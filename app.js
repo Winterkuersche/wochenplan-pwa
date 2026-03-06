@@ -267,6 +267,20 @@ function getDayWarnings(dayKey) {
   }
 
   return warnings;
+  
+  function getPreviousDayKey(dayKey) {
+  const idx = DAYS.findIndex(d => d.key === dayKey);
+  if (idx <= 0) return null;
+  return DAYS[idx - 1].key;
+}
+
+function hadLateShiftPreviousDay(emp, dayKey) {
+  const prevDayKey = getPreviousDayKey(dayKey);
+  if (!prevDayKey) return false;
+
+  const prevShift = getShiftByKey(emp.days[prevDayKey]);
+  return prevShift.end === "19:10";
+}
 }
 
 function renderPlanner() {
