@@ -9,6 +9,15 @@
   --warn-border: #f0c36d;
   --active: #111111;
   --activeText: #ffffff;
+
+  --early-bg: #e9f3ff;
+  --early-border: #b9d7ff;
+  --full-bg: #ddeaff;
+  --full-border: #9ec0ff;
+  --late-bg: #fff0e0;
+  --late-border: #f3c087;
+  --free-bg: #f0f0f0;
+  --free-border: #d8d8d8;
 }
 
 * {
@@ -73,6 +82,37 @@ button {
 .small {
   color: var(--muted);
   font-size: 12px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.summaryCard {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+}
+
+.summaryLabel {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.summaryValue {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.summarySub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
 }
 
 .sectionhead {
@@ -152,6 +192,23 @@ button {
   background: #fff;
 }
 
+.planRow.prevLate {
+  border: 2px solid #f0c36d !important;
+  background: #fff7e6 !important;
+}
+
+.prevLateBadge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a5600;
+  background: #ffe7a8;
+  border: 1px solid #f0c36d;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
 .planHead {
   display: flex;
   justify-content: space-between;
@@ -194,6 +251,35 @@ button {
   border-color: var(--active);
 }
 
+.shiftBtn.shift-early {
+  background: var(--early-bg);
+  border-color: var(--early-border);
+}
+
+.shiftBtn.shift-full {
+  background: var(--full-bg);
+  border-color: var(--full-border);
+}
+
+.shiftBtn.shift-late {
+  background: var(--late-bg);
+  border-color: var(--late-border);
+}
+
+.shiftBtn.shift-free {
+  background: var(--free-bg);
+  border-color: var(--free-border);
+}
+
+.shiftBtn.active.shift-early,
+.shiftBtn.active.shift-full,
+.shiftBtn.active.shift-late,
+.shiftBtn.active.shift-free {
+  background: var(--active);
+  color: var(--activeText);
+  border-color: var(--active);
+}
+
 .shiftLegend {
   margin-top: 8px;
   font-size: 12px;
@@ -209,7 +295,7 @@ button {
 table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 900px;
+  min-width: 950px;
 }
 
 th, td {
@@ -226,15 +312,60 @@ th {
   z-index: 1;
 }
 
-.deltaPos,
-.deltaNeg,
-.deltaZero {
+.overviewChip {
+  display: inline-block;
+  min-width: 36px;
+  text-align: center;
+  padding: 5px 8px;
+  border-radius: 999px;
   font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.overviewChip.early {
+  background: var(--early-bg);
+  border-color: var(--early-border);
+}
+
+.overviewChip.full {
+  background: var(--full-bg);
+  border-color: var(--full-border);
+}
+
+.overviewChip.late {
+  background: var(--late-bg);
+  border-color: var(--late-border);
+}
+
+.overviewChip.free {
+  background: var(--free-bg);
+  border-color: var(--free-border);
+}
+
+.deltaPos {
+  font-weight: 800;
+}
+
+.deltaNeg {
+  font-weight: 800;
+  color: #9a4f00;
+}
+
+.deltaZero {
+  font-weight: 800;
+}
+
+.hidden {
+  display: none !important;
 }
 
 @media (min-width: 920px) {
   .daymeta {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -247,6 +378,7 @@ th {
   .tabs,
   .daymeta,
   .plannerList,
+  .summaryGrid,
   .teamsetup .small,
   .daynav .small,
   .overview .small {
@@ -265,20 +397,4 @@ th {
   .tableWrap {
     border: none;
   }
-  .planRow.prevLate {
-  border: 2px solid #f0c36d !important;
-  background: #fff7e6 !important;
-}
-
-.prevLateBadge {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #7a5600;
-  background: #ffe7a8;
-  border: 1px solid #f0c36d;
-  border-radius: 999px;
-  padding: 4px 8px;
-}
 }
