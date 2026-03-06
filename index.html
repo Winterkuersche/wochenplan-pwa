@@ -3,63 +3,93 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#ffffff">
-  <title>Wochenplan MEP</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Wochenplan V4</title>
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <strong>Wochenplan (Handy)</strong>
+  <header class="topbar">
+    <div class="titlewrap">
+      <h1>Wochenplan</h1>
+      <div class="small">Handy-Ansicht für Mo-Sa</div>
+    </div>
 
-    <label>Woche von:
-      <input id="weekFrom" type="date">
-    </label>
-    <label>bis:
-      <input id="weekTo" type="date">
-    </label>
+    <div class="weekrange">
+      <label>
+        Woche von
+        <input id="weekFrom" type="date" />
+      </label>
+      <label>
+        bis
+        <input id="weekTo" type="date" />
+      </label>
+    </div>
 
-    <span class="actions">
-      <button id="btnAutoTarget">Soll nach Funktion setzen</button>
+    <div class="toolbar">
       <button id="btnSave">Speichern</button>
-      <button id="btnClear">Leeren</button>
+      <button id="btnClearWeek">Woche leeren</button>
       <button id="btnPrint">Drucken / PDF</button>
-    </span>
-
-    <div class="small">Offline-fähig • Daten bleiben lokal auf dem Gerät</div>
+    </div>
   </header>
 
-  <div id="warnings" class="warnings"></div>
+  <section class="teamsetup">
+    <div class="sectionhead">
+      <h2>Team</h2>
+      <div class="small">Feste Reihenfolge für die Planung</div>
+    </div>
+    <div id="teamList" class="teamlist"></div>
+  </section>
 
-  <div class="table">
-    <table id="planTable">
-      <thead>
-        <tr>
-          <th class="name">Name</th>
-          <th class="role">Funktion</th>
-          <th class="target">Soll/Woche</th>
-          <th class="delta">Delta</th>
-          <th class="day">Mo</th>
-          <th class="day">Di</th>
-          <th class="day">Mi</th>
-          <th class="day">Do</th>
-          <th class="day">Fr</th>
-          <th class="day">Sa</th>
-          <th class="day">So</th>
-          <th class="week">Woche</th>
-        </tr>
-      </thead>
+  <section class="daynav">
+    <div class="sectionhead">
+      <h2>Planung</h2>
+      <div class="small">Früh zuerst, dann Spät</div>
+    </div>
 
-      <tbody id="tbody"></tbody>
+    <div id="dayTabs" class="tabs"></div>
 
-      <tfoot>
-        <tr>
-          <td colspan="11" class="sum">Summe Stunden (alle)</td>
-          <td class="sum" id="sumAll">0:00</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+    <div class="daymeta">
+      <div class="metaBox">
+        <strong id="metaDayName">Montag</strong>
+        <div id="lateCountInfo">19:10 heute: 0 / 2</div>
+      </div>
+      <div class="metaBox">
+        <strong>Warnungen</strong>
+        <div id="dayWarnings" class="warnText">Keine Warnungen.</div>
+      </div>
+    </div>
+
+    <div id="plannerList" class="plannerList"></div>
+  </section>
+
+  <section class="overview">
+    <div class="sectionhead">
+      <h2>Wochenübersicht</h2>
+      <div class="small">Kontrolle für die ganze Woche</div>
+    </div>
+
+    <div class="tableWrap">
+      <table id="overviewTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Funktion</th>
+            <th>Soll</th>
+            <th>Mo</th>
+            <th>Di</th>
+            <th>Mi</th>
+            <th>Do</th>
+            <th>Fr</th>
+            <th>Sa</th>
+            <th>Ist</th>
+            <th>Delta</th>
+          </tr>
+        </thead>
+        <tbody id="overviewBody"></tbody>
+      </table>
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
