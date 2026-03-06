@@ -1,411 +1,443 @@
-const DAYS = ["mo","di","mi","do","fr","sa","so"];
-const DAY_LABEL = { mo:"Mo", di:"Di", mi:"Mi", do:"Do", fr:"Fr", sa:"Sa", so:"So" };
-const LS_KEY = "wochenplan_v3";
+const DAYS = [
+  { key: "mo", label: "Mo", full: "Montag" },
+  { key: "di", label: "Di", full: "Dienstag" },
+  { key: "mi", label: "Mi", full: "Mittwoch" },
+  { key: "do", label: "Do", full: "Donnerstag" },
+  { key: "fr", label: "Fr", full: "Freitag" },
+  { key: "sa", label: "Sa", full: "Samstag" }
+];
 
-// Schichten (Preset) + Custom + Frei
+const ROLE_OPTIONS = [
+  { key: "", label: "-" },
+  { key: "TL", label: "TL", target: "30:00" },
+  { key: "TZ30", label: "TZ 30", target: "30:00" },
+  { key: "TZ20", label: "TZ 20", target: "20:00" },
+  { key: "TZ15", label: "TZ 15", target: "15:00" },
+  { key: "GFB", label: "GfB", target: "9:30" }
+];
+
 const SHIFTS = [
-  { key:"", label:"Frei", start:"", end:"" },
-
-  // Früh
-  { key:"9-12",  label:"09:00–12:00", start:"09:00", end:"12:00" },
-  { key:"9-13",  label:"09:00–13:00", start:"09:00", end:"13:00" },
-  { key:"9-14",  label:"09:00–14:00", start:"09:00", end:"14:00" },
-  { key:"9-15",  label:"09:00–15:00", start:"09:00", end:"15:00" },
-  { key:"9-19",  label:"09:00–19:00", start:"09:00", end:"19:00" },
-
-  // Spät
-  { key:"13-1910", label:"13:00–19:10", start:"13:00", end:"19:10" },
-  { key:"14-1910", label:"14:00–19:10", start:"14:00", end:"19:10" },
-  { key:"15-1910", label:"15:00–19:10", start:"15:00", end:"19:10" },
-  { key:"16-1910", label:"16:00–19:10", start:"16:00", end:"19:10" },
-
-  // Custom (lässt Zeiten unberührt)
-  { key:"custom", label:"Custom (Zeiten frei)", start:null, end:null }
+  { key: "F3", label: "F3", start: "09:00", end: "12:00", desc: "09:00-12:00" },
+  { key: "F4", label: "F4", start: "09:00", end: "13:00", desc: "09:00-13:00" },
+  { key: "F5", label: "F5", start: "09:00", end: "14:00", desc: "09:00-14:00" },
+  { key: "F6", label: "F6", start: "09:00", end: "15:00", desc: "09:00-15:00" },
+  { key: "G1", label: "G1", start: "09:00", end: "19:10", desc: "09:00-19:10" },
+  { key: "L1", label: "L1", start: "13:00", end: "19:10", desc: "13:00-19:10" },
+  { key: "L2", label: "L2", start: "14:00", end: "19:10", desc: "14:00-19:10" },
+  { key: "L3", label: "L3", start: "15:00", end: "19:10", desc: "15:00-19:10" },
+  { key: "L4", label: "L4", start: "16:00", end: "19:10", desc: "16:00-19:10" },
+  { key: "-", label: "-", start: "", end: "", desc: "frei" }
 ];
 
-// Funktion (Dropdown) + Auto-Sollstunden
-const ROLES = [
-  { key:"",      label:"—",     target:""      },
-  { key:"TL",    label:"TL",    target:"30:00" },
-  { key:"TZ30",  label:"TZ 30", target:"30:00" },
-  { key:"TZ20",  label:"TZ 20", target:"20:00" },
-  { key:"TZ15",  label:"TZ 15", target:"15:00" },
-  { key:"GFB",   label:"GfB",   target:"9:30"  }
-];
+const LS_KEY = "wochenplan_v4";
+let currentDay = "mo";
 
-const tbody = document.getElementById("tbody");
-const sumAllEl = document.getElementById("sumAll");
-const warningsEl = document.getElementById("warnings");
+const teamListEl = document.getElementById("teamList");
+const dayTabsEl = document.getElementById("dayTabs");
+const plannerListEl = document.getElementById("plannerList");
+const metaDayNameEl = document.getElementById("metaDayName");
+const lateCountInfoEl = document.getElementById("lateCountInfo");
+const dayWarningsEl = document.getElementById("dayWarnings");
+const overviewBodyEl = document.getElementById("overviewBody");
+const weekFromEl = document.getElementById("weekFrom");
+const weekToEl = document.getElementById("weekTo");
 
-// --- Time helpers ---
+function createDefaultEmployees() {
+  return Array.from({ length: 13 }, (_, i) => ({
+    id: `emp_${i + 1}`,
+    name: "",
+    roleKey: "",
+    target: "",
+    days: Object.fromEntries(DAYS.map(d => [d.key, "-"]))
+  }));
+}
+
+function defaultState() {
+  return {
+    weekFrom: "",
+    weekTo: "",
+    employees: createDefaultEmployees()
+  };
+}
+
+let state = loadState() || defaultState();
+normalizeState();
+
+function normalizeState() {
+  if (!state || !Array.isArray(state.employees)) {
+    state = defaultState();
+  }
+
+  if (state.employees.length < 13) {
+    while (state.employees.length < 13) {
+      const i = state.employees.length;
+      state.employees.push({
+        id: `emp_${i + 1}`,
+        name: "",
+        roleKey: "",
+        target: "",
+        days: Object.fromEntries(DAYS.map(d => [d.key, "-"]))
+      });
+    }
+  }
+
+  state.employees = state.employees.slice(0, 13).map((emp, index) => {
+    const days = emp.days || {};
+    const normalizedDays = {};
+    for (const d of DAYS) {
+      normalizedDays[d.key] = days[d.key] || "-";
+    }
+
+    const roleKey = emp.roleKey || "";
+    let target = emp.target || roleToTarget(roleKey);
+
+    return {
+      id: emp.id || `emp_${index + 1}`,
+      name: emp.name || "",
+      roleKey,
+      target,
+      days: normalizedDays
+    };
+  });
+}
+
+function roleToTarget(roleKey) {
+  const found = ROLE_OPTIONS.find(r => r.key === roleKey);
+  return found && found.target ? found.target : "";
+}
+
 function hmToMinutes(hm) {
   if (!hm) return 0;
   const [h, m] = hm.split(":").map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return 0;
-  return h*60 + m;
+  return h * 60 + m;
 }
+
 function minutesToHM(min) {
   min = Math.max(0, Math.round(min));
-  const h = Math.floor(min/60);
+  const h = Math.floor(min / 60);
   const m = min % 60;
-  return `${h}:${String(m).padStart(2,"0")}`;
+  return `${h}:${String(m).padStart(2, "0")}`;
 }
+
 function formatDelta(min) {
   if (min === 0) return "0:00";
-  const sign = min > 0 ? "+" : "-";
-  return sign + minutesToHM(Math.abs(min));
+  return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
 }
 
-function shiftDurationMinutes(start, end) {
-  const s = hmToMinutes(start);
-  const e = hmToMinutes(end);
-  if (!s || !e) return 0;
-  return (e >= s) ? (e - s) : (24*60 - s + e);
+function getShiftByKey(key) {
+  return SHIFTS.find(s => s.key === key) || SHIFTS[SHIFTS.length - 1];
 }
 
-// --- Pause rules (deine Regeln) ---
-function appliedPauseMinutes(start, end) {
-  const dur = shiftDurationMinutes(start, end);
-  if (!dur) return 0;
+function shiftDurationMinutes(shiftKey) {
+  const shift = getShiftByKey(shiftKey);
+  if (!shift.start || !shift.end) return 0;
+  const start = hmToMinutes(shift.start);
+  const end = hmToMinutes(shift.end);
+  return end - start;
+}
 
-  // Immer 10 Minuten Pause wenn Ende 19:10
-  if (end === "19:10") return 10;
+function appliedPauseMinutes(shiftKey) {
+  const shift = getShiftByKey(shiftKey);
+  if (!shift.start || !shift.end) return 0;
+  const dur = shiftDurationMinutes(shiftKey);
 
-  // Sonst: über 6h Arbeit = 60 Minuten Pause
-  if (dur > 6*60) return 60;
-
+  if (shift.end === "19:10") return 10;
+  if (dur > 6 * 60) return 60;
   return 0;
 }
-function netMinutes(start, end) {
-  const dur = shiftDurationMinutes(start, end);
+
+function netMinutesForShift(shiftKey) {
+  const dur = shiftDurationMinutes(shiftKey);
   if (!dur) return 0;
-  return Math.max(0, dur - appliedPauseMinutes(start, end));
+  return Math.max(0, dur - appliedPauseMinutes(shiftKey));
 }
 
-// --- UI builders ---
-function makeSelect(options, value="") {
-  const s = document.createElement("select");
-  for (const o of options) {
-    const opt = document.createElement("option");
-    opt.value = o.key;
-    opt.textContent = o.label;
-    s.appendChild(opt);
-  }
-  s.value = value;
-  return s;
+function totalMinutesForEmployee(emp) {
+  return DAYS.reduce((sum, d) => sum + netMinutesForShift(emp.days[d.key]), 0);
 }
 
-function makeTimeInput(value="") {
-  const i = document.createElement("input");
-  i.type = "time";
-  i.className = "time";
-  i.value = value;
-  return i;
+function targetMinutes(emp) {
+  return hmToMinutes(emp.target || "0:00");
 }
 
-function roleToTarget(roleKey) {
-  const r = ROLES.find(x => x.key === roleKey);
-  return r ? r.target : "";
+function deltaMinutes(emp) {
+  return totalMinutesForEmployee(emp) - targetMinutes(emp);
 }
 
-function minutesFromTargetString(t) {
-  // akzeptiert "9:30" oder "30:00"
-  return t ? hmToMinutes(t) : 0;
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
 
-function makeDayCell(data={}) {
-  const wrap = document.createElement("div");
-  wrap.style.display = "grid";
-  wrap.style.gridTemplateColumns = "1fr";
-  wrap.style.gap = "6px";
-
-  const sel = makeSelect(SHIFTS, data.shiftKey ?? "");
-
-  const row = document.createElement("div");
-  row.style.display = "flex";
-  row.style.gap = "6px";
-  row.style.alignItems = "center";
-
-  const start = makeTimeInput(data.start || "");
-  const end = makeTimeInput(data.end || "");
-
-  const pausePill = document.createElement("span");
-  pausePill.className = "pausepill";
-  pausePill.textContent = "Pause: 0";
-
-  row.append("S", start, "E", end, pausePill);
-  wrap.append(sel, row);
-
-  sel.addEventListener("change", () => {
-    const sh = SHIFTS.find(x => x.key === sel.value);
-    if (!sh) return;
-
-    if (sh.key === "") {
-      start.value = "";
-      end.value = "";
-    } else if (sh.key === "custom") {
-      // Zeiten bleiben
-    } else {
-      start.value = sh.start;
-      end.value = sh.end;
-    }
-    recalc();
-  });
-
-  start.addEventListener("change", () => {
-    if (start.value || end.value) sel.value = "custom";
-    recalc();
-  });
-  end.addEventListener("change", () => {
-    if (start.value || end.value) sel.value = "custom";
-    recalc();
-  });
-
-  return { wrap, sel, start, end, pausePill };
-}
-
-function buildRow(idx, rowData={}) {
-  const tr = document.createElement("tr");
-
-  // Name
-  const nameTd = document.createElement("td");
-  const name = document.createElement("input");
-  name.placeholder = `Mitarbeiter ${idx+1}`;
-  name.value = rowData.name || "";
-  name.addEventListener("input", recalc);
-  nameTd.appendChild(name);
-
-  // Funktion (Dropdown)
-  const roleTd = document.createElement("td");
-  const roleSel = makeSelect(ROLES, rowData.roleKey || "");
-  roleTd.appendChild(roleSel);
-
-  // Soll/Woche (Dropdown - kann man auch manuell übersteuern)
-  const targetTd = document.createElement("td");
-  const targetSel = document.createElement("select");
-  const TARGETS = [
-    { key:"",      label:"—" },
-    { key:"30:00", label:"30:00" },
-    { key:"20:00", label:"20:00" },
-    { key:"15:00", label:"15:00" },
-    { key:"9:30",  label:"9:30"  }
-  ];
-  for (const t of TARGETS) {
-    const opt = document.createElement("option");
-    opt.value = t.key;
-    opt.textContent = t.label;
-    targetSel.appendChild(opt);
-  }
-  targetSel.value = rowData.target || "";
-  targetTd.appendChild(targetSel);
-
-  // Delta
-  const deltaTd = document.createElement("td");
-  deltaTd.className = "sum deltaZero";
-  deltaTd.textContent = "0:00";
-
-  tr.appendChild(nameTd);
-  tr.appendChild(roleTd);
-  tr.appendChild(targetTd);
-  tr.appendChild(deltaTd);
-
-  // Tage
-  const dayInputs = {};
-  for (const d of DAYS) {
-    const td = document.createElement("td");
-    const cell = makeDayCell((rowData.days && rowData.days[d]) || {});
-    td.appendChild(cell.wrap);
-    tr.appendChild(td);
-    dayInputs[d] = cell;
-  }
-
-  // Wochen-Summe
-  const sumTd = document.createElement("td");
-  sumTd.className = "sum";
-  sumTd.textContent = "0:00";
-  tr.appendChild(sumTd);
-
-  tr._data = { name, roleSel, targetSel, deltaTd, dayInputs, sumTd };
-
-  // Auto-Soll nach Funktion (sofort beim Ändern)
-  roleSel.addEventListener("change", () => {
-    const autoT = roleToTarget(roleSel.value);
-    if (autoT) tr._data.targetSel.value = autoT;
-    recalc();
-  });
-
-  // Wenn Soll manuell geändert wird, einfach neu rechnen
-  targetSel.addEventListener("change", recalc);
-
-  // Wenn ein gespeicherter roleKey existiert, aber target leer ist, setze auto
-  if (!targetSel.value && roleSel.value) {
-    const autoT = roleToTarget(roleSel.value);
-    if (autoT) targetSel.value = autoT;
-  }
-
-  return tr;
-}
-
-// --- State ---
-function getState() {
-  const rows = [...tbody.querySelectorAll("tr")].map(tr => {
-    const d = tr._data;
-    const days = {};
-    for (const k of DAYS) {
-      const c = d.dayInputs[k];
-      days[k] = {
-        shiftKey: c.sel.value,
-        start: c.start.value,
-        end: c.end.value
-      };
-    }
-    return {
-      name: d.name.value,
-      roleKey: d.roleSel.value,
-      target: d.targetSel.value,
-      days
-    };
-  });
-
-  return {
-    weekFrom: document.getElementById("weekFrom").value,
-    weekTo: document.getElementById("weekTo").value,
-    rows
-  };
-}
-
-function setState(state) {
-  document.getElementById("weekFrom").value = state.weekFrom || "";
-  document.getElementById("weekTo").value = state.weekTo || "";
-  tbody.innerHTML = "";
-
-  const rows = (state.rows && state.rows.length) ? state.rows : [];
-  const count = 13;
-
-  for (let i=0; i<count; i++) {
-    tbody.appendChild(buildRow(i, rows[i] || {}));
-  }
-  recalc();
-}
-
-function renderWarnings(messages) {
-  warningsEl.innerHTML = "";
-  for (const msg of messages) {
-    const div = document.createElement("div");
-    div.className = "warn";
-    div.textContent = msg;
-    warningsEl.appendChild(div);
-  }
-}
-
-// --- Recalc + validations ---
-function recalc() {
-  let all = 0;
-  const rows = [...tbody.querySelectorAll("tr")];
-
-  // Warn helpers
-  const end1910Count = Object.fromEntries(DAYS.map(d => [d, 0]));
-  const warnings = [];
-
-  for (const tr of rows) {
-    let rowSum = 0;
-
-    for (const d of DAYS) {
-      const c = tr._data.dayInputs[d];
-      const pause = appliedPauseMinutes(c.start.value, c.end.value);
-      c.pausePill.textContent = `Pause: ${pause}`;
-
-      if (c.end.value === "19:10") end1910Count[d]++;
-
-      rowSum += netMinutes(c.start.value, c.end.value);
-    }
-
-    tr._data.sumTd.textContent = minutesToHM(rowSum);
-    all += rowSum;
-
-    // Delta pro Mitarbeiter
-    const targetMin = minutesFromTargetString(tr._data.targetSel.value);
-    const delta = rowSum - targetMin;
-
-    tr._data.deltaTd.textContent = formatDelta(delta);
-    tr._data.deltaTd.classList.remove("deltaPos","deltaNeg","deltaZero");
-    tr._data.deltaTd.classList.add(delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero");
-  }
-
-  sumAllEl.textContent = minutesToHM(all);
-
-  // Max 2 bis 19:10 pro Tag (Abrechnung)
-  for (const d of DAYS) {
-    if (end1910Count[d] > 2) {
-      warnings.push(`⚠ ${DAY_LABEL[d]}: ${end1910Count[d]} Personen bis 19:10 (max. 2 für Abrechnung).`);
-    }
-  }
-
-  // Abend-Anker: Wenn Mo..Sa 19:10 besetzt ist, muss mind. eine dieser Personen am Folgetag arbeiten
-  for (let i=0; i<DAYS.length-1; i++) {
-    const d = DAYS[i];
-    const next = DAYS[i+1];
-
-    const lateIdx = rows
-      .map((tr, idx) => ({ tr, idx }))
-      .filter(x => x.tr._data.dayInputs[d].end.value === "19:10")
-      .map(x => x.idx);
-
-    if (lateIdx.length === 0) continue;
-
-    const hasAnchor = lateIdx.some(idx => {
-      const nextCell = rows[idx]._data.dayInputs[next];
-      return !!(nextCell.start.value && nextCell.end.value);
-    });
-
-    if (!hasAnchor) {
-      warnings.push(`⚠ Abend-Anker: ${DAY_LABEL[d]} hat 19:10-Schicht(en), aber keine dieser Personen ist ${DAY_LABEL[next]} eingeplant.`);
-    }
-  }
-
-  renderWarnings(warnings);
-}
-
-// --- Persistence ---
-function save() {
-  localStorage.setItem(LS_KEY, JSON.stringify(getState()));
-}
-function load() {
+function loadState() {
   const raw = localStorage.getItem(LS_KEY);
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
-// --- Buttons ---
+function renderTeamSetup() {
+  teamListEl.innerHTML = "";
+
+  state.employees.forEach((emp, idx) => {
+    const row = document.createElement("div");
+    row.className = "teamrow";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = `Mitarbeiter ${idx + 1}`;
+    nameInput.value = emp.name;
+    nameInput.addEventListener("input", () => {
+      emp.name = nameInput.value;
+      renderAll();
+    });
+
+    const roleSel = document.createElement("select");
+    for (const role of ROLE_OPTIONS) {
+      const opt = document.createElement("option");
+      opt.value = role.key;
+      opt.textContent = role.label;
+      roleSel.appendChild(opt);
+    }
+    roleSel.value = emp.roleKey;
+    roleSel.addEventListener("change", () => {
+      emp.roleKey = roleSel.value;
+      emp.target = roleToTarget(emp.roleKey);
+      renderAll();
+    });
+
+    const targetBox = document.createElement("input");
+    targetBox.type = "text";
+    targetBox.value = emp.target || "";
+    targetBox.placeholder = "Soll";
+    targetBox.addEventListener("input", () => {
+      emp.target = targetBox.value;
+      renderAll();
+    });
+
+    const info = document.createElement("div");
+    info.className = "small";
+    info.textContent = `#${idx + 1}`;
+
+    row.appendChild(nameInput);
+    row.appendChild(roleSel);
+    row.appendChild(targetBox);
+    row.appendChild(info);
+
+    teamListEl.appendChild(row);
+  });
+}
+
+function renderTabs() {
+  dayTabsEl.innerHTML = "";
+
+  DAYS.forEach(d => {
+    const btn = document.createElement("button");
+    btn.className = `tabBtn${currentDay === d.key ? " active" : ""}`;
+    btn.textContent = d.label;
+    btn.addEventListener("click", () => {
+      currentDay = d.key;
+      renderPlanner();
+    });
+    dayTabsEl.appendChild(btn);
+  });
+}
+
+function getDayWarnings(dayKey) {
+  const warnings = [];
+  const lateWorkers = state.employees.filter(emp => {
+    const shift = getShiftByKey(emp.days[dayKey]);
+    return shift.end === "19:10";
+  });
+
+  if (lateWorkers.length > 2) {
+    warnings.push(`⚠ ${lateWorkers.length} Personen bis 19:10 eingeplant. Maximal 2 erlaubt.`);
+  }
+
+  const dayIndex = DAYS.findIndex(d => d.key === dayKey);
+  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && lateWorkers.length > 0) {
+    const nextDayKey = DAYS[dayIndex + 1].key;
+    const hasAnchor = lateWorkers.some(emp => emp.days[nextDayKey] !== "-");
+    if (!hasAnchor) {
+      warnings.push(`⚠ Keine 19:10-Person von ${DAYS[dayIndex].label} ist am ${DAYS[dayIndex + 1].label} eingeplant.`);
+    }
+  }
+
+  return warnings;
+}
+
+function renderPlanner() {
+  renderTabs();
+
+  const dayObj = DAYS.find(d => d.key === currentDay);
+  metaDayNameEl.textContent = dayObj ? dayObj.full : currentDay;
+
+  const lateCount = state.employees.filter(emp => {
+    const shift = getShiftByKey(emp.days[currentDay]);
+    return shift.end === "19:10";
+  }).length;
+
+  lateCountInfoEl.textContent = `19:10 heute: ${lateCount} / 2`;
+
+  const warnings = getDayWarnings(currentDay);
+  dayWarningsEl.innerHTML = "";
+
+  if (warnings.length === 0) {
+    dayWarningsEl.textContent = "Keine Warnungen.";
+  } else {
+    warnings.forEach(w => {
+      const div = document.createElement("div");
+      div.className = "warnLine";
+      div.textContent = w;
+      dayWarningsEl.appendChild(div);
+    });
+  }
+
+  plannerListEl.innerHTML = "";
+
+  state.employees.forEach((emp) => {
+    const row = document.createElement("div");
+    row.className = "planRow";
+
+    const head = document.createElement("div");
+    head.className = "planHead";
+
+    const left = document.createElement("div");
+    const name = document.createElement("div");
+    name.className = "planName";
+    name.textContent = emp.name || "—";
+
+    const sub = document.createElement("div");
+    sub.className = "planSub";
+    const currentShift = getShiftByKey(emp.days[currentDay]);
+    sub.textContent = `${emp.roleKey || "-"} · ${currentShift.desc}`;
+
+    left.appendChild(name);
+    left.appendChild(sub);
+
+    const right = document.createElement("div");
+    right.className = "planHours";
+    right.innerHTML = `
+      <div><strong>${minutesToHM(totalMinutesForEmployee(emp))}</strong> / ${emp.target || "—"}</div>
+      <div class="small">Delta ${formatDelta(deltaMinutes(emp))}</div>
+    `;
+
+    head.appendChild(left);
+    head.appendChild(right);
+
+    const btnWrap = document.createElement("div");
+    btnWrap.className = "shiftButtons";
+
+    SHIFTS.forEach(shift => {
+      const btn = document.createElement("button");
+      btn.className = `shiftBtn${emp.days[currentDay] === shift.key ? " active" : ""}`;
+      btn.textContent = shift.label;
+      btn.title = shift.desc;
+      btn.addEventListener("click", () => {
+        emp.days[currentDay] = shift.key;
+        renderAll();
+      });
+      btnWrap.appendChild(btn);
+    });
+
+    const legend = document.createElement("div");
+    legend.className = "shiftLegend";
+    legend.textContent = "F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1 13-19:10 · L2 14-19:10 · L3 15-19:10 · L4 16-19:10 · - frei";
+
+    row.appendChild(head);
+    row.appendChild(btnWrap);
+    row.appendChild(legend);
+
+    plannerListEl.appendChild(row);
+  });
+}
+
+function renderOverview() {
+  overviewBodyEl.innerHTML = "";
+
+  state.employees.forEach(emp => {
+    const tr = document.createElement("tr");
+
+    const tdName = document.createElement("td");
+    tdName.textContent = emp.name || "—";
+
+    const tdRole = document.createElement("td");
+    tdRole.textContent = emp.roleKey || "-";
+
+    const tdTarget = document.createElement("td");
+    tdTarget.textContent = emp.target || "-";
+
+    tr.appendChild(tdName);
+    tr.appendChild(tdRole);
+    tr.appendChild(tdTarget);
+
+    DAYS.forEach(d => {
+      const td = document.createElement("td");
+      td.textContent = emp.days[d.key] || "-";
+      tr.appendChild(td);
+    });
+
+    const tdActual = document.createElement("td");
+    tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
+
+    const delta = deltaMinutes(emp);
+    const tdDelta = document.createElement("td");
+    tdDelta.textContent = formatDelta(delta);
+    tdDelta.className = delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero";
+
+    tr.appendChild(tdActual);
+    tr.appendChild(tdDelta);
+
+    overviewBodyEl.appendChild(tr);
+  });
+}
+
+function renderAll() {
+  weekFromEl.value = state.weekFrom || "";
+  weekToEl.value = state.weekTo || "";
+
+  renderTeamSetup();
+  renderPlanner();
+  renderOverview();
+  saveState();
+}
+
+weekFromEl.addEventListener("change", () => {
+  state.weekFrom = weekFromEl.value;
+  saveState();
+});
+
+weekToEl.addEventListener("change", () => {
+  state.weekTo = weekToEl.value;
+  saveState();
+});
+
 document.getElementById("btnSave").addEventListener("click", () => {
-  save();
+  saveState();
   alert("Gespeichert.");
 });
 
-document.getElementById("btnClear").addEventListener("click", () => {
-  if (confirm("Alles leeren?")) {
-    localStorage.removeItem(LS_KEY);
-    setState({ rows: [] });
-  }
+document.getElementById("btnClearWeek").addEventListener("click", () => {
+  if (!confirm("Komplette Woche leeren?")) return;
+
+  state.employees.forEach(emp => {
+    for (const d of DAYS) {
+      emp.days[d.key] = "-";
+    }
+  });
+
+  renderAll();
 });
 
-document.getElementById("btnPrint").addEventListener("click", () => window.print());
-
-document.getElementById("btnAutoTarget").addEventListener("click", () => {
-  for (const tr of [...tbody.querySelectorAll("tr")]) {
-    const roleKey = tr._data.roleSel.value;
-    const autoT = roleToTarget(roleKey);
-    if (autoT) tr._data.targetSel.value = autoT;
-  }
-  recalc();
-  alert("Sollstunden nach Funktion gesetzt.");
+document.getElementById("btnPrint").addEventListener("click", () => {
+  window.print();
 });
 
-// --- Service Worker ---
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js");
 }
 
-// --- Start ---
-const st = load();
-setState(st || { rows: [] });
+renderAll();
