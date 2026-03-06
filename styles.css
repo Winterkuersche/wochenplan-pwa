@@ -266,8 +266,8 @@ th {
     border: none;
   }
   .planRow.prevLate {
-  border: 2px solid #f0c36d;
-  background: #fff7e6;
+  border: 2px solid #f0c36d !important;
+  background: #fff7e6 !important;
 }
 
 .prevLateBadge {
