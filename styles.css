@@ -265,4 +265,20 @@ th {
   .tableWrap {
     border: none;
   }
+  .planRow.prevLate {
+  border: 2px solid #f0c36d;
+  background: #fff7e6;
+}
+
+.prevLateBadge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #7a5600;
+  background: #ffe7a8;
+  border: 1px solid #f0c36d;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
 }
