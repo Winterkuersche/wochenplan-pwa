@@ -1,1 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ffffff">
+  <title>Wochenplan MEP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <strong>Wochenplan (Handy)</strong>
 
+    <label>Woche von:
+      <input id="weekFrom" type="date">
+    </label>
+    <label>bis:
+      <input id="weekTo" type="date">
+    </label>
+
+    <span class="actions">
+      <button id="btnAutoTarget">Soll nach Funktion setzen</button>
+      <button id="btnSave">Speichern</button>
+      <button id="btnClear">Leeren</button>
+      <button id="btnPrint">Drucken / PDF</button>
+    </span>
+
+    <div class="small">Offline-fähig • Daten bleiben lokal auf dem Gerät</div>
+  </header>
+
+  <div id="warnings" class="warnings"></div>
+
+  <div class="table">
+    <table id="planTable">
+      <thead>
+        <tr>
+          <th class="name">Name</th>
+          <th class="role">Funktion</th>
+          <th class="target">Soll/Woche</th>
+          <th class="delta">Delta</th>
+          <th class="day">Mo</th>
+          <th class="day">Di</th>
+          <th class="day">Mi</th>
+          <th class="day">Do</th>
+          <th class="day">Fr</th>
+          <th class="day">Sa</th>
+          <th class="day">So</th>
+          <th class="week">Woche</th>
+        </tr>
+      </thead>
+
+      <tbody id="tbody"></tbody>
+
+      <tfoot>
+        <tr>
+          <td colspan="11" class="sum">Summe Stunden (alle)</td>
+          <td class="sum" id="sumAll">0:00</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
