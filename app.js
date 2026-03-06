@@ -29,7 +29,7 @@ const SHIFTS = [
   { key: "-", label: "-", start: "", end: "", desc: "frei" }
 ];
 
-const LS_KEY = "wochenplan_v4";
+const LS_KEY = "wochenplan_v41";
 let currentDay = "mo";
 
 const teamListEl = document.getElementById("teamList");
@@ -60,6 +60,16 @@ function defaultState() {
   };
 }
 
+function loadState() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 let state = loadState() || defaultState();
 normalizeState();
 
@@ -84,12 +94,13 @@ function normalizeState() {
   state.employees = state.employees.slice(0, 13).map((emp, index) => {
     const days = emp.days || {};
     const normalizedDays = {};
+
     for (const d of DAYS) {
       normalizedDays[d.key] = days[d.key] || "-";
     }
 
     const roleKey = emp.roleKey || "";
-    let target = emp.target || roleToTarget(roleKey);
+    const target = emp.target || roleToTarget(roleKey);
 
     return {
       id: emp.id || `emp_${index + 1}`,
@@ -99,6 +110,10 @@ function normalizeState() {
       days: normalizedDays
     };
   });
+}
+
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
 
 function roleToTarget(roleKey) {
@@ -140,17 +155,18 @@ function shiftDurationMinutes(shiftKey) {
 function appliedPauseMinutes(shiftKey) {
   const shift = getShiftByKey(shiftKey);
   if (!shift.start || !shift.end) return 0;
-  const dur = shiftDurationMinutes(shiftKey);
+
+  const duration = shiftDurationMinutes(shiftKey);
 
   if (shift.end === "19:10") return 10;
-  if (dur > 6 * 60) return 60;
+  if (duration > 6 * 60) return 60;
   return 0;
 }
 
 function netMinutesForShift(shiftKey) {
-  const dur = shiftDurationMinutes(shiftKey);
-  if (!dur) return 0;
-  return Math.max(0, dur - appliedPauseMinutes(shiftKey));
+  const duration = shiftDurationMinutes(shiftKey);
+  if (!duration) return 0;
+  return Math.max(0, duration - appliedPauseMinutes(shiftKey));
 }
 
 function totalMinutesForEmployee(emp) {
@@ -165,18 +181,44 @@ function deltaMinutes(emp) {
   return totalMinutesForEmployee(emp) - targetMinutes(emp);
 }
 
-function saveState() {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+function getPreviousDayKey(dayKey) {
+  const idx = DAYS.findIndex(d => d.key === dayKey);
+  if (idx <= 0) return null;
+  return DAYS[idx - 1].key;
 }
 
-function loadState() {
-  const raw = localStorage.getItem(LS_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
+function hadLateShiftPreviousDay(emp, dayKey) {
+  const prevDayKey = getPreviousDayKey(dayKey);
+  if (!prevDayKey) return false;
+
+  const prevShift = getShiftByKey(emp.days[prevDayKey]);
+  return prevShift.end === "19:10";
+}
+
+function getDayWarnings(dayKey) {
+  const warnings = [];
+
+  const lateWorkers = state.employees.filter(emp => {
+    const shift = getShiftByKey(emp.days[dayKey]);
+    return shift.end === "19:10";
+  });
+
+  if (lateWorkers.length > 2) {
+    warnings.push(`⚠ ${lateWorkers.length} Personen bis 19:10 eingeplant. Maximal 2 erlaubt.`);
   }
+
+  const dayIndex = DAYS.findIndex(d => d.key === dayKey);
+  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && lateWorkers.length > 0) {
+    const nextDayKey = DAYS[dayIndex + 1].key;
+
+    const hasAnchor = lateWorkers.some(emp => emp.days[nextDayKey] !== "-");
+
+    if (!hasAnchor) {
+      warnings.push(`⚠ Keine 19:10-Person von ${DAYS[dayIndex].label} ist am ${DAYS[dayIndex + 1].label} eingeplant.`);
+    }
+  }
+
+  return warnings;
 }
 
 function renderTeamSetup() {
@@ -190,9 +232,11 @@ function renderTeamSetup() {
     nameInput.type = "text";
     nameInput.placeholder = `Mitarbeiter ${idx + 1}`;
     nameInput.value = emp.name;
-    nameInput.addEventListener("input", () => {
+    nameInput.addEventListener("change", () => {
       emp.name = nameInput.value;
-      renderAll();
+      saveState();
+      renderPlanner();
+      renderOverview();
     });
 
     const roleSel = document.createElement("select");
@@ -206,16 +250,21 @@ function renderTeamSetup() {
     roleSel.addEventListener("change", () => {
       emp.roleKey = roleSel.value;
       emp.target = roleToTarget(emp.roleKey);
-      renderAll();
+      saveState();
+      renderTeamSetup();
+      renderPlanner();
+      renderOverview();
     });
 
     const targetBox = document.createElement("input");
     targetBox.type = "text";
     targetBox.value = emp.target || "";
     targetBox.placeholder = "Soll";
-    targetBox.addEventListener("input", () => {
+    targetBox.addEventListener("change", () => {
       emp.target = targetBox.value;
-      renderAll();
+      saveState();
+      renderPlanner();
+      renderOverview();
     });
 
     const info = document.createElement("div");
@@ -244,43 +293,6 @@ function renderTabs() {
     });
     dayTabsEl.appendChild(btn);
   });
-}
-
-function getDayWarnings(dayKey) {
-  const warnings = [];
-  const lateWorkers = state.employees.filter(emp => {
-    const shift = getShiftByKey(emp.days[dayKey]);
-    return shift.end === "19:10";
-  });
-
-  if (lateWorkers.length > 2) {
-    warnings.push(`⚠ ${lateWorkers.length} Personen bis 19:10 eingeplant. Maximal 2 erlaubt.`);
-  }
-
-  const dayIndex = DAYS.findIndex(d => d.key === dayKey);
-  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && lateWorkers.length > 0) {
-    const nextDayKey = DAYS[dayIndex + 1].key;
-    const hasAnchor = lateWorkers.some(emp => emp.days[nextDayKey] !== "-");
-    if (!hasAnchor) {
-      warnings.push(`⚠ Keine 19:10-Person von ${DAYS[dayIndex].label} ist am ${DAYS[dayIndex + 1].label} eingeplant.`);
-    }
-  }
-
-  return warnings;
-  
-  function getPreviousDayKey(dayKey) {
-  const idx = DAYS.findIndex(d => d.key === dayKey);
-  if (idx <= 0) return null;
-  return DAYS[idx - 1].key;
-}
-
-function hadLateShiftPreviousDay(emp, dayKey) {
-  const prevDayKey = getPreviousDayKey(dayKey);
-  if (!prevDayKey) return false;
-
-  const prevShift = getShiftByKey(emp.days[prevDayKey]);
-  return prevShift.end === "19:10";
-}
 }
 
 function renderPlanner() {
@@ -312,14 +324,17 @@ function renderPlanner() {
 
   plannerListEl.innerHTML = "";
 
-  state.employees.forEach((emp) => {
+  state.employees.forEach(emp => {
+    const wasLateYesterday = hadLateShiftPreviousDay(emp, currentDay);
+
     const row = document.createElement("div");
-    row.className = "planRow";
+    row.className = `planRow${wasLateYesterday ? " prevLate" : ""}`;
 
     const head = document.createElement("div");
     head.className = "planHead";
 
     const left = document.createElement("div");
+
     const name = document.createElement("div");
     name.className = "planName";
     name.textContent = emp.name || "—";
@@ -331,6 +346,13 @@ function renderPlanner() {
 
     left.appendChild(name);
     left.appendChild(sub);
+
+    if (wasLateYesterday) {
+      const badge = document.createElement("div");
+      badge.className = "prevLateBadge";
+      badge.textContent = "Gestern 19:10";
+      left.appendChild(badge);
+    }
 
     const right = document.createElement("div");
     right.className = "planHours";
@@ -352,7 +374,9 @@ function renderPlanner() {
       btn.title = shift.desc;
       btn.addEventListener("click", () => {
         emp.days[currentDay] = shift.key;
-        renderAll();
+        saveState();
+        renderPlanner();
+        renderOverview();
       });
       btnWrap.appendChild(btn);
     });
@@ -443,15 +467,13 @@ document.getElementById("btnClearWeek").addEventListener("click", () => {
     }
   });
 
-  renderAll();
+  saveState();
+  renderPlanner();
+  renderOverview();
 });
 
 document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
-}
 
 renderAll();
