@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V4</title>
+  <title>Wochenplan V5</title>
   <meta name="theme-color" content="#ffffff" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
@@ -12,7 +12,7 @@
   <header class="topbar">
     <div class="titlewrap">
       <h1>Wochenplan</h1>
-      <div class="small">Handy-Ansicht für Mo-Sa</div>
+      <div class="small">Mo-Sa · Handy-Ansicht · feste Reihenfolge</div>
     </div>
 
     <div class="weekrange">
@@ -27,16 +27,43 @@
     </div>
 
     <div class="toolbar">
-      <button id="btnSave">Speichern</button>
-      <button id="btnClearWeek">Woche leeren</button>
+      <button id="btnToggleTeam">Team ausblenden</button>
+      <button id="btnSaveMaster">Stammdaten speichern</button>
+      <button id="btnResetWeek">Neue Woche / Plan leeren</button>
       <button id="btnPrint">Drucken / PDF</button>
     </div>
   </header>
 
-  <section class="teamsetup">
+  <section class="summaryGrid">
+    <div class="summaryCard">
+      <div class="summaryLabel">Wochenstunden gesamt</div>
+      <div class="summaryValue" id="weeklyHoursActual">0:00</div>
+      <div class="summarySub" id="weeklyHoursTarget">von 159:00</div>
+    </div>
+
+    <div class="summaryCard">
+      <div class="summaryLabel">Rest / Über</div>
+      <div class="summaryValue" id="weeklyHoursRemaining">159:00</div>
+      <div class="summarySub" id="weeklyHoursStatus">Noch frei</div>
+    </div>
+
+    <div class="summaryCard">
+      <div class="summaryLabel">Tagesstunden</div>
+      <div class="summaryValue" id="dayHoursActual">0:00</div>
+      <div class="summarySub" id="dayHoursSub">Aktueller Tag</div>
+    </div>
+
+    <div class="summaryCard">
+      <div class="summaryLabel">19:10 heute</div>
+      <div class="summaryValue" id="lateCountInfo">0 / 2</div>
+      <div class="summarySub">Abrechnung</div>
+    </div>
+  </section>
+
+  <section id="teamSection" class="teamsetup">
     <div class="sectionhead">
-      <h2>Team</h2>
-      <div class="small">Feste Reihenfolge für die Planung</div>
+      <h2>Stammdaten</h2>
+      <div class="small">Diese Daten bleiben erhalten, auch wenn du eine neue Woche startest</div>
     </div>
     <div id="teamList" class="teamlist"></div>
   </section>
@@ -52,7 +79,7 @@
     <div class="daymeta">
       <div class="metaBox">
         <strong id="metaDayName">Montag</strong>
-        <div id="lateCountInfo">19:10 heute: 0 / 2</div>
+        <div id="dayHoursInfo">Geplante Arbeitsstunden: 0:00</div>
       </div>
       <div class="metaBox">
         <strong>Warnungen</strong>
@@ -66,7 +93,7 @@
   <section class="overview">
     <div class="sectionhead">
       <h2>Wochenübersicht</h2>
-      <div class="small">Kontrolle für die ganze Woche</div>
+      <div class="small">Kontrolle der gesamten Woche</div>
     </div>
 
     <div class="tableWrap">
