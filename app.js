@@ -20,21 +20,31 @@ const ROLE_OPTIONS = [
 ];
 
 const SHIFTS = [
-  { key: "F3", label: "F3", start: "09:00", end: "12:00", desc: "09:00-12:00", type: "early" },
-  { key: "F4", label: "F4", start: "09:00", end: "13:00", desc: "09:00-13:00", type: "early" },
-  { key: "F5", label: "F5", start: "09:00", end: "14:00", desc: "09:00-14:00", type: "early" },
-  { key: "F6", label: "F6", start: "09:00", end: "15:00", desc: "09:00-15:00", type: "early" },
-  { key: "G1", label: "G1", start: "09:00", end: "19:10", desc: "09:00-19:10", type: "full" },
-  { key: "L1", label: "L1", start: "13:00", end: "19:10", desc: "13:00-19:10", type: "late" },
-  { key: "L2", label: "L2", start: "14:00", end: "19:10", desc: "14:00-19:10", type: "late" },
-  { key: "L3", label: "L3", start: "15:00", end: "19:10", desc: "15:00-19:10", type: "late" },
-  { key: "L4", label: "L4", start: "16:00", end: "19:10", desc: "16:00-19:10", type: "late" },
-  { key: "-", label: "-", start: "", end: "", desc: "frei", type: "free" }
+  { key: "-",   label: "-",   start: "",      end: "",      desc: "frei",          type: "free" },
+
+  { key: "F3",  label: "F3",  start: "09:00", end: "12:00", desc: "09:00-12:00",   type: "early" },
+  { key: "F4",  label: "F4",  start: "09:00", end: "13:00", desc: "09:00-13:00",   type: "early" },
+  { key: "F5",  label: "F5",  start: "09:00", end: "14:00", desc: "09:00-14:00",   type: "early" },
+  { key: "F6",  label: "F6",  start: "09:00", end: "15:00", desc: "09:00-15:00",   type: "early" },
+
+  { key: "G1",  label: "G1",  start: "09:00", end: "19:10", desc: "09:00-19:10",   type: "full" },
+
+  // Spät mit Abrechnung
+  { key: "L1",  label: "L1",  start: "13:00", end: "19:10", desc: "13:00-19:10",   type: "late" },
+  { key: "L2",  label: "L2",  start: "14:00", end: "19:10", desc: "14:00-19:10",   type: "late" },
+  { key: "L3",  label: "L3",  start: "15:00", end: "19:10", desc: "15:00-19:10",   type: "late" },
+  { key: "L4",  label: "L4",  start: "16:00", end: "19:10", desc: "16:00-19:10",   type: "late" },
+
+  // Spät ohne Abrechnung
+  { key: "L1E", label: "L1E", start: "13:00", end: "19:00", desc: "13:00-19:00",   type: "lateNo" },
+  { key: "L2E", label: "L2E", start: "14:00", end: "19:00", desc: "14:00-19:00",   type: "lateNo" },
+  { key: "L3E", label: "L3E", start: "15:00", end: "19:00", desc: "15:00-19:00",   type: "lateNo" },
+  { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00",   type: "lateNo" }
 ];
 
 const MASTER_KEY = "wochenplan_master_v1";
-const WEEK_KEY = "wochenplan_week_v1";
-const UI_KEY = "wochenplan_ui_v2";
+const WEEK_KEY = "wochenplan_week_v2";
+const UI_KEY = "wochenplan_ui_v3";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
@@ -63,6 +73,9 @@ const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
+
+// Neuer Warnungsblock für Wochenansicht
+const weekWarningsEl = document.getElementById("weekWarnings");
 
 let state = buildInitialState();
 
@@ -101,7 +114,7 @@ function defaultWeekState() {
 function defaultUiState() {
   return {
     teamCollapsed: false,
-    currentView: "day"
+    currentView: "week"
   };
 }
 
@@ -230,7 +243,7 @@ function formatSignedMinutes(min) {
 }
 
 function getShiftByKey(key) {
-  return SHIFTS.find(s => s.key === key) || SHIFTS[SHIFTS.length - 1];
+  return SHIFTS.find(s => s.key === key) || SHIFTS[0];
 }
 
 function getShiftClassByKey(key) {
@@ -247,8 +260,13 @@ function shiftDurationMinutes(shiftKey) {
 function appliedPauseMinutes(shiftKey) {
   const duration = shiftDurationMinutes(shiftKey);
 
+  // Ganztag: 60 + 10
   if (shiftKey === "G1") return 70;
+
+  // Spät mit Abrechnung: 10 Minuten Pause
   if (["L1", "L2", "L3", "L4"].includes(shiftKey)) return 10;
+
+  // Alles andere > 6h = 60 min
   if (duration > 6 * 60) return 60;
 
   return 0;
@@ -286,38 +304,68 @@ function getPreviousDayKey(dayKey) {
   return DAYS[idx - 1].key;
 }
 
+function isClosingShift(shiftKey) {
+  return ["G1", "L1", "L2", "L3", "L4"].includes(shiftKey);
+}
+
 function hadLateShiftPreviousDay(emp, dayKey) {
   const prevDayKey = getPreviousDayKey(dayKey);
   if (!prevDayKey) return false;
-  return ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[prevDayKey]);
+  return isClosingShift(emp.days[prevDayKey]);
 }
 
-function getLateWorkersForDay(dayKey) {
-  return state.employees.filter(emp => ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[dayKey]));
-}
-
-function getLate1910WorkersForDay(dayKey) {
-  return state.employees.filter(emp => ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[dayKey]));
+function getClosingWorkersForDay(dayKey) {
+  return state.employees.filter(emp => isClosingShift(emp.days[dayKey]));
 }
 
 function getDayWarnings(dayKey) {
   const warnings = [];
-  const lateWorkers = getLate1910WorkersForDay(dayKey);
+  const closingWorkers = getClosingWorkersForDay(dayKey);
 
-  if (lateWorkers.length > 2) {
-    warnings.push(`⚠ ${lateWorkers.length} Personen bis 19:10 eingeplant. Maximal 2 erlaubt.`);
+  if (closingWorkers.length === 0) {
+    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: keine Schicht bis 19:10.`);
+  }
+
+  if (closingWorkers.length > 2) {
+    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: ${closingWorkers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
 
   const dayIndex = DAYS.findIndex(d => d.key === dayKey);
-  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && lateWorkers.length > 0) {
+  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && closingWorkers.length > 0) {
     const nextDayKey = DAYS[dayIndex + 1].key;
-    const hasAnchor = lateWorkers.some(emp => emp.days[nextDayKey] !== "-");
+    const hasAnchor = closingWorkers.some(emp => emp.days[nextDayKey] !== "-");
     if (!hasAnchor) {
-      warnings.push(`⚠ Keine 19:10-Person von ${DAYS[dayIndex].label} ist am ${DAYS[dayIndex + 1].label} eingeplant.`);
+      warnings.push(`⚠ ${DAYS[dayIndex + 1].label}: niemand vom ${DAYS[dayIndex].label}-Abschluss eingeplant.`);
     }
   }
 
   return warnings;
+}
+
+function getWeekWarnings() {
+  return DAYS.flatMap(d => getDayWarnings(d.key));
+}
+
+function renderWeekWarnings() {
+  if (!weekWarningsEl) return;
+
+  const warnings = getWeekWarnings();
+  weekWarningsEl.innerHTML = "";
+
+  if (warnings.length === 0) {
+    const div = document.createElement("div");
+    div.className = "warnLine";
+    div.textContent = "Keine Warnungen.";
+    weekWarningsEl.appendChild(div);
+    return;
+  }
+
+  warnings.forEach(w => {
+    const div = document.createElement("div");
+    div.className = "warnLine";
+    div.textContent = w;
+    weekWarningsEl.appendChild(div);
+  });
 }
 
 function renderTeamSectionVisibility() {
@@ -327,7 +375,7 @@ function renderTeamSectionVisibility() {
 }
 
 function renderView() {
-  const currentView = uiState.currentView || "day";
+  const currentView = uiState.currentView || "week";
   const isDay = currentView === "day";
 
   dayViewEl.classList.toggle("hidden", !isDay);
@@ -418,7 +466,7 @@ function renderSummary() {
   const totalWeek = totalMinutesForWeek();
   const rest = MAX_WEEKLY_MINUTES - totalWeek;
   const dayTotal = totalMinutesForDay(currentDay);
-  const lateCount = getLate1910WorkersForDay(currentDay).length;
+  const lateCount = getClosingWorkersForDay(currentDay).length;
 
   weeklyHoursActualEl.textContent = minutesToHM(totalWeek);
   weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(rest));
@@ -506,13 +554,14 @@ function renderPlanner() {
         renderPlanner();
         renderWeekTable();
         renderSummary();
+        renderWeekWarnings();
       });
       btnWrap.appendChild(btn);
     });
 
     const legend = document.createElement("div");
     legend.className = "shiftLegend";
-    legend.textContent = "F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1 13-19:10 · L2 14-19:10 · L3 15-19:10 · L4 16-19:10 · - frei";
+    legend.textContent = "- frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung";
 
     row.appendChild(head);
     row.appendChild(btnWrap);
@@ -527,17 +576,14 @@ function renderWeekTable() {
   state.employees.forEach(emp => {
     const tr = document.createElement("tr");
 
-    const tdName = document.createElement("td");
-    tdName.textContent = emp.name || "—";
-    tr.appendChild(tdName);
-
-    const tdRole = document.createElement("td");
-    tdRole.textContent = emp.roleKey || "-";
-    tr.appendChild(tdRole);
-
-    const tdTarget = document.createElement("td");
-    tdTarget.textContent = emp.target || "-";
-    tr.appendChild(tdTarget);
+    // Name + Fkt in einer Spalte
+    const tdNameRole = document.createElement("td");
+    tdNameRole.className = "nameRoleCell";
+    tdNameRole.innerHTML = `
+      <div class="nameRoleName">${emp.name || "—"}</div>
+      <div class="nameRoleSub">${emp.roleKey || "-"}</div>
+    `;
+    tr.appendChild(tdNameRole);
 
     DAYS.forEach(d => {
       const td = document.createElement("td");
@@ -558,6 +604,7 @@ function renderWeekTable() {
         renderWeekTable();
         renderPlanner();
         renderSummary();
+        renderWeekWarnings();
       });
 
       td.appendChild(sel);
@@ -574,6 +621,10 @@ function renderWeekTable() {
     tdDelta.className = delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero";
     tr.appendChild(tdDelta);
 
+    const tdTarget = document.createElement("td");
+    tdTarget.textContent = emp.target || "-";
+    tr.appendChild(tdTarget);
+
     weekTableBodyEl.appendChild(tr);
   });
 }
@@ -588,6 +639,7 @@ function renderAll() {
   renderPlanner();
   renderWeekTable();
   renderSummary();
+  renderWeekWarnings();
 }
 
 weekFromEl.addEventListener("change", () => {
@@ -640,4 +692,4 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();renderAll();
+renderAll();renderAll();renderAll();
