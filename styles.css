@@ -1,6 +1,6 @@
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  --border: #dddddd;
+  --border: #d7d7d7;
   --text: #1f1f1f;
   --muted: #666666;
   --bg: #ffffff;
@@ -49,10 +49,6 @@ h1, h2 {
   border-radius: 12px;
   padding: 10px;
   background: #fff;
-}
-
-.compactTopbar {
-  padding: 10px;
 }
 
 .titleLine {
@@ -419,6 +415,100 @@ th {
   display: none !important;
 }
 
+/* MEP Original-nahe Formularansicht */
+.mepSheet {
+  background: #fff;
+}
+
+.mepHeaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mepTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.mepBranch {
+  font-size: 12px;
+}
+
+.mepHeaderMeta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.mepWrap {
+  border-radius: 0;
+}
+
+.mepTable {
+  min-width: 2400px;
+  border-collapse: collapse;
+}
+
+.mepTable th,
+.mepTable td {
+  border: 1px solid #cfcfcf;
+  padding: 4px 6px;
+  font-size: 11px;
+  vertical-align: middle;
+  background: #fff;
+}
+
+.mepTable thead th {
+  text-align: center;
+  font-weight: 700;
+}
+
+.mepLeftCol {
+  min-width: 130px;
+}
+
+.mepFuncCol {
+  min-width: 65px;
+}
+
+.mepPlanCol {
+  min-width: 70px;
+}
+
+.mepWeekSumCol {
+  min-width: 78px;
+}
+
+.mepDayGroup {
+  min-width: 220px;
+}
+
+.mepNameCell {
+  min-width: 130px;
+}
+
+.mepNameMain {
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.mepNameSub {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.mepEmpty {
+  color: #bdbdbd;
+}
+
 @media (min-width: 920px) {
   .daymeta {
     grid-template-columns: 1fr 1fr;
@@ -456,45 +546,22 @@ th {
     border: none;
   }
 
-  #dayView {
+  #dayView,
+  #weekView {
     display: none !important;
   }
 
-  #weekView {
+  #formView {
     display: block !important;
   }
-}
 
-.formTableWrap table {
-  min-width: 2300px;
-}
+  .mepTitle {
+    font-size: 16px;
+  }
 
-.formNameCol {
-  min-width: 120px;
-}
-
-.formNameCell {
-  min-width: 120px;
-  max-width: 120px;
-}
-
-.formNameMain {
-  font-weight: 700;
-  font-size: 12px;
-  line-height: 1.15;
-}
-
-.formNameSub {
-  font-size: 11px;
-  color: var(--muted);
-  line-height: 1.1;
-  margin-top: 2px;
-}
-
-.formTiny {
-  font-size: 11px;
-}
-
-.formCellEmpty {
-  color: #b5b5b5;
+  .mepTable th,
+  .mepTable td {
+    font-size: 9px;
+    padding: 3px 4px;
+  }
 }
