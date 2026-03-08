@@ -1,3 +1,6 @@
+console.log("APP VERSION 5.2");
+alert("APP VERSION 5.2 geladen");
+
 const DAYS = [
   { key: "mo", label: "Mo", full: "Montag" },
   { key: "di", label: "Di", full: "Dienstag" },
