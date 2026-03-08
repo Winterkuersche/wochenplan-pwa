@@ -250,12 +250,17 @@ function appliedPauseMinutes(shiftKey) {
 
   const duration = shiftDurationMinutes(shiftKey);
 
-  // Nur die echten Spätschichten L1-L4 bekommen pauschal 10 Minuten.
+  // Ganztag: 10 Minuten Abschluss + 60 Minuten normale Pause
+  if (shiftKey === "G1") {
+    return 70;
+  }
+
+  // Nur die echten Spätschichten L1-L4 bekommen pauschal 10 Minuten
   if (["L1", "L2", "L3", "L4"].includes(shiftKey)) {
     return 10;
   }
 
-  // Alle anderen Schichten über 6 Stunden bekommen 60 Minuten Pause.
+  // Alle anderen Schichten über 6 Stunden bekommen 60 Minuten Pause
   if (duration > 6 * 60) {
     return 60;
   }
