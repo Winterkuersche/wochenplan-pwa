@@ -250,8 +250,16 @@ function appliedPauseMinutes(shiftKey) {
 
   const duration = shiftDurationMinutes(shiftKey);
 
-  if (shift.end === "19:10") return 10;
-  if (duration > 6 * 60) return 60;
+  // Nur die echten Spätschichten L1-L4 bekommen pauschal 10 Minuten.
+  if (["L1", "L2", "L3", "L4"].includes(shiftKey)) {
+    return 10;
+  }
+
+  // Alle anderen Schichten über 6 Stunden bekommen 60 Minuten Pause.
+  if (duration > 6 * 60) {
+    return 60;
+  }
+
   return 0;
 }
 
