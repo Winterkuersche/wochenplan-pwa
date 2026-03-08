@@ -1,6 +1,3 @@
-console.log("APP VERSION 5.2");
-alert("APP VERSION 5.2 geladen");
-
 const DAYS = [
   { key: "mo", label: "Mo", full: "Montag" },
   { key: "di", label: "Di", full: "Dienstag" },
@@ -42,7 +39,7 @@ const SHIFTS = [
 
 const MASTER_KEY = "wochenplan_master_v1";
 const WEEK_KEY = "wochenplan_week_v2";
-const UI_KEY = "wochenplan_ui_v4";
+const UI_KEY = "wochenplan_ui_v5";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
@@ -56,7 +53,7 @@ const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
 const weekTableBodyEl = document.getElementById("weekTableBody");
-const formTableBodyEl = document.getElementById("formTableBody");
+const mepTableBodyEl = document.getElementById("mepTableBody");
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
@@ -76,6 +73,9 @@ const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewFormEl = document.getElementById("btnViewForm");
 
 const weekWarningsEl = document.getElementById("weekWarnings");
+const mepWeekFromEl = document.getElementById("mepWeekFrom");
+const mepWeekToEl = document.getElementById("mepWeekTo");
+const mepMonthYearEl = document.getElementById("mepMonthYear");
 
 let state = buildInitialState();
 
@@ -385,6 +385,13 @@ function getFormDataForShift(shiftKey) {
   };
 }
 
+function formatMonthYear(dateStr) {
+  if (!dateStr) return "__________";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "__________";
+  return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
+}
+
 function renderTeamSectionVisibility() {
   const collapsed = !!uiState.teamCollapsed;
   teamSectionEl.classList.toggle("hidden", collapsed);
@@ -418,7 +425,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderPlanner();
       renderWeekTable();
-      renderFormTable();
+      renderMepTable();
     });
 
     const roleSel = document.createElement("select");
@@ -436,7 +443,7 @@ function renderTeamSetup() {
       renderTeamSetup();
       renderPlanner();
       renderWeekTable();
-      renderFormTable();
+      renderMepTable();
       renderSummary();
     });
 
@@ -449,7 +456,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderPlanner();
       renderWeekTable();
-      renderFormTable();
+      renderMepTable();
       renderSummary();
     });
 
@@ -497,6 +504,10 @@ function renderSummary() {
   dayHoursSubEl.textContent = dayObj ? dayObj.full : "Aktueller Tag";
 
   lateCountInfoEl.textContent = `${lateCount} / 2`;
+
+  mepWeekFromEl.textContent = state.weekFrom || "__________";
+  mepWeekToEl.textContent = state.weekTo || "__________";
+  mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
 }
 
 function renderPlanner() {
@@ -573,7 +584,7 @@ function renderPlanner() {
         saveWeekData();
         renderPlanner();
         renderWeekTable();
-        renderFormTable();
+        renderMepTable();
         renderSummary();
         renderWeekWarnings();
       });
@@ -623,7 +634,7 @@ function renderWeekTable() {
         saveWeekData();
         renderWeekTable();
         renderPlanner();
-        renderFormTable();
+        renderMepTable();
         renderSummary();
         renderWeekWarnings();
       });
@@ -650,47 +661,44 @@ function renderWeekTable() {
   });
 }
 
-function appendFormDayCells(tr, shiftKey) {
+function appendMepDayCells(tr, shiftKey) {
   const data = getFormDataForShift(shiftKey);
-
   [data.start, data.end, data.pause, data.sum].forEach(value => {
     const td = document.createElement("td");
-    td.className = "formTiny";
     td.textContent = value || "";
-    if (!value) td.classList.add("formCellEmpty");
+    if (!value) td.classList.add("mepEmpty");
     tr.appendChild(td);
   });
 }
 
-function renderFormTable() {
-  if (!formTableBodyEl) return;
-
-  formTableBodyEl.innerHTML = "";
+function renderMepTable() {
+  mepTableBodyEl.innerHTML = "";
 
   state.employees.forEach(emp => {
     const tr = document.createElement("tr");
 
     const tdName = document.createElement("td");
-    tdName.className = "formNameCell";
+    tdName.className = "mepNameCell";
     tdName.innerHTML = `
-      <div class="formNameMain">${emp.name || "—"}</div>
-      <div class="formNameSub">${emp.roleKey || "-"}</div>
+      <div class="mepNameMain">${emp.name || "—"}</div>
     `;
     tr.appendChild(tdName);
+
+    const tdFunc = document.createElement("td");
+    tdFunc.textContent = emp.roleKey || "-";
+    tr.appendChild(tdFunc);
 
     const tdPlan = document.createElement("td");
     tdPlan.textContent = emp.target || "-";
     tr.appendChild(tdPlan);
 
-    DAYS.forEach(d => {
-      appendFormDayCells(tr, emp.days[d.key]);
-    });
+    DAYS.forEach(d => appendMepDayCells(tr, emp.days[d.key]));
 
     const tdWeek = document.createElement("td");
     tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
     tr.appendChild(tdWeek);
 
-    formTableBodyEl.appendChild(tr);
+    mepTableBodyEl.appendChild(tr);
   });
 }
 
@@ -703,7 +711,7 @@ function renderAll() {
   renderTeamSetup();
   renderPlanner();
   renderWeekTable();
-  renderFormTable();
+  renderMepTable();
   renderSummary();
   renderWeekWarnings();
 }
@@ -711,11 +719,13 @@ function renderAll() {
 weekFromEl.addEventListener("change", () => {
   state.weekFrom = weekFromEl.value;
   saveWeekData();
+  renderSummary();
 });
 
 weekToEl.addEventListener("change", () => {
   state.weekTo = weekToEl.value;
   saveWeekData();
+  renderSummary();
 });
 
 btnToggleTeamEl.addEventListener("click", () => {
@@ -764,4 +774,4 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();renderAll();renderAll();renderAll();
+renderAll();renderAll();renderAll();renderAll();renderAll();
