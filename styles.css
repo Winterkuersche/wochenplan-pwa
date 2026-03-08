@@ -16,6 +16,8 @@
   --full-border: #9ec0ff;
   --late-bg: #fff0e0;
   --late-border: #f3c087;
+  --late-no-bg: #f7f0ff;
+  --late-no-border: #d5b8ff;
   --free-bg: #f0f0f0;
   --free-border: #d8d8d8;
 }
@@ -26,7 +28,10 @@
 
 body {
   margin: 0;
-  padding: 10px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-left: calc(10px + env(safe-area-inset-left));
+  padding-right: calc(10px + env(safe-area-inset-right));
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
   color: var(--text);
   background: var(--bg);
 }
@@ -195,6 +200,10 @@ label {
   font-size: 12px;
 }
 
+.weekWarningsBox {
+  margin-bottom: 10px;
+}
+
 .plannerList {
   display: grid;
   gap: 10px;
@@ -283,6 +292,11 @@ label {
   border-color: var(--late-border);
 }
 
+.shiftBtn.shift-lateNo {
+  background: var(--late-no-bg);
+  border-color: var(--late-no-border);
+}
+
 .shiftBtn.shift-free {
   background: var(--free-bg);
   border-color: var(--free-border);
@@ -291,6 +305,7 @@ label {
 .shiftBtn.active.shift-early,
 .shiftBtn.active.shift-full,
 .shiftBtn.active.shift-late,
+.shiftBtn.active.shift-lateNo,
 .shiftBtn.active.shift-free {
   background: var(--active);
   color: var(--activeText);
@@ -312,7 +327,7 @@ label {
 }
 
 .compactTableWrap table {
-  min-width: 860px;
+  min-width: 820px;
 }
 
 table {
@@ -322,7 +337,7 @@ table {
 
 th, td {
   border-bottom: 1px solid #eeeeee;
-  padding: 6px 6px;
+  padding: 6px 5px;
   text-align: left;
   white-space: nowrap;
   font-size: 13px;
@@ -336,12 +351,30 @@ th {
   font-size: 12px;
 }
 
-.weekSelect {
-  width: 58px;
-  min-width: 58px;
+.nameRoleCell {
+  min-width: 112px;
+  max-width: 112px;
+}
+
+.nameRoleName {
+  font-weight: 700;
   font-size: 12px;
-  padding: 4px 5px;
-  border-radius: 7px;
+  line-height: 1.15;
+}
+
+.nameRoleSub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.weekSelect {
+  width: 54px;
+  min-width: 54px;
+  font-size: 11px;
+  padding: 3px 4px;
+  border-radius: 6px;
 }
 
 .weekSelect.early {
@@ -357,6 +390,11 @@ th {
 .weekSelect.late {
   background: var(--late-bg);
   border-color: var(--late-border);
+}
+
+.weekSelect.lateNo {
+  background: var(--late-no-bg);
+  border-color: var(--late-no-border);
 }
 
 .weekSelect.free {
@@ -400,7 +438,8 @@ th {
   .legendCompact,
   .teamsetup .small,
   .daynav .small,
-  .overview .small {
+  .overview .small,
+  .weekWarningsBox {
     display: none !important;
   }
 
