@@ -3,19 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V5</title>
+  <title>Wochenplan V6</title>
   <meta name="theme-color" content="#ffffff" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="titlewrap">
-      <h1>Wochenplan</h1>
-      <div class="small">Mo-Sa · Handy-Ansicht · feste Reihenfolge</div>
+  <header class="topbar compactTopbar">
+    <div class="titleLine">
+      <div>
+        <h1>Wochenplan</h1>
+        <div class="small">Mo-Sa · Stammdaten + 2 Ansichten</div>
+      </div>
+
+      <div class="viewSwitch" id="viewSwitch">
+        <button id="btnViewDay" class="viewBtn active">Tagesplanung</button>
+        <button id="btnViewWeek" class="viewBtn">Wochenplan</button>
+      </div>
     </div>
 
-    <div class="weekrange">
+    <div class="metaLine">
       <label>
         Woche von
         <input id="weekFrom" type="date" />
@@ -24,41 +31,39 @@
         bis
         <input id="weekTo" type="date" />
       </label>
+
+      <div class="miniStat">
+        <span class="miniLabel">Woche</span>
+        <strong id="weeklyHoursActual">0:00</strong>
+        <span class="miniSub">/ 159:00</span>
+      </div>
+
+      <div class="miniStat">
+        <span class="miniLabel">Rest / Über</span>
+        <strong id="weeklyHoursRemaining">159:00</strong>
+        <span class="miniSub" id="weeklyHoursStatus">Noch frei</span>
+      </div>
+
+      <div class="miniStat">
+        <span class="miniLabel">Tag</span>
+        <strong id="dayHoursActual">0:00</strong>
+        <span class="miniSub" id="dayHoursSub">Montag</span>
+      </div>
+
+      <div class="miniStat">
+        <span class="miniLabel">19:10</span>
+        <strong id="lateCountInfo">0 / 2</strong>
+        <span class="miniSub">heute</span>
+      </div>
     </div>
 
-    <div class="toolbar">
+    <div class="toolbar compactToolbar">
       <button id="btnToggleTeam">Team ausblenden</button>
       <button id="btnSaveMaster">Stammdaten speichern</button>
       <button id="btnResetWeek">Neue Woche / Plan leeren</button>
       <button id="btnPrint">Drucken / PDF</button>
     </div>
   </header>
-
-  <section class="summaryGrid">
-    <div class="summaryCard">
-      <div class="summaryLabel">Wochenstunden gesamt</div>
-      <div class="summaryValue" id="weeklyHoursActual">0:00</div>
-      <div class="summarySub" id="weeklyHoursTarget">von 159:00</div>
-    </div>
-
-    <div class="summaryCard">
-      <div class="summaryLabel">Rest / Über</div>
-      <div class="summaryValue" id="weeklyHoursRemaining">159:00</div>
-      <div class="summarySub" id="weeklyHoursStatus">Noch frei</div>
-    </div>
-
-    <div class="summaryCard">
-      <div class="summaryLabel">Tagesstunden</div>
-      <div class="summaryValue" id="dayHoursActual">0:00</div>
-      <div class="summarySub" id="dayHoursSub">Aktueller Tag</div>
-    </div>
-
-    <div class="summaryCard">
-      <div class="summaryLabel">19:10 heute</div>
-      <div class="summaryValue" id="lateCountInfo">0 / 2</div>
-      <div class="summarySub">Abrechnung</div>
-    </div>
-  </section>
 
   <section id="teamSection" class="teamsetup">
     <div class="sectionhead">
@@ -68,7 +73,7 @@
     <div id="teamList" class="teamlist"></div>
   </section>
 
-  <section class="daynav">
+  <section id="dayView" class="daynav">
     <div class="sectionhead">
       <h2>Planung</h2>
       <div class="small">Früh zuerst, dann Spät</div>
@@ -90,18 +95,22 @@
     <div id="plannerList" class="plannerList"></div>
   </section>
 
-  <section class="overview">
+  <section id="weekView" class="overview hidden">
     <div class="sectionhead">
-      <h2>Wochenübersicht</h2>
-      <div class="small">Kontrolle der gesamten Woche</div>
+      <h2>Wochenplan</h2>
+      <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
     </div>
 
-    <div class="tableWrap">
-      <table id="overviewTable">
+    <div class="legendCompact" id="legendCompact">
+      F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1 13-19:10 · L2 14-19:10 · L3 15-19:10 · L4 16-19:10 · - frei
+    </div>
+
+    <div class="tableWrap compactTableWrap">
+      <table id="weekTable">
         <thead>
           <tr>
             <th>Name</th>
-            <th>Funktion</th>
+            <th>Fkt</th>
             <th>Soll</th>
             <th>Mo</th>
             <th>Di</th>
@@ -110,10 +119,10 @@
             <th>Fr</th>
             <th>Sa</th>
             <th>Ist</th>
-            <th>Delta</th>
+            <th>Δ</th>
           </tr>
         </thead>
-        <tbody id="overviewBody"></tbody>
+        <tbody id="weekTableBody"></tbody>
       </table>
     </div>
   </section>
