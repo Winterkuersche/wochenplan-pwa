@@ -34,7 +34,7 @@ const SHIFTS = [
 
 const MASTER_KEY = "wochenplan_master_v1";
 const WEEK_KEY = "wochenplan_week_v1";
-const UI_KEY = "wochenplan_ui_v1";
+const UI_KEY = "wochenplan_ui_v2";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
@@ -47,18 +47,22 @@ const metaDayNameEl = document.getElementById("metaDayName");
 const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
-const overviewBodyEl = document.getElementById("overviewBody");
+const weekTableBodyEl = document.getElementById("weekTableBody");
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
 const btnToggleTeamEl = document.getElementById("btnToggleTeam");
 
 const weeklyHoursActualEl = document.getElementById("weeklyHoursActual");
-const weeklyHoursTargetEl = document.getElementById("weeklyHoursTarget");
 const weeklyHoursRemainingEl = document.getElementById("weeklyHoursRemaining");
 const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
 const dayHoursActualEl = document.getElementById("dayHoursActual");
 const dayHoursSubEl = document.getElementById("dayHoursSub");
+
+const dayViewEl = document.getElementById("dayView");
+const weekViewEl = document.getElementById("weekView");
+const btnViewDayEl = document.getElementById("btnViewDay");
+const btnViewWeekEl = document.getElementById("btnViewWeek");
 
 let state = buildInitialState();
 
@@ -83,9 +87,7 @@ function createDefaultWeekShifts() {
 }
 
 function defaultMasterState() {
-  return {
-    employees: createDefaultEmployees()
-  };
+  return { employees: createDefaultEmployees() };
 }
 
 function defaultWeekState() {
@@ -98,7 +100,8 @@ function defaultWeekState() {
 
 function defaultUiState() {
   return {
-    teamCollapsed: false
+    teamCollapsed: false,
+    currentView: "day"
   };
 }
 
@@ -232,41 +235,21 @@ function getShiftByKey(key) {
 
 function getShiftClassByKey(key) {
   const shift = getShiftByKey(key);
-  if (shift.type === "early") return "early";
-  if (shift.type === "full") return "full";
-  if (shift.type === "late") return "late";
-  return "free";
+  return shift.type || "free";
 }
 
 function shiftDurationMinutes(shiftKey) {
   const shift = getShiftByKey(shiftKey);
   if (!shift.start || !shift.end) return 0;
-
-  const start = hmToMinutes(shift.start);
-  const end = hmToMinutes(shift.end);
-  return end - start;
+  return hmToMinutes(shift.end) - hmToMinutes(shift.start);
 }
 
 function appliedPauseMinutes(shiftKey) {
-  const shift = getShiftByKey(shiftKey);
-  if (!shift.start || !shift.end) return 0;
-
   const duration = shiftDurationMinutes(shiftKey);
 
-  // Ganztag: 10 Minuten Abschluss + 60 Minuten normale Pause
-  if (shiftKey === "G1") {
-    return 70;
-  }
-
-  // Nur die echten Spätschichten L1-L4 bekommen pauschal 10 Minuten
-  if (["L1", "L2", "L3", "L4"].includes(shiftKey)) {
-    return 10;
-  }
-
-  // Alle anderen Schichten über 6 Stunden bekommen 60 Minuten Pause
-  if (duration > 6 * 60) {
-    return 60;
-  }
+  if (shiftKey === "G1") return 70;
+  if (["L1", "L2", "L3", "L4"].includes(shiftKey)) return 10;
+  if (duration > 6 * 60) return 60;
 
   return 0;
 }
@@ -306,20 +289,20 @@ function getPreviousDayKey(dayKey) {
 function hadLateShiftPreviousDay(emp, dayKey) {
   const prevDayKey = getPreviousDayKey(dayKey);
   if (!prevDayKey) return false;
-  const prevShift = getShiftByKey(emp.days[prevDayKey]);
-  return prevShift.end === "19:10";
+  return ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[prevDayKey]);
 }
 
 function getLateWorkersForDay(dayKey) {
-  return state.employees.filter(emp => {
-    const shift = getShiftByKey(emp.days[dayKey]);
-    return shift.end === "19:10";
-  });
+  return state.employees.filter(emp => ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[dayKey]));
+}
+
+function getLate1910WorkersForDay(dayKey) {
+  return state.employees.filter(emp => ["G1", "L1", "L2", "L3", "L4"].includes(emp.days[dayKey]));
 }
 
 function getDayWarnings(dayKey) {
   const warnings = [];
-  const lateWorkers = getLateWorkersForDay(dayKey);
+  const lateWorkers = getLate1910WorkersForDay(dayKey);
 
   if (lateWorkers.length > 2) {
     warnings.push(`⚠ ${lateWorkers.length} Personen bis 19:10 eingeplant. Maximal 2 erlaubt.`);
@@ -329,7 +312,6 @@ function getDayWarnings(dayKey) {
   if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && lateWorkers.length > 0) {
     const nextDayKey = DAYS[dayIndex + 1].key;
     const hasAnchor = lateWorkers.some(emp => emp.days[nextDayKey] !== "-");
-
     if (!hasAnchor) {
       warnings.push(`⚠ Keine 19:10-Person von ${DAYS[dayIndex].label} ist am ${DAYS[dayIndex + 1].label} eingeplant.`);
     }
@@ -342,6 +324,17 @@ function renderTeamSectionVisibility() {
   const collapsed = !!uiState.teamCollapsed;
   teamSectionEl.classList.toggle("hidden", collapsed);
   btnToggleTeamEl.textContent = collapsed ? "Team einblenden" : "Team ausblenden";
+}
+
+function renderView() {
+  const currentView = uiState.currentView || "day";
+  const isDay = currentView === "day";
+
+  dayViewEl.classList.toggle("hidden", !isDay);
+  weekViewEl.classList.toggle("hidden", isDay);
+
+  btnViewDayEl.classList.toggle("active", isDay);
+  btnViewWeekEl.classList.toggle("active", !isDay);
 }
 
 function renderTeamSetup() {
@@ -359,7 +352,7 @@ function renderTeamSetup() {
       emp.name = nameInput.value;
       saveMasterData();
       renderPlanner();
-      renderOverview();
+      renderWeekTable();
     });
 
     const roleSel = document.createElement("select");
@@ -376,7 +369,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderTeamSetup();
       renderPlanner();
-      renderOverview();
+      renderWeekTable();
       renderSummary();
     });
 
@@ -388,7 +381,7 @@ function renderTeamSetup() {
       emp.target = targetInput.value;
       saveMasterData();
       renderPlanner();
-      renderOverview();
+      renderWeekTable();
       renderSummary();
     });
 
@@ -425,11 +418,9 @@ function renderSummary() {
   const totalWeek = totalMinutesForWeek();
   const rest = MAX_WEEKLY_MINUTES - totalWeek;
   const dayTotal = totalMinutesForDay(currentDay);
-  const lateCount = getLateWorkersForDay(currentDay).length;
+  const lateCount = getLate1910WorkersForDay(currentDay).length;
 
   weeklyHoursActualEl.textContent = minutesToHM(totalWeek);
-  weeklyHoursTargetEl.textContent = `von ${minutesToHM(MAX_WEEKLY_MINUTES)}`;
-
   weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(rest));
   weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
 
@@ -445,9 +436,7 @@ function renderPlanner() {
 
   const dayObj = DAYS.find(d => d.key === currentDay);
   metaDayNameEl.textContent = dayObj ? dayObj.full : currentDay;
-
-  const dayHours = totalMinutesForDay(currentDay);
-  dayHoursInfoEl.textContent = `Geplante Arbeitsstunden: ${minutesToHM(dayHours)}`;
+  dayHoursInfoEl.textContent = `Geplante Arbeitsstunden: ${minutesToHM(totalMinutesForDay(currentDay))}`;
 
   const warnings = getDayWarnings(currentDay);
   dayWarningsEl.innerHTML = "";
@@ -475,15 +464,13 @@ function renderPlanner() {
     head.className = "planHead";
 
     const left = document.createElement("div");
-
     const name = document.createElement("div");
     name.className = "planName";
     name.textContent = emp.name || "—";
 
     const sub = document.createElement("div");
     sub.className = "planSub";
-    const currentShift = getShiftByKey(emp.days[currentDay]);
-    sub.textContent = `${emp.roleKey || "-"} · ${currentShift.desc}`;
+    sub.textContent = `${emp.roleKey || "-"} · ${getShiftByKey(emp.days[currentDay]).desc}`;
 
     left.appendChild(name);
     left.appendChild(sub);
@@ -510,15 +497,14 @@ function renderPlanner() {
 
     SHIFTS.forEach(shift => {
       const btn = document.createElement("button");
-      const shiftClass = getShiftClassByKey(shift.key);
-      btn.className = `shiftBtn shift-${shiftClass}${emp.days[currentDay] === shift.key ? " active" : ""}`;
+      btn.className = `shiftBtn shift-${getShiftClassByKey(shift.key)}${emp.days[currentDay] === shift.key ? " active" : ""}`;
       btn.textContent = shift.label;
       btn.title = shift.desc;
       btn.addEventListener("click", () => {
         emp.days[currentDay] = shift.key;
         saveWeekData();
         renderPlanner();
-        renderOverview();
+        renderWeekTable();
         renderSummary();
       });
       btnWrap.appendChild(btn);
@@ -531,51 +517,64 @@ function renderPlanner() {
     row.appendChild(head);
     row.appendChild(btnWrap);
     row.appendChild(legend);
-
     plannerListEl.appendChild(row);
   });
 }
 
-function renderOverview() {
-  overviewBodyEl.innerHTML = "";
+function renderWeekTable() {
+  weekTableBodyEl.innerHTML = "";
 
   state.employees.forEach(emp => {
     const tr = document.createElement("tr");
 
     const tdName = document.createElement("td");
     tdName.textContent = emp.name || "—";
+    tr.appendChild(tdName);
 
     const tdRole = document.createElement("td");
     tdRole.textContent = emp.roleKey || "-";
+    tr.appendChild(tdRole);
 
     const tdTarget = document.createElement("td");
     tdTarget.textContent = emp.target || "-";
-
-    tr.appendChild(tdName);
-    tr.appendChild(tdRole);
     tr.appendChild(tdTarget);
 
     DAYS.forEach(d => {
       const td = document.createElement("td");
-      const chip = document.createElement("span");
-      chip.className = `overviewChip ${getShiftClassByKey(emp.days[d.key])}`;
-      chip.textContent = emp.days[d.key] || "-";
-      td.appendChild(chip);
+      const sel = document.createElement("select");
+      sel.className = `weekSelect ${getShiftClassByKey(emp.days[d.key])}`;
+
+      SHIFTS.forEach(shift => {
+        const opt = document.createElement("option");
+        opt.value = shift.key;
+        opt.textContent = shift.key;
+        sel.appendChild(opt);
+      });
+
+      sel.value = emp.days[d.key];
+      sel.addEventListener("change", () => {
+        emp.days[d.key] = sel.value;
+        saveWeekData();
+        renderWeekTable();
+        renderPlanner();
+        renderSummary();
+      });
+
+      td.appendChild(sel);
       tr.appendChild(td);
     });
 
     const tdActual = document.createElement("td");
     tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
+    tr.appendChild(tdActual);
 
     const delta = deltaMinutes(emp);
     const tdDelta = document.createElement("td");
     tdDelta.textContent = formatSignedMinutes(delta);
     tdDelta.className = delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero";
-
-    tr.appendChild(tdActual);
     tr.appendChild(tdDelta);
 
-    overviewBodyEl.appendChild(tr);
+    weekTableBodyEl.appendChild(tr);
   });
 }
 
@@ -584,9 +583,10 @@ function renderAll() {
   weekToEl.value = state.weekTo || "";
 
   renderTeamSectionVisibility();
+  renderView();
   renderTeamSetup();
   renderPlanner();
-  renderOverview();
+  renderWeekTable();
   renderSummary();
 }
 
@@ -606,6 +606,18 @@ btnToggleTeamEl.addEventListener("click", () => {
   renderTeamSectionVisibility();
 });
 
+btnViewDayEl.addEventListener("click", () => {
+  uiState.currentView = "day";
+  saveUiState();
+  renderView();
+});
+
+btnViewWeekEl.addEventListener("click", () => {
+  uiState.currentView = "week";
+  saveUiState();
+  renderView();
+});
+
 document.getElementById("btnSaveMaster").addEventListener("click", () => {
   saveMasterData();
   alert("Stammdaten gespeichert.");
@@ -616,11 +628,8 @@ document.getElementById("btnResetWeek").addEventListener("click", () => {
 
   state.weekFrom = "";
   state.weekTo = "";
-
   state.employees.forEach(emp => {
-    for (const d of DAYS) {
-      emp.days[d.key] = "-";
-    }
+    for (const d of DAYS) emp.days[d.key] = "-";
   });
 
   saveWeekData();
@@ -631,4 +640,4 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();
+renderAll();renderAll();
