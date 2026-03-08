@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V6</title>
+  <title>Wochenplan V7</title>
   <meta name="theme-color" content="#ffffff" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
@@ -13,14 +13,15 @@
     <div class="titleLine">
       <div>
         <h1>Wochenplan</h1>
-        <div class="small">Mo-Sa · Stammdaten + 2 Ansichten</div>
+        <div class="small">Mo-Sa · Stammdaten + 3 Ansichten</div>
       </div>
 
       <div class="viewSwitch" id="viewSwitch">
-  <button id="btnViewDay" class="viewBtn">Tagesplanung</button>
-  <button id="btnViewWeek" class="viewBtn active">Wochenplan</button>
-  <button id="btnViewForm" class="viewBtn">Formular</button>
-</div>
+        <button id="btnViewDay" class="viewBtn">Tagesplanung</button>
+        <button id="btnViewWeek" class="viewBtn active">Wochenplan</button>
+        <button id="btnViewForm" class="viewBtn">Formular</button>
+      </div>
+    </div>
 
     <div class="metaLine">
       <label>
@@ -73,9 +74,9 @@
     <div id="teamList" class="teamlist"></div>
   </section>
 
-  <section id="dayView" class="daynav">
+  <section id="dayView" class="daynav hidden">
     <div class="sectionhead">
-      <h2>Planung</h2>
+      <h2>Tagesplanung</h2>
       <div class="small">Früh zuerst, dann Spät</div>
     </div>
 
@@ -96,81 +97,88 @@
   </section>
 
   <section id="weekView" class="overview">
-  <div class="sectionhead">
-    <h2>Wochenplan</h2>
-    <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
-  </div>
-  
+    <div class="sectionhead">
+      <h2>Wochenplan</h2>
+      <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
+    </div>
+
+    <div class="weekWarningsBox" id="weekWarnings"></div>
+
+    <div class="legendCompact" id="legendCompact">
+      - frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung
+    </div>
+
+    <div class="tableWrap compactTableWrap">
+      <table id="weekTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mo</th>
+            <th>Di</th>
+            <th>Mi</th>
+            <th>Do</th>
+            <th>Fr</th>
+            <th>Sa</th>
+            <th>Ist</th>
+            <th>Δ</th>
+            <th>Soll</th>
+          </tr>
+        </thead>
+        <tbody id="weekTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="formView" class="overview hidden">
-  <div class="sectionhead">
-    <h2>Formularansicht</h2>
-    <div class="small">Mit Uhrzeiten und Pausen von-bis</div>
-  </div>
+    <div class="sectionhead">
+      <h2>Formularansicht</h2>
+      <div class="small">Mit Uhrzeiten und Pausen von-bis</div>
+    </div>
 
-  <div class="tableWrap formTableWrap">
-    <table id="formTable">
-      <thead>
-        <tr>
-          <th class="formNameCol">Name / Fkt</th>
-          <th>Plan/Woche</th>
-          <th>Mo Beginn</th>
-          <th>Mo Ende</th>
-          <th>Mo Pause</th>
-          <th>Mo Summe</th>
-          <th>Di Beginn</th>
-          <th>Di Ende</th>
-          <th>Di Pause</th>
-          <th>Di Summe</th>
-          <th>Mi Beginn</th>
-          <th>Mi Ende</th>
-          <th>Mi Pause</th>
-          <th>Mi Summe</th>
-          <th>Do Beginn</th>
-          <th>Do Ende</th>
-          <th>Do Pause</th>
-          <th>Do Summe</th>
-          <th>Fr Beginn</th>
-          <th>Fr Ende</th>
-          <th>Fr Pause</th>
-          <th>Fr Summe</th>
-          <th>Sa Beginn</th>
-          <th>Sa Ende</th>
-          <th>Sa Pause</th>
-          <th>Sa Summe</th>
-          <th>Woche</th>
-        </tr>
-      </thead>
-      <tbody id="formTableBody"></tbody>
-    </table>
-  </div>
-</section>
-  
-  <div class="weekWarningsBox" id="weekWarnings"></div>
+    <div class="tableWrap formTableWrap">
+      <table id="formTable">
+        <thead>
+          <tr>
+            <th class="formNameCol">Name / Fkt</th>
+            <th>Plan/Woche</th>
 
-  <div class="legendCompact" id="legendCompact">
-    - frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung
-  </div>
+            <th>Mo Beginn</th>
+            <th>Mo Ende</th>
+            <th>Mo Pause</th>
+            <th>Mo Summe</th>
 
-  <div class="tableWrap compactTableWrap">
-    <table id="weekTable">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Mo</th>
-          <th>Di</th>
-          <th>Mi</th>
-          <th>Do</th>
-          <th>Fr</th>
-          <th>Sa</th>
-          <th>Ist</th>
-          <th>Δ</th>
-          <th>Soll</th>
-        </tr>
-      </thead>
-      <tbody id="weekTableBody"></tbody>
-    </table>
-  </div>
-</section>
+            <th>Di Beginn</th>
+            <th>Di Ende</th>
+            <th>Di Pause</th>
+            <th>Di Summe</th>
+
+            <th>Mi Beginn</th>
+            <th>Mi Ende</th>
+            <th>Mi Pause</th>
+            <th>Mi Summe</th>
+
+            <th>Do Beginn</th>
+            <th>Do Ende</th>
+            <th>Do Pause</th>
+            <th>Do Summe</th>
+
+            <th>Fr Beginn</th>
+            <th>Fr Ende</th>
+            <th>Fr Pause</th>
+            <th>Fr Summe</th>
+
+            <th>Sa Beginn</th>
+            <th>Sa Ende</th>
+            <th>Sa Pause</th>
+            <th>Sa Summe</th>
+
+            <th>Woche</th>
+          </tr>
+        </thead>
+        <tbody id="formTableBody"></tbody>
+      </table>
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>
