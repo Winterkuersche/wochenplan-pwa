@@ -464,3 +464,37 @@ th {
     display: block !important;
   }
 }
+
+.formTableWrap table {
+  min-width: 2300px;
+}
+
+.formNameCol {
+  min-width: 120px;
+}
+
+.formNameCell {
+  min-width: 120px;
+  max-width: 120px;
+}
+
+.formNameMain {
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.formNameSub {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.formTiny {
+  font-size: 11px;
+}
+
+.formCellEmpty {
+  color: #b5b5b5;
+}
