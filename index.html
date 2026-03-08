@@ -95,37 +95,38 @@
     <div id="plannerList" class="plannerList"></div>
   </section>
 
-  <section id="weekView" class="overview hidden">
-    <div class="sectionhead">
-      <h2>Wochenplan</h2>
-      <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
-    </div>
+  <section id="weekView" class="overview">
+  <div class="sectionhead">
+    <h2>Wochenplan</h2>
+    <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
+  </div>
 
-    <div class="legendCompact" id="legendCompact">
-      F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1 13-19:10 · L2 14-19:10 · L3 15-19:10 · L4 16-19:10 · - frei
-    </div>
+  <div class="weekWarningsBox" id="weekWarnings"></div>
 
-    <div class="tableWrap compactTableWrap">
-      <table id="weekTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Fkt</th>
-            <th>Soll</th>
-            <th>Mo</th>
-            <th>Di</th>
-            <th>Mi</th>
-            <th>Do</th>
-            <th>Fr</th>
-            <th>Sa</th>
-            <th>Ist</th>
-            <th>Δ</th>
-          </tr>
-        </thead>
-        <tbody id="weekTableBody"></tbody>
-      </table>
-    </div>
-  </section>
+  <div class="legendCompact" id="legendCompact">
+    - frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung
+  </div>
+
+  <div class="tableWrap compactTableWrap">
+    <table id="weekTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Mo</th>
+          <th>Di</th>
+          <th>Mi</th>
+          <th>Do</th>
+          <th>Fr</th>
+          <th>Sa</th>
+          <th>Ist</th>
+          <th>Δ</th>
+          <th>Soll</th>
+        </tr>
+      </thead>
+      <tbody id="weekTableBody"></tbody>
+    </table>
+  </div>
+</section>
 
   <script src="app.js"></script>
 </body>
