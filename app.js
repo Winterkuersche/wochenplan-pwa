@@ -20,31 +20,29 @@ const ROLE_OPTIONS = [
 ];
 
 const SHIFTS = [
-  { key: "-",   label: "-",   start: "",      end: "",      desc: "frei",          type: "free" },
+  { key: "-",   label: "-",   start: "",      end: "",      desc: "frei",        type: "free" },
 
-  { key: "F3",  label: "F3",  start: "09:00", end: "12:00", desc: "09:00-12:00",   type: "early" },
-  { key: "F4",  label: "F4",  start: "09:00", end: "13:00", desc: "09:00-13:00",   type: "early" },
-  { key: "F5",  label: "F5",  start: "09:00", end: "14:00", desc: "09:00-14:00",   type: "early" },
-  { key: "F6",  label: "F6",  start: "09:00", end: "15:00", desc: "09:00-15:00",   type: "early" },
+  { key: "F3",  label: "F3",  start: "09:00", end: "12:00", desc: "09:00-12:00", type: "early" },
+  { key: "F4",  label: "F4",  start: "09:00", end: "13:00", desc: "09:00-13:00", type: "early" },
+  { key: "F5",  label: "F5",  start: "09:00", end: "14:00", desc: "09:00-14:00", type: "early" },
+  { key: "F6",  label: "F6",  start: "09:00", end: "15:00", desc: "09:00-15:00", type: "early" },
 
-  { key: "G1",  label: "G1",  start: "09:00", end: "19:10", desc: "09:00-19:10",   type: "full" },
+  { key: "G1",  label: "G1",  start: "09:00", end: "19:10", desc: "09:00-19:10", type: "full" },
 
-  // Spät mit Abrechnung
-  { key: "L1",  label: "L1",  start: "13:00", end: "19:10", desc: "13:00-19:10",   type: "late" },
-  { key: "L2",  label: "L2",  start: "14:00", end: "19:10", desc: "14:00-19:10",   type: "late" },
-  { key: "L3",  label: "L3",  start: "15:00", end: "19:10", desc: "15:00-19:10",   type: "late" },
-  { key: "L4",  label: "L4",  start: "16:00", end: "19:10", desc: "16:00-19:10",   type: "late" },
+  { key: "L1",  label: "L1",  start: "13:00", end: "19:10", desc: "13:00-19:10", type: "late" },
+  { key: "L2",  label: "L2",  start: "14:00", end: "19:10", desc: "14:00-19:10", type: "late" },
+  { key: "L3",  label: "L3",  start: "15:00", end: "19:10", desc: "15:00-19:10", type: "late" },
+  { key: "L4",  label: "L4",  start: "16:00", end: "19:10", desc: "16:00-19:10", type: "late" },
 
-  // Spät ohne Abrechnung
-  { key: "L1E", label: "L1E", start: "13:00", end: "19:00", desc: "13:00-19:00",   type: "lateNo" },
-  { key: "L2E", label: "L2E", start: "14:00", end: "19:00", desc: "14:00-19:00",   type: "lateNo" },
-  { key: "L3E", label: "L3E", start: "15:00", end: "19:00", desc: "15:00-19:00",   type: "lateNo" },
-  { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00",   type: "lateNo" }
+  { key: "L1E", label: "L1E", start: "13:00", end: "19:00", desc: "13:00-19:00", type: "lateNo" },
+  { key: "L2E", label: "L2E", start: "14:00", end: "19:00", desc: "14:00-19:00", type: "lateNo" },
+  { key: "L3E", label: "L3E", start: "15:00", end: "19:00", desc: "15:00-19:00", type: "lateNo" },
+  { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00", type: "lateNo" }
 ];
 
 const MASTER_KEY = "wochenplan_master_v1";
 const WEEK_KEY = "wochenplan_week_v2";
-const UI_KEY = "wochenplan_ui_v3";
+const UI_KEY = "wochenplan_ui_v4";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
@@ -58,6 +56,7 @@ const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
 const weekTableBodyEl = document.getElementById("weekTableBody");
+const formTableBodyEl = document.getElementById("formTableBody");
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
@@ -71,10 +70,11 @@ const dayHoursSubEl = document.getElementById("dayHoursSub");
 
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
+const formViewEl = document.getElementById("formView");
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
+const btnViewFormEl = document.getElementById("btnViewForm");
 
-// Neuer Warnungsblock für Wochenansicht
 const weekWarningsEl = document.getElementById("weekWarnings");
 
 let state = buildInitialState();
@@ -259,16 +259,9 @@ function shiftDurationMinutes(shiftKey) {
 
 function appliedPauseMinutes(shiftKey) {
   const duration = shiftDurationMinutes(shiftKey);
-
-  // Ganztag: 60 + 10
   if (shiftKey === "G1") return 70;
-
-  // Spät mit Abrechnung: 10 Minuten Pause
   if (["L1", "L2", "L3", "L4"].includes(shiftKey)) return 10;
-
-  // Alles andere > 6h = 60 min
   if (duration > 6 * 60) return 60;
-
   return 0;
 }
 
@@ -348,7 +341,6 @@ function getWeekWarnings() {
 
 function renderWeekWarnings() {
   if (!weekWarningsEl) return;
-
   const warnings = getWeekWarnings();
   weekWarningsEl.innerHTML = "";
 
@@ -368,6 +360,31 @@ function renderWeekWarnings() {
   });
 }
 
+function getFormPauseText(shiftKey) {
+  switch (shiftKey) {
+    case "G1": return "14:00-15:10";
+    case "L1": return "16:00-16:10";
+    case "L2": return "16:00-16:10";
+    case "L3": return "17:00-17:10";
+    case "L4": return "17:00-17:10";
+    default: return "";
+  }
+}
+
+function getFormDataForShift(shiftKey) {
+  const shift = getShiftByKey(shiftKey);
+  if (!shift.start || !shift.end) {
+    return { start: "", end: "", pause: "", sum: "" };
+  }
+
+  return {
+    start: shift.start,
+    end: shift.end,
+    pause: getFormPauseText(shiftKey),
+    sum: minutesToHM(netMinutesForShift(shiftKey))
+  };
+}
+
 function renderTeamSectionVisibility() {
   const collapsed = !!uiState.teamCollapsed;
   teamSectionEl.classList.toggle("hidden", collapsed);
@@ -376,13 +393,13 @@ function renderTeamSectionVisibility() {
 
 function renderView() {
   const currentView = uiState.currentView || "week";
-  const isDay = currentView === "day";
+  dayViewEl.classList.toggle("hidden", currentView !== "day");
+  weekViewEl.classList.toggle("hidden", currentView !== "week");
+  formViewEl.classList.toggle("hidden", currentView !== "form");
 
-  dayViewEl.classList.toggle("hidden", !isDay);
-  weekViewEl.classList.toggle("hidden", isDay);
-
-  btnViewDayEl.classList.toggle("active", isDay);
-  btnViewWeekEl.classList.toggle("active", !isDay);
+  btnViewDayEl.classList.toggle("active", currentView === "day");
+  btnViewWeekEl.classList.toggle("active", currentView === "week");
+  btnViewFormEl.classList.toggle("active", currentView === "form");
 }
 
 function renderTeamSetup() {
@@ -401,6 +418,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderPlanner();
       renderWeekTable();
+      renderFormTable();
     });
 
     const roleSel = document.createElement("select");
@@ -418,6 +436,7 @@ function renderTeamSetup() {
       renderTeamSetup();
       renderPlanner();
       renderWeekTable();
+      renderFormTable();
       renderSummary();
     });
 
@@ -430,6 +449,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderPlanner();
       renderWeekTable();
+      renderFormTable();
       renderSummary();
     });
 
@@ -553,6 +573,7 @@ function renderPlanner() {
         saveWeekData();
         renderPlanner();
         renderWeekTable();
+        renderFormTable();
         renderSummary();
         renderWeekWarnings();
       });
@@ -576,7 +597,6 @@ function renderWeekTable() {
   state.employees.forEach(emp => {
     const tr = document.createElement("tr");
 
-    // Name + Fkt in einer Spalte
     const tdNameRole = document.createElement("td");
     tdNameRole.className = "nameRoleCell";
     tdNameRole.innerHTML = `
@@ -603,6 +623,7 @@ function renderWeekTable() {
         saveWeekData();
         renderWeekTable();
         renderPlanner();
+        renderFormTable();
         renderSummary();
         renderWeekWarnings();
       });
@@ -629,6 +650,50 @@ function renderWeekTable() {
   });
 }
 
+function appendFormDayCells(tr, shiftKey) {
+  const data = getFormDataForShift(shiftKey);
+
+  [data.start, data.end, data.pause, data.sum].forEach(value => {
+    const td = document.createElement("td");
+    td.className = "formTiny";
+    td.textContent = value || "";
+    if (!value) td.classList.add("formCellEmpty");
+    tr.appendChild(td);
+  });
+}
+
+function renderFormTable() {
+  if (!formTableBodyEl) return;
+
+  formTableBodyEl.innerHTML = "";
+
+  state.employees.forEach(emp => {
+    const tr = document.createElement("tr");
+
+    const tdName = document.createElement("td");
+    tdName.className = "formNameCell";
+    tdName.innerHTML = `
+      <div class="formNameMain">${emp.name || "—"}</div>
+      <div class="formNameSub">${emp.roleKey || "-"}</div>
+    `;
+    tr.appendChild(tdName);
+
+    const tdPlan = document.createElement("td");
+    tdPlan.textContent = emp.target || "-";
+    tr.appendChild(tdPlan);
+
+    DAYS.forEach(d => {
+      appendFormDayCells(tr, emp.days[d.key]);
+    });
+
+    const tdWeek = document.createElement("td");
+    tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
+    tr.appendChild(tdWeek);
+
+    formTableBodyEl.appendChild(tr);
+  });
+}
+
 function renderAll() {
   weekFromEl.value = state.weekFrom || "";
   weekToEl.value = state.weekTo || "";
@@ -638,6 +703,7 @@ function renderAll() {
   renderTeamSetup();
   renderPlanner();
   renderWeekTable();
+  renderFormTable();
   renderSummary();
   renderWeekWarnings();
 }
@@ -670,6 +736,12 @@ btnViewWeekEl.addEventListener("click", () => {
   renderView();
 });
 
+btnViewFormEl.addEventListener("click", () => {
+  uiState.currentView = "form";
+  saveUiState();
+  renderView();
+});
+
 document.getElementById("btnSaveMaster").addEventListener("click", () => {
   saveMasterData();
   alert("Stammdaten gespeichert.");
@@ -692,4 +764,4 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();renderAll();renderAll();
+renderAll();renderAll();renderAll();renderAll();
