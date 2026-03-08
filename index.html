@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V8</title>
+  <title>Wochenplan V9</title>
   <meta name="theme-color" content="#ffffff" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar compactTopbar">
+  <header class="topbar compactTopbar no-print">
     <div class="titleLine">
       <div>
         <h1>Wochenplan</h1>
@@ -19,7 +19,7 @@
       <div class="viewSwitch" id="viewSwitch">
         <button id="btnViewDay" class="viewBtn">Tagesplanung</button>
         <button id="btnViewWeek" class="viewBtn active">Wochenplan</button>
-        <button id="btnViewForm" class="viewBtn">Formular</button>
+        <button id="btnViewForm" class="viewBtn">Original</button>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
     </div>
   </header>
 
-  <section id="teamSection" class="teamsetup">
+  <section id="teamSection" class="teamsetup no-print">
     <div class="sectionhead">
       <h2>Stammdaten</h2>
       <div class="small">Diese Daten bleiben erhalten, auch wenn du eine neue Woche startest</div>
@@ -74,7 +74,7 @@
     <div id="teamList" class="teamlist"></div>
   </section>
 
-  <section id="dayView" class="daynav hidden">
+  <section id="dayView" class="daynav hidden no-print">
     <div class="sectionhead">
       <h2>Tagesplanung</h2>
       <div class="small">Früh zuerst, dann Spät</div>
@@ -96,7 +96,7 @@
     <div id="plannerList" class="plannerList"></div>
   </section>
 
-  <section id="weekView" class="overview">
+  <section id="weekView" class="overview no-print">
     <div class="sectionhead">
       <h2>Wochenplan</h2>
       <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
@@ -130,52 +130,42 @@
   </section>
 
   <section id="formView" class="overview hidden">
-    <div class="mepSheet">
-      <div class="mepHeaderTop">
+    <div class="printSheet">
+      <div class="mepHeaderRow1">
         <div class="mepTitle">Mitarbeiter-Einsatz-Planung (MEP)</div>
-        <div class="mepBranch">Filiale: <span id="mepBranch">__________</span></div>
+        <div class="mepFiliale">Filiale: <span id="mepBranch">__________</span></div>
       </div>
 
-      <div class="mepHeaderMeta">
+      <div class="mepHeaderRow2">
         <div>Monat/Jahr <span id="mepMonthYear">__________</span></div>
         <div>Woche vom <span id="mepWeekFrom">__________</span></div>
         <div>bis <span id="mepWeekTo">__________</span></div>
       </div>
 
-      <div class="tableWrap mepWrap">
+      <div class="mepTableOuter">
         <table id="mepTable" class="mepTable">
           <thead>
             <tr>
-              <th class="mepLeftCol">Name / Vorname</th>
-              <th class="mepFuncCol">Funktion</th>
-              <th class="mepPlanCol">Plan / Woche</th>
+              <th class="mepColName">Name / Vorname</th>
+              <th class="mepColFunc">Funktion</th>
+              <th class="mepColPlan">Plan / Woche</th>
 
-              <th class="mepDayGroup" colspan="4">Montag</th>
-              <th class="mepDayGroup" colspan="4">Dienstag</th>
-              <th class="mepDayGroup" colspan="4">Mittwoch</th>
-              <th class="mepDayGroup" colspan="4">Donnerstag</th>
-              <th class="mepDayGroup" colspan="4">Freitag</th>
-              <th class="mepDayGroup" colspan="4">Samstag</th>
+              <th class="mepDayHead">Montag</th>
+              <th class="mepDayHead">Dienstag</th>
+              <th class="mepDayHead">Mittwoch</th>
+              <th class="mepDayHead">Donnerstag</th>
+              <th class="mepDayHead">Freitag</th>
+              <th class="mepDayHead">Samstag</th>
 
-              <th class="mepWeekSumCol">Summe / Woche</th>
-            </tr>
-            <tr>
-              <th></th>
-              <th></th>
-              <th></th>
-
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
-
-              <th></th>
+              <th class="mepColWeek">Summe / Woche</th>
             </tr>
           </thead>
           <tbody id="mepTableBody"></tbody>
         </table>
+      </div>
+
+      <div class="mepFooterHint">
+        Pausenzeiten: bis 6 Stunden keine Pause, über 6 Stunden 60 Minuten, Spätschichten mit Abrechnung 10 Minuten, Ganztag 70 Minuten.
       </div>
     </div>
   </section>
