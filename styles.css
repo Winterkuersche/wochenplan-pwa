@@ -26,7 +26,7 @@
 
 body {
   margin: 0;
-  padding: 12px;
+  padding: 10px;
   color: var(--text);
   background: var(--bg);
 }
@@ -39,80 +39,91 @@ h1, h2 {
 .teamsetup,
 .daynav,
 .overview {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 10px;
   background: #fff;
 }
 
-.titlewrap {
-  margin-bottom: 10px;
+.compactTopbar {
+  padding: 10px;
 }
 
-.weekrange,
-.toolbar {
+.titleLine {
   display: flex;
+  justify-content: space-between;
+  align-items: start;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.metaLine,
+.toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-top: 10px;
+  align-items: end;
+}
+
+.compactToolbar button,
+.viewBtn,
+select,
+input,
+button {
+  font-size: 14px;
+  padding: 7px 9px;
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
 }
 
 label {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 14px;
-}
-
-input,
-select,
-button {
-  font-size: 16px;
-  padding: 10px 12px;
-}
-
-button {
-  cursor: pointer;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fff;
+  font-size: 12px;
 }
 
 .small {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
-.summaryGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.summaryCard {
+.miniStat {
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 7px 9px;
   background: #fff;
+  min-width: 86px;
 }
 
-.summaryLabel {
-  font-size: 13px;
+.miniLabel {
+  display: block;
+  font-size: 11px;
   color: var(--muted);
-  margin-bottom: 6px;
 }
 
-.summaryValue {
-  font-size: 24px;
-  font-weight: 800;
-}
-
-.summarySub {
-  font-size: 12px;
+.miniSub {
+  display: block;
+  font-size: 11px;
   color: var(--muted);
-  margin-top: 4px;
+}
+
+.viewSwitch {
+  display: flex;
+  gap: 6px;
+}
+
+.viewBtn.active {
+  background: var(--active);
+  color: var(--activeText);
+  border-color: var(--active);
 }
 
 .sectionhead {
@@ -120,31 +131,33 @@ button {
   justify-content: space-between;
   align-items: end;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .teamlist {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .teamrow {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 0.9fr 0.9fr;
-  gap: 8px;
+  grid-template-columns: 1.6fr 1fr 0.9fr 0.8fr;
+  gap: 6px;
   align-items: center;
 }
 
 .tabs {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .tabBtn {
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 700;
+  font-size: 13px;
+  padding: 8px 6px;
 }
 
 .tabBtn.active {
@@ -156,39 +169,41 @@ button {
 .daymeta {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .metaBox {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px;
+  border-radius: 10px;
+  padding: 8px;
   background: var(--soft);
+  font-size: 13px;
 }
 
 .warnText {
-  margin-top: 6px;
-  line-height: 1.35;
+  margin-top: 5px;
+  line-height: 1.3;
 }
 
 .warnLine {
   border: 1px solid var(--warn-border);
   background: var(--warn-bg);
-  border-radius: 10px;
-  padding: 8px 10px;
-  margin-top: 6px;
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin-top: 5px;
+  font-size: 12px;
 }
 
 .plannerList {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .planRow {
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 10px;
+  border-radius: 12px;
+  padding: 8px;
   background: #fff;
 }
 
@@ -199,50 +214,52 @@ button {
 
 .prevLateBadge {
   display: inline-block;
-  margin-top: 6px;
-  font-size: 12px;
+  margin-top: 5px;
+  font-size: 11px;
   font-weight: 700;
   color: #7a5600;
   background: #ffe7a8;
   border: 1px solid #f0c36d;
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 3px 7px;
 }
 
 .planHead {
   display: flex;
   justify-content: space-between;
   align-items: start;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .planName {
   font-weight: 700;
+  font-size: 14px;
 }
 
 .planSub {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   margin-top: 2px;
 }
 
 .planHours {
   text-align: right;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .shiftButtons {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 .shiftBtn {
-  border-radius: 10px;
-  padding: 12px 8px;
+  border-radius: 8px;
+  padding: 9px 6px;
   font-weight: 700;
-  min-height: 46px;
+  min-height: 38px;
+  font-size: 13px;
 }
 
 .shiftBtn.active {
@@ -280,29 +297,35 @@ button {
   border-color: var(--active);
 }
 
-.shiftLegend {
+.shiftLegend,
+.legendCompact {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
+  line-height: 1.3;
 }
 
 .tableWrap {
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
+}
+
+.compactTableWrap table {
+  min-width: 860px;
 }
 
 table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 950px;
 }
 
 th, td {
   border-bottom: 1px solid #eeeeee;
-  padding: 10px 8px;
+  padding: 6px 6px;
   text-align: left;
   white-space: nowrap;
+  font-size: 13px;
 }
 
 th {
@@ -310,34 +333,33 @@ th {
   top: 0;
   background: #fff;
   z-index: 1;
+  font-size: 12px;
 }
 
-.overviewChip {
-  display: inline-block;
-  min-width: 36px;
-  text-align: center;
-  padding: 5px 8px;
-  border-radius: 999px;
-  font-weight: 700;
-  border: 1px solid transparent;
+.weekSelect {
+  width: 58px;
+  min-width: 58px;
+  font-size: 12px;
+  padding: 4px 5px;
+  border-radius: 7px;
 }
 
-.overviewChip.early {
+.weekSelect.early {
   background: var(--early-bg);
   border-color: var(--early-border);
 }
 
-.overviewChip.full {
+.weekSelect.full {
   background: var(--full-bg);
   border-color: var(--full-border);
 }
 
-.overviewChip.late {
+.weekSelect.late {
   background: var(--late-bg);
   border-color: var(--late-border);
 }
 
-.overviewChip.free {
+.weekSelect.free {
   background: var(--free-bg);
   border-color: var(--free-border);
 }
@@ -363,10 +385,6 @@ th {
   .daymeta {
     grid-template-columns: 1fr 1fr;
   }
-
-  .summaryGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
 }
 
 @media print {
@@ -375,10 +393,11 @@ th {
   }
 
   .toolbar,
+  .viewSwitch,
   .tabs,
   .daymeta,
   .plannerList,
-  .summaryGrid,
+  .legendCompact,
   .teamsetup .small,
   .daynav .small,
   .overview .small {
@@ -391,10 +410,18 @@ th {
   .overview {
     border: none;
     padding: 0;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .tableWrap {
     border: none;
+  }
+
+  #dayView {
+    display: none !important;
+  }
+
+  #weekView {
+    display: block !important;
   }
 }
