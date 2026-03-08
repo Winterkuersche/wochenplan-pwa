@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V7</title>
+  <title>Wochenplan V8</title>
   <meta name="theme-color" content="#ffffff" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
@@ -130,53 +130,53 @@
   </section>
 
   <section id="formView" class="overview hidden">
-    <div class="sectionhead">
-      <h2>Formularansicht</h2>
-      <div class="small">Mit Uhrzeiten und Pausen von-bis</div>
-    </div>
+    <div class="mepSheet">
+      <div class="mepHeaderTop">
+        <div class="mepTitle">Mitarbeiter-Einsatz-Planung (MEP)</div>
+        <div class="mepBranch">Filiale: <span id="mepBranch">__________</span></div>
+      </div>
 
-    <div class="tableWrap formTableWrap">
-      <table id="formTable">
-        <thead>
-          <tr>
-            <th class="formNameCol">Name / Fkt</th>
-            <th>Plan/Woche</th>
+      <div class="mepHeaderMeta">
+        <div>Monat/Jahr <span id="mepMonthYear">__________</span></div>
+        <div>Woche vom <span id="mepWeekFrom">__________</span></div>
+        <div>bis <span id="mepWeekTo">__________</span></div>
+      </div>
 
-            <th>Mo Beginn</th>
-            <th>Mo Ende</th>
-            <th>Mo Pause</th>
-            <th>Mo Summe</th>
+      <div class="tableWrap mepWrap">
+        <table id="mepTable" class="mepTable">
+          <thead>
+            <tr>
+              <th class="mepLeftCol">Name / Vorname</th>
+              <th class="mepFuncCol">Funktion</th>
+              <th class="mepPlanCol">Plan / Woche</th>
 
-            <th>Di Beginn</th>
-            <th>Di Ende</th>
-            <th>Di Pause</th>
-            <th>Di Summe</th>
+              <th class="mepDayGroup" colspan="4">Montag</th>
+              <th class="mepDayGroup" colspan="4">Dienstag</th>
+              <th class="mepDayGroup" colspan="4">Mittwoch</th>
+              <th class="mepDayGroup" colspan="4">Donnerstag</th>
+              <th class="mepDayGroup" colspan="4">Freitag</th>
+              <th class="mepDayGroup" colspan="4">Samstag</th>
 
-            <th>Mi Beginn</th>
-            <th>Mi Ende</th>
-            <th>Mi Pause</th>
-            <th>Mi Summe</th>
+              <th class="mepWeekSumCol">Summe / Woche</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th></th>
+              <th></th>
 
-            <th>Do Beginn</th>
-            <th>Do Ende</th>
-            <th>Do Pause</th>
-            <th>Do Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
+              <th>Beginn</th><th>Ende</th><th>Pause</th><th>Summe</th>
 
-            <th>Fr Beginn</th>
-            <th>Fr Ende</th>
-            <th>Fr Pause</th>
-            <th>Fr Summe</th>
-
-            <th>Sa Beginn</th>
-            <th>Sa Ende</th>
-            <th>Sa Pause</th>
-            <th>Sa Summe</th>
-
-            <th>Woche</th>
-          </tr>
-        </thead>
-        <tbody id="formTableBody"></tbody>
-      </table>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="mepTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
