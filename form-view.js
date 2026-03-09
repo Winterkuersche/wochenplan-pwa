@@ -10,17 +10,22 @@ function formatIsoDateForm(date) {
   return `${date.getFullYear()}-${pad2Form(date.getMonth() + 1)}-${pad2Form(date.getDate())}`;
 }
 
-function formatMonthYearFromDateForm(date) {
-  return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
-}
-
-function getMonthTotalForEmployee(emp) {
+function getMonthTotalForEmployeeUntilWeek(emp, currentWeekDays) {
   const monthPlan = state.monthPlan;
-  if (!monthPlan?.weeks) return 0;
+  if (!monthPlan?.weeks || !currentWeekDays?.length) return 0;
 
+  const currentWeekStartIso = currentWeekDays[0].iso;
   let total = 0;
 
   monthPlan.weeks.forEach((week) => {
+    if (!week.length) return;
+
+    const weekStartIso = week[0].iso;
+
+    if (weekStartIso > currentWeekStartIso) {
+      return;
+    }
+
     week.forEach((day) => {
       if (!day.inCurrentMonth) return;
       total += netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
@@ -50,7 +55,7 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
     return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
   }, 0);
 
-  const monthMinutes = getMonthTotalForEmployee(emp);
+ const monthMinutes = getMonthTotalForEmployeeUntilWeek(emp, weekDays);
 
   rows.forEach((rowDef, rowIndex) => {
     html += "<tr>";
