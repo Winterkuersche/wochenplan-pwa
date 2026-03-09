@@ -1,186 +1,50 @@
-function pad2Form(n) {
-  return String(n).padStart(2, "0");
-}
+function renderFormView(){
 
-function formatShortDate(date) {
-  return `${pad2Form(date.getDate())}.${pad2Form(date.getMonth() + 1)}`;
-}
+  const root=document.getElementById("formView");
+  root.innerHTML="";
 
-function formatIsoDate(date) {
-  return `${date.getFullYear()}-${pad2Form(date.getMonth() + 1)}-${pad2Form(date.getDate())}`;
-}
+  if(!state.monthPlan) return;
 
-function formatMonthYearFromDate(date) {
-  return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
-}
+  state.monthPlan.weeks.forEach(week=>{
 
-function getFormDayData(emp, isoDate) {
-  const shiftKey = getShiftForEmployeeOnIso(emp, isoDate);
-  return getFormDataForShift(shiftKey);
-}
+    const div=document.createElement("div");
+    div.className="printSheet";
 
-function totalMinutesForEmployeeInMonth(emp, monthPlan) {
-  if (!monthPlan?.weeks) return 0;
+    const table=document.createElement("table");
+    table.className="mepTable";
 
-  let total = 0;
+    const body=document.createElement("tbody");
 
-  monthPlan.weeks.forEach((week) => {
-    week.forEach((day) => {
-      if (!day.inCurrentMonth) return;
-      total += netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
-    });
-  });
+    state.employees.forEach(emp=>{
 
-  return total;
-}
+      const tr=document.createElement("tr");
 
-function buildEmployeeRows(emp, weekDays, monthPlan) {
-  const rows = [
-    { label: "Beginn", key: "start" },
-    { label: "Pause", key: "pause" },
-    { label: "Ende", key: "end" },
-    { label: "Summe", key: "sum" }
-  ];
+      const name=document.createElement("td");
+      name.textContent=emp.name;
+      tr.appendChild(name);
 
-  let html = "";
+      week.forEach(d=>{
 
-  const weekMinutes = weekDays.reduce((sum, day) => {
-    if (day.isOutsideMonth) return sum;
-    return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
-  }, 0);
+        const td=document.createElement("td");
 
-  const monthMinutes = totalMinutesForEmployeeInMonth(emp, monthPlan);
+        if(d.isOutsideMonth){
+          td.style.background="#eee";
+        }
 
-  rows.forEach((rowDef, rowIndex) => {
-    html += "<tr>";
+        const shift=getShift(emp,d.iso);
+        td.textContent=shift;
 
-    if (rowIndex === 0) {
-      html += `
-        <td class="mepNameCell" rowspan="4">${emp.name || "—"}</td>
-        <td class="mepFuncText" rowspan="4">${emp.roleKey || "-"}</td>
-        <td class="mepPlanText" rowspan="4">${emp.target || "-"}</td>
-      `;
-    }
+        tr.appendChild(td);
+      });
 
-    html += `<td class="mepTypeCell">${rowDef.label}</td>`;
+      body.appendChild(tr);
 
-    weekDays.forEach((day) => {
-      const dayData = getFormDayData(emp, day.iso);
-      const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
-
-      html += `
-        <td class="mepDayValueCell" style="${grayStyle}">
-          ${dayData[rowDef.key] || ""}
-        </td>
-      `;
     });
 
-    if (rowIndex === 0) {
-      html += `
-        <td class="mepWeekText" rowspan="4">${minutesToHM(weekMinutes)}</td>
-        <td class="mepMonthText" rowspan="4">${minutesToHM(monthMinutes)}</td>
-      `;
-    }
+    table.appendChild(body);
+    div.appendChild(table);
+    root.appendChild(div);
 
-    html += "</tr>";
   });
 
-  return html;
-}
-
-function buildWeekSheet(weekDays, monthPlan) {
-  const weekStart = weekDays[0]?.date;
-  const weekEnd = weekDays[6]?.date;
-
-  if (!weekStart || !weekEnd) return "";
-
-  let html = `
-    <div class="printSheet">
-      <h2>Mitarbeiter-Einsatz-Planung (MEP)</h2>
-
-      <div class="mepMeta">
-        <div><strong>Filiale:</strong> __________</div>
-        <div><strong>Monat/Jahr</strong> ${formatMonthYearFromDate(weekStart)}</div>
-        <div><strong>Woche vom</strong> ${formatIsoDate(weekStart)}</div>
-        <div><strong>bis</strong> ${formatIsoDate(weekEnd)}</div>
-      </div>
-
-      <div class="mepTableOuter">
-        <table class="mepTable">
-          <thead>
-            <tr>
-              <th class="mepNameCol" rowspan="3">Name / Vorname</th>
-              <th class="mepFuncCol" rowspan="3">Funktion</th>
-              <th class="mepPlanCol" rowspan="3">Plan / Woche</th>
-
-              <th class="mepTypeCol">Wochentag</th>
-  `;
-
-  weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
-    html += `<th class="mepDayCol" style="${grayStyle}">${day.weekdayLabel}</th>`;
-  });
-
-  html += `
-              <th class="mepWeekCol" rowspan="3">Summe / Woche</th>
-              <th class="mepMonthCol" rowspan="3">Summe / Monat</th>
-            </tr>
-
-            <tr>
-              <th class="mepTypeCol">Datum</th>
-  `;
-
-  weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
-    html += `<th class="mepSubHead" style="${grayStyle}">${formatShortDate(day.date)}</th>`;
-  });
-
-  html += `
-            </tr>
-
-            <tr>
-              <th class="mepTypeCol">Warentag</th>
-  `;
-
-  weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
-    html += `<th class="mepSubHead" style="${grayStyle}"></th>`;
-  });
-
-  html += `
-            </tr>
-          </thead>
-          <tbody>
-  `;
-
-  state.employees.forEach((emp) => {
-    html += buildEmployeeRows(emp, weekDays, monthPlan);
-  });
-
-  html += `
-          </tbody>
-        </table>
-      </div>
-
-      <div class="mepFooterHint">
-        Pausenzeiten: bis 6 Stunden keine Pause, über 6 Stunden 60 Minuten,
-        Spätschichten mit Abrechnung 10 Minuten, Ganztag 70 Minuten.
-      </div>
-    </div>
-  `;
-
-  return html;
-}
-
-function renderFormView() {
-  if (!formViewEl) return;
-
-  formViewEl.innerHTML = "";
-
-  const monthPlan = state.monthPlan;
-  if (!monthPlan || !Array.isArray(monthPlan.weeks)) return;
-
-  monthPlan.weeks.forEach((weekDays) => {
-    formViewEl.innerHTML += buildWeekSheet(weekDays, monthPlan);
-  });
 }
