@@ -19,25 +19,85 @@ function renderWeekWarnings() {
     weekWarningsEl.appendChild(div);
   });
 }
+function getWeekSelectValueForDay(emp, isoDate) {
+  const resolved = getResolvedDayEntry({
+    employee: emp,
+    isoDate,
+    schedule: state.schedule,
+    absences: state.absences,
+    stateKey: APP_META.stateKey
+  });
+
+  if (resolved.type === "holiday") return "H";
+  if (resolved.type === "sick") return "K";
+  if (resolved.type === "vacation") return "U";
+  if (resolved.type === "external-help") return "AH";
+
+  if (resolved.type === "shift" && resolved.sourceEntry) {
+    return resolved.sourceEntry.code || "";
+  }
+
+  return "";
+}
+
+function getWeekSelectClassByValue(value) {
+  if (!value) return "";
+  return `shift-${String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
 
 function createWeekSelect(emp, isoDate) {
   const sel = document.createElement("select");
-  const currentShift = getShiftForEmployeeOnIso(emp, isoDate);
+  const currentValue = getWeekSelectValueForDay(emp, isoDate);
 
-  sel.className = `weekSelect ${getShiftClassByKey(currentShift)}`;
+  sel.className = `weekSelect ${getWeekSelectClassByValue(currentValue)}`;
 
-  SHIFTS.forEach((shift) => {
+  const resolved = getResolvedDayEntry({
+    employee: emp,
+    isoDate,
+    schedule: state.schedule,
+    absences: state.absences,
+    stateKey: APP_META.stateKey
+  });
+
+  const allOptions = [
+    { value: "", label: "—" },
+    ...SHIFT_CONFIG.statusOptions
+      .filter((opt) => opt.value && opt.value !== "H")
+      .map((opt) => ({ value: opt.value, label: opt.label }))
+  ];
+
+  if (resolved.type === "holiday") {
+    const holidayOption = document.createElement("option");
+    holidayOption.value = "H";
+    holidayOption.textContent = "H";
+    sel.appendChild(holidayOption);
+    sel.value = "H";
+    sel.disabled = true;
+    sel.className = `weekSelect ${getWeekSelectClassByValue("H")}`;
+    return sel;
+  }
+
+  allOptions.forEach((option) => {
     const opt = document.createElement("option");
-    opt.value = shift.key;
-    opt.textContent = shift.key;
+    opt.value = option.value;
+    opt.textContent = option.label;
     sel.appendChild(opt);
   });
 
-  sel.value = currentShift;
+  sel.value = currentValue;
 
   sel.addEventListener("change", () => {
-    setShiftForEmployeeOnIso(emp, isoDate, sel.value);
-    sel.className = `weekSelect ${getShiftClassByKey(sel.value)}`;
+    const selectedValue = sel.value;
+
+    console.log("Neue Auswahl im Wochenplan:", {
+      employeeId: emp.id,
+      isoDate,
+      selectedValue
+    });
+
+    sel.className = `weekSelect ${getWeekSelectClassByValue(selectedValue)}`;
+
+    // Speichern folgt im nächsten Schritt
     savePlanData();
     renderAllViews();
   });
