@@ -1,3 +1,10 @@
+document.title = `${APP_META.name} ${APP_META.version}`;
+
+const appTitleEl = document.getElementById("app-title");
+if (appTitleEl) {
+  appTitleEl.textContent = `${APP_META.name} ${APP_META.version}`;
+}
+
 const DAYS = [
   { key: "mo", label: "Mo", full: "Montag" },
   { key: "di", label: "Di", full: "Dienstag" },
