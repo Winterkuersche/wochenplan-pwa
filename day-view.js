@@ -1,128 +1,63 @@
-function renderDayTabs() {
-  if (!dayTabsEl) return;
+function renderDayTabs(){
 
-  const weekDays = getActiveWeekDays();
-  dayTabsEl.innerHTML = "";
+  const tabs=document.getElementById("dayTabs");
+  tabs.innerHTML="";
 
-  weekDays.forEach((day, index) => {
-    if (index > 5) return; // Tagesplanung nur Mo-Sa
+  const week=getActiveWeekDays();
 
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = index === currentDayIndex ? "active" : "";
-    btn.textContent = `${day.weekdayLabel} ${formatShortDate(day.date)}`;
+  week.slice(0,6).forEach((d,i)=>{
 
-    if (day.isOutsideMonth) {
-      btn.style.background = "#eee";
-      btn.style.color = "#666";
-    }
+    const b=document.createElement("button");
+    b.textContent=d.weekdayLabel;
 
-    btn.addEventListener("click", () => {
-      currentDayIndex = index;
+    if(i===currentDayIndex) b.className="active";
+
+    b.onclick=()=>{
+      currentDayIndex=i;
       renderAllViews();
+    };
+
+    tabs.appendChild(b);
+  });
+}
+
+function renderDayView(){
+
+  renderDayTabs();
+
+  const list=document.getElementById("plannerList");
+  list.innerHTML="";
+
+  const day=getActiveWeekDays()[currentDayIndex];
+  if(!day) return;
+
+  state.employees.forEach(emp=>{
+
+    const div=document.createElement("div");
+    div.className="dayCard";
+
+    const title=document.createElement("div");
+    title.textContent=emp.name;
+
+    const sel=document.createElement("select");
+
+    SHIFTS.forEach(s=>{
+      const o=document.createElement("option");
+      o.value=s.key;
+      o.textContent=s.key;
+      sel.appendChild(o);
     });
 
-    dayTabsEl.appendChild(btn);
+    sel.value=getShift(emp,day.iso);
+
+    sel.onchange=()=>{
+      setShift(emp,day.iso,sel.value);
+      renderAllViews();
+    };
+
+    div.appendChild(title);
+    div.appendChild(sel);
+
+    list.appendChild(div);
   });
-}
-
-function buildPlannerCard(emp, isoDate) {
-  const currentShift = getShiftForEmployeeOnIso(emp, isoDate);
-  const shift = getShiftByKey(currentShift);
-
-  const card = document.createElement("div");
-  card.className = "dayCard";
-
-  const title = document.createElement("div");
-  title.className = "dayCardTitle";
-  title.textContent = emp.name || "—";
-
-  const sub = document.createElement("div");
-  sub.className = "dayCardSub";
-  sub.textContent = `${emp.roleKey || "-"} · Soll ${emp.target || "0:00"}`;
-
-  const select = document.createElement("select");
-  select.className = `weekSelect ${getShiftClassByKey(currentShift)}`;
-
-  SHIFTS.forEach((s) => {
-    const opt = document.createElement("option");
-    opt.value = s.key;
-    opt.textContent = s.key;
-    select.appendChild(opt);
-  });
-
-  select.value = currentShift;
-
-  select.addEventListener("change", () => {
-    setShiftForEmployeeOnIso(emp, isoDate, select.value);
-    savePlanData();
-    renderAllViews();
-  });
-
-  const info = document.createElement("div");
-  info.className = "dayCardSub";
-
-  if (shift.start && shift.end) {
-    const pause = getFormPauseText(currentShift);
-    const sum = minutesToHM(netMinutesForShift(currentShift));
-    info.textContent = pause
-      ? `${shift.start}–${shift.end} · Pause ${pause} · ${sum}`
-      : `${shift.start}–${shift.end} · ${sum}`;
-  } else {
-    info.textContent = "Kein Einsatz";
-  }
-
-  card.appendChild(title);
-  card.appendChild(sub);
-  card.appendChild(select);
-  card.appendChild(info);
-
-  return card;
-}
-
-function renderDayMeta() {
-  const dayObj = getCurrentDayObject();
-  if (!dayObj) return;
-
-  if (metaDayNameEl) {
-    metaDayNameEl.textContent = `${dayObj.weekdayLabel} ${formatShortDate(dayObj.date)}`;
-  }
-
-  if (dayHoursInfoEl) {
-    dayHoursInfoEl.textContent = `Geplante Arbeitsstunden: ${minutesToHM(totalMinutesForDayIso(dayObj.iso))}`;
-  }
-
-  if (dayWarningsEl) {
-    const warnings = getDayWarningsByIndex(currentDayIndex);
-    dayWarningsEl.textContent = warnings.length ? warnings.join(" ") : "Keine Warnungen.";
-  }
-}
-
-function renderDayPlannerList() {
-  if (!plannerListEl) return;
-
-  const dayObj = getCurrentDayObject();
-  plannerListEl.innerHTML = "";
-  if (!dayObj) return;
-
-  const employeesSorted = [...state.employees].sort((a, b) => {
-    const aShift = getShiftForEmployeeOnIso(a, dayObj.iso);
-    const bShift = getShiftForEmployeeOnIso(b, dayObj.iso);
-
-    const aType = getShiftByKey(aShift).type || "";
-    const bType = getShiftByKey(bShift).type || "";
-
-    const order = { early: 1, full: 2, late: 3, lateNo: 4, free: 5 };
-    return (order[aType] || 99) - (order[bType] || 99);
-  });
-
-  employeesSorted.forEach((emp) => {
-    plannerListEl.appendChild(buildPlannerCard(emp, dayObj.iso));
-  });
-}
-
-function renderDayView() {
-  renderDayTabs();
-  renderDayMeta();
-  renderDayPlannerList();
 }
