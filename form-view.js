@@ -6,154 +6,160 @@ function formatShortDate(date) {
   return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}`;
 }
 
-function getWeekDatesFromState() {
-  const weekFromInput = document.getElementById("weekFrom");
-
-  const startStr =
-    state.weekStart ||
-    state.week?.start ||
-    state.week?.from ||
-    state.weekFrom ||
-    weekFromInput?.value ||
-    "";
-
-  if (!startStr) return null;
-
-  const start = new Date(startStr);
-  if (Number.isNaN(start.getTime())) return null;
-
-  const days = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    days.push(d);
-  }
-  return days;
+function buildDayHeaderHTML(dayObj) {
+  const gray = dayObj.isOutsideMonth ? "style='background:#eee'" : "";
+  return `
+    <th class="mepDayCol" ${gray}>
+      ${dayObj.weekdayLabel}
+    </th>
+  `;
 }
 
-function renderMepDateHeader() {
-  const dateIds = [
-    "mepDateMo",
-    "mepDateDi",
-    "mepDateMi",
-    "mepDateDo",
-    "mepDateFr",
-    "mepDateSa",
-    "mepDateSo"
-  ];
-
-  const goodsIds = [
-    "mepGoodsMo",
-    "mepGoodsDi",
-    "mepGoodsMi",
-    "mepGoodsDo",
-    "mepGoodsFr",
-    "mepGoodsSa",
-    "mepGoodsSo"
-  ];
-
-  const dates = getWeekDatesFromState();
-
-  dateIds.forEach((id, index) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    if (!dates || !dates[index]) {
-      el.textContent = "";
-      return;
-    }
-
-    el.textContent = formatShortDate(dates[index]);
-  });
-
-  goodsIds.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = "";
-  });
+function buildDateHeaderHTML(dayObj) {
+  const gray = dayObj.isOutsideMonth ? "style='background:#eee'" : "";
+  return `
+    <th class="mepSubHead" ${gray}>
+      ${formatShortDate(dayObj.date)}
+    </th>
+  `;
 }
 
 function getDayData(emp, dayKey) {
   return getFormDataForShift(emp.days?.[dayKey] || "-");
 }
 
-function renderMepTable() {
-  if (!mepTableBodyEl) return;
+function buildEmployeeRows(emp, weekDays) {
+  const dayKeys = ["mo","di","mi","do","fr","sa","so"];
 
-  mepTableBodyEl.innerHTML = "";
+  const dayData = {
+    mo: getDayData(emp,"mo"),
+    di: getDayData(emp,"di"),
+    mi: getDayData(emp,"mi"),
+    do: getDayData(emp,"do"),
+    fr: getDayData(emp,"fr"),
+    sa: getDayData(emp,"sa"),
+    so: {start:"",pause:"",end:"",sum:""}
+  };
 
-  state.employees.forEach((emp) => {
-    const dayData = {
-      mo: getDayData(emp, "mo"),
-      di: getDayData(emp, "di"),
-      mi: getDayData(emp, "mi"),
-      do: getDayData(emp, "do"),
-      fr: getDayData(emp, "fr"),
-      sa: getDayData(emp, "sa"),
-      so: { start: "", pause: "", end: "", sum: "" }
-    };
+  const rows = [
+    { label:"Beginn", key:"start"},
+    { label:"Pause", key:"pause"},
+    { label:"Ende", key:"end"},
+    { label:"Summe", key:"sum"}
+  ];
 
-    const rows = [
-      { label: "Beginn", key: "start" },
-      { label: "Pause", key: "pause" },
-      { label: "Ende", key: "end" },
-      { label: "Summe", key: "sum" }
-    ];
+  let html = "";
 
-    rows.forEach((rowDef, index) => {
-      const tr = document.createElement("tr");
+  rows.forEach((rowDef,rowIndex)=>{
 
-      if (index === 0) {
-        const tdName = document.createElement("td");
-        tdName.className = "mepNameCell";
-        tdName.rowSpan = 4;
-        tdName.textContent = emp.name || "—";
-        tr.appendChild(tdName);
+    html += "<tr>";
 
-        const tdFunc = document.createElement("td");
-        tdFunc.className = "mepFuncText";
-        tdFunc.rowSpan = 4;
-        tdFunc.textContent = emp.roleKey || "-";
-        tr.appendChild(tdFunc);
+    if(rowIndex===0){
 
-        const tdPlan = document.createElement("td");
-        tdPlan.className = "mepPlanText";
-        tdPlan.rowSpan = 4;
-        tdPlan.textContent = emp.target || "-";
-        tr.appendChild(tdPlan);
-      }
+      html+=`
+      <td class="mepNameCell" rowspan="4">${emp.name||"—"}</td>
+      <td class="mepFuncText" rowspan="4">${emp.roleKey||"-"}</td>
+      <td class="mepPlanText" rowspan="4">${emp.target||"-"}</td>
+      `;
+    }
 
-      const tdType = document.createElement("td");
-      tdType.className = "mepTypeCell";
-      tdType.textContent = rowDef.label;
-      tr.appendChild(tdType);
+    html+=`<td class="mepTypeCell">${rowDef.label}</td>`;
 
-      ["mo", "di", "mi", "do", "fr", "sa", "so"].forEach((dayKey) => {
-        const td = document.createElement("td");
-        td.className = "mepDayValueCell";
-        td.textContent = dayData[dayKey][rowDef.key] || "";
-        tr.appendChild(td);
-      });
+    weekDays.forEach((day,idx)=>{
 
-      if (index === 0) {
-        const tdWeek = document.createElement("td");
-        tdWeek.className = "mepWeekText";
-        tdWeek.rowSpan = 4;
-        tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
-        tr.appendChild(tdWeek);
+      const dayKey = dayKeys[idx];
+      const gray = day.isOutsideMonth ? "style='background:#eee'" : "";
 
-        const tdMonth = document.createElement("td");
-        tdMonth.className = "mepMonthText";
-        tdMonth.rowSpan = 4;
-        tdMonth.textContent = "";
-        tr.appendChild(tdMonth);
-      }
-
-      mepTableBodyEl.appendChild(tr);
+      html+=`
+      <td class="mepDayValueCell" ${gray}>
+        ${dayData[dayKey][rowDef.key]||""}
+      </td>
+      `;
     });
+
+    if(rowIndex===0){
+
+      html+=`
+      <td class="mepWeekText" rowspan="4">
+        ${minutesToHM(totalMinutesForEmployee(emp))}
+      </td>
+      <td class="mepMonthText" rowspan="4"></td>
+      `;
+    }
+
+    html+="</tr>";
+
   });
+
+  return html;
+}
+
+function buildWeekSheet(weekDays) {
+
+  let html = `
+  <div class="printSheet">
+  <div class="mepTableOuter">
+  <table class="mepTable">
+  <thead>
+  <tr>
+
+  <th class="mepNameCol" rowspan="2">Name / Vorname</th>
+  <th class="mepFuncCol" rowspan="2">Funktion</th>
+  <th class="mepPlanCol" rowspan="2">Plan / Woche</th>
+
+  <th class="mepTypeCol" rowspan="2">
+  Wochentag<br>Datum<br>Warentag
+  </th>
+  `;
+
+  weekDays.forEach(day=>{
+    html+=buildDayHeaderHTML(day);
+  });
+
+  html+=`
+  <th class="mepWeekCol" rowspan="2">Summe / Woche</th>
+  <th class="mepMonthCol" rowspan="2">Summe / Monat</th>
+  </tr>
+
+  <tr>
+  `;
+
+  weekDays.forEach(day=>{
+    html+=buildDateHeaderHTML(day);
+  });
+
+  html+=`
+  </tr>
+  </thead>
+  <tbody>
+  `;
+
+  state.employees.forEach(emp=>{
+    html+=buildEmployeeRows(emp,weekDays);
+  });
+
+  html+=`
+  </tbody>
+  </table>
+  </div>
+  </div>
+  `;
+
+  return html;
 }
 
 function renderFormView() {
-  renderMepDateHeader();
-  renderMepTable();
+
+  if(!formViewEl) return;
+
+  formViewEl.innerHTML="";
+
+  const monthPlan = state.monthPlan;
+
+  if(!monthPlan) return;
+
+  monthPlan.weeks.forEach(week=>{
+    formViewEl.innerHTML += buildWeekSheet(week);
+  });
+
 }
