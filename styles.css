@@ -2,28 +2,38 @@
 /* BASIS                         */
 /* ============================= */
 
-body{
+body {
   font-family: system-ui, Arial, sans-serif;
-  margin:0;
-  padding:16px;
-  background:#f5f5f5;
-  color:#222;
+  margin: 0;
+  padding: 16px;
+  background: #f5f5f5;
+  color: #222;
 }
 
-h1,h2,h3{
-  margin-top:0;
+h1,
+h2,
+h3 {
+  margin-top: 0;
 }
 
-button{
-  padding:8px 14px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  background:#fff;
-  cursor:pointer;
+button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
 }
 
-button:hover{
-  background:#f0f0f0;
+button:hover {
+  background: #f0f0f0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.no-print {
+  display: block;
 }
 
 
@@ -31,30 +41,37 @@ button:hover{
 /* TOPBAR                        */
 /* ============================= */
 
-.topbar{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-bottom:16px;
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.viewBtn.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
 }
 
 
 /* ============================= */
-/* TABELLEN (ALLGEMEIN)         */
+/* TABELLEN (ALLGEMEIN)          */
 /* ============================= */
 
-table{
-  border-collapse:collapse;
+table {
+  border-collapse: collapse;
 }
 
-th,td{
-  border:1px solid #ccc;
-  padding:6px 8px;
+th,
+td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
 }
 
-th{
-  background:#eee;
-  font-weight:600;
+th {
+  background: #eee;
+  font-weight: 600;
 }
 
 
@@ -62,21 +79,21 @@ th{
 /* WEEK VIEW                     */
 /* ============================= */
 
-.weekTable{
-  width:100%;
-  background:#fff;
+.weekTable {
+  width: 100%;
+  background: #fff;
 }
 
-.weekTable th{
-  text-align:center;
+.weekTable th {
+  text-align: center;
 }
 
-.weekSelect{
-  width:100%;
-  padding:4px;
-  border-radius:6px;
-  border:1px solid #ccc;
-  font-size:14px;
+.weekSelect {
+  width: 100%;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
 
@@ -84,57 +101,87 @@ th{
 /* MEP FORMULAR                  */
 /* ============================= */
 
-.mepPage{
-  width:100%;
-  max-width:100%;
-  background:#fff;
-  margin:0 auto;
-  padding:8px;
-  border-radius:8px;
+.printSheet {
+  width: 100%;
+  max-width: 297mm;
+  background: #fff;
+  margin: 0 auto;
+  padding: 8px;
+  border-radius: 8px;
+  color: #111;
 }
 
-.mepOuter{
-  border:0.4mm solid #8e8e8e;
-  overflow-x:auto;
-  background:#fff;
+.mepMeta {
+  margin-bottom: 10px;
+  line-height: 1.35;
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.mepTable{
-  width:max-content;
-  min-width:100%;
-  border-collapse:collapse;
-  table-layout:fixed;
+.mepTableOuter {
+  border: 0.4mm solid #8e8e8e;
+  overflow-x: auto;
+  overflow-y: visible;
+  background: #fff;
+}
+
+.mepTable {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .mepTable th,
-.mepTable td{
-  border:0.3mm solid #9b9b9b;
-  padding:1mm;
-  font-size:3mm;
-  line-height:1.15;
-  vertical-align:top;
-  background:#fff;
+.mepTable td {
+  border: 0.3mm solid #9b9b9b;
+  padding: 1mm;
+  font-size: 3mm;
+  line-height: 1.15;
+  vertical-align: top;
+  background: #fff;
 }
 
-.mepTable thead th{
-  text-align:center;
-  font-weight:700;
-  white-space:normal;
-  overflow-wrap:break-word;
+.mepTable thead th {
+  text-align: center;
+  font-weight: 700;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
-
 
 /* ============================= */
 /* SPALTENBREITEN               */
 /* ============================= */
 
-.mepNameCol{width:34mm;}
-.mepFuncCol{width:18mm;}
-.mepPlanCol{width:20mm;}
-.mepTypeCol{width:22mm;}
-.mepDayCol{width:26mm;}
-.mepWeekCol{width:20mm;}
-.mepMonthCol{width:20mm;}
+.mepNameCol {
+  width: 34mm;
+}
+
+.mepFuncCol {
+  width: 18mm;
+}
+
+.mepPlanCol {
+  width: 20mm;
+}
+
+.mepTypeCol {
+  width: 22mm;
+}
+
+.mepDayCol {
+  width: 26mm;
+}
+
+.mepWeekCol {
+  width: 20mm;
+}
+
+.mepMonthCol {
+  width: 20mm;
+}
 
 
 /* ============================= */
@@ -145,66 +192,25 @@ th{
 .mepFuncText,
 .mepPlanText,
 .mepWeekText,
-.mepMonthText{
-  vertical-align:top;
-  white-space:normal;
-  overflow-wrap:break-word;
+.mepMonthText {
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 
 /* ============================= */
-/* BEGINN PAUSE ENDE SUMME       */
+/* BEGINN / PAUSE / ENDE / SUMME */
 /* ============================= */
 
-.mepTypeCell{
-  font-weight:700;
-  white-space:nowrap;
+.mepTypeCell {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 
 /* ============================= */
-/* WOCHENTAG DATUM WARENTAG      */
-/* ============================= */
-
-.mepTypeHead{
-  padding:0 !important;
-}
-
-.mepTypeHeadBox{
-  display:grid;
-  grid-template-rows:repeat(3,1fr);
-  height:100%;
-  min-height:22mm;
-}
-
-.mepTypeHeadBox div{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:1mm;
-  font-weight:700;
-  line-height:1.1;
-  white-space:normal;
-}
-
-.mepTypeHeadBox div:not(:last-child){
-  border-bottom:0.3mm solid #9b9b9b;
-}
-
-
-/* ============================= */
-/* TAGESWERTE                    */
-/* ============================= */
-
-.mepDayValueCell{
-  text-align:center;
-  white-space:nowrap;
-}
-
-
-/* ============================= */
-/* WOCHENTAG DATUM WARENTAG      */
+/* WOCHENTAG / DATUM / WARENTAG  */
 /* ============================= */
 
 .mepTypeHead {
@@ -236,6 +242,17 @@ th{
 
 
 /* ============================= */
+/* TAGESWERTE                    */
+/* ============================= */
+
+.mepDayValueCell {
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ============================= */
 /* SUBHEADER (DATUM REIHE)       */
 /* ============================= */
 
@@ -253,10 +270,10 @@ th{
 /* FOOTER                        */
 /* ============================= */
 
-.mepFooterNote{
-  margin-top:4mm;
-  font-size:2.8mm;
-  color:#555;
+.mepFooterHint {
+  margin-top: 4mm;
+  font-size: 2.8mm;
+  color: #555;
 }
 
 
@@ -264,94 +281,53 @@ th{
 /* PRINT                         */
 /* ============================= */
 
-@page{
-  size:A4 landscape;
-  margin:8mm;
+@page {
+  size: A4 landscape;
+  margin: 8mm;
 }
 
-@media print{
+@media print {
+  body {
+    padding: 0;
+    background: #fff;
+  }
 
-body{
-  padding:0;
-  background:#fff;
-}
+  .topbar {
+    display: none !important;
+  }
 
-.topbar{
-  display:none !important;
-}
+  #dayView,
+  #weekView {
+    display: none !important;
+  }
 
-#dayView,
-#weekView{
-  display:none !important;
-}
+  #formView {
+    display: block !important;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
 
-#formView{
-  display:block !important;
-  border:none;
-  margin:0;
-  padding:0;
-}
+  .printSheet {
+    width: auto;
+    max-width: none;
+    min-height: auto;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+  }
 
-.mepPage{
-  width:auto;
-  max-width:none;
-  margin:0;
-}
+  .mepTableOuter {
+    overflow: visible;
+    border: none;
+  }
 
-.mepOuter{
-  overflow:visible;
-  border:none;
-}
+  .mepTable {
+    width: 100%;
+    min-width: 0;
+  }
 
-.mepTable{
-  width:100%;
-}
-
-.mepTable tr{
-  page-break-inside:avoid;
-}
-
-}
-
-/* ===== schnelle Reparatur für View-Umschaltung ===== */
-.hidden {
-  display: none !important;
-}
-
-.viewBtn.active {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-}
-
-.no-print {
-  display: block;
-}
-
-.viewBtn.active {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-}
-
-/* ===== MEP-Klassen an aktuelles HTML anpassen ===== */
-.printSheet {
-  width: 100%;
-  max-width: 100%;
-  background: #fff;
-  margin: 0 auto;
-  color: #111;
-}
-
-.mepTableOuter {
-  border: 0.4mm solid #8e8e8e;
-  overflow-x: auto;
-  overflow-y: visible;
-  background: #fff;
-}
-
-.mepFooterHint {
-  margin-top: 4mm;
-  font-size: 2.8mm;
-  color: #555;
+  .mepTable tr {
+    page-break-inside: avoid;
+  }
 }
