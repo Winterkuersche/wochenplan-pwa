@@ -444,7 +444,7 @@ th {
   line-height: 1.2;
   vertical-align: top;
   background: #fff;
-  white-space: nowrap;
+  white-space: normal;
   overflow-wrap: normal;
 }
 
@@ -456,9 +456,9 @@ th {
 
 .mepDayBlock {
   display: grid;
-  grid-template-columns: 12mm auto;
+  grid-template-columns: 12mm 1fr;
   row-gap: 0.8mm;
-  column-gap: 1mm;
+  column-gap: 1.5mm;
   align-items: start;
 }
 
@@ -470,7 +470,7 @@ th {
 .mepDayValue {
   font-size: 2.8mm;
   min-height: 3.2mm;
-  text-align: left;
+  text-align: right;
   white-space: nowrap;
 }
 
