@@ -12,17 +12,19 @@ function renderWeekWarnings() {
     return;
   }
 
-  warnings.forEach((w) => {
+  warnings.forEach((text) => {
     const div = document.createElement("div");
     div.className = "warnLine";
-    div.textContent = w;
+    div.textContent = text;
     weekWarningsEl.appendChild(div);
   });
 }
 
-function createWeekSelect(emp, dayKey) {
+function createWeekSelect(emp, isoDate) {
   const sel = document.createElement("select");
-  sel.className = `weekSelect ${getShiftClassByKey(emp.days[dayKey])}`;
+  const currentShift = getShiftForEmployeeOnIso(emp, isoDate);
+
+  sel.className = `weekSelect ${getShiftClassByKey(currentShift)}`;
 
   SHIFTS.forEach((shift) => {
     const opt = document.createElement("option");
@@ -31,23 +33,54 @@ function createWeekSelect(emp, dayKey) {
     sel.appendChild(opt);
   });
 
-  sel.value = emp.days[dayKey];
+  sel.value = currentShift;
 
   sel.addEventListener("change", () => {
-    emp.days[dayKey] = sel.value;
-    sel.className = `weekSelect ${getShiftClassByKey(emp.days[dayKey])}`;
-    saveWeekData();
+    setShiftForEmployeeOnIso(emp, isoDate, sel.value);
+    sel.className = `weekSelect ${getShiftClassByKey(sel.value)}`;
+
+    savePlanData();
     renderAllViews();
-    renderFormView();
   });
 
   return sel;
 }
 
+function renderWeekHeader() {
+  const table = document.getElementById("weekTable");
+  if (!table) return;
+
+  const thead = table.querySelector("thead");
+  if (!thead) return;
+
+  const weekDays = getActiveWeekDays();
+  if (!weekDays.length) return;
+
+  thead.innerHTML = `
+    <tr>
+      <th>Name</th>
+      <th>Mo</th>
+      <th>Di</th>
+      <th>Mi</th>
+      <th>Do</th>
+      <th>Fr</th>
+      <th>Sa</th>
+      <th>Ist</th>
+      <th>Δ</th>
+      <th>Soll</th>
+    </tr>
+  `;
+}
+
 function renderWeekTable() {
   if (!weekTableBodyEl) return;
 
+  const weekDays = getActiveWeekDays();
   weekTableBodyEl.innerHTML = "";
+
+  if (!weekDays.length) return;
+
+  const visibleDays = weekDays.slice(0, 6); // Mo-Sa in Wochenansicht
 
   state.employees.forEach((emp) => {
     const tr = document.createElement("tr");
@@ -60,9 +93,14 @@ function renderWeekTable() {
     `;
     tr.appendChild(tdNameRole);
 
-    DAYS.forEach((d) => {
+    visibleDays.forEach((day) => {
       const td = document.createElement("td");
-      td.appendChild(createWeekSelect(emp, d.key));
+
+      if (day.isOutsideMonth) {
+        td.style.background = "#eee";
+      }
+
+      td.appendChild(createWeekSelect(emp, day.iso));
       tr.appendChild(td);
     });
 
@@ -73,7 +111,9 @@ function renderWeekTable() {
 
     const delta = deltaMinutes(emp);
     const tdDelta = document.createElement("td");
-    tdDelta.className = `weekDeltaCell ${delta < 0 ? "deltaNeg" : delta > 0 ? "deltaPos" : "deltaZero"}`;
+    tdDelta.className = `weekDeltaCell ${
+      delta < 0 ? "deltaNeg" : delta > 0 ? "deltaPos" : "deltaZero"
+    }`;
     tdDelta.textContent = formatSignedMinutes(delta);
     tr.appendChild(tdDelta);
 
@@ -87,6 +127,7 @@ function renderWeekTable() {
 }
 
 function renderWeekView() {
+  renderWeekHeader();
   renderWeekWarnings();
   renderWeekTable();
 }
