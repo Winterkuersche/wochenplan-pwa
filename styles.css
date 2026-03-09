@@ -456,7 +456,7 @@ th {
 
 .mepDayBlock {
   display: grid;
-  grid-template-columns: 10mm 1fr;
+  grid-template-columns: 12mm auto;
   row-gap: 0.8mm;
   column-gap: 1mm;
   align-items: start;
