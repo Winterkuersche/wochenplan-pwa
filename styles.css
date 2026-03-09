@@ -444,8 +444,8 @@ th {
   line-height: 1.2;
   vertical-align: top;
   background: #fff;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .mepNameCol  { width: 28mm; }
