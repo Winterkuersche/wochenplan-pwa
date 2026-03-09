@@ -415,7 +415,10 @@ th {
   display: none !important;
 }
 
-/* Original-nahe MEP-Druckansicht */
+/* ============================= */
+/* MEP ORIGINAL FORMULAR LAYOUT  */
+/* ============================= */
+
 .mepPage {
   width: 297mm;
   min-height: 190mm;
@@ -435,28 +438,57 @@ th {
   table-layout: fixed;
 }
 
+/* Tabellenzellen */
+
 .mepTable th,
 .mepTable td {
   border: 0.3mm solid #9b9b9b;
   padding: 1.2mm 1mm;
-  font-size: 3.1mm;
-  line-height: 1.15;
+  font-size: 3mm;
+  line-height: 1.2;
   vertical-align: top;
   background: #fff;
-  white-space: normal;
 }
+
+/* Tabellenkopf */
 
 .mepTable thead th {
   text-align: center;
-  vertical-align: middle;
   font-weight: 700;
+  vertical-align: middle;
 }
 
-.mepNameCol { width: 34mm; }
-.mepFuncCol { width: 18mm; }
-.mepPlanCol { width: 20mm; }
-.mepDayCol  { width: 34mm; }
-.mepWeekCol { width: 20mm; }
+/* Spaltenbreiten */
+
+.mepNameCol {
+  width: 34mm;
+}
+
+.mepFuncCol {
+  width: 18mm;
+}
+
+.mepPlanCol {
+  width: 20mm;
+}
+
+.mepTypeCol {
+  width: 18mm;
+}
+
+.mepDayCol {
+  width: 28mm;
+}
+
+.mepWeekCol {
+  width: 18mm;
+}
+
+.mepMonthCol {
+  width: 18mm;
+}
+
+/* Textfelder */
 
 .mepNameCell {
   vertical-align: top;
@@ -464,45 +496,29 @@ th {
 
 .mepFuncText,
 .mepPlanText,
-.mepWeekText {
-  font-size: 3.1mm;
-}
-
-/* Neue Tageszelle */
-.mepDayCell {
-  padding: 0 !important;
+.mepWeekText,
+.mepMonthText {
+  font-size: 3mm;
   vertical-align: top;
 }
 
-/* Neue Innentabelle pro Tag */
-.mepInnerTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
+/* Beginn Pause Ende Summe */
 
-.mepInnerTable tr:not(:last-child) td {
-  border-bottom: 0.2mm solid #d6d6d6;
-}
-
-.mepInnerLabel,
-.mepInnerValue {
-  padding: 0.8mm 1mm;
-  font-size: 2.8mm;
-  line-height: 1.15;
-  vertical-align: top;
-}
-
-.mepInnerLabel {
-  width: 13mm;
+.mepTypeCell {
   font-weight: 700;
   white-space: nowrap;
+  vertical-align: top;
 }
 
-.mepInnerValue {
-  text-align: right;
+/* Tageswerte */
+
+.mepDayValueCell {
+  text-align: center;
   white-space: nowrap;
+  vertical-align: top;
 }
+
+/* Fußtext */
 
 .mepFooterNote {
   margin-top: 4mm;
@@ -510,18 +526,13 @@ th {
   color: #555;
 }
 
-@media (min-width: 920px) {
-  .daymeta {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
-@page {
-  size: A4 landscape;
-  margin: 8mm;
-}
+/* ============================= */
+/* PRINT VERSION                 */
+/* ============================= */
 
 @media print {
+
   body {
     padding: 0;
     background: #fff;
@@ -551,4 +562,13 @@ th {
   .mepOuter {
     overflow: visible;
   }
+
+  .mepTable {
+    page-break-inside: avoid;
+  }
+
+  .mepTable tr {
+    page-break-inside: avoid;
+  }
+
 }
