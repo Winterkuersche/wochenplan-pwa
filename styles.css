@@ -2,6 +2,10 @@
 /* BASIS                         */
 /* ============================= */
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: system-ui, Arial, sans-serif;
   margin: 0;
@@ -13,19 +17,35 @@ body {
 h1,
 h2,
 h3 {
-  margin-top: 0;
+  margin: 0;
+}
+
+button,
+select,
+input {
+  font: inherit;
 }
 
 button {
   padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  border-radius: 12px;
+  border: 1px solid #cfcfcf;
   background: #fff;
+  color: #1677ff;
   cursor: pointer;
 }
 
 button:hover {
-  background: #f0f0f0;
+  background: #f4f4f4;
+}
+
+input,
+select {
+  border: 1px solid #d2d2d2;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #222;
 }
 
 .hidden {
@@ -36,6 +56,11 @@ button:hover {
   display: block;
 }
 
+.small {
+  color: #666;
+  font-size: 0.95rem;
+}
+
 
 /* ============================= */
 /* TOPBAR                        */
@@ -43,9 +68,38 @@ button:hover {
 
 .topbar {
   display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 18px;
+}
+
+.compactTopbar {
+  gap: 14px;
+}
+
+.titleLine {
+  display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  gap: 14px 22px;
+  align-items: flex-start;
+}
+
+.titleLine h1 {
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.viewSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .viewBtn.active {
@@ -54,24 +108,174 @@ button:hover {
   border-color: #111;
 }
 
-
-/* ============================= */
-/* TABELLEN (ALLGEMEIN)          */
-/* ============================= */
-
-table {
-  border-collapse: collapse;
+.metaLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: stretch;
 }
 
-th,
-td {
-  border: 1px solid #ccc;
-  padding: 6px 8px;
+.metaLine label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+  min-width: 150px;
 }
 
-th {
-  background: #eee;
-  font-weight: 600;
+.metaLine input[type="date"] {
+  min-width: 150px;
+  background: #efefef;
+  border-color: #e0e0e0;
+}
+
+.miniStat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 150px;
+  padding: 12px 14px;
+  border: 1px solid #d0d0d0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.miniLabel {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.miniStat strong {
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.miniSub {
+  color: #666;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.compactToolbar {
+  gap: 10px;
+}
+
+
+/* ============================= */
+/* SECTION WRAPPER               */
+/* ============================= */
+
+.teamsetup,
+.daynav,
+.overview,
+#printView,
+#formView {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.sectionhead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.sectionhead h2 {
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+
+/* ============================= */
+/* STAMMDATEN                    */
+/* ============================= */
+
+.teamlist {
+  display: grid;
+  gap: 12px;
+}
+
+.teamRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(90px, 0.6fr) minmax(90px, 0.8fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.teamRowLabel {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+
+/* ============================= */
+/* TAGESPLANUNG                  */
+/* ============================= */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.tabs button {
+  color: #1677ff;
+}
+
+.tabs button.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.daymeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.metaBox {
+  padding: 12px 14px;
+  border: 1px solid #d0d0d0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.warnText {
+  color: #7a4a00;
+}
+
+.plannerList {
+  display: grid;
+  gap: 10px;
+}
+
+.dayCard {
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+}
+
+.dayCardTitle {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.dayCardSub {
+  color: #666;
 }
 
 
@@ -79,26 +283,133 @@ th {
 /* WEEK VIEW                     */
 /* ============================= */
 
+.weekWarningsBox {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.warnLine {
+  padding: 10px 12px;
+  border: 1px solid #e3b257;
+  border-radius: 14px;
+  background: #f8f1e3;
+  color: #222;
+  font-weight: 700;
+}
+
+.legendCompact {
+  margin-bottom: 10px;
+  color: #666;
+  font-weight: 600;
+}
+
+.tableWrap,
+.compactTableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#weekTable,
 .weekTable {
   width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
   background: #fff;
 }
 
+#weekTable th,
+#weekTable td,
+.weekTable th,
+.weekTable td {
+  border: 1px solid #d0d0d0;
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+#weekTable th,
 .weekTable th {
   text-align: center;
+  font-weight: 800;
+  background: #f3f3f3;
+  white-space: nowrap;
+}
+
+.nameRoleCell {
+  min-width: 220px;
+}
+
+.nameRoleName {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.nameRoleSub {
+  color: #666;
+  font-weight: 600;
 }
 
 .weekSelect {
   width: 100%;
-  padding: 4px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+  min-width: 92px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 2px solid #d0d0d0;
+  font-size: 1rem;
+  font-weight: 700;
+  background: #fff;
+}
+
+/* Schichtfarben */
+.weekSelect.free {
+  background: #f0f0f0;
+}
+
+.weekSelect.early {
+  background: #dff1ff;
+  border-color: #9ecfff;
+}
+
+.weekSelect.full {
+  background: #ffe9bf;
+  border-color: #f1cb74;
+}
+
+.weekSelect.late {
+  background: #ffdede;
+  border-color: #f1a6a6;
+}
+
+.weekSelect.lateNo {
+  background: #eedfff;
+  border-color: #c8a6ee;
+}
+
+.weekHoursCell,
+.weekTargetCell,
+.weekDeltaCell {
+  text-align: center;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.deltaPos {
+  color: #167a2f;
+}
+
+.deltaNeg {
+  color: #b46300;
+}
+
+.deltaZero {
+  color: #555;
 }
 
 
 /* ============================= */
-/* MEP FORMULAR                  */
+/* MEP / ORIGINAL                */
 /* ============================= */
 
 .printSheet {
@@ -111,11 +422,21 @@ th {
   color: #111;
 }
 
+.printSheet h2 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
 .mepMeta {
-  margin-bottom: 10px;
-  line-height: 1.35;
-  font-size: 18px;
-  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.25;
+  font-size: clamp(1.15rem, 2.6vw, 2rem);
+  font-weight: 800;
+}
+
+.mepMeta > div {
+  margin-bottom: 6px;
 }
 
 .mepTableOuter {
@@ -123,6 +444,7 @@ th {
   overflow-x: auto;
   overflow-y: visible;
   background: #fff;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mepTable {
@@ -151,10 +473,6 @@ th {
   word-break: normal;
 }
 
-/* ============================= */
-/* SPALTENBREITEN               */
-/* ============================= */
-
 .mepNameCol {
   width: 34mm;
 }
@@ -168,7 +486,10 @@ th {
 }
 
 .mepTypeCol {
-  width: 22mm;
+  width: 18mm;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: 700;
 }
 
 .mepDayCol {
@@ -183,11 +504,6 @@ th {
   width: 20mm;
 }
 
-
-/* ============================= */
-/* LINKE SPALTEN                 */
-/* ============================= */
-
 .mepNameCell,
 .mepFuncText,
 .mepPlanText,
@@ -198,60 +514,16 @@ th {
   overflow-wrap: break-word;
 }
 
-
-/* ============================= */
-/* BEGINN / PAUSE / ENDE / SUMME */
-/* ============================= */
-
 .mepTypeCell {
   font-weight: 700;
   white-space: nowrap;
 }
-
-
-/* ============================= */
-/* WOCHENTAG / DATUM / WARENTAG  */
-/* ============================= */
-
-.mepTypeCol {
-  width: 18mm;
-  text-align: center;
-  vertical-align: middle;
-  font-weight: 700;
-}
-
-.mepSubHead {
-  height: 5mm;
-  font-size: 2.6mm;
-  font-weight: 500;
-  text-align: center;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.mepTable thead th {
-  text-align: center;
-  font-weight: 700;
-  vertical-align: middle;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-
-
-/* ============================= */
-/* TAGESWERTE                    */
-/* ============================= */
 
 .mepDayValueCell {
   text-align: center;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-
-
-/* ============================= */
-/* SUBHEADER (DATUM REIHE)       */
-/* ============================= */
 
 .mepSubHead {
   height: 6mm;
@@ -262,15 +534,70 @@ th {
   white-space: nowrap;
 }
 
-
-/* ============================= */
-/* FOOTER                        */
-/* ============================= */
-
 .mepFooterHint {
   margin-top: 4mm;
   font-size: 2.8mm;
   color: #555;
+}
+
+
+/* ============================= */
+/* RESPONSIVE                    */
+/* ============================= */
+
+@media (max-width: 920px) {
+  body {
+    padding: 10px;
+  }
+
+  .topbar,
+  .teamsetup,
+  .daynav,
+  .overview,
+  #formView {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .titleLine {
+    flex-direction: column;
+  }
+
+  .metaLine {
+    flex-direction: column;
+  }
+
+  .miniStat,
+  .metaLine label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .toolbar,
+  .viewSwitch,
+  .tabs {
+    width: 100%;
+  }
+
+  .toolbar button,
+  .viewSwitch button,
+  .tabs button {
+    flex: 1 1 auto;
+  }
+
+  .teamRow {
+    grid-template-columns: 1fr;
+  }
+
+  .printSheet {
+    max-width: none;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .mepMeta {
+    font-size: 1.15rem;
+  }
 }
 
 
@@ -301,11 +628,13 @@ th {
     margin: 0;
     padding: 0;
     border: none;
+    background: #fff;
   }
 
   .printSheet {
     width: 100%;
     max-width: none;
+    min-height: auto;
     margin: 0;
     padding: 0;
     border-radius: 0;
@@ -329,5 +658,9 @@ th {
 
   .mepDayCol {
     width: auto;
+  }
+
+  .mepTable tr {
+    page-break-inside: avoid;
   }
 }
