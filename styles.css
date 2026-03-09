@@ -417,47 +417,17 @@ th {
 
 /* Original-nahe MEP-Druckansicht */
 .mepPage {
-  width: 297mm;
+  width: 100%;
+  max-width: 297mm;
   min-height: 190mm;
   background: #fff;
   margin: 0 auto;
   color: #111;
 }
 
-.mepHeaderRow1 {
-  display: flex;
-  justify-content: space-between;
-  align-items: end;
-  gap: 10mm;
-  margin-bottom: 5mm;
-}
-
-.mepTitle {
-  font-size: 8.5mm;
-  font-weight: 700;
-  line-height: 1.05;
-}
-
-.mepFiliale {
-  font-size: 4.1mm;
-  font-weight: 700;
-  min-width: 48mm;
-  text-align: left;
-}
-
-.mepHeaderRow2 {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8mm;
-  margin-bottom: 5mm;
-  font-size: 4.1mm;
-  font-weight: 600;
-}
-
 .mepOuter {
   border: 0.4mm solid #8e8e8e;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .mepTable {
@@ -470,57 +440,37 @@ th {
 .mepTable td {
   border: 0.3mm solid #9b9b9b;
   padding: 1.2mm 1mm;
-  font-size: 3.1mm;
-  line-height: 1.15;
+  font-size: 3mm;
+  line-height: 1.2;
   vertical-align: top;
   background: #fff;
   white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.mepTable thead th {
-  text-align: center;
-  vertical-align: middle;
-  font-weight: 700;
-}
-
-.mepNameCol { width: 34mm; }
-.mepFuncCol { width: 18mm; }
-.mepPlanCol { width: 20mm; }
-.mepDayCol  { width: 34mm; }
-.mepWeekCol { width: 20mm; }
-
-.mepNameCell {
-  vertical-align: top;
-}
-
-.mepNameMain {
-  font-weight: 700;
-  font-size: 3.2mm;
-  line-height: 1.15;
-}
-
-.mepFuncText,
-.mepPlanText,
-.mepWeekText {
-  font-size: 3.1mm;
-}
+.mepNameCol  { width: 28mm; }
+.mepFuncCol  { width: 16mm; }
+.mepPlanCol  { width: 18mm; }
+.mepDayCol   { width: 28mm; }
+.mepWeekCol  { width: 18mm; }
 
 .mepDayBlock {
   display: grid;
-  grid-template-columns: 13mm 1fr;
-  row-gap: 1mm;
-  column-gap: 1.2mm;
+  grid-template-columns: 10mm 1fr;
+  row-gap: 0.8mm;
+  column-gap: 1mm;
   align-items: start;
 }
 
 .mepDayLabel {
-  font-size: 2.8mm;
+  font-size: 2.6mm;
   font-weight: 700;
 }
 
 .mepDayValue {
-  font-size: 3mm;
-  min-height: 3.4mm;
+  font-size: 2.8mm;
+  min-height: 3.2mm;
+  text-align: left;
 }
 
 .mepEmpty {
