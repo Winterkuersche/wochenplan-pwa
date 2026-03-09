@@ -1,20 +1,30 @@
 function buildMepDayBlock(shiftKey) {
   const data = getFormDataForShift(shiftKey);
 
+  const start = data.start || "";
+  const pause = data.pause || "";
+  const end = data.end || "";
+  const sum = data.sum || "";
+
   return `
-    <div class="mepDayBlock">
-      <div class="mepDayLabel">Beginn</div>
-      <div class="mepDayValue ${data.start ? "" : "mepEmpty"}">${data.start || ""}</div>
-
-      <div class="mepDayLabel">Ende</div>
-      <div class="mepDayValue ${data.end ? "" : "mepEmpty"}">${data.end || ""}</div>
-
-      <div class="mepDayLabel">Pause</div>
-      <div class="mepDayValue ${data.pause ? "" : "mepEmpty"}">${data.pause || ""}</div>
-
-      <div class="mepDayLabel">Summe</div>
-      <div class="mepDayValue ${data.sum ? "" : "mepEmpty"}">${data.sum || ""}</div>
-    </div>
+    <table class="mepInnerTable">
+      <tr>
+        <td class="mepInnerLabel">Beginn</td>
+        <td class="mepInnerValue">${start}</td>
+      </tr>
+      <tr>
+        <td class="mepInnerLabel">Pause</td>
+        <td class="mepInnerValue">${pause}</td>
+      </tr>
+      <tr>
+        <td class="mepInnerLabel">Ende</td>
+        <td class="mepInnerValue">${end}</td>
+      </tr>
+      <tr>
+        <td class="mepInnerLabel">Summe</td>
+        <td class="mepInnerValue">${sum}</td>
+      </tr>
+    </table>
   `;
 }
 
@@ -28,7 +38,7 @@ function renderMepTable() {
 
     const tdName = document.createElement("td");
     tdName.className = "mepNameCell";
-    tdName.innerHTML = `<div class="mepNameMain">${emp.name || "—"}</div>`;
+    tdName.innerHTML = `${emp.name || "—"}`;
     tr.appendChild(tdName);
 
     const tdFunc = document.createElement("td");
@@ -43,6 +53,7 @@ function renderMepTable() {
 
     DAYS.forEach(d => {
       const td = document.createElement("td");
+      td.className = "mepDayCell";
       td.innerHTML = buildMepDayBlock(emp.days[d.key]);
       tr.appendChild(td);
     });
