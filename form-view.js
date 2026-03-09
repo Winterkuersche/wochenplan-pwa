@@ -2,6 +2,10 @@ function pad2Form(n) {
   return String(n).padStart(2, "0");
 }
 
+function formatMonthYearFromDateForm(date) {
+  return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
+}
+
 function formatShortDateForm(date) {
   return `${pad2Form(date.getDate())}.${pad2Form(date.getMonth() + 1)}`;
 }
