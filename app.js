@@ -4,7 +4,8 @@ const DAYS = [
   { key: "mi", label: "Mi", full: "Mittwoch" },
   { key: "do", label: "Do", full: "Donnerstag" },
   { key: "fr", label: "Fr", full: "Freitag" },
-  { key: "sa", label: "Sa", full: "Samstag" }
+  { key: "sa", label: "Sa", full: "Samstag" },
+  { key: "so", label: "So", full: "Sonntag" }
 ];
 
 const ROLE_OPTIONS = [
@@ -33,12 +34,12 @@ const SHIFTS = [
   { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00", type: "lateNo" }
 ];
 
-const MASTER_KEY = "wochenplan_master_v1";
-const WEEK_KEY = "wochenplan_week_v3";
-const UI_KEY = "wochenplan_ui_v7";
+const MASTER_KEY = "wochenplan_master_v2";
+const PLAN_KEY = "wochenplan_monthplan_v1";
+const UI_KEY = "wochenplan_ui_v8";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
-let currentDay = "mo";
+let currentDayIndex = 0;
 let uiState = loadUiState();
 let state = buildInitialState();
 
@@ -51,7 +52,6 @@ const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
 const weekTableBodyEl = document.getElementById("weekTableBody");
-const mepTableBodyEl = document.getElementById("mepTableBody");
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
@@ -68,45 +68,57 @@ const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewFormEl = document.getElementById("btnViewForm");
 const weekWarningsEl = document.getElementById("weekWarnings");
-const mepWeekFromEl = document.getElementById("mepWeekFrom");
-const mepWeekToEl = document.getElementById("mepWeekTo");
-const mepMonthYearEl = document.getElementById("mepMonthYear");
 
-/* ========= STATE HELPERS ========= */
-function createDefaultEmployees() {
-  return Array.from({ length: 13 }, (_, i) => ({
-    id: `emp_${i + 1}`,
-    name: "",
-    roleKey: "",
-    target: ""
-  }));
+/* ========= BASICS ========= */
+function pad2(n) {
+  return String(n).padStart(2, "0");
 }
 
-function createEmptyWeekDays() {
-  return Object.fromEntries(DAYS.map((d) => [d.key, "-"]));
+function toIsoDate(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
-function createDefaultWeekShifts() {
-  return Array.from({ length: 13 }, (_, i) => ({
-    id: `emp_${i + 1}`,
-    days: createEmptyWeekDays()
-  }));
+function isoToDate(iso) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function defaultMasterState() {
-  return {
-    employees: createDefaultEmployees()
-  };
+function cloneDate(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function defaultWeekState() {
-  return {
-    weekFrom: "",
-    weekTo: "",
-    employees: createDefaultWeekShifts()
-  };
+function roleToTarget(roleKey) {
+  const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
+  return found?.target || "";
 }
 
+function hmToMinutes(hm) {
+  if (!hm) return 0;
+  const [h, m] = hm.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
+  return h * 60 + m;
+}
+
+function minutesToHM(min) {
+  min = Math.max(0, Math.round(min));
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
+function formatSignedMinutes(min) {
+  if (min === 0) return "0:00";
+  return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
+}
+
+function formatMonthYear(dateStr) {
+  if (!dateStr) return "____________";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "____________";
+  return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
+}
+
+/* ========= STORAGE ========= */
 function defaultUiState() {
   return {
     teamCollapsed: false,
@@ -144,55 +156,56 @@ function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-function roleToTarget(roleKey) {
-  const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
-  return found?.target || "";
+/* ========= STATE ========= */
+function createDefaultEmployees() {
+  return Array.from({ length: 13 }, (_, i) => ({
+    id: `emp_${i + 1}`,
+    name: i === 0 ? "Stephan M" : `Mitarbeiter ${i + 1}`,
+    roleKey: i === 0 ? "TL" : i === 1 ? "TZ30" : i === 2 ? "TZ20" : i === 3 ? "TZ15" : i === 4 ? "TZ20" : "",
+    target: i === 0 ? "30:00" : i === 1 ? "30:00" : i === 2 ? "20:00" : i === 3 ? "15:00" : i === 4 ? "20:00" : ""
+  }));
+}
+
+function defaultMasterState() {
+  return {
+    employees: createDefaultEmployees()
+  };
+}
+
+function defaultPlanState() {
+  return {
+    weekFrom: "",
+    weekTo: "",
+    shiftsByEmployee: {}
+  };
 }
 
 function buildInitialState() {
   const master = loadJson(MASTER_KEY, defaultMasterState());
-  const week = loadJson(WEEK_KEY, defaultWeekState());
+  const plan = loadJson(PLAN_KEY, defaultPlanState());
 
-  const masterEmployees = Array.isArray(master.employees) ? master.employees.slice(0, 13) : [];
-  while (masterEmployees.length < 13) {
-    const i = masterEmployees.length;
-    masterEmployees.push({
+  const employees = Array.isArray(master.employees) ? master.employees.slice(0, 13) : createDefaultEmployees();
+  while (employees.length < 13) {
+    const i = employees.length;
+    employees.push({
       id: `emp_${i + 1}`,
-      name: "",
+      name: `Mitarbeiter ${i + 1}`,
       roleKey: "",
       target: ""
     });
   }
 
-  const weekEmployees = Array.isArray(week.employees) ? week.employees.slice(0, 13) : [];
-  while (weekEmployees.length < 13) {
-    const i = weekEmployees.length;
-    weekEmployees.push({
-      id: `emp_${i + 1}`,
-      days: createEmptyWeekDays()
-    });
-  }
-
   return {
-    weekFrom: week.weekFrom || "",
-    weekTo: week.weekTo || "",
+    weekFrom: plan.weekFrom || "",
+    weekTo: plan.weekTo || "",
     monthPlan: null,
-    employees: masterEmployees.map((emp, index) => {
-      const weekEmp = weekEmployees[index] || { id: emp.id, days: createEmptyWeekDays() };
-      const normalizedDays = createEmptyWeekDays();
-
-      for (const d of DAYS) {
-        normalizedDays[d.key] = weekEmp.days?.[d.key] || "-";
-      }
-
-      return {
-        id: emp.id || `emp_${index + 1}`,
-        name: emp.name || "",
-        roleKey: emp.roleKey || "",
-        target: emp.target || roleToTarget(emp.roleKey || ""),
-        days: normalizedDays
-      };
-    })
+    employees: employees.map((emp, index) => ({
+      id: emp.id || `emp_${index + 1}`,
+      name: emp.name || "",
+      roleKey: emp.roleKey || "",
+      target: emp.target || roleToTarget(emp.roleKey || ""),
+      shifts: plan.shiftsByEmployee?.[emp.id] || {}
+    }))
   };
 }
 
@@ -207,32 +220,23 @@ function saveMasterData() {
   });
 }
 
-function saveWeekData() {
-  saveJson(WEEK_KEY, {
+function savePlanData() {
+  const shiftsByEmployee = {};
+  state.employees.forEach((emp) => {
+    shiftsByEmployee[emp.id] = { ...emp.shifts };
+  });
+
+  saveJson(PLAN_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
-    employees: state.employees.map((emp) => ({
-      id: emp.id,
-      days: { ...emp.days }
-    }))
+    shiftsByEmployee
   });
 }
 
-/* ========= MONTH ENGINE ========= */
+/* ========= MONTH / WEEK ========= */
 function getActiveMonthPlan() {
-  const startStr =
-    state.weekFrom ||
-    state.weekStart ||
-    state.week?.start ||
-    state.week?.from ||
-    state.weekFrom ||
-    weekFromEl?.value ||
-    "";
-
-  if (!startStr) return null;
-
-  if (typeof getMonthPlanFromDateString !== "function") return null;
-
+  const startStr = state.weekFrom || weekFromEl?.value || "";
+  if (!startStr || typeof getMonthPlanFromDateString !== "function") return null;
   return getMonthPlanFromDateString(startStr);
 }
 
@@ -245,38 +249,45 @@ function getCurrentMonthWeeks() {
   return state.monthPlan?.weeks || [];
 }
 
-/* ========= TIME HELPERS ========= */
-function hmToMinutes(hm) {
-  if (!hm) return 0;
-  const [h, m] = hm.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
-  return h * 60 + m;
+function getActiveWeekDays() {
+  const iso = state.weekFrom || weekFromEl?.value || "";
+  if (!iso) return [];
+
+  const weeks = getCurrentMonthWeeks();
+  for (const week of weeks) {
+    if (week.some((day) => day.iso === iso)) {
+      return week;
+    }
+  }
+
+  return weeks[0] || [];
 }
 
-function minutesToHM(min) {
-  min = Math.max(0, Math.round(min));
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${h}:${String(m).padStart(2, "0")}`;
+function syncWeekRangeFromActiveWeek() {
+  const week = getActiveWeekDays();
+  if (!week.length) return;
+
+  state.weekFrom = week[0].iso;
+  state.weekTo = week[6].iso;
+
+  if (weekFromEl) weekFromEl.value = state.weekFrom;
+  if (weekToEl) weekToEl.value = state.weekTo;
 }
 
-function formatSignedMinutes(min) {
-  if (min === 0) return "0:00";
-  return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
+function getDayObjectByIndex(index) {
+  const week = getActiveWeekDays();
+  return week[index] || null;
 }
 
-function formatMonthYear(dateStr) {
-  if (!dateStr) return "____________";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "____________";
-
-  return d.toLocaleDateString("de-DE", {
-    month: "2-digit",
-    year: "numeric"
-  });
+function getCurrentDayObject() {
+  return getDayObjectByIndex(currentDayIndex);
 }
 
-/* ========= SHIFT HELPERS ========= */
+function getCurrentDayIso() {
+  return getCurrentDayObject()?.iso || "";
+}
+
+/* ========= SHIFTS ========= */
 function getShiftByKey(key) {
   return SHIFTS.find((s) => s.key === key) || SHIFTS[0];
 }
@@ -311,42 +322,60 @@ function isClosingShift(shiftKey) {
   return ["G1", "L1", "L2", "L3", "L4"].includes(shiftKey);
 }
 
-/* ========= CALCULATIONS ========= */
+function getShiftForEmployeeOnIso(emp, iso) {
+  return emp.shifts?.[iso] || "-";
+}
+
+function setShiftForEmployeeOnIso(emp, iso, shiftKey) {
+  if (!emp.shifts) emp.shifts = {};
+  emp.shifts[iso] = shiftKey;
+}
+
+/* ========= CALC ========= */
+function totalMinutesForEmployeeInWeek(emp, weekDays) {
+  return weekDays.reduce((sum, day) => sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso)), 0);
+}
+
 function totalMinutesForEmployee(emp) {
-  return DAYS.reduce((sum, d) => sum + netMinutesForShift(emp.days[d.key]), 0);
+  return totalMinutesForEmployeeInWeek(emp, getActiveWeekDays());
 }
 
 function deltaMinutes(emp) {
   return totalMinutesForEmployee(emp) - hmToMinutes(emp.target || "0:00");
 }
 
-function totalMinutesForDay(dayKey) {
-  return state.employees.reduce((sum, emp) => sum + netMinutesForShift(emp.days[dayKey]), 0);
+function totalMinutesForDayIso(iso) {
+  return state.employees.reduce((sum, emp) => sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, iso)), 0);
+}
+
+function totalMinutesForDay(dayKeyOrIndex) {
+  if (typeof dayKeyOrIndex === "number") {
+    const day = getDayObjectByIndex(dayKeyOrIndex);
+    return day ? totalMinutesForDayIso(day.iso) : 0;
+  }
+
+  const day = DAYS.findIndex((d) => d.key === dayKeyOrIndex);
+  return totalMinutesForDay(day);
 }
 
 function totalMinutesForWeek() {
-  return state.employees.reduce((sum, emp) => sum + totalMinutesForEmployee(emp), 0);
-}
-
-function getPreviousDayKey(dayKey) {
-  const idx = DAYS.findIndex((d) => d.key === dayKey);
-  return idx <= 0 ? null : DAYS[idx - 1].key;
-}
-
-function hadLateShiftPreviousDay(emp, dayKey) {
-  const prev = getPreviousDayKey(dayKey);
-  return prev ? isClosingShift(emp.days[prev]) : false;
-}
-
-function getClosingWorkersForDay(dayKey) {
-  return state.employees.filter((emp) => isClosingShift(emp.days[dayKey]));
+  const week = getActiveWeekDays();
+  return state.employees.reduce((sum, emp) => sum + totalMinutesForEmployeeInWeek(emp, week), 0);
 }
 
 /* ========= WARNINGS ========= */
-function getDayWarnings(dayKey) {
+function getClosingWorkersForIso(iso) {
+  return state.employees.filter((emp) => isClosingShift(getShiftForEmployeeOnIso(emp, iso)));
+}
+
+function getDayWarningsByIndex(index) {
+  const week = getActiveWeekDays();
+  const day = week[index];
+  if (!day) return [];
+
   const warnings = [];
-  const closers = getClosingWorkersForDay(dayKey);
-  const dayLabel = DAYS.find((d) => d.key === dayKey)?.label || dayKey;
+  const closers = getClosingWorkersForIso(day.iso);
+  const dayLabel = day.weekdayLabel;
 
   if (closers.length === 0) {
     warnings.push(`⚠ ${dayLabel}: keine Schicht bis 19:10.`);
@@ -356,13 +385,12 @@ function getDayWarnings(dayKey) {
     warnings.push(`⚠ ${dayLabel}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
 
-  const idx = DAYS.findIndex((d) => d.key === dayKey);
-  if (idx >= 0 && idx < DAYS.length - 1 && closers.length > 0) {
-    const next = DAYS[idx + 1].key;
-    const hasAnchor = closers.some((emp) => emp.days[next] !== "-");
+  if (index < week.length - 1 && closers.length > 0) {
+    const nextDay = week[index + 1];
+    const hasAnchor = closers.some((emp) => getShiftForEmployeeOnIso(emp, nextDay.iso) !== "-");
 
     if (!hasAnchor) {
-      warnings.push(`⚠ ${DAYS[idx + 1].label}: niemand vom ${DAYS[idx].label}-Abschluss eingeplant.`);
+      warnings.push(`⚠ ${nextDay.weekdayLabel}: niemand vom ${day.weekdayLabel}-Abschluss eingeplant.`);
     }
   }
 
@@ -370,20 +398,19 @@ function getDayWarnings(dayKey) {
 }
 
 function getWeekWarnings() {
-  return DAYS.flatMap((d) => getDayWarnings(d.key));
+  const week = getActiveWeekDays();
+  return week.slice(0, 6).flatMap((_, index) => getDayWarningsByIndex(index));
 }
 
-/* ========= FORM / MEP HELPERS ========= */
+/* ========= FORM HELPERS ========= */
 function getFormPauseText(shiftKey) {
   switch (shiftKey) {
     case "G1":
       return "14:00-15:10";
     case "L1":
-      return "16:00-16:10";
     case "L2":
       return "16:00-16:10";
     case "L3":
-      return "17:00-17:10";
     case "L4":
       return "17:00-17:10";
     default:
@@ -411,7 +438,7 @@ function getFormDataForShift(shiftKey) {
   };
 }
 
-/* ========= COMMON RENDER ========= */
+/* ========= RENDER ========= */
 function renderTeamSectionVisibility() {
   teamSectionEl.classList.toggle("hidden", !!uiState.teamCollapsed);
   btnToggleTeamEl.textContent = uiState.teamCollapsed ? "Team einblenden" : "Team ausblenden";
@@ -430,15 +457,15 @@ function renderView() {
 }
 
 function renderTeamSetup() {
+  if (!teamListEl) return;
   teamListEl.innerHTML = "";
 
-  state.employees.forEach((emp, idx) => {
+  state.employees.forEach((emp) => {
     const row = document.createElement("div");
     row.className = "teamRow";
 
     const nameInput = document.createElement("input");
     nameInput.type = "text";
-    nameInput.placeholder = `Mitarbeiter ${idx + 1}`;
     nameInput.value = emp.name;
     nameInput.addEventListener("change", () => {
       emp.name = nameInput.value;
@@ -463,7 +490,6 @@ function renderTeamSetup() {
 
     const targetInput = document.createElement("input");
     targetInput.type = "text";
-    targetInput.placeholder = "Soll";
     targetInput.value = emp.target || "";
     targetInput.addEventListener("change", () => {
       emp.target = targetInput.value;
@@ -482,20 +508,17 @@ function renderTeamSetup() {
 function renderSummary() {
   const totalWeek = totalMinutesForWeek();
   const rest = MAX_WEEKLY_MINUTES - totalWeek;
-  const dayTotal = totalMinutesForDay(currentDay);
-  const lateCount = getClosingWorkersForDay(currentDay).length;
+  const currentDay = getCurrentDayObject();
+  const currentDayTotal = currentDay ? totalMinutesForDayIso(currentDay.iso) : 0;
+  const currentClosers = currentDay ? getClosingWorkersForIso(currentDay.iso).length : 0;
 
   weeklyHoursActualEl.textContent = minutesToHM(totalWeek);
   weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(rest));
   weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
 
-  dayHoursActualEl.textContent = minutesToHM(dayTotal);
-  dayHoursSubEl.textContent = DAYS.find((d) => d.key === currentDay)?.full || "Aktueller Tag";
-  lateCountInfoEl.textContent = `${lateCount} / 2`;
-
-  if (mepWeekFromEl) mepWeekFromEl.textContent = state.weekFrom || "____________";
-  if (mepWeekToEl) mepWeekToEl.textContent = state.weekTo || "____________";
-  if (mepMonthYearEl) mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
+  dayHoursActualEl.textContent = minutesToHM(currentDayTotal);
+  dayHoursSubEl.textContent = currentDay ? currentDay.weekdayLabel : "—";
+  lateCountInfoEl.textContent = `${currentClosers} / 2`;
 }
 
 function renderAllViews() {
@@ -508,9 +531,7 @@ function renderAllViews() {
 
 function renderAll() {
   syncMonthPlanToState();
-
-  weekFromEl.value = state.weekFrom || "";
-  weekToEl.value = state.weekTo || "";
+  syncWeekRangeFromActiveWeek();
 
   renderTeamSectionVisibility();
   renderView();
@@ -522,14 +543,14 @@ function renderAll() {
 weekFromEl.addEventListener("change", () => {
   state.weekFrom = weekFromEl.value;
   syncMonthPlanToState();
-  saveWeekData();
+  syncWeekRangeFromActiveWeek();
+  savePlanData();
   renderAllViews();
 });
 
 weekToEl.addEventListener("change", () => {
   state.weekTo = weekToEl.value;
-  syncMonthPlanToState();
-  saveWeekData();
+  savePlanData();
   renderAllViews();
 });
 
@@ -567,21 +588,13 @@ document.getElementById("btnSaveMaster").addEventListener("click", () => {
 });
 
 document.getElementById("btnResetWeek").addEventListener("click", () => {
-  if (!confirm("Neue Woche starten und nur den Wochenplan leeren? Stammdaten bleiben erhalten.")) {
-    return;
-  }
-
-  state.weekFrom = "";
-  state.weekTo = "";
+  if (!confirm("Monatsplan leeren? Stammdaten bleiben erhalten.")) return;
 
   state.employees.forEach((emp) => {
-    for (const d of DAYS) {
-      emp.days[d.key] = "-";
-    }
+    emp.shifts = {};
   });
 
-  syncMonthPlanToState();
-  saveWeekData();
+  savePlanData();
   renderAll();
 });
 
