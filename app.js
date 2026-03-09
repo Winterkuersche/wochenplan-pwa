@@ -555,4 +555,6 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();
+window.addEventListener("load", () => {
+  renderAll();
+});
