@@ -1,36 +1,40 @@
-function pad2(n) {
+function pad2Form(n) {
   return String(n).padStart(2, "0");
 }
 
 function formatShortDate(date) {
-  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}`;
+  return `${pad2Form(date.getDate())}.${pad2Form(date.getMonth() + 1)}`;
 }
 
 function formatIsoDate(date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  return `${date.getFullYear()}-${pad2Form(date.getMonth() + 1)}-${pad2Form(date.getDate())}`;
 }
 
 function formatMonthYearFromDate(date) {
-  return `${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+  return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
-function getDayData(emp, dayKey) {
-  return getFormDataForShift(emp.days?.[dayKey] || "-");
+function getFormDayData(emp, isoDate) {
+  const shiftKey = getShiftForEmployeeOnIso(emp, isoDate);
+  return getFormDataForShift(shiftKey);
 }
 
-function buildEmployeeRows(emp, weekDays) {
-  const dayKeys = ["mo", "di", "mi", "do", "fr", "sa", "so"];
+function totalMinutesForEmployeeInMonth(emp, monthPlan) {
+  if (!monthPlan?.weeks) return 0;
 
-  const dayData = {
-    mo: getDayData(emp, "mo"),
-    di: getDayData(emp, "di"),
-    mi: getDayData(emp, "mi"),
-    do: getDayData(emp, "do"),
-    fr: getDayData(emp, "fr"),
-    sa: getDayData(emp, "sa"),
-    so: { start: "", pause: "", end: "", sum: "" }
-  };
+  let total = 0;
 
+  monthPlan.weeks.forEach((week) => {
+    week.forEach((day) => {
+      if (!day.inCurrentMonth) return;
+      total += netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
+    });
+  });
+
+  return total;
+}
+
+function buildEmployeeRows(emp, weekDays, monthPlan) {
   const rows = [
     { label: "Beginn", key: "start" },
     { label: "Pause", key: "pause" },
@@ -39,6 +43,13 @@ function buildEmployeeRows(emp, weekDays) {
   ];
 
   let html = "";
+
+  const weekMinutes = weekDays.reduce((sum, day) => {
+    if (day.isOutsideMonth) return sum;
+    return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
+  }, 0);
+
+  const monthMinutes = totalMinutesForEmployeeInMonth(emp, monthPlan);
 
   rows.forEach((rowDef, rowIndex) => {
     html += "<tr>";
@@ -53,21 +64,21 @@ function buildEmployeeRows(emp, weekDays) {
 
     html += `<td class="mepTypeCell">${rowDef.label}</td>`;
 
-    weekDays.forEach((day, idx) => {
-      const dayKey = dayKeys[idx];
+    weekDays.forEach((day) => {
+      const dayData = getFormDayData(emp, day.iso);
       const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
 
       html += `
         <td class="mepDayValueCell" style="${grayStyle}">
-          ${dayData[dayKey][rowDef.key] || ""}
+          ${dayData[rowDef.key] || ""}
         </td>
       `;
     });
 
     if (rowIndex === 0) {
       html += `
-        <td class="mepWeekText" rowspan="4">${minutesToHM(totalMinutesForEmployee(emp))}</td>
-        <td class="mepMonthText" rowspan="4"></td>
+        <td class="mepWeekText" rowspan="4">${minutesToHM(weekMinutes)}</td>
+        <td class="mepMonthText" rowspan="4">${minutesToHM(monthMinutes)}</td>
       `;
     }
 
@@ -77,7 +88,7 @@ function buildEmployeeRows(emp, weekDays) {
   return html;
 }
 
-function buildWeekSheet(weekDays) {
+function buildWeekSheet(weekDays, monthPlan) {
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
 
@@ -143,7 +154,7 @@ function buildWeekSheet(weekDays) {
   `;
 
   state.employees.forEach((emp) => {
-    html += buildEmployeeRows(emp, weekDays);
+    html += buildEmployeeRows(emp, weekDays, monthPlan);
   });
 
   html += `
@@ -170,6 +181,6 @@ function renderFormView() {
   if (!monthPlan || !Array.isArray(monthPlan.weeks)) return;
 
   monthPlan.weeks.forEach((weekDays) => {
-    formViewEl.innerHTML += buildWeekSheet(weekDays);
+    formViewEl.innerHTML += buildWeekSheet(weekDays, monthPlan);
   });
 }
