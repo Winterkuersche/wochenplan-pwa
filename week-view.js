@@ -45,6 +45,78 @@ function getWeekSelectClassByValue(value) {
   return `shift-${String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }
 
+function applyWeekSelection(emp, isoDate, value) {
+
+  if (!state.schedule) state.schedule = {};
+  if (!state.absences) state.absences = [];
+
+  const empId = emp.id;
+
+  // alte Schicht entfernen
+  if (state.schedule?.[isoDate]?.[empId]) {
+    delete state.schedule[isoDate][empId];
+  }
+
+  // alte Abwesenheit für diesen Tag entfernen
+  state.absences = state.absences.filter((a) => {
+    if (a.employeeId !== empId) return true;
+    if (!isIsoDateInRange(isoDate, a.from, a.to)) return true;
+    return false;
+  });
+
+  // --- Auswahl verarbeiten ---
+
+  if (value === "") {
+    // frei
+    return;
+  }
+
+  if (value === "U") {
+    state.absences.push(
+      createAbsenceEntry({
+        employeeId: empId,
+        type: "vacation",
+        from: isoDate,
+        to: isoDate
+      })
+    );
+    return;
+  }
+
+  if (value === "K") {
+    state.absences.push(
+      createAbsenceEntry({
+        employeeId: empId,
+        type: "sick",
+        from: isoDate,
+        to: isoDate
+      })
+    );
+    return;
+  }
+
+  if (value === "AH") {
+    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+
+    state.schedule[isoDate][empId] = {
+      type: "external-help",
+      label: "AH",
+      minutes: 0
+    };
+    return;
+  }
+
+  // Frühschichten
+  if (value.startsWith("F")) {
+    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+
+    const entry = buildEarlyShiftEntry(value);
+    if (entry) {
+      state.schedule[isoDate][empId] = entry;
+    }
+  }
+}
+
 function createWeekSelect(emp, isoDate) {
   const sel = document.createElement("select");
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
@@ -84,16 +156,16 @@ function createWeekSelect(emp, isoDate) {
     sel.appendChild(opt);
   });
 
-  sel.value = currentValue;
-
   sel.addEventListener("change", () => {
-    const selectedValue = sel.value;
+  const selectedValue = sel.value;
 
-    console.log("Neue Auswahl im Wochenplan:", {
-      employeeId: emp.id,
-      isoDate,
-      selectedValue
-    });
+  applyWeekSelection(emp, isoDate, selectedValue);
+
+  sel.className = `weekSelect ${getWeekSelectClassByValue(selectedValue)}`;
+
+  savePlanData();
+  renderAllViews();
+});
 
     sel.className = `weekSelect ${getWeekSelectClassByValue(selectedValue)}`;
 
