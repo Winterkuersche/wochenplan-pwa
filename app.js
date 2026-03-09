@@ -17,27 +17,20 @@ const ROLE_OPTIONS = [
 ];
 
 const SHIFTS = [
-  { key: "-",   label: "-",   start: "",      end: "",      desc: "frei",        type: "free" },
-
-  { key: "F3",  label: "F3",  start: "09:00", end: "12:00", desc: "09:00-12:00", type: "early" },
-  { key: "F4",  label: "F4",  start: "09:00", end: "13:00", desc: "09:00-13:00", type: "early" },
-  { key: "F5",  label: "F5",  start: "09:00", end: "14:00", desc: "09:00-14:00", type: "early" },
-  { key: "F6",  label: "F6",  start: "09:00", end: "15:00", desc: "09:00-15:00", type: "early" },
-
-  { key: "G1",  label: "G1",  start: "09:00", end: "19:10", desc: "09:00-19:10", type: "full" },
-
-  { key: "L1",  label: "L1",  start: "13:00", end: "19:10", desc: "13:00-19:10", type: "late" },
-  { key: "L2",  label: "L2",  start: "14:00", end: "19:10", desc: "14:00-19:10", type: "late" },
-  { key: "L3",  label: "L3",  start: "15:00", end: "19:10", desc: "15:00-19:10", type: "late" },
-  { key: "L4",  label: "L4",  start: "16:00", end: "19:10", desc: "16:00-19:10", type: "late" },
-
+  { key: "-", label: "-", start: "", end: "", desc: "frei", type: "free" },
+  { key: "F3", label: "F3", start: "09:00", end: "12:00", desc: "09:00-12:00", type: "early" },
+  { key: "F4", label: "F4", start: "09:00", end: "13:00", desc: "09:00-13:00", type: "early" },
+  { key: "F5", label: "F5", start: "09:00", end: "14:00", desc: "09:00-14:00", type: "early" },
+  { key: "F6", label: "F6", start: "09:00", end: "15:00", desc: "09:00-15:00", type: "early" },
+  { key: "G1", label: "G1", start: "09:00", end: "19:10", desc: "09:00-19:10", type: "full" },
+  { key: "L1", label: "L1", start: "13:00", end: "19:10", desc: "13:00-19:10", type: "late" },
+  { key: "L2", label: "L2", start: "14:00", end: "19:10", desc: "14:00-19:10", type: "late" },
+  { key: "L3", label: "L3", start: "15:00", end: "19:10", desc: "15:00-19:10", type: "late" },
+  { key: "L4", label: "L4", start: "16:00", end: "19:10", desc: "16:00-19:10", type: "late" },
   { key: "L1E", label: "L1E", start: "13:00", end: "19:00", desc: "13:00-19:00", type: "lateNo" },
   { key: "L2E", label: "L2E", start: "14:00", end: "19:00", desc: "14:00-19:00", type: "lateNo" },
   { key: "L3E", label: "L3E", start: "15:00", end: "19:00", desc: "15:00-19:00", type: "lateNo" },
   { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00", type: "lateNo" }
-
-  // Später leicht erweiterbar:
-  // { key: "U", label: "U", start: "", end: "", desc: "Urlaub", type: "absence" }
 ];
 
 const MASTER_KEY = "wochenplan_master_v1";
@@ -50,7 +43,6 @@ let uiState = loadUiState();
 let state = buildInitialState();
 
 /* ========= DOM ========= */
-
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
 const plannerListEl = document.getElementById("plannerList");
@@ -58,36 +50,29 @@ const metaDayNameEl = document.getElementById("metaDayName");
 const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
-
 const weekTableBodyEl = document.getElementById("weekTableBody");
 const mepTableBodyEl = document.getElementById("mepTableBody");
-
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
 const btnToggleTeamEl = document.getElementById("btnToggleTeam");
-
 const weeklyHoursActualEl = document.getElementById("weeklyHoursActual");
 const weeklyHoursRemainingEl = document.getElementById("weeklyHoursRemaining");
 const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
 const dayHoursActualEl = document.getElementById("dayHoursActual");
 const dayHoursSubEl = document.getElementById("dayHoursSub");
-
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const formViewEl = document.getElementById("formView");
-
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewFormEl = document.getElementById("btnViewForm");
-
 const weekWarningsEl = document.getElementById("weekWarnings");
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
 const mepMonthYearEl = document.getElementById("mepMonthYear");
 
 /* ========= STATE HELPERS ========= */
-
 function createDefaultEmployees() {
   return Array.from({ length: 13 }, (_, i) => ({
     id: `emp_${i + 1}`,
@@ -98,7 +83,7 @@ function createDefaultEmployees() {
 }
 
 function createEmptyWeekDays() {
-  return Object.fromEntries(DAYS.map(d => [d.key, "-"]));
+  return Object.fromEntries(DAYS.map((d) => [d.key, "-"]));
 }
 
 function createDefaultWeekShifts() {
@@ -109,7 +94,9 @@ function createDefaultWeekShifts() {
 }
 
 function defaultMasterState() {
-  return { employees: createDefaultEmployees() };
+  return {
+    employees: createDefaultEmployees()
+  };
 }
 
 function defaultWeekState() {
@@ -130,6 +117,7 @@ function defaultUiState() {
 function loadUiState() {
   const raw = localStorage.getItem(UI_KEY);
   if (!raw) return defaultUiState();
+
   try {
     return { ...defaultUiState(), ...JSON.parse(raw) };
   } catch {
@@ -144,6 +132,7 @@ function saveUiState() {
 function loadJson(key, fallback) {
   const raw = localStorage.getItem(key);
   if (!raw) return fallback;
+
   try {
     return JSON.parse(raw);
   } catch {
@@ -156,7 +145,7 @@ function saveJson(key, value) {
 }
 
 function roleToTarget(roleKey) {
-  const found = ROLE_OPTIONS.find(r => r.key === roleKey);
+  const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
   return found?.target || "";
 }
 
@@ -187,6 +176,7 @@ function buildInitialState() {
   return {
     weekFrom: week.weekFrom || "",
     weekTo: week.weekTo || "",
+    monthPlan: null,
     employees: masterEmployees.map((emp, index) => {
       const weekEmp = weekEmployees[index] || { id: emp.id, days: createEmptyWeekDays() };
       const normalizedDays = createEmptyWeekDays();
@@ -208,7 +198,7 @@ function buildInitialState() {
 
 function saveMasterData() {
   saveJson(MASTER_KEY, {
-    employees: state.employees.map(emp => ({
+    employees: state.employees.map((emp) => ({
       id: emp.id,
       name: emp.name,
       roleKey: emp.roleKey,
@@ -221,15 +211,41 @@ function saveWeekData() {
   saveJson(WEEK_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
-    employees: state.employees.map(emp => ({
+    employees: state.employees.map((emp) => ({
       id: emp.id,
       days: { ...emp.days }
     }))
   });
 }
 
-/* ========= TIME HELPERS ========= */
+/* ========= MONTH ENGINE ========= */
+function getActiveMonthPlan() {
+  const startStr =
+    state.weekFrom ||
+    state.weekStart ||
+    state.week?.start ||
+    state.week?.from ||
+    state.weekFrom ||
+    weekFromEl?.value ||
+    "";
 
+  if (!startStr) return null;
+
+  if (typeof getMonthPlanFromDateString !== "function") return null;
+
+  return getMonthPlanFromDateString(startStr);
+}
+
+function syncMonthPlanToState() {
+  state.monthPlan = getActiveMonthPlan();
+  return state.monthPlan;
+}
+
+function getCurrentMonthWeeks() {
+  return state.monthPlan?.weeks || [];
+}
+
+/* ========= TIME HELPERS ========= */
 function hmToMinutes(hm) {
   if (!hm) return 0;
   const [h, m] = hm.split(":").map(Number);
@@ -253,13 +269,16 @@ function formatMonthYear(dateStr) {
   if (!dateStr) return "____________";
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "____________";
-  return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
+
+  return d.toLocaleDateString("de-DE", {
+    month: "2-digit",
+    year: "numeric"
+  });
 }
 
 /* ========= SHIFT HELPERS ========= */
-
 function getShiftByKey(key) {
-  return SHIFTS.find(s => s.key === key) || SHIFTS[0];
+  return SHIFTS.find((s) => s.key === key) || SHIFTS[0];
 }
 
 function getShiftClassByKey(key) {
@@ -293,7 +312,6 @@ function isClosingShift(shiftKey) {
 }
 
 /* ========= CALCULATIONS ========= */
-
 function totalMinutesForEmployee(emp) {
   return DAYS.reduce((sum, d) => sum + netMinutesForShift(emp.days[d.key]), 0);
 }
@@ -311,7 +329,7 @@ function totalMinutesForWeek() {
 }
 
 function getPreviousDayKey(dayKey) {
-  const idx = DAYS.findIndex(d => d.key === dayKey);
+  const idx = DAYS.findIndex((d) => d.key === dayKey);
   return idx <= 0 ? null : DAYS[idx - 1].key;
 }
 
@@ -321,15 +339,14 @@ function hadLateShiftPreviousDay(emp, dayKey) {
 }
 
 function getClosingWorkersForDay(dayKey) {
-  return state.employees.filter(emp => isClosingShift(emp.days[dayKey]));
+  return state.employees.filter((emp) => isClosingShift(emp.days[dayKey]));
 }
 
 /* ========= WARNINGS ========= */
-
 function getDayWarnings(dayKey) {
   const warnings = [];
   const closers = getClosingWorkersForDay(dayKey);
-  const dayLabel = DAYS.find(d => d.key === dayKey)?.label || dayKey;
+  const dayLabel = DAYS.find((d) => d.key === dayKey)?.label || dayKey;
 
   if (closers.length === 0) {
     warnings.push(`⚠ ${dayLabel}: keine Schicht bis 19:10.`);
@@ -339,10 +356,11 @@ function getDayWarnings(dayKey) {
     warnings.push(`⚠ ${dayLabel}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
 
-  const idx = DAYS.findIndex(d => d.key === dayKey);
+  const idx = DAYS.findIndex((d) => d.key === dayKey);
   if (idx >= 0 && idx < DAYS.length - 1 && closers.length > 0) {
     const next = DAYS[idx + 1].key;
-    const hasAnchor = closers.some(emp => emp.days[next] !== "-");
+    const hasAnchor = closers.some((emp) => emp.days[next] !== "-");
+
     if (!hasAnchor) {
       warnings.push(`⚠ ${DAYS[idx + 1].label}: niemand vom ${DAYS[idx].label}-Abschluss eingeplant.`);
     }
@@ -352,26 +370,37 @@ function getDayWarnings(dayKey) {
 }
 
 function getWeekWarnings() {
-  return DAYS.flatMap(d => getDayWarnings(d.key));
+  return DAYS.flatMap((d) => getDayWarnings(d.key));
 }
 
 /* ========= FORM / MEP HELPERS ========= */
-
 function getFormPauseText(shiftKey) {
   switch (shiftKey) {
-    case "G1": return "14:00-15:10";
-    case "L1": return "16:00-16:10";
-    case "L2": return "16:00-16:10";
-    case "L3": return "17:00-17:10";
-    case "L4": return "17:00-17:10";
-    default: return "";
+    case "G1":
+      return "14:00-15:10";
+    case "L1":
+      return "16:00-16:10";
+    case "L2":
+      return "16:00-16:10";
+    case "L3":
+      return "17:00-17:10";
+    case "L4":
+      return "17:00-17:10";
+    default:
+      return "";
   }
 }
 
 function getFormDataForShift(shiftKey) {
   const shift = getShiftByKey(shiftKey);
+
   if (!shift.start || !shift.end) {
-    return { start: "", end: "", pause: "", sum: "" };
+    return {
+      start: "",
+      end: "",
+      pause: "",
+      sum: ""
+    };
   }
 
   return {
@@ -383,7 +412,6 @@ function getFormDataForShift(shiftKey) {
 }
 
 /* ========= COMMON RENDER ========= */
-
 function renderTeamSectionVisibility() {
   teamSectionEl.classList.toggle("hidden", !!uiState.teamCollapsed);
   btnToggleTeamEl.textContent = uiState.teamCollapsed ? "Team einblenden" : "Team ausblenden";
@@ -406,7 +434,7 @@ function renderTeamSetup() {
 
   state.employees.forEach((emp, idx) => {
     const row = document.createElement("div");
-    row.className = "teamrow";
+    row.className = "teamRow";
 
     const nameInput = document.createElement("input");
     nameInput.type = "text";
@@ -419,7 +447,7 @@ function renderTeamSetup() {
     });
 
     const roleSel = document.createElement("select");
-    ROLE_OPTIONS.forEach(role => {
+    ROLE_OPTIONS.forEach((role) => {
       const opt = document.createElement("option");
       opt.value = role.key;
       opt.textContent = role.label;
@@ -443,14 +471,9 @@ function renderTeamSetup() {
       renderAllViews();
     });
 
-    const info = document.createElement("div");
-    info.className = "small";
-    info.textContent = `#${idx + 1}`;
-
     row.appendChild(nameInput);
     row.appendChild(roleSel);
     row.appendChild(targetInput);
-    row.appendChild(info);
 
     teamListEl.appendChild(row);
   });
@@ -467,7 +490,7 @@ function renderSummary() {
   weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
 
   dayHoursActualEl.textContent = minutesToHM(dayTotal);
-  dayHoursSubEl.textContent = DAYS.find(d => d.key === currentDay)?.full || "Aktueller Tag";
+  dayHoursSubEl.textContent = DAYS.find((d) => d.key === currentDay)?.full || "Aktueller Tag";
   lateCountInfoEl.textContent = `${lateCount} / 2`;
 
   if (mepWeekFromEl) mepWeekFromEl.textContent = state.weekFrom || "____________";
@@ -484,6 +507,8 @@ function renderAllViews() {
 }
 
 function renderAll() {
+  syncMonthPlanToState();
+
   weekFromEl.value = state.weekFrom || "";
   weekToEl.value = state.weekTo || "";
 
@@ -494,17 +519,18 @@ function renderAll() {
 }
 
 /* ========= EVENTS ========= */
-
 weekFromEl.addEventListener("change", () => {
   state.weekFrom = weekFromEl.value;
+  syncMonthPlanToState();
   saveWeekData();
-  renderSummary();
+  renderAllViews();
 });
 
 weekToEl.addEventListener("change", () => {
   state.weekTo = weekToEl.value;
+  syncMonthPlanToState();
   saveWeekData();
-  renderSummary();
+  renderAllViews();
 });
 
 btnToggleTeamEl.addEventListener("click", () => {
@@ -517,18 +543,22 @@ btnViewDayEl.addEventListener("click", () => {
   uiState.currentView = "day";
   saveUiState();
   renderView();
+  renderAllViews();
 });
 
 btnViewWeekEl.addEventListener("click", () => {
   uiState.currentView = "week";
   saveUiState();
   renderView();
+  renderAllViews();
 });
 
 btnViewFormEl.addEventListener("click", () => {
   uiState.currentView = "form";
   saveUiState();
+  syncMonthPlanToState();
   renderView();
+  renderAllViews();
 });
 
 document.getElementById("btnSaveMaster").addEventListener("click", () => {
@@ -537,16 +567,20 @@ document.getElementById("btnSaveMaster").addEventListener("click", () => {
 });
 
 document.getElementById("btnResetWeek").addEventListener("click", () => {
-  if (!confirm("Neue Woche starten und nur den Wochenplan leeren? Stammdaten bleiben erhalten.")) return;
+  if (!confirm("Neue Woche starten und nur den Wochenplan leeren? Stammdaten bleiben erhalten.")) {
+    return;
+  }
 
   state.weekFrom = "";
   state.weekTo = "";
-  state.employees.forEach(emp => {
+
+  state.employees.forEach((emp) => {
     for (const d of DAYS) {
       emp.days[d.key] = "-";
     }
   });
 
+  syncMonthPlanToState();
   saveWeekData();
   renderAll();
 });
@@ -556,5 +590,6 @@ document.getElementById("btnPrint").addEventListener("click", () => {
 });
 
 window.addEventListener("load", () => {
+  syncMonthPlanToState();
   renderAll();
 });
