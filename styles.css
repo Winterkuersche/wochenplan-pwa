@@ -280,7 +280,7 @@ th {
 
 @page {
   size: A4 landscape;
-  margin: 8mm;
+  margin: 6mm;
 }
 
 @media print {
@@ -289,10 +289,8 @@ th {
     background: #fff;
   }
 
-  .topbar {
-    display: none !important;
-  }
-
+  .topbar,
+  .teamsetup,
   #dayView,
   #weekView {
     display: none !important;
@@ -300,15 +298,14 @@ th {
 
   #formView {
     display: block !important;
-    border: none;
     margin: 0;
     padding: 0;
+    border: none;
   }
 
   .printSheet {
-    width: auto;
+    width: 100%;
     max-width: none;
-    min-height: auto;
     margin: 0;
     padding: 0;
     border-radius: 0;
@@ -324,7 +321,13 @@ th {
     min-width: 0;
   }
 
-  .mepTable tr {
-    page-break-inside: avoid;
+  .mepTable th,
+  .mepTable td {
+    font-size: 2.6mm;
+    padding: 0.8mm;
+  }
+
+  .mepDayCol {
+    width: auto;
   }
 }
