@@ -1,71 +1,24 @@
-function renderFormView(){
+const CACHE_NAME = "wochenplan-cache-v1";
 
-  const root=document.getElementById("formView");
-  root.innerHTML="";
-
-  if(!state.monthPlan) return;
-
-  state.monthPlan.weeks.forEach(week=>{
-
-    const div=document.createElement("div");
-    div.className="printSheet";
-
-    const table=document.createElement("table");
-    table.className="mepTable";
-
-    const body=document.createElement("tbody");
-
-    state.employees.forEach(emp=>{
-
-      const tr=document.createElement("tr");
-
-      const name=document.createElement("td");
-      name.textContent=emp.name;
-      tr.appendChild(name);
-
-      week.forEach(d=>{
-
-        const td=document.createElement("td");
-
-        if(d.isOutsideMonth){
-          td.style.background="#eee";
-        }
-
-        const shift=getShift(emp,d.iso);
-        td.textContent=shift;
-
-        tr.appendChild(td);
-      });
-
-      body.appendChild(tr);
-
-    });
-
-    table.appendChild(body);
-    div.appendChild(table);
-    root.appendChild(div);
-
-  });
-
-}
-
-const ASSETS = [
+const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./day-view.js",
   "./week-view.js",
+  "./day-view.js",
   "./form-view.js",
-  "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./month-engine.js",
+  "./manifest.webmanifest"
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(FILES_TO_CACHE);
+    })
   );
+
   self.skipWaiting();
 });
 
@@ -74,18 +27,21 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys.map((key) => {
-          if (key !== CACHE) {
+          if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
       )
     )
   );
+
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
