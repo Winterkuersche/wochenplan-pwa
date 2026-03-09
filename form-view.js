@@ -1,69 +1,80 @@
-function buildMepDayBlock(shiftKey) {
-  const data = getFormDataForShift(shiftKey);
-
-  const start = data.start || "";
-  const pause = data.pause || "";
-  const end = data.end || "";
-  const sum = data.sum || "";
-
-  return `
-    <table class="mepInnerTable">
-      <tr>
-        <td class="mepInnerLabel">Beginn</td>
-        <td class="mepInnerValue">${start}</td>
-      </tr>
-      <tr>
-        <td class="mepInnerLabel">Pause</td>
-        <td class="mepInnerValue">${pause}</td>
-      </tr>
-      <tr>
-        <td class="mepInnerLabel">Ende</td>
-        <td class="mepInnerValue">${end}</td>
-      </tr>
-      <tr>
-        <td class="mepInnerLabel">Summe</td>
-        <td class="mepInnerValue">${sum}</td>
-      </tr>
-    </table>
-  `;
+function getDayData(emp, dayKey) {
+  return getFormDataForShift(emp.days?.[dayKey] || "-");
 }
 
 function renderMepTable() {
   if (!mepTableBodyEl) return;
-
   mepTableBodyEl.innerHTML = "";
 
-  state.employees.forEach(emp => {
-    const tr = document.createElement("tr");
+  state.employees.forEach((emp) => {
+    const dayData = {
+      mo: getDayData(emp, "mo"),
+      di: getDayData(emp, "di"),
+      mi: getDayData(emp, "mi"),
+      do: getDayData(emp, "do"),
+      fr: getDayData(emp, "fr"),
+      sa: getDayData(emp, "sa"),
+      so: { start: "", pause: "", end: "", sum: "" }
+    };
 
-    const tdName = document.createElement("td");
-    tdName.className = "mepNameCell";
-    tdName.innerHTML = `${emp.name || "—"}`;
-    tr.appendChild(tdName);
+    const rows = [
+      { label: "Beginn", key: "start" },
+      { label: "Pause",  key: "pause" },
+      { label: "Ende",   key: "end" },
+      { label: "Summe",  key: "sum" }
+    ];
 
-    const tdFunc = document.createElement("td");
-    tdFunc.className = "mepFuncText";
-    tdFunc.textContent = emp.roleKey || "-";
-    tr.appendChild(tdFunc);
+    rows.forEach((rowDef, index) => {
+      const tr = document.createElement("tr");
 
-    const tdPlan = document.createElement("td");
-    tdPlan.className = "mepPlanText";
-    tdPlan.textContent = emp.target || "-";
-    tr.appendChild(tdPlan);
+      if (index === 0) {
+        const tdName = document.createElement("td");
+        tdName.className = "mepNameCell";
+        tdName.rowSpan = 4;
+        tdName.textContent = emp.name || "—";
+        tr.appendChild(tdName);
 
-    DAYS.forEach(d => {
-      const td = document.createElement("td");
-      td.className = "mepDayCell";
-      td.innerHTML = buildMepDayBlock(emp.days[d.key]);
-      tr.appendChild(td);
+        const tdFunc = document.createElement("td");
+        tdFunc.className = "mepFuncText";
+        tdFunc.rowSpan = 4;
+        tdFunc.textContent = emp.roleKey || "-";
+        tr.appendChild(tdFunc);
+
+        const tdPlan = document.createElement("td");
+        tdPlan.className = "mepPlanText";
+        tdPlan.rowSpan = 4;
+        tdPlan.textContent = emp.target || "-";
+        tr.appendChild(tdPlan);
+      }
+
+      const tdType = document.createElement("td");
+      tdType.className = "mepTypeCell";
+      tdType.textContent = rowDef.label;
+      tr.appendChild(tdType);
+
+      ["mo", "di", "mi", "do", "fr", "sa", "so"].forEach((dayKey) => {
+        const td = document.createElement("td");
+        td.className = "mepDayValueCell";
+        td.textContent = dayData[dayKey][rowDef.key] || "";
+        tr.appendChild(td);
+      });
+
+      if (index === 0) {
+        const tdWeek = document.createElement("td");
+        tdWeek.className = "mepWeekText";
+        tdWeek.rowSpan = 4;
+        tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
+        tr.appendChild(tdWeek);
+
+        const tdMonth = document.createElement("td");
+        tdMonth.className = "mepMonthText";
+        tdMonth.rowSpan = 4;
+        tdMonth.textContent = "";
+        tr.appendChild(tdMonth);
+      }
+
+      mepTableBodyEl.appendChild(tr);
     });
-
-    const tdWeek = document.createElement("td");
-    tdWeek.className = "mepWeekText";
-    tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
-    tr.appendChild(tdWeek);
-
-    mepTableBodyEl.appendChild(tr);
   });
 }
 
