@@ -6,6 +6,7 @@ const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
+  "./version.js",
   "./app.js",
   "./month-engine.js",
   "./day-view.js",
