@@ -417,8 +417,7 @@ th {
 
 /* Original-nahe MEP-Druckansicht */
 .mepPage {
-  width: 100%;
-  max-width: 297mm;
+  width: 297mm;
   min-height: 190mm;
   background: #fff;
   margin: 0 auto;
@@ -427,7 +426,7 @@ th {
 
 .mepOuter {
   border: 0.4mm solid #8e8e8e;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .mepTable {
@@ -440,42 +439,69 @@ th {
 .mepTable td {
   border: 0.3mm solid #9b9b9b;
   padding: 1.2mm 1mm;
-  font-size: 3mm;
-  line-height: 1.2;
+  font-size: 3.1mm;
+  line-height: 1.15;
   vertical-align: top;
   background: #fff;
   white-space: normal;
-  overflow-wrap: normal;
 }
 
-.mepNameCol  { width: 28mm; }
-.mepFuncCol  { width: 16mm; }
-.mepPlanCol  { width: 18mm; }
-.mepDayCol   { width: 28mm; }
-.mepWeekCol  { width: 18mm; }
-
-.mepDayBlock {
-  display: grid;
-  grid-template-columns: 12mm 1fr;
-  row-gap: 0.8mm;
-  column-gap: 1.5mm;
-  align-items: start;
-}
-
-.mepDayLabel {
-  font-size: 2.6mm;
+.mepTable thead th {
+  text-align: center;
+  vertical-align: middle;
   font-weight: 700;
 }
 
-.mepDayValue {
+.mepNameCol { width: 34mm; }
+.mepFuncCol { width: 18mm; }
+.mepPlanCol { width: 20mm; }
+.mepDayCol  { width: 34mm; }
+.mepWeekCol { width: 20mm; }
+
+.mepNameCell {
+  vertical-align: top;
+}
+
+.mepFuncText,
+.mepPlanText,
+.mepWeekText {
+  font-size: 3.1mm;
+}
+
+/* Neue Tageszelle */
+.mepDayCell {
+  padding: 0 !important;
+  vertical-align: top;
+}
+
+/* Neue Innentabelle pro Tag */
+.mepInnerTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.mepInnerTable tr:not(:last-child) td {
+  border-bottom: 0.2mm solid #d6d6d6;
+}
+
+.mepInnerLabel,
+.mepInnerValue {
+  padding: 0.8mm 1mm;
   font-size: 2.8mm;
-  min-height: 3.2mm;
-  text-align: right;
+  line-height: 1.15;
+  vertical-align: top;
+}
+
+.mepInnerLabel {
+  width: 13mm;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.mepEmpty {
-  color: #bdbdbd;
+.mepInnerValue {
+  text-align: right;
+  white-space: nowrap;
 }
 
 .mepFooterNote {
