@@ -1,4 +1,6 @@
-const CACHE = "wochenplan-v9.1";
+importScripts("./version.js");
+
+const CACHE_NAME = APP_META.cacheName;
 
 const APP_FILES = [
   "./",
