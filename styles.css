@@ -318,6 +318,12 @@ body{
   display: none !important;
 }
 
+.viewBtn.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
 .no-print {
   display: block;
 }
