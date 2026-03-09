@@ -312,3 +312,40 @@ body{
 }
 
 }
+
+/* ===== schnelle Reparatur für View-Umschaltung ===== */
+.hidden {
+  display: none !important;
+}
+
+.no-print {
+  display: block;
+}
+
+.viewBtn.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ===== MEP-Klassen an aktuelles HTML anpassen ===== */
+.printSheet {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  margin: 0 auto;
+  color: #111;
+}
+
+.mepTableOuter {
+  border: 0.4mm solid #8e8e8e;
+  overflow-x: auto;
+  overflow-y: visible;
+  background: #fff;
+}
+
+.mepFooterHint {
+  margin-top: 4mm;
+  font-size: 2.8mm;
+  color: #555;
+}
