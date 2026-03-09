@@ -49,7 +49,8 @@ const MAX_WEEKLY_MINUTES = 159 * 60;
 let currentDayIndex = 0;
 let uiState = loadUiState();
 let state = buildInitialState();
-
+state.schedule = state.schedule || {};
+state.absences = state.absences || [];
 /* ========= DOM ========= */
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
@@ -210,6 +211,8 @@ function defaultPlanState() {
   return {
     weekFrom: "",
     weekTo: "",
+    schedule: {},
+    absences: [],
     shiftsByEmployee: {}
   };
 }
@@ -218,22 +221,39 @@ function buildInitialState() {
   const master = loadJson(MASTER_KEY, defaultMasterState());
   const plan = loadJson(PLAN_KEY, defaultPlanState());
 
-  const baseEmployees = Array.isArray(master.employees) ? master.employees : defaultMasterState().employees;
+  const baseEmployees = Array.isArray(master.employees)
+    ? master.employees
+    : defaultMasterState().employees;
+
+  const employees = baseEmployees.map((emp, index) => {
+    const legacyShifts = { ...(plan.shiftsByEmployee?.[emp.id] || {}) };
+
+    return {
+      id: emp.id || `emp_${index + 1}`,
+      name: emp.name || "",
+      roleKey: emp.roleKey || "",
+      target: emp.target || roleToTarget(emp.roleKey || ""),
+      shifts: legacyShifts
+    };
+  });
+
+  const schedule = plan.schedule && typeof plan.schedule === "object"
+    ? { ...plan.schedule }
+    : {};
+
+  const absences = Array.isArray(plan.absences)
+    ? normalizeAbsences(plan.absences)
+    : [];
 
   return {
     weekFrom: plan.weekFrom || "",
     weekTo: plan.weekTo || "",
     monthPlan: null,
-    employees: baseEmployees.map((emp, index) => ({
-      id: emp.id || `emp_${index + 1}`,
-      name: emp.name || "",
-      roleKey: emp.roleKey || "",
-      target: emp.target || roleToTarget(emp.roleKey || ""),
-      shifts: { ...(plan.shiftsByEmployee?.[emp.id] || {}) }
-    }))
+    employees,
+    schedule,
+    absences
   };
 }
-
 function saveMasterData() {
   saveJson(MASTER_KEY, {
     employees: state.employees.map((emp) => ({
@@ -254,6 +274,8 @@ function savePlanData() {
   saveJson(PLAN_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
+    schedule: state.schedule || {},
+    absences: state.absences || [],
     shiftsByEmployee
   });
 }
