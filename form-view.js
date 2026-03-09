@@ -7,11 +7,14 @@ function formatShortDate(date) {
 }
 
 function getWeekDatesFromState() {
+  const weekFromInput = document.getElementById("weekFrom");
+
   const startStr =
     state.weekStart ||
     state.week?.start ||
     state.week?.from ||
     state.weekFrom ||
+    weekFromInput?.value ||
     "";
 
   if (!startStr) return null;
@@ -45,7 +48,7 @@ function renderMepDateHeader() {
     const el = document.getElementById(id);
     if (!el) return;
 
-    if (!dates) {
+    if (!dates || !dates[index]) {
       el.textContent = "";
       return;
     }
