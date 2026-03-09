@@ -1,213 +1,382 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Wochenplan V9</title>
-  <meta name="theme-color" content="#ffffff" />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>Wochenplan V9</title>
+
+<meta name="theme-color" content="#ffffff">
+
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+
 </head>
+
+
 <body>
-  <header class="topbar compactTopbar no-print">
-    <div class="titleLine">
-      <div>
-        <h1>Wochenplan</h1>
-        <div class="small">Mo-Sa · Stammdaten + 3 Ansichten</div>
-      </div>
 
-      <div class="viewSwitch" id="viewSwitch">
-        <button id="btnViewDay" class="viewBtn">Tagesplanung</button>
-        <button id="btnViewWeek" class="viewBtn active">Wochenplan</button>
-        <button id="btnViewForm" class="viewBtn">Original</button>
-      </div>
-    </div>
 
-    <div class="metaLine">
-      <label>
-        Woche von
-        <input id="weekFrom" type="date" />
-      </label>
-      <label>
-        bis
-        <input id="weekTo" type="date" />
-      </label>
+<header class="topbar compactTopbar no-print">
 
-      <div class="miniStat">
-        <span class="miniLabel">Woche</span>
-        <strong id="weeklyHoursActual">0:00</strong>
-        <span class="miniSub">/ 159:00</span>
-      </div>
+<div class="titleLine">
 
-      <div class="miniStat">
-        <span class="miniLabel">Rest / Über</span>
-        <strong id="weeklyHoursRemaining">159:00</strong>
-        <span class="miniSub" id="weeklyHoursStatus">Noch frei</span>
-      </div>
+<div>
+<h1>Wochenplan</h1>
+<div class="small">Mo-Sa · Stammdaten + 3 Ansichten</div>
+</div>
 
-      <div class="miniStat">
-        <span class="miniLabel">Tag</span>
-        <strong id="dayHoursActual">0:00</strong>
-        <span class="miniSub" id="dayHoursSub">Montag</span>
-      </div>
+<div class="viewSwitch" id="viewSwitch">
 
-      <div class="miniStat">
-        <span class="miniLabel">19:10</span>
-        <strong id="lateCountInfo">0 / 2</strong>
-        <span class="miniSub">heute</span>
-      </div>
-    </div>
+<button id="btnViewDay" class="viewBtn">
+Tagesplanung
+</button>
 
-    <div class="toolbar compactToolbar">
-      <button id="btnToggleTeam">Team ausblenden</button>
-      <button id="btnSaveMaster">Stammdaten speichern</button>
-      <button id="btnResetWeek">Neue Woche / Plan leeren</button>
-      <button id="btnPrint">Drucken / PDF</button>
-    </div>
-  </header>
+<button id="btnViewWeek" class="viewBtn active">
+Wochenplan
+</button>
 
-  <section id="teamSection" class="teamsetup no-print">
-    <div class="sectionhead">
-      <h2>Stammdaten</h2>
-      <div class="small">Diese Daten bleiben erhalten, auch wenn du eine neue Woche startest</div>
-    </div>
-    <div id="teamList" class="teamlist"></div>
-  </section>
+<button id="btnViewForm" class="viewBtn">
+Original
+</button>
 
-  <section id="dayView" class="daynav hidden no-print">
-    <div class="sectionhead">
-      <h2>Tagesplanung</h2>
-      <div class="small">Früh zuerst, dann Spät</div>
-    </div>
+</div>
+</div>
 
-    <div id="dayTabs" class="tabs"></div>
 
-    <div class="daymeta">
-      <div class="metaBox">
-        <strong id="metaDayName">Montag</strong>
-        <div id="dayHoursInfo">Geplante Arbeitsstunden: 0:00</div>
-      </div>
-      <div class="metaBox">
-        <strong>Warnungen</strong>
-        <div id="dayWarnings" class="warnText">Keine Warnungen.</div>
-      </div>
-    </div>
+<div class="metaLine">
 
-    <div id="plannerList" class="plannerList"></div>
-  </section>
+<label>
+Woche von
+<input id="weekFrom" type="date">
+</label>
 
-  <section id="weekView" class="overview no-print">
-    <div class="sectionhead">
-      <h2>Wochenplan</h2>
-      <div class="small">Kompakte Tabellenansicht mit Dropdowns</div>
-    </div>
+<label>
+bis
+<input id="weekTo" type="date">
+</label>
 
-    <div class="weekWarningsBox" id="weekWarnings"></div>
 
-    <div class="legendCompact" id="legendCompact">
-      - frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung
-    </div>
+<div class="miniStat">
+<span class="miniLabel">Woche</span>
+<strong id="weeklyHoursActual">0:00</strong>
+<span class="miniSub">/ 159:00</span>
+</div>
 
-    <div class="tableWrap compactTableWrap">
-      <table id="weekTable">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Mo</th>
-            <th>Di</th>
-            <th>Mi</th>
-            <th>Do</th>
-            <th>Fr</th>
-            <th>Sa</th>
-            <th>Ist</th>
-            <th>Δ</th>
-            <th>Soll</th>
-          </tr>
-        </thead>
-        <tbody id="weekTableBody"></tbody>
-      </table>
-    </div>
-  </section>
 
-  <section id="formView" class="hidden">
-  <div class="printSheet">
-    <h2>Mitarbeiter-Einsatz-Planung (MEP)</h2>
+<div class="miniStat">
+<span class="miniLabel">Rest / Über</span>
+<strong id="weeklyHoursRemaining">159:00</strong>
+<span id="weeklyHoursStatus" class="miniSub">
+Noch frei
+</span>
+</div>
 
-    <div class="mepMeta">
-      <div><strong>Filiale:</strong> <span id="mepBranch">__________</span></div>
-      <div><strong>Monat/Jahr</strong> <span id="mepMonthYear">__________</span></div>
-      <div><strong>Woche vom</strong> <span id="mepWeekFrom">__________</span></div>
-      <div><strong>bis</strong> <span id="mepWeekTo">__________</span></div>
-    </div>
 
-    <div class="mepTableOuter">
-      <table class="mepTable">
-        <thead>
-  <tr>
-    <th class="mepNameCol" rowspan="3">Name / Vorname</th>
-    <th class="mepFuncCol" rowspan="3">Funktion</th>
-    <th class="mepPlanCol" rowspan="3">Plan / Woche</th>
+<div class="miniStat">
+<span class="miniLabel">Tag</span>
+<strong id="dayHoursActual">0:00</strong>
+<span id="dayHoursSub" class="miniSub">
+Montag
+</span>
+</div>
 
-    <th class="mepTypeCol">Wochentag</th>
 
-    <th class="mepDayCol">Montag</th>
-    <th class="mepDayCol">Dienstag</th>
-    <th class="mepDayCol">Mittwoch</th>
-    <th class="mepDayCol">Donnerstag</th>
-    <th class="mepDayCol">Freitag</th>
-    <th class="mepDayCol">Samstag</th>
-    <th class="mepDayCol">Sonntag</th>
+<div class="miniStat">
+<span class="miniLabel">19:10</span>
+<strong id="lateCountInfo">0 / 2</strong>
+<span class="miniSub">heute</span>
+</div>
 
-    <th class="mepWeekCol" rowspan="3">Summe / Woche</th>
-    <th class="mepMonthCol" rowspan="3">Summe / Monat</th>
-  </tr>
+</div>
 
-  <tr>
-    <th class="mepTypeCol">Datum</th>
 
-    <th class="mepSubHead" id="mepDateMo"></th>
-    <th class="mepSubHead" id="mepDateDi"></th>
-    <th class="mepSubHead" id="mepDateMi"></th>
-    <th class="mepSubHead" id="mepDateDo"></th>
-    <th class="mepSubHead" id="mepDateFr"></th>
-    <th class="mepSubHead" id="mepDateSa"></th>
-    <th class="mepSubHead" id="mepDateSo"></th>
-  </tr>
 
-  <tr>
-    <th class="mepTypeCol">Warentag</th>
+<div class="toolbar compactToolbar">
 
-    <th class="mepSubHead" id="mepGoodsMo"></th>
-    <th class="mepSubHead" id="mepGoodsDi"></th>
-    <th class="mepSubHead" id="mepGoodsMi"></th>
-    <th class="mepSubHead" id="mepGoodsDo"></th>
-    <th class="mepSubHead" id="mepGoodsFr"></th>
-    <th class="mepSubHead" id="mepGoodsSa"></th>
-    <th class="mepSubHead" id="mepGoodsSo"></th>
-  </tr>
-</thead>
-        <tbody id="mepTableBody"></tbody>
-      </table>
-    </div>
+<button id="btnToggleTeam">
+Team ausblenden
+</button>
 
-    <div class="mepFooterHint">
-      Pausenzeiten: bis 6 Stunden keine Pause, über 6 Stunden 60 Minuten,
-      Spätschichten mit Abrechnung 10 Minuten, Ganztag 70 Minuten.
-    </div>
-  </div>
+<button id="btnSaveMaster">
+Stammdaten speichern
+</button>
+
+<button id="btnResetWeek">
+Neue Woche / Plan leeren
+</button>
+
+<button id="btnPrint">
+Drucken / PDF
+</button>
+
+</div>
+
+</header>
+
+
+
+<section id="teamSection" class="teamsetup no-print">
+
+<div class="sectionhead">
+
+<h2>Stammdaten</h2>
+
+<div class="small">
+Diese Daten bleiben erhalten, auch wenn du eine neue Woche startest
+</div>
+
+</div>
+
+<div id="teamList" class="teamlist"></div>
+
 </section>
 
- <script src="./app.js" defer></script>
+
+
+<section id="dayView" class="daynav hidden no-print">
+
+<div class="sectionhead">
+
+<h2>Tagesplanung</h2>
+
+<div class="small">
+Früh zuerst, dann Spät
+</div>
+
+</div>
+
+<div id="dayTabs" class="tabs"></div>
+
+<div class="daymeta">
+
+<div class="metaBox">
+<strong id="metaDayName">Montag</strong>
+<div id="dayHoursInfo">
+Geplante Arbeitsstunden: 0:00
+</div>
+</div>
+
+<div class="metaBox">
+<strong>Warnungen</strong>
+<div id="dayWarnings" class="warnText">
+Keine Warnungen.
+</div>
+</div>
+
+</div>
+
+<div id="plannerList" class="plannerList"></div>
+
+</section>
+
+
+
+<section id="weekView" class="overview no-print">
+
+<div class="sectionhead">
+
+<h2>Wochenplan</h2>
+
+<div class="small">
+Kompakte Tabellenansicht mit Dropdowns
+</div>
+
+</div>
+
+
+<div id="weekWarnings" class="weekWarningsBox"></div>
+
+
+<div id="legendCompact" class="legendCompact">
+
+- frei ·  
+F3 09-12 ·  
+F4 09-13 ·  
+F5 09-14 ·  
+F6 09-15 ·  
+G1 09-19:10 ·  
+L1-L4 mit Abrechnung ·  
+L1E-L4E ohne Abrechnung
+
+</div>
+
+
+
+<div class="tableWrap compactTableWrap">
+
+<table id="weekTable">
+
+<thead>
+
+<tr>
+<th>Name</th>
+<th>Mo</th>
+<th>Di</th>
+<th>Mi</th>
+<th>Do</th>
+<th>Fr</th>
+<th>Sa</th>
+<th>Ist</th>
+<th>Δ</th>
+<th>Soll</th>
+</tr>
+
+</thead>
+
+<tbody id="weekTableBody"></tbody>
+
+</table>
+
+</div>
+
+</section>
+
+
+
+<section id="formView" class="hidden">
+
+<div class="printSheet">
+
+<h2>Mitarbeiter-Einsatz-Planung (MEP)</h2>
+
+
+<div class="mepMeta">
+
+<div>
+<strong>Filiale:</strong>
+<span id="mepBranch">__________</span>
+</div>
+
+<div>
+<strong>Monat/Jahr</strong>
+<span id="mepMonthYear">__________</span>
+</div>
+
+<div>
+<strong>Woche vom</strong>
+<span id="mepWeekFrom">__________</span>
+</div>
+
+<div>
+<strong>bis</strong>
+<span id="mepWeekTo">__________</span>
+</div>
+
+</div>
+
+
+
+<div class="mepTableOuter">
+
+<table class="mepTable">
+
+<thead>
+
+<tr>
+
+<th class="mepNameCol" rowspan="2">
+Name / Vorname
+</th>
+
+<th class="mepFuncCol" rowspan="2">
+Funktion
+</th>
+
+<th class="mepPlanCol" rowspan="2">
+Plan / Woche
+</th>
+
+
+<th class="mepTypeCol" rowspan="2">
+Wochentag<br>
+Datum<br>
+Warentag
+</th>
+
+
+<th class="mepDayCol">Montag</th>
+<th class="mepDayCol">Dienstag</th>
+<th class="mepDayCol">Mittwoch</th>
+<th class="mepDayCol">Donnerstag</th>
+<th class="mepDayCol">Freitag</th>
+<th class="mepDayCol">Samstag</th>
+<th class="mepDayCol">Sonntag</th>
+
+
+<th class="mepWeekCol" rowspan="2">
+Summe / Woche
+</th>
+
+<th class="mepMonthCol" rowspan="2">
+Summe / Monat
+</th>
+
+</tr>
+
+
+<tr>
+
+<th class="mepSubHead" id="mepDateMo"></th>
+<th class="mepSubHead" id="mepDateDi"></th>
+<th class="mepSubHead" id="mepDateMi"></th>
+<th class="mepSubHead" id="mepDateDo"></th>
+<th class="mepSubHead" id="mepDateFr"></th>
+<th class="mepSubHead" id="mepDateSa"></th>
+<th class="mepSubHead" id="mepDateSo"></th>
+
+</tr>
+
+</thead>
+
+<tbody id="mepTableBody"></tbody>
+
+</table>
+
+</div>
+
+
+
+<div class="mepFooterHint">
+
+Pausenzeiten:  
+bis 6 Stunden keine Pause,  
+über 6 Stunden 60 Minuten,  
+Spätschichten mit Abrechnung 10 Minuten,  
+Ganztag 70 Minuten.
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- Scripts -->
+
+
+<script src="./app.js" defer></script>
 <script src="./month-engine.js" defer></script>
 <script src="./day-view.js" defer></script>
 <script src="./week-view.js" defer></script>
 <script src="./form-view.js" defer></script>
-   <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js");
-}
-</script>
-</body>
 
- 
+
+<script>
+
+if ("serviceWorker" in navigator) {
+
+navigator.serviceWorker
+.register("./sw.js")
+.catch(err => console.log("SW Fehler", err));
+
+}
+
+</script>
+
+
+</body>
 </html>
