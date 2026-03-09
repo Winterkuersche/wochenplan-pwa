@@ -9,11 +9,11 @@ const DAYS = [
 
 const ROLE_OPTIONS = [
   { key: "", label: "-" },
-  { key: "TL", target: "30:00" },
-  { key: "TZ30", target: "30:00" },
-  { key: "TZ20", target: "20:00" },
-  { key: "TZ15", target: "15:00" },
-  { key: "GFB", target: "9:30" }
+  { key: "TL", label: "TL", target: "30:00" },
+  { key: "TZ30", label: "TZ30", target: "30:00" },
+  { key: "TZ20", label: "TZ20", target: "20:00" },
+  { key: "TZ15", label: "TZ15", target: "15:00" },
+  { key: "GFB", label: "GfB", target: "9:30" }
 ];
 
 const SHIFTS = [
@@ -35,15 +35,21 @@ const SHIFTS = [
   { key: "L2E", label: "L2E", start: "14:00", end: "19:00", desc: "14:00-19:00", type: "lateNo" },
   { key: "L3E", label: "L3E", start: "15:00", end: "19:00", desc: "15:00-19:00", type: "lateNo" },
   { key: "L4E", label: "L4E", start: "16:00", end: "19:00", desc: "16:00-19:00", type: "lateNo" }
+
+  // Später leicht erweiterbar:
+  // { key: "U", label: "U", start: "", end: "", desc: "Urlaub", type: "absence" }
 ];
 
 const MASTER_KEY = "wochenplan_master_v1";
-const WEEK_KEY = "wochenplan_week_v2";
-const UI_KEY = "wochenplan_ui_v6";
+const WEEK_KEY = "wochenplan_week_v3";
+const UI_KEY = "wochenplan_ui_v7";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
 let uiState = loadUiState();
+let state = buildInitialState();
+
+/* ========= DOM ========= */
 
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
@@ -52,8 +58,10 @@ const metaDayNameEl = document.getElementById("metaDayName");
 const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
+
 const weekTableBodyEl = document.getElementById("weekTableBody");
 const mepTableBodyEl = document.getElementById("mepTableBody");
+
 const weekFromEl = document.getElementById("weekFrom");
 const weekToEl = document.getElementById("weekTo");
 const teamSectionEl = document.getElementById("teamSection");
@@ -68,6 +76,7 @@ const dayHoursSubEl = document.getElementById("dayHoursSub");
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const formViewEl = document.getElementById("formView");
+
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewFormEl = document.getElementById("btnViewForm");
@@ -77,7 +86,7 @@ const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
 const mepMonthYearEl = document.getElementById("mepMonthYear");
 
-let state = buildInitialState();
+/* ========= STATE HELPERS ========= */
 
 function createDefaultEmployees() {
   return Array.from({ length: 13 }, (_, i) => ({
@@ -219,6 +228,8 @@ function saveWeekData() {
   });
 }
 
+/* ========= TIME HELPERS ========= */
+
 function hmToMinutes(hm) {
   if (!hm) return 0;
   const [h, m] = hm.split(":").map(Number);
@@ -238,6 +249,15 @@ function formatSignedMinutes(min) {
   return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
 }
 
+function formatMonthYear(dateStr) {
+  if (!dateStr) return "____________";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "____________";
+  return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
+}
+
+/* ========= SHIFT HELPERS ========= */
+
 function getShiftByKey(key) {
   return SHIFTS.find(s => s.key === key) || SHIFTS[0];
 }
@@ -254,9 +274,11 @@ function shiftDurationMinutes(shiftKey) {
 
 function appliedPauseMinutes(shiftKey) {
   const duration = shiftDurationMinutes(shiftKey);
+
   if (shiftKey === "G1") return 70;
   if (["L1", "L2", "L3", "L4"].includes(shiftKey)) return 10;
   if (duration > 6 * 60) return 60;
+
   return 0;
 }
 
@@ -265,6 +287,12 @@ function netMinutesForShift(shiftKey) {
   if (!duration) return 0;
   return Math.max(0, duration - appliedPauseMinutes(shiftKey));
 }
+
+function isClosingShift(shiftKey) {
+  return ["G1", "L1", "L2", "L3", "L4"].includes(shiftKey);
+}
+
+/* ========= CALCULATIONS ========= */
 
 function totalMinutesForEmployee(emp) {
   return DAYS.reduce((sum, d) => sum + netMinutesForShift(emp.days[d.key]), 0);
@@ -287,10 +315,6 @@ function getPreviousDayKey(dayKey) {
   return idx <= 0 ? null : DAYS[idx - 1].key;
 }
 
-function isClosingShift(shiftKey) {
-  return ["G1", "L1", "L2", "L3", "L4"].includes(shiftKey);
-}
-
 function hadLateShiftPreviousDay(emp, dayKey) {
   const prev = getPreviousDayKey(dayKey);
   return prev ? isClosingShift(emp.days[prev]) : false;
@@ -300,15 +324,19 @@ function getClosingWorkersForDay(dayKey) {
   return state.employees.filter(emp => isClosingShift(emp.days[dayKey]));
 }
 
+/* ========= WARNINGS ========= */
+
 function getDayWarnings(dayKey) {
   const warnings = [];
   const closers = getClosingWorkersForDay(dayKey);
+  const dayLabel = DAYS.find(d => d.key === dayKey)?.label || dayKey;
 
   if (closers.length === 0) {
-    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: keine Schicht bis 19:10.`);
+    warnings.push(`⚠ ${dayLabel}: keine Schicht bis 19:10.`);
   }
+
   if (closers.length > 2) {
-    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
+    warnings.push(`⚠ ${dayLabel}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
 
   const idx = DAYS.findIndex(d => d.key === dayKey);
@@ -327,26 +355,7 @@ function getWeekWarnings() {
   return DAYS.flatMap(d => getDayWarnings(d.key));
 }
 
-function renderWeekWarnings() {
-  if (!weekWarningsEl) return;
-  weekWarningsEl.innerHTML = "";
-  const warnings = getWeekWarnings();
-
-  if (warnings.length === 0) {
-    const div = document.createElement("div");
-    div.className = "warnLine";
-    div.textContent = "Keine Warnungen.";
-    weekWarningsEl.appendChild(div);
-    return;
-  }
-
-  warnings.forEach(w => {
-    const div = document.createElement("div");
-    div.className = "warnLine";
-    div.textContent = w;
-    weekWarningsEl.appendChild(div);
-  });
-}
+/* ========= FORM / MEP HELPERS ========= */
 
 function getFormPauseText(shiftKey) {
   switch (shiftKey) {
@@ -364,6 +373,7 @@ function getFormDataForShift(shiftKey) {
   if (!shift.start || !shift.end) {
     return { start: "", end: "", pause: "", sum: "" };
   }
+
   return {
     start: shift.start,
     end: shift.end,
@@ -372,12 +382,7 @@ function getFormDataForShift(shiftKey) {
   };
 }
 
-function formatMonthYear(dateStr) {
-  if (!dateStr) return "____________";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "____________";
-  return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
-}
+/* ========= COMMON RENDER ========= */
 
 function renderTeamSectionVisibility() {
   teamSectionEl.classList.toggle("hidden", !!uiState.teamCollapsed);
@@ -385,14 +390,15 @@ function renderTeamSectionVisibility() {
 }
 
 function renderView() {
-  const v = uiState.currentView || "week";
-  dayViewEl.classList.toggle("hidden", v !== "day");
-  weekViewEl.classList.toggle("hidden", v !== "week");
-  formViewEl.classList.toggle("hidden", v !== "form");
+  const view = uiState.currentView || "week";
 
-  btnViewDayEl.classList.toggle("active", v === "day");
-  btnViewWeekEl.classList.toggle("active", v === "week");
-  btnViewFormEl.classList.toggle("active", v === "form");
+  dayViewEl.classList.toggle("hidden", view !== "day");
+  weekViewEl.classList.toggle("hidden", view !== "week");
+  formViewEl.classList.toggle("hidden", view !== "form");
+
+  btnViewDayEl.classList.toggle("active", view === "day");
+  btnViewWeekEl.classList.toggle("active", view === "week");
+  btnViewFormEl.classList.toggle("active", view === "form");
 }
 
 function renderTeamSetup() {
@@ -409,16 +415,14 @@ function renderTeamSetup() {
     nameInput.addEventListener("change", () => {
       emp.name = nameInput.value;
       saveMasterData();
-      renderPlanner();
-      renderWeekTable();
-      renderMepTable();
+      renderAllViews();
     });
 
     const roleSel = document.createElement("select");
     ROLE_OPTIONS.forEach(role => {
       const opt = document.createElement("option");
       opt.value = role.key;
-      opt.textContent = role.key || "-";
+      opt.textContent = role.label;
       roleSel.appendChild(opt);
     });
     roleSel.value = emp.roleKey;
@@ -426,11 +430,7 @@ function renderTeamSetup() {
       emp.roleKey = roleSel.value;
       emp.target = roleToTarget(emp.roleKey);
       saveMasterData();
-      renderTeamSetup();
-      renderPlanner();
-      renderWeekTable();
-      renderMepTable();
-      renderSummary();
+      renderAllViews();
     });
 
     const targetInput = document.createElement("input");
@@ -440,10 +440,7 @@ function renderTeamSetup() {
     targetInput.addEventListener("change", () => {
       emp.target = targetInput.value;
       saveMasterData();
-      renderPlanner();
-      renderWeekTable();
-      renderMepTable();
-      renderSummary();
+      renderAllViews();
     });
 
     const info = document.createElement("div");
@@ -454,22 +451,8 @@ function renderTeamSetup() {
     row.appendChild(roleSel);
     row.appendChild(targetInput);
     row.appendChild(info);
-    teamListEl.appendChild(row);
-  });
-}
 
-function renderTabs() {
-  dayTabsEl.innerHTML = "";
-  DAYS.forEach(d => {
-    const btn = document.createElement("button");
-    btn.className = `tabBtn${currentDay === d.key ? " active" : ""}`;
-    btn.textContent = d.label;
-    btn.addEventListener("click", () => {
-      currentDay = d.key;
-      renderPlanner();
-      renderSummary();
-    });
-    dayTabsEl.appendChild(btn);
+    teamListEl.appendChild(row);
   });
 }
 
@@ -487,198 +470,17 @@ function renderSummary() {
   dayHoursSubEl.textContent = DAYS.find(d => d.key === currentDay)?.full || "Aktueller Tag";
   lateCountInfoEl.textContent = `${lateCount} / 2`;
 
-  mepWeekFromEl.textContent = state.weekFrom || "____________";
-  mepWeekToEl.textContent = state.weekTo || "____________";
-  mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
+  if (mepWeekFromEl) mepWeekFromEl.textContent = state.weekFrom || "____________";
+  if (mepWeekToEl) mepWeekToEl.textContent = state.weekTo || "____________";
+  if (mepMonthYearEl) mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
 }
 
-function renderPlanner() {
-  renderTabs();
-  metaDayNameEl.textContent = DAYS.find(d => d.key === currentDay)?.full || currentDay;
-  dayHoursInfoEl.textContent = `Geplante Arbeitsstunden: ${minutesToHM(totalMinutesForDay(currentDay))}`;
+function renderAllViews() {
+  renderSummary();
 
-  const warnings = getDayWarnings(currentDay);
-  dayWarningsEl.innerHTML = "";
-  if (warnings.length === 0) {
-    dayWarningsEl.textContent = "Keine Warnungen.";
-  } else {
-    warnings.forEach(w => {
-      const div = document.createElement("div");
-      div.className = "warnLine";
-      div.textContent = w;
-      dayWarningsEl.appendChild(div);
-    });
-  }
-
-  plannerListEl.innerHTML = "";
-
-  state.employees.forEach(emp => {
-    const wasLateYesterday = hadLateShiftPreviousDay(emp, currentDay);
-    const row = document.createElement("div");
-    row.className = `planRow${wasLateYesterday ? " prevLate" : ""}`;
-
-    const head = document.createElement("div");
-    head.className = "planHead";
-
-    const left = document.createElement("div");
-    left.innerHTML = `
-      <div class="planName">${emp.name || "—"}</div>
-      <div class="planSub">${emp.roleKey || "-"} · ${getShiftByKey(emp.days[currentDay]).desc}</div>
-    `;
-
-    if (wasLateYesterday) {
-      const badge = document.createElement("div");
-      badge.className = "prevLateBadge";
-      badge.textContent = "Gestern 19:10";
-      left.appendChild(badge);
-    }
-
-    const right = document.createElement("div");
-    right.className = "planHours";
-    right.innerHTML = `
-      <div><strong>${minutesToHM(totalMinutesForEmployee(emp))}</strong> / ${emp.target || "—"}</div>
-      <div class="small">Delta ${formatSignedMinutes(deltaMinutes(emp))}</div>
-    `;
-
-    head.appendChild(left);
-    head.appendChild(right);
-
-    const btnWrap = document.createElement("div");
-    btnWrap.className = "shiftButtons";
-
-    SHIFTS.forEach(shift => {
-      const btn = document.createElement("button");
-      btn.className = `shiftBtn shift-${getShiftClassByKey(shift.key)}${emp.days[currentDay] === shift.key ? " active" : ""}`;
-      btn.textContent = shift.label;
-      btn.title = shift.desc;
-      btn.addEventListener("click", () => {
-        emp.days[currentDay] = shift.key;
-        saveWeekData();
-        renderPlanner();
-        renderWeekTable();
-        renderMepTable();
-        renderSummary();
-        renderWeekWarnings();
-      });
-      btnWrap.appendChild(btn);
-    });
-
-    const legend = document.createElement("div");
-    legend.className = "shiftLegend";
-    legend.textContent = "- frei · F3 09-12 · F4 09-13 · F5 09-14 · F6 09-15 · G1 09-19:10 · L1-L4 mit Abrechnung · L1E-L4E ohne Abrechnung";
-
-    row.appendChild(head);
-    row.appendChild(btnWrap);
-    row.appendChild(legend);
-    plannerListEl.appendChild(row);
-  });
-}
-
-function renderWeekTable() {
-  weekTableBodyEl.innerHTML = "";
-
-  state.employees.forEach(emp => {
-    const tr = document.createElement("tr");
-
-    const tdNameRole = document.createElement("td");
-    tdNameRole.className = "nameRoleCell";
-    tdNameRole.innerHTML = `
-      <div class="nameRoleName">${emp.name || "—"}</div>
-      <div class="nameRoleSub">${emp.roleKey || "-"}</div>
-    `;
-    tr.appendChild(tdNameRole);
-
-    DAYS.forEach(d => {
-      const td = document.createElement("td");
-      const sel = document.createElement("select");
-      sel.className = `weekSelect ${getShiftClassByKey(emp.days[d.key])}`;
-
-      SHIFTS.forEach(shift => {
-        const opt = document.createElement("option");
-        opt.value = shift.key;
-        opt.textContent = shift.key;
-        sel.appendChild(opt);
-      });
-
-      sel.value = emp.days[d.key];
-      sel.addEventListener("change", () => {
-        emp.days[d.key] = sel.value;
-        saveWeekData();
-        renderWeekTable();
-        renderPlanner();
-        renderMepTable();
-        renderSummary();
-        renderWeekWarnings();
-      });
-
-      td.appendChild(sel);
-      tr.appendChild(td);
-    });
-
-    const tdActual = document.createElement("td");
-    tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
-    tr.appendChild(tdActual);
-
-    const delta = deltaMinutes(emp);
-    const tdDelta = document.createElement("td");
-    tdDelta.textContent = formatSignedMinutes(delta);
-    tdDelta.className = delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero";
-    tr.appendChild(tdDelta);
-
-    const tdTarget = document.createElement("td");
-    tdTarget.textContent = emp.target || "-";
-    tr.appendChild(tdTarget);
-
-    weekTableBodyEl.appendChild(tr);
-  });
-}
-
-function buildMepDayBlock(shiftKey) {
-  const data = getFormDataForShift(shiftKey);
-  return `
-    <div class="mepDayBlock">
-      <div class="mepDayLabel">Beginn</div><div class="mepDayValue ${data.start ? "" : "mepEmpty"}">${data.start || ""}</div>
-      <div class="mepDayLabel">Ende</div><div class="mepDayValue ${data.end ? "" : "mepEmpty"}">${data.end || ""}</div>
-      <div class="mepDayLabel">Pause</div><div class="mepDayValue ${data.pause ? "" : "mepEmpty"}">${data.pause || ""}</div>
-      <div class="mepDayLabel">Summe</div><div class="mepDayValue ${data.sum ? "" : "mepEmpty"}">${data.sum || ""}</div>
-    </div>
-  `;
-}
-
-function renderMepTable() {
-  mepTableBodyEl.innerHTML = "";
-
-  state.employees.forEach(emp => {
-    const tr = document.createElement("tr");
-
-    const tdName = document.createElement("td");
-    tdName.className = "mepNameCell";
-    tdName.innerHTML = `<div class="mepNameMain">${emp.name || "—"}</div>`;
-    tr.appendChild(tdName);
-
-    const tdFunc = document.createElement("td");
-    tdFunc.className = "mepFuncText";
-    tdFunc.textContent = emp.roleKey || "-";
-    tr.appendChild(tdFunc);
-
-    const tdPlan = document.createElement("td");
-    tdPlan.className = "mepPlanText";
-    tdPlan.textContent = emp.target || "-";
-    tr.appendChild(tdPlan);
-
-    DAYS.forEach(d => {
-      const td = document.createElement("td");
-      td.innerHTML = buildMepDayBlock(emp.days[d.key]);
-      tr.appendChild(td);
-    });
-
-    const tdWeek = document.createElement("td");
-    tdWeek.className = "mepWeekText";
-    tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
-    tr.appendChild(tdWeek);
-
-    mepTableBodyEl.appendChild(tr);
-  });
+  if (typeof renderDayView === "function") renderDayView();
+  if (typeof renderWeekView === "function") renderWeekView();
+  if (typeof renderFormView === "function") renderFormView();
 }
 
 function renderAll() {
@@ -688,12 +490,10 @@ function renderAll() {
   renderTeamSectionVisibility();
   renderView();
   renderTeamSetup();
-  renderPlanner();
-  renderWeekTable();
-  renderMepTable();
-  renderSummary();
-  renderWeekWarnings();
+  renderAllViews();
 }
+
+/* ========= EVENTS ========= */
 
 weekFromEl.addEventListener("change", () => {
   state.weekFrom = weekFromEl.value;
@@ -742,7 +542,9 @@ document.getElementById("btnResetWeek").addEventListener("click", () => {
   state.weekFrom = "";
   state.weekTo = "";
   state.employees.forEach(emp => {
-    for (const d of DAYS) emp.days[d.key] = "-";
+    for (const d of DAYS) {
+      emp.days[d.key] = "-";
+    }
   });
 
   saveWeekData();
