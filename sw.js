@@ -1,4 +1,4 @@
-const CACHE = "wochenplan-v7";
+const CACHE = "wochenplan-v7.1";
 
 const ASSETS = [
   "./",
