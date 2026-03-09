@@ -42,6 +42,9 @@ function createWeekSelect(emp, dayKey) {
 }
 
 function renderWeekTable() {
+  console.log("weekTableBodyEl:", weekTableBodyEl);
+  console.log("state.employees:", state.employees);
+
   if (!weekTableBodyEl) return;
 
   weekTableBodyEl.innerHTML = "";
@@ -62,20 +65,6 @@ function renderWeekTable() {
       td.appendChild(createWeekSelect(emp, d.key));
       tr.appendChild(td);
     });
-
-    const tdActual = document.createElement("td");
-    tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
-    tr.appendChild(tdActual);
-
-    const delta = deltaMinutes(emp);
-    const tdDelta = document.createElement("td");
-    tdDelta.textContent = formatSignedMinutes(delta);
-    tdDelta.className = delta > 0 ? "deltaPos" : delta < 0 ? "deltaNeg" : "deltaZero";
-    tr.appendChild(tdDelta);
-
-    const tdTarget = document.createElement("td");
-    tdTarget.textContent = emp.target || "-";
-    tr.appendChild(tdTarget);
 
     weekTableBodyEl.appendChild(tr);
   });
