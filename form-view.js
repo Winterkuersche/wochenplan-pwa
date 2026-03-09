@@ -32,7 +32,7 @@ function getWeekDatesFromState() {
 }
 
 function renderMepDateHeader() {
-  const ids = [
+  const dateIds = [
     "mepDateMo",
     "mepDateDi",
     "mepDateMi",
@@ -42,9 +42,19 @@ function renderMepDateHeader() {
     "mepDateSo"
   ];
 
+  const goodsIds = [
+    "mepGoodsMo",
+    "mepGoodsDi",
+    "mepGoodsMi",
+    "mepGoodsDo",
+    "mepGoodsFr",
+    "mepGoodsSa",
+    "mepGoodsSo"
+  ];
+
   const dates = getWeekDatesFromState();
 
-  ids.forEach((id, index) => {
+  dateIds.forEach((id, index) => {
     const el = document.getElementById(id);
     if (!el) return;
 
@@ -54,6 +64,11 @@ function renderMepDateHeader() {
     }
 
     el.textContent = formatShortDate(dates[index]);
+  });
+
+  goodsIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "";
   });
 }
 
