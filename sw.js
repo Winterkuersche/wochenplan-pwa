@@ -1,4 +1,4 @@
-const CACHE_NAME = "wochenplan-cache-v41";
+const CACHE = "wochenplan-v9.1";
 
 const APP_FILES = [
   "./",
