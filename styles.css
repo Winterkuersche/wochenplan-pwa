@@ -516,7 +516,12 @@ th {
 
   .mepPage {
     width: auto;
+    max-width: none;
     min-height: auto;
     margin: 0;
+  }
+
+  .mepOuter {
+    overflow: visible;
   }
 }
