@@ -14,28 +14,24 @@ function cloneDate(date) {
 
 function getMondayBasedDayIndex(date) {
   // JS: So=0, Mo=1, ... Sa=6
-  // Wir wollen: Mo=0, Di=1, ... So=6
+  // Gewünscht: Mo=0, Di=1, ... So=6
   return (date.getDay() + 6) % 7;
 }
 
 function getStartOfVisibleMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
   const mondayIndex = getMondayBasedDayIndex(firstOfMonth);
-
   const gridStart = cloneDate(firstOfMonth);
   gridStart.setDate(firstOfMonth.getDate() - mondayIndex);
-
   return gridStart;
 }
 
 function getEndOfVisibleMonthGrid(year, monthIndex) {
   const lastOfMonth = new Date(year, monthIndex + 1, 0);
   const mondayIndex = getMondayBasedDayIndex(lastOfMonth);
-
   const daysUntilSunday = 6 - mondayIndex;
   const gridEnd = cloneDate(lastOfMonth);
   gridEnd.setDate(lastOfMonth.getDate() + daysUntilSunday);
-
   return gridEnd;
 }
 
@@ -53,15 +49,15 @@ function buildMonthDayObject(date, targetYear, targetMonthIndex) {
     weekdayIndex,
     weekdayLabel: MONTH_WEEKDAY_LABELS[weekdayIndex],
     inCurrentMonth: date.getFullYear() === targetYear && monthIndex === targetMonthIndex,
-    isOutsideMonth: !(date.getFullYear() === targetYear && monthIndex === targetMonthIndex)
+    isOutsideMonth: !(date.getFullYear() === targetYear && monthIndex === targetMonthIndex),
   };
 }
 
 function buildMonthWeeks(year, monthIndex) {
   const gridStart = getStartOfVisibleMonthGrid(year, monthIndex);
   const gridEnd = getEndOfVisibleMonthGrid(year, monthIndex);
-
   const weeks = [];
+
   let cursor = cloneDate(gridStart);
 
   while (cursor <= gridEnd) {
@@ -69,7 +65,6 @@ function buildMonthWeeks(year, monthIndex) {
 
     for (let i = 0; i < 7; i++) {
       week.push(buildMonthDayObject(cursor, year, monthIndex));
-
       const next = cloneDate(cursor);
       next.setDate(cursor.getDate() + 1);
       cursor = next;
@@ -93,14 +88,14 @@ function getMonthMeta(year, monthIndex) {
     firstOfMonth: cloneDate(firstDay),
     lastOfMonth: cloneDate(lastDay),
     firstOfMonthIso: toIsoDate(firstDay),
-    lastOfMonthIso: toIsoDate(lastDay)
+    lastOfMonthIso: toIsoDate(lastDay),
   };
 }
 
 function buildMonthPlan(year, monthIndex) {
   return {
     meta: getMonthMeta(year, monthIndex),
-    weeks: buildMonthWeeks(year, monthIndex)
+    weeks: buildMonthWeeks(year, monthIndex),
   };
 }
 
