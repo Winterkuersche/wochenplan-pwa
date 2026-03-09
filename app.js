@@ -9,11 +9,11 @@ const DAYS = [
 
 const ROLE_OPTIONS = [
   { key: "", label: "-" },
-  { key: "TL", label: "TL", target: "30:00" },
-  { key: "TZ30", label: "TZ 30", target: "30:00" },
-  { key: "TZ20", label: "TZ 20", target: "20:00" },
-  { key: "TZ15", label: "TZ 15", target: "15:00" },
-  { key: "GFB", label: "GfB", target: "9:30" }
+  { key: "TL", target: "30:00" },
+  { key: "TZ30", target: "30:00" },
+  { key: "TZ20", target: "20:00" },
+  { key: "TZ15", target: "15:00" },
+  { key: "GFB", target: "9:30" }
 ];
 
 const SHIFTS = [
@@ -39,7 +39,7 @@ const SHIFTS = [
 
 const MASTER_KEY = "wochenplan_master_v1";
 const WEEK_KEY = "wochenplan_week_v2";
-const UI_KEY = "wochenplan_ui_v5";
+const UI_KEY = "wochenplan_ui_v6";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDay = "mo";
@@ -148,7 +148,7 @@ function saveJson(key, value) {
 
 function roleToTarget(roleKey) {
   const found = ROLE_OPTIONS.find(r => r.key === roleKey);
-  return found && found.target ? found.target : "";
+  return found?.target || "";
 }
 
 function buildInitialState() {
@@ -175,52 +175,48 @@ function buildInitialState() {
     });
   }
 
-  const employees = masterEmployees.map((emp, index) => {
-    const weekEmp = weekEmployees[index] || { id: emp.id, days: createEmptyWeekDays() };
-    const normalizedDays = createEmptyWeekDays();
-
-    for (const d of DAYS) {
-      normalizedDays[d.key] = weekEmp.days?.[d.key] || "-";
-    }
-
-    return {
-      id: emp.id || `emp_${index + 1}`,
-      name: emp.name || "",
-      roleKey: emp.roleKey || "",
-      target: emp.target || roleToTarget(emp.roleKey || ""),
-      days: normalizedDays
-    };
-  });
-
   return {
     weekFrom: week.weekFrom || "",
     weekTo: week.weekTo || "",
-    employees
+    employees: masterEmployees.map((emp, index) => {
+      const weekEmp = weekEmployees[index] || { id: emp.id, days: createEmptyWeekDays() };
+      const normalizedDays = createEmptyWeekDays();
+
+      for (const d of DAYS) {
+        normalizedDays[d.key] = weekEmp.days?.[d.key] || "-";
+      }
+
+      return {
+        id: emp.id || `emp_${index + 1}`,
+        name: emp.name || "",
+        roleKey: emp.roleKey || "",
+        target: emp.target || roleToTarget(emp.roleKey || ""),
+        days: normalizedDays
+      };
+    })
   };
 }
 
 function saveMasterData() {
-  const payload = {
+  saveJson(MASTER_KEY, {
     employees: state.employees.map(emp => ({
       id: emp.id,
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target
     }))
-  };
-  saveJson(MASTER_KEY, payload);
+  });
 }
 
 function saveWeekData() {
-  const payload = {
+  saveJson(WEEK_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
     employees: state.employees.map(emp => ({
       id: emp.id,
       days: { ...emp.days }
     }))
-  };
-  saveJson(WEEK_KEY, payload);
+  });
 }
 
 function hmToMinutes(hm) {
@@ -247,8 +243,7 @@ function getShiftByKey(key) {
 }
 
 function getShiftClassByKey(key) {
-  const shift = getShiftByKey(key);
-  return shift.type || "free";
+  return getShiftByKey(key).type || "free";
 }
 
 function shiftDurationMinutes(shiftKey) {
@@ -275,12 +270,8 @@ function totalMinutesForEmployee(emp) {
   return DAYS.reduce((sum, d) => sum + netMinutesForShift(emp.days[d.key]), 0);
 }
 
-function targetMinutes(emp) {
-  return hmToMinutes(emp.target || "0:00");
-}
-
 function deltaMinutes(emp) {
-  return totalMinutesForEmployee(emp) - targetMinutes(emp);
+  return totalMinutesForEmployee(emp) - hmToMinutes(emp.target || "0:00");
 }
 
 function totalMinutesForDay(dayKey) {
@@ -293,8 +284,7 @@ function totalMinutesForWeek() {
 
 function getPreviousDayKey(dayKey) {
   const idx = DAYS.findIndex(d => d.key === dayKey);
-  if (idx <= 0) return null;
-  return DAYS[idx - 1].key;
+  return idx <= 0 ? null : DAYS[idx - 1].key;
 }
 
 function isClosingShift(shiftKey) {
@@ -302,9 +292,8 @@ function isClosingShift(shiftKey) {
 }
 
 function hadLateShiftPreviousDay(emp, dayKey) {
-  const prevDayKey = getPreviousDayKey(dayKey);
-  if (!prevDayKey) return false;
-  return isClosingShift(emp.days[prevDayKey]);
+  const prev = getPreviousDayKey(dayKey);
+  return prev ? isClosingShift(emp.days[prev]) : false;
 }
 
 function getClosingWorkersForDay(dayKey) {
@@ -313,22 +302,21 @@ function getClosingWorkersForDay(dayKey) {
 
 function getDayWarnings(dayKey) {
   const warnings = [];
-  const closingWorkers = getClosingWorkersForDay(dayKey);
+  const closers = getClosingWorkersForDay(dayKey);
 
-  if (closingWorkers.length === 0) {
+  if (closers.length === 0) {
     warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: keine Schicht bis 19:10.`);
   }
-
-  if (closingWorkers.length > 2) {
-    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: ${closingWorkers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
+  if (closers.length > 2) {
+    warnings.push(`⚠ ${DAYS.find(d => d.key === dayKey)?.label}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
 
-  const dayIndex = DAYS.findIndex(d => d.key === dayKey);
-  if (dayIndex >= 0 && dayIndex < DAYS.length - 1 && closingWorkers.length > 0) {
-    const nextDayKey = DAYS[dayIndex + 1].key;
-    const hasAnchor = closingWorkers.some(emp => emp.days[nextDayKey] !== "-");
+  const idx = DAYS.findIndex(d => d.key === dayKey);
+  if (idx >= 0 && idx < DAYS.length - 1 && closers.length > 0) {
+    const next = DAYS[idx + 1].key;
+    const hasAnchor = closers.some(emp => emp.days[next] !== "-");
     if (!hasAnchor) {
-      warnings.push(`⚠ ${DAYS[dayIndex + 1].label}: niemand vom ${DAYS[dayIndex].label}-Abschluss eingeplant.`);
+      warnings.push(`⚠ ${DAYS[idx + 1].label}: niemand vom ${DAYS[idx].label}-Abschluss eingeplant.`);
     }
   }
 
@@ -341,8 +329,8 @@ function getWeekWarnings() {
 
 function renderWeekWarnings() {
   if (!weekWarningsEl) return;
-  const warnings = getWeekWarnings();
   weekWarningsEl.innerHTML = "";
+  const warnings = getWeekWarnings();
 
   if (warnings.length === 0) {
     const div = document.createElement("div");
@@ -376,7 +364,6 @@ function getFormDataForShift(shiftKey) {
   if (!shift.start || !shift.end) {
     return { start: "", end: "", pause: "", sum: "" };
   }
-
   return {
     start: shift.start,
     end: shift.end,
@@ -386,27 +373,26 @@ function getFormDataForShift(shiftKey) {
 }
 
 function formatMonthYear(dateStr) {
-  if (!dateStr) return "__________";
+  if (!dateStr) return "____________";
   const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "__________";
+  if (Number.isNaN(d.getTime())) return "____________";
   return d.toLocaleDateString("de-DE", { month: "2-digit", year: "numeric" });
 }
 
 function renderTeamSectionVisibility() {
-  const collapsed = !!uiState.teamCollapsed;
-  teamSectionEl.classList.toggle("hidden", collapsed);
-  btnToggleTeamEl.textContent = collapsed ? "Team einblenden" : "Team ausblenden";
+  teamSectionEl.classList.toggle("hidden", !!uiState.teamCollapsed);
+  btnToggleTeamEl.textContent = uiState.teamCollapsed ? "Team einblenden" : "Team ausblenden";
 }
 
 function renderView() {
-  const currentView = uiState.currentView || "week";
-  dayViewEl.classList.toggle("hidden", currentView !== "day");
-  weekViewEl.classList.toggle("hidden", currentView !== "week");
-  formViewEl.classList.toggle("hidden", currentView !== "form");
+  const v = uiState.currentView || "week";
+  dayViewEl.classList.toggle("hidden", v !== "day");
+  weekViewEl.classList.toggle("hidden", v !== "week");
+  formViewEl.classList.toggle("hidden", v !== "form");
 
-  btnViewDayEl.classList.toggle("active", currentView === "day");
-  btnViewWeekEl.classList.toggle("active", currentView === "week");
-  btnViewFormEl.classList.toggle("active", currentView === "form");
+  btnViewDayEl.classList.toggle("active", v === "day");
+  btnViewWeekEl.classList.toggle("active", v === "week");
+  btnViewFormEl.classList.toggle("active", v === "form");
 }
 
 function renderTeamSetup() {
@@ -429,12 +415,12 @@ function renderTeamSetup() {
     });
 
     const roleSel = document.createElement("select");
-    for (const role of ROLE_OPTIONS) {
+    ROLE_OPTIONS.forEach(role => {
       const opt = document.createElement("option");
       opt.value = role.key;
-      opt.textContent = role.label;
+      opt.textContent = role.key || "-";
       roleSel.appendChild(opt);
-    }
+    });
     roleSel.value = emp.roleKey;
     roleSel.addEventListener("change", () => {
       emp.roleKey = roleSel.value;
@@ -468,14 +454,12 @@ function renderTeamSetup() {
     row.appendChild(roleSel);
     row.appendChild(targetInput);
     row.appendChild(info);
-
     teamListEl.appendChild(row);
   });
 }
 
 function renderTabs() {
   dayTabsEl.innerHTML = "";
-
   DAYS.forEach(d => {
     const btn = document.createElement("button");
     btn.className = `tabBtn${currentDay === d.key ? " active" : ""}`;
@@ -500,26 +484,21 @@ function renderSummary() {
   weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
 
   dayHoursActualEl.textContent = minutesToHM(dayTotal);
-  const dayObj = DAYS.find(d => d.key === currentDay);
-  dayHoursSubEl.textContent = dayObj ? dayObj.full : "Aktueller Tag";
-
+  dayHoursSubEl.textContent = DAYS.find(d => d.key === currentDay)?.full || "Aktueller Tag";
   lateCountInfoEl.textContent = `${lateCount} / 2`;
 
-  mepWeekFromEl.textContent = state.weekFrom || "__________";
-  mepWeekToEl.textContent = state.weekTo || "__________";
+  mepWeekFromEl.textContent = state.weekFrom || "____________";
+  mepWeekToEl.textContent = state.weekTo || "____________";
   mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
 }
 
 function renderPlanner() {
   renderTabs();
-
-  const dayObj = DAYS.find(d => d.key === currentDay);
-  metaDayNameEl.textContent = dayObj ? dayObj.full : currentDay;
+  metaDayNameEl.textContent = DAYS.find(d => d.key === currentDay)?.full || currentDay;
   dayHoursInfoEl.textContent = `Geplante Arbeitsstunden: ${minutesToHM(totalMinutesForDay(currentDay))}`;
 
   const warnings = getDayWarnings(currentDay);
   dayWarningsEl.innerHTML = "";
-
   if (warnings.length === 0) {
     dayWarningsEl.textContent = "Keine Warnungen.";
   } else {
@@ -535,7 +514,6 @@ function renderPlanner() {
 
   state.employees.forEach(emp => {
     const wasLateYesterday = hadLateShiftPreviousDay(emp, currentDay);
-
     const row = document.createElement("div");
     row.className = `planRow${wasLateYesterday ? " prevLate" : ""}`;
 
@@ -543,16 +521,10 @@ function renderPlanner() {
     head.className = "planHead";
 
     const left = document.createElement("div");
-    const name = document.createElement("div");
-    name.className = "planName";
-    name.textContent = emp.name || "—";
-
-    const sub = document.createElement("div");
-    sub.className = "planSub";
-    sub.textContent = `${emp.roleKey || "-"} · ${getShiftByKey(emp.days[currentDay]).desc}`;
-
-    left.appendChild(name);
-    left.appendChild(sub);
+    left.innerHTML = `
+      <div class="planName">${emp.name || "—"}</div>
+      <div class="planSub">${emp.roleKey || "-"} · ${getShiftByKey(emp.days[currentDay]).desc}</div>
+    `;
 
     if (wasLateYesterday) {
       const badge = document.createElement("div");
@@ -661,14 +633,16 @@ function renderWeekTable() {
   });
 }
 
-function appendMepDayCells(tr, shiftKey) {
+function buildMepDayBlock(shiftKey) {
   const data = getFormDataForShift(shiftKey);
-  [data.start, data.end, data.pause, data.sum].forEach(value => {
-    const td = document.createElement("td");
-    td.textContent = value || "";
-    if (!value) td.classList.add("mepEmpty");
-    tr.appendChild(td);
-  });
+  return `
+    <div class="mepDayBlock">
+      <div class="mepDayLabel">Beginn</div><div class="mepDayValue ${data.start ? "" : "mepEmpty"}">${data.start || ""}</div>
+      <div class="mepDayLabel">Ende</div><div class="mepDayValue ${data.end ? "" : "mepEmpty"}">${data.end || ""}</div>
+      <div class="mepDayLabel">Pause</div><div class="mepDayValue ${data.pause ? "" : "mepEmpty"}">${data.pause || ""}</div>
+      <div class="mepDayLabel">Summe</div><div class="mepDayValue ${data.sum ? "" : "mepEmpty"}">${data.sum || ""}</div>
+    </div>
+  `;
 }
 
 function renderMepTable() {
@@ -679,22 +653,27 @@ function renderMepTable() {
 
     const tdName = document.createElement("td");
     tdName.className = "mepNameCell";
-    tdName.innerHTML = `
-      <div class="mepNameMain">${emp.name || "—"}</div>
-    `;
+    tdName.innerHTML = `<div class="mepNameMain">${emp.name || "—"}</div>`;
     tr.appendChild(tdName);
 
     const tdFunc = document.createElement("td");
+    tdFunc.className = "mepFuncText";
     tdFunc.textContent = emp.roleKey || "-";
     tr.appendChild(tdFunc);
 
     const tdPlan = document.createElement("td");
+    tdPlan.className = "mepPlanText";
     tdPlan.textContent = emp.target || "-";
     tr.appendChild(tdPlan);
 
-    DAYS.forEach(d => appendMepDayCells(tr, emp.days[d.key]));
+    DAYS.forEach(d => {
+      const td = document.createElement("td");
+      td.innerHTML = buildMepDayBlock(emp.days[d.key]);
+      tr.appendChild(td);
+    });
 
     const tdWeek = document.createElement("td");
+    tdWeek.className = "mepWeekText";
     tdWeek.textContent = minutesToHM(totalMinutesForEmployee(emp));
     tr.appendChild(tdWeek);
 
@@ -774,4 +753,4 @@ document.getElementById("btnPrint").addEventListener("click", () => {
   window.print();
 });
 
-renderAll();renderAll();renderAll();renderAll();renderAll();
+renderAll();
