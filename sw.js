@@ -1,14 +1,14 @@
-const CACHE_NAME = "wochenplan-cache-v34";
+const CACHE_NAME = "wochenplan-cache-v40";
 
-const FILES = [
+const APP_FILES = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./week-view.js",
-  "./day-view.js",
-  "./form-view.js",
   "./month-engine.js",
+  "./day-view.js",
+  "./week-view.js",
+  "./form-view.js",
   "./manifest.webmanifest"
 ];
 
@@ -17,7 +17,7 @@ self.addEventListener("install", (event) => {
 
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(FILES);
+      return cache.addAll(APP_FILES);
     })
   );
 });
@@ -32,28 +32,34 @@ self.addEventListener("activate", (event) => {
           }
         })
       )
-    )
+    ).then(() => self.clients.claim())
   );
-
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(event.request).then((response) => {
-        const copy = response.clone();
+    fetch(event.request)
+      .then((networkResponse) => {
+        const responseClone = networkResponse.clone();
 
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, copy);
+          cache.put(event.request, responseClone);
         });
 
-        return response;
-      });
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          return cachedResponse || caches.match("./index.html");
+        });
+      })
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
