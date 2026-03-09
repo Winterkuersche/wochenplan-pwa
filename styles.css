@@ -420,8 +420,8 @@ th {
 /* ============================= */
 
 .mepPage {
-  width: 297mm;
-  min-height: 190mm;
+  width: 100%;
+  max-width: 100%;
   background: #fff;
   margin: 0 auto;
   color: #111;
@@ -429,7 +429,8 @@ th {
 
 .mepOuter {
   border: 0.4mm solid #8e8e8e;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .mepTable {
@@ -437,8 +438,6 @@ th {
   border-collapse: collapse;
   table-layout: fixed;
 }
-
-/* Tabellenzellen */
 
 .mepTable th,
 .mepTable td {
@@ -448,62 +447,60 @@ th {
   line-height: 1.2;
   vertical-align: top;
   background: #fff;
+  overflow: hidden;
 }
-
-/* Tabellenkopf */
 
 .mepTable thead th {
   text-align: center;
   font-weight: 700;
   vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
 }
 
 /* Spaltenbreiten */
-
 .mepNameCol {
   width: 34mm;
 }
 
 .mepFuncCol {
-  width: 18mm;
+  width: 19mm;
 }
 
 .mepPlanCol {
-  width: 20mm;
+  width: 21mm;
 }
 
 .mepTypeCol {
-  width: 18mm;
+  width: 19mm;
 }
 
 .mepDayCol {
-  width: 28mm;
+  width: 29mm;
 }
 
 .mepWeekCol {
-  width: 18mm;
+  width: 20mm;
 }
 
 .mepMonthCol {
-  width: 18mm;
+  width: 20mm;
 }
 
-/* Textfelder */
-
-.mepNameCell {
-  vertical-align: top;
-}
-
+/* Zellen links */
+.mepNameCell,
 .mepFuncText,
 .mepPlanText,
 .mepWeekText,
 .mepMonthText {
-  font-size: 3mm;
   vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
-/* Beginn Pause Ende Summe */
-
+/* Spalte Beginn / Pause / Ende / Summe */
 .mepTypeCell {
   font-weight: 700;
   white-space: nowrap;
@@ -511,28 +508,36 @@ th {
 }
 
 /* Tageswerte */
-
 .mepDayValueCell {
   text-align: center;
   white-space: nowrap;
   vertical-align: top;
+  overflow: visible;
+}
+
+/* Falls du Datum / Warentag später einträgst */
+.mepMetaCell {
+  text-align: center;
+  white-space: nowrap;
 }
 
 /* Fußtext */
-
 .mepFooterNote {
   margin-top: 4mm;
   font-size: 2.8mm;
   color: #555;
 }
 
-
 /* ============================= */
 /* PRINT VERSION                 */
 /* ============================= */
 
-@media print {
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
 
+@media print {
   body {
     padding: 0;
     background: #fff;
@@ -561,9 +566,11 @@ th {
 
   .mepOuter {
     overflow: visible;
+    border: none;
   }
 
   .mepTable {
+    width: 100%;
     page-break-inside: avoid;
   }
 
@@ -571,4 +578,8 @@ th {
     page-break-inside: avoid;
   }
 
+  .mepTable thead th {
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
 }
