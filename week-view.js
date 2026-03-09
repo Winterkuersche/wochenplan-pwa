@@ -19,15 +19,17 @@ function renderWeekWarnings() {
     weekWarningsEl.appendChild(div);
   });
 }
+
 function getWeekSelectValueForDay(emp, isoDate) {
   const resolved = getResolvedDayEntry({
     employee: emp,
-    isoDate,
+    isoDate: isoDate,
     schedule: state.schedule,
     absences: state.absences,
     stateKey: APP_META.stateKey
   });
 
+  if (!resolved) return "";
   if (resolved.type === "holiday") return "H";
   if (resolved.type === "sick") return "K";
   if (resolved.type === "vacation") return "U";
@@ -41,79 +43,101 @@ function getWeekSelectValueForDay(emp, isoDate) {
 }
 
 function getWeekSelectClassByValue(value) {
-  if (!value) return "";
-  return `shift-${String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  if (!value) return "free";
+  return String(value).toLowerCase();
 }
 
-function applyWeekSelection(emp, isoDate, value) {
-
+function ensureScheduleDay(isoDate) {
   if (!state.schedule) state.schedule = {};
-  if (!state.absences) state.absences = [];
+  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+  return state.schedule[isoDate];
+}
 
-  const empId = emp.id;
+function removeScheduleEntryForEmployeeOnDate(employeeId, isoDate) {
+  if (!state.schedule || !state.schedule[isoDate]) return;
+  delete state.schedule[isoDate][employeeId];
 
-  // alte Schicht entfernen
-  if (state.schedule?.[isoDate]?.[empId]) {
-    delete state.schedule[isoDate][empId];
+  if (Object.keys(state.schedule[isoDate]).length === 0) {
+    delete state.schedule[isoDate];
   }
+}
 
-  // alte Abwesenheit für diesen Tag entfernen
-  state.absences = state.absences.filter((a) => {
-    if (a.employeeId !== empId) return true;
-    if (!isIsoDateInRange(isoDate, a.from, a.to)) return true;
-    return false;
-  });
-
-  // --- Auswahl verarbeiten ---
-
-  if (value === "") {
-    // frei
+function removeAbsenceForEmployeeOnDate(employeeId, isoDate) {
+  if (!Array.isArray(state.absences)) {
+    state.absences = [];
     return;
   }
 
+  state.absences = state.absences.filter((entry) => {
+    if (!entry || entry.employeeId !== employeeId) return true;
+    return !isIsoDateInRange(isoDate, entry.from, entry.to);
+  });
+}
+
+function applyWeekSelection(emp, isoDate, value) {
+  if (!state.schedule) state.schedule = {};
+  if (!Array.isArray(state.absences)) state.absences = [];
+
+  const employeeId = emp.id;
+
+  removeScheduleEntryForEmployeeOnDate(employeeId, isoDate);
+  removeAbsenceForEmployeeOnDate(employeeId, isoDate);
+
+  if (!value) return;
+
   if (value === "U") {
-    state.absences.push(
-      createAbsenceEntry({
-        employeeId: empId,
-        type: "vacation",
-        from: isoDate,
-        to: isoDate
-      })
-    );
+    const entry = createAbsenceEntry({
+      employeeId: employeeId,
+      type: "vacation",
+      from: isoDate,
+      to: isoDate,
+      note: ""
+    });
+
+    if (entry) {
+      state.absences.push(entry);
+    }
     return;
   }
 
   if (value === "K") {
-    state.absences.push(
-      createAbsenceEntry({
-        employeeId: empId,
-        type: "sick",
-        from: isoDate,
-        to: isoDate
-      })
-    );
+    const entry = createAbsenceEntry({
+      employeeId: employeeId,
+      type: "sick",
+      from: isoDate,
+      to: isoDate,
+      note: ""
+    });
+
+    if (entry) {
+      state.absences.push(entry);
+    }
     return;
   }
 
   if (value === "AH") {
-    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-
-    state.schedule[isoDate][empId] = {
+    const daySchedule = ensureScheduleDay(isoDate);
+    daySchedule[employeeId] = {
       type: "external-help",
       label: "AH",
-      minutes: 0
+      minutes: 0,
+      branch: ""
     };
     return;
   }
 
-  // Frühschichten
-  if (value.startsWith("F")) {
-    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-
+  if (value === "F3" || value === "F4" || value === "F5" || value === "F6") {
     const entry = buildEarlyShiftEntry(value);
     if (entry) {
-      state.schedule[isoDate][empId] = entry;
+      const daySchedule = ensureScheduleDay(isoDate);
+      daySchedule[employeeId] = entry;
     }
+    return;
+  }
+
+  if (value === "L" || value === "G" || value === "FLEX") {
+    alert("Diese Auswahl bauen wir als Nächstes mit Zusatzabfrage ein.");
+    return;
   }
 }
 
@@ -121,55 +145,54 @@ function createWeekSelect(emp, isoDate) {
   const sel = document.createElement("select");
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
 
-  sel.className = `weekSelect ${getWeekSelectClassByValue(currentValue)}`;
-
   const resolved = getResolvedDayEntry({
     employee: emp,
-    isoDate,
+    isoDate: isoDate,
     schedule: state.schedule,
     absences: state.absences,
     stateKey: APP_META.stateKey
   });
 
-  const allOptions = [
-    { value: "", label: "—" },
-    ...SHIFT_CONFIG.statusOptions
-      .filter((opt) => opt.value && opt.value !== "H")
-      .map((opt) => ({ value: opt.value, label: opt.label }))
-  ];
+  sel.className = "weekSelect " + getWeekSelectClassByValue(currentValue);
 
-  if (resolved.type === "holiday") {
+  if (resolved && resolved.type === "holiday") {
     const holidayOption = document.createElement("option");
     holidayOption.value = "H";
     holidayOption.textContent = "H";
     sel.appendChild(holidayOption);
     sel.value = "H";
     sel.disabled = true;
-    sel.className = `weekSelect ${getWeekSelectClassByValue("H")}`;
     return sel;
   }
 
-  allOptions.forEach((option) => {
+  const options = [
+    { value: "", label: "—" },
+    { value: "F3", label: "F3" },
+    { value: "F4", label: "F4" },
+    { value: "F5", label: "F5" },
+    { value: "F6", label: "F6" },
+    { value: "L", label: "L" },
+    { value: "G", label: "G" },
+    { value: "FLEX", label: "Flex" },
+    { value: "U", label: "U" },
+    { value: "K", label: "K" },
+    { value: "AH", label: "AH" }
+  ];
+
+  options.forEach((option) => {
     const opt = document.createElement("option");
     opt.value = option.value;
     opt.textContent = option.label;
     sel.appendChild(opt);
   });
 
+  sel.value = currentValue;
+
   sel.addEventListener("change", () => {
-  const selectedValue = sel.value;
+    const selectedValue = sel.value;
 
-  applyWeekSelection(emp, isoDate, selectedValue);
+    applyWeekSelection(emp, isoDate, selectedValue);
 
-  sel.className = `weekSelect ${getWeekSelectClassByValue(selectedValue)}`;
-
-  savePlanData();
-  renderAllViews();
-});
-
-    sel.className = `weekSelect ${getWeekSelectClassByValue(selectedValue)}`;
-
-    // Speichern folgt im nächsten Schritt
     savePlanData();
     renderAllViews();
   });
@@ -217,7 +240,7 @@ function renderWeekTable() {
   const weekDays = getActiveWeekDays();
   if (!weekDays.length) return;
 
-  const visibleDays = weekDays.slice(0, 6); // Wochenplan nur Mo-Sa
+  const visibleDays = weekDays.slice(0, 6);
 
   state.employees.forEach((emp) => {
     const tr = document.createElement("tr");
