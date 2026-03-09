@@ -1,6 +1,6 @@
-const CACHE_NAME = "wochenplan-cache-v1";
+const CACHE_NAME = "wochenplan-cache-v30";
 
-const FILES_TO_CACHE = [
+const FILES = [
   "./",
   "./index.html",
   "./styles.css",
@@ -13,13 +13,13 @@ const FILES_TO_CACHE = [
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(FILES_TO_CACHE);
+      return cache.addAll(FILES);
     })
   );
-
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -39,9 +39,21 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(event.request).then((response) => {
+        const copy = response.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, copy);
+        });
+
+        return response;
+      });
     })
   );
 });
