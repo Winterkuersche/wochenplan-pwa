@@ -146,10 +146,11 @@
         <table id="mepTable" class="mepTable">
           <thead>
   <tr>
-    <th class="mepNameCol">Name / Vorname</th>
-    <th class="mepFuncCol">Funktion</th>
-    <th class="mepPlanCol">Plan / Woche</th>
-    <th class="mepTypeCol">Wochentag<br>Datum<br>Warentag</th>
+    <th class="mepNameCol" rowspan="2">Name / Vorname</th>
+    <th class="mepFuncCol" rowspan="2">Funktion</th>
+    <th class="mepPlanCol" rowspan="2">Plan / Woche</th>
+    <th class="mepTypeCol" rowspan="2">Wochentag<br>Datum<br>Warentag</th>
+
     <th class="mepDayCol">Montag</th>
     <th class="mepDayCol">Dienstag</th>
     <th class="mepDayCol">Mittwoch</th>
@@ -157,8 +158,18 @@
     <th class="mepDayCol">Freitag</th>
     <th class="mepDayCol">Samstag</th>
     <th class="mepDayCol">Sonntag</th>
-    <th class="mepWeekCol">Summe / Woche</th>
-    <th class="mepMonthCol">Summe / Monat</th>
+
+    <th class="mepWeekCol" rowspan="2">Summe / Woche</th>
+    <th class="mepMonthCol" rowspan="2">Summe / Monat</th>
+  </tr>
+  <tr>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
+    <th class="mepSubHead"></th>
   </tr>
 </thead>
 <tbody id="mepTableBody"></tbody>
