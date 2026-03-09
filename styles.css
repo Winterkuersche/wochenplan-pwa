@@ -431,10 +431,12 @@ th {
   border: 0.4mm solid #8e8e8e;
   overflow-x: auto;
   overflow-y: visible;
+  background: #fff;
 }
 
 .mepTable {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -442,12 +444,11 @@ th {
 .mepTable th,
 .mepTable td {
   border: 0.3mm solid #9b9b9b;
-  padding: 1.2mm 1mm;
+  padding: 1mm 1mm;
   font-size: 3mm;
-  line-height: 1.2;
+  line-height: 1.15;
   vertical-align: top;
   background: #fff;
-  overflow: hidden;
 }
 
 .mepTable thead th {
@@ -460,36 +461,42 @@ th {
   hyphens: auto;
 }
 
-/* Spaltenbreiten */
+.mepSubHead {
+  height: 6mm;
+  font-size: 2.6mm;
+  font-weight: 400;
+}
+
+/* Spaltenbreiten näher am Formular */
 .mepNameCol {
   width: 34mm;
 }
 
 .mepFuncCol {
-  width: 19mm;
+  width: 18mm;
 }
 
 .mepPlanCol {
-  width: 21mm;
+  width: 20mm;
 }
 
 .mepTypeCol {
-  width: 19mm;
+  width: 18mm;
 }
 
 .mepDayCol {
-  width: 29mm;
+  width: 24mm;
 }
 
 .mepWeekCol {
-  width: 20mm;
+  width: 18mm;
 }
 
 .mepMonthCol {
-  width: 20mm;
+  width: 18mm;
 }
 
-/* Zellen links */
+/* Linke Spalten */
 .mepNameCell,
 .mepFuncText,
 .mepPlanText,
@@ -500,25 +507,27 @@ th {
   overflow-wrap: break-word;
 }
 
-/* Spalte Beginn / Pause / Ende / Summe */
+/* Beginn / Pause / Ende / Summe */
 .mepTypeCell {
   font-weight: 700;
   white-space: nowrap;
   vertical-align: top;
 }
 
-/* Tageswerte */
+/* Werte je Tag */
 .mepDayValueCell {
   text-align: center;
   white-space: nowrap;
   vertical-align: top;
-  overflow: visible;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Falls du Datum / Warentag später einträgst */
-.mepMetaCell {
-  text-align: center;
+/* Summen */
+.mepWeekText,
+.mepMonthText {
   white-space: nowrap;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Fußtext */
@@ -571,6 +580,7 @@ th {
 
   .mepTable {
     width: 100%;
+    min-width: 0;
     page-break-inside: avoid;
   }
 
