@@ -1,3 +1,10 @@
+function pad2Form(n) {
+  return String(n).padStart(2, "0");
+}
+
+function formatShortDateForm(date) {
+  return `${pad2Form(date.getDate())}.${pad2Form(date.getMonth() + 1)}`;
+}
 
 function formatIsoDateForm(date) {
   return `${date.getFullYear()}-${pad2Form(date.getMonth() + 1)}-${pad2Form(date.getDate())}`;
@@ -7,12 +14,8 @@ function formatMonthYearFromDateForm(date) {
   return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
-function getFormDayData(emp, isoDate) {
-  const shiftKey = getShiftForEmployeeOnIso(emp, isoDate);
-  return getFormDataForShift(shiftKey);
-}
-
-function totalMinutesForEmployeeInMonth(emp, monthPlan) {
+function getMonthTotalForEmployee(emp) {
+  const monthPlan = state.monthPlan;
   if (!monthPlan?.weeks) return 0;
 
   let total = 0;
@@ -27,7 +30,12 @@ function totalMinutesForEmployeeInMonth(emp, monthPlan) {
   return total;
 }
 
-function buildEmployeeRowsForWeek(emp, weekDays, monthPlan) {
+function getFormDayData(emp, isoDate) {
+  const shiftKey = getShiftForEmployeeOnIso(emp, isoDate);
+  return getFormDataForShift(shiftKey);
+}
+
+function buildEmployeeRowsForWeek(emp, weekDays) {
   const rows = [
     { label: "Beginn", key: "start" },
     { label: "Pause", key: "pause" },
@@ -42,7 +50,7 @@ function buildEmployeeRowsForWeek(emp, weekDays, monthPlan) {
     return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
   }, 0);
 
-  const monthMinutes = totalMinutesForEmployeeInMonth(emp, monthPlan);
+  const monthMinutes = getMonthTotalForEmployee(emp);
 
   rows.forEach((rowDef, rowIndex) => {
     html += "<tr>";
@@ -81,7 +89,7 @@ function buildEmployeeRowsForWeek(emp, weekDays, monthPlan) {
   return html;
 }
 
-function buildWeekSheet(weekDays, monthPlan) {
+function buildWeekSheet(weekDays) {
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
 
@@ -147,7 +155,7 @@ function buildWeekSheet(weekDays, monthPlan) {
   `;
 
   state.employees.forEach((emp) => {
-    html += buildEmployeeRowsForWeek(emp, weekDays, monthPlan);
+    html += buildEmployeeRowsForWeek(emp, weekDays);
   });
 
   html += `
@@ -174,6 +182,6 @@ function renderFormView() {
   if (!monthPlan || !Array.isArray(monthPlan.weeks)) return;
 
   monthPlan.weeks.forEach((weekDays) => {
-    formViewEl.innerHTML += buildWeekSheet(weekDays, monthPlan);
+    formViewEl.innerHTML += buildWeekSheet(weekDays);
   });
 }
