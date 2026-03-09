@@ -415,98 +415,122 @@ th {
   display: none !important;
 }
 
-/* MEP Original-nahe Formularansicht */
-.mepSheet {
+/* Original-nahe MEP-Druckansicht */
+.mepPage {
+  width: 297mm;
+  min-height: 190mm;
   background: #fff;
+  margin: 0 auto;
+  color: #111;
 }
 
-.mepHeaderTop {
+.mepHeaderRow1 {
   display: flex;
   justify-content: space-between;
   align-items: end;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 10mm;
+  margin-bottom: 5mm;
 }
 
 .mepTitle {
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 8.5mm;
+  font-weight: 700;
+  line-height: 1.05;
 }
 
-.mepBranch {
-  font-size: 12px;
+.mepFiliale {
+  font-size: 4.1mm;
+  font-weight: 700;
+  min-width: 48mm;
+  text-align: left;
 }
 
-.mepHeaderMeta {
+.mepHeaderRow2 {
   display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8mm;
+  margin-bottom: 5mm;
+  font-size: 4.1mm;
+  font-weight: 600;
 }
 
-.mepWrap {
-  border-radius: 0;
+.mepOuter {
+  border: 0.4mm solid #8e8e8e;
+  overflow: hidden;
 }
 
 .mepTable {
-  min-width: 2400px;
+  width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .mepTable th,
 .mepTable td {
-  border: 1px solid #cfcfcf;
-  padding: 4px 6px;
-  font-size: 11px;
-  vertical-align: middle;
+  border: 0.3mm solid #9b9b9b;
+  padding: 1.2mm 1mm;
+  font-size: 3.1mm;
+  line-height: 1.15;
+  vertical-align: top;
   background: #fff;
+  white-space: normal;
 }
 
 .mepTable thead th {
   text-align: center;
+  vertical-align: middle;
   font-weight: 700;
 }
 
-.mepLeftCol {
-  min-width: 130px;
-}
-
-.mepFuncCol {
-  min-width: 65px;
-}
-
-.mepPlanCol {
-  min-width: 70px;
-}
-
-.mepWeekSumCol {
-  min-width: 78px;
-}
-
-.mepDayGroup {
-  min-width: 220px;
-}
+.mepNameCol { width: 34mm; }
+.mepFuncCol { width: 18mm; }
+.mepPlanCol { width: 20mm; }
+.mepDayCol  { width: 34mm; }
+.mepWeekCol { width: 20mm; }
 
 .mepNameCell {
-  min-width: 130px;
+  vertical-align: top;
 }
 
 .mepNameMain {
   font-weight: 700;
-  font-size: 11px;
+  font-size: 3.2mm;
   line-height: 1.15;
 }
 
-.mepNameSub {
-  font-size: 10px;
-  color: #555;
-  line-height: 1.1;
-  margin-top: 2px;
+.mepFuncText,
+.mepPlanText,
+.mepWeekText {
+  font-size: 3.1mm;
+}
+
+.mepDayBlock {
+  display: grid;
+  grid-template-columns: 13mm 1fr;
+  row-gap: 1mm;
+  column-gap: 1.2mm;
+  align-items: start;
+}
+
+.mepDayLabel {
+  font-size: 2.8mm;
+  font-weight: 700;
+}
+
+.mepDayValue {
+  font-size: 3mm;
+  min-height: 3.4mm;
 }
 
 .mepEmpty {
   color: #bdbdbd;
+}
+
+.mepFooterNote {
+  margin-top: 4mm;
+  font-size: 2.8mm;
+  color: #555;
 }
 
 @media (min-width: 920px) {
@@ -515,37 +539,19 @@ th {
   }
 }
 
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+
 @media print {
   body {
     padding: 0;
-  }
-
-  .toolbar,
-  .viewSwitch,
-  .tabs,
-  .daymeta,
-  .plannerList,
-  .legendCompact,
-  .teamsetup .small,
-  .daynav .small,
-  .overview .small,
-  .weekWarningsBox {
-    display: none !important;
+    background: #fff;
   }
 
   .topbar,
   .teamsetup,
-  .daynav,
-  .overview {
-    border: none;
-    padding: 0;
-    margin-bottom: 12px;
-  }
-
-  .tableWrap {
-    border: none;
-  }
-
   #dayView,
   #weekView {
     display: none !important;
@@ -553,15 +559,14 @@ th {
 
   #formView {
     display: block !important;
+    border: none;
+    margin: 0;
+    padding: 0;
   }
 
-  .mepTitle {
-    font-size: 16px;
-  }
-
-  .mepTable th,
-  .mepTable td {
-    font-size: 9px;
-    padding: 3px 4px;
+  .mepPage {
+    width: auto;
+    min-height: auto;
+    margin: 0;
   }
 }
