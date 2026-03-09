@@ -163,13 +163,43 @@ th{
 
 
 /* ============================= */
+/* WOCHENTAG DATUM WARENTAG      */
+/* ============================= */
+
+.mepTypeHead{
+  padding:0 !important;
+}
+
+.mepTypeHeadBox{
+  display:grid;
+  grid-template-rows:repeat(3,1fr);
+  height:100%;
+  min-height:22mm;
+}
+
+.mepTypeHeadBox div{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:1mm;
+  font-weight:700;
+  line-height:1.1;
+  white-space:normal;
+}
+
+.mepTypeHeadBox div:not(:last-child){
+  border-bottom:0.3mm solid #9b9b9b;
+}
+
+
+/* ============================= */
 /* TAGESWERTE                    */
 /* ============================= */
 
 .mepDayValueCell{
   text-align:center;
   white-space:nowrap;
-  font-variant-numeric:tabular-nums;
 }
 
 
