@@ -902,3 +902,76 @@ table {
 th {
   background: var(--panel);
 }
+
+body.dark .topbar,
+body.dark .teamsetup,
+body.dark .daynav,
+body.dark .overview,
+body.dark .printSheet,
+body.dark .metaBox,
+body.dark .miniStat,
+body.dark .tableWrap,
+body.dark .compactTableWrap {
+  background: #2a2c30;
+  color: #e8e8e8;
+  border-color: #3c3f45;
+}
+
+body.dark input,
+body.dark select,
+body.dark textarea {
+  background: #232529;
+  color: #f1f1f1;
+  border: 1px solid #4a4d55;
+}
+
+body.dark button {
+  background: #2a2c30;
+  color: #f1f1f1;
+  border: 1px solid #4a4d55;
+}
+
+body.dark .viewBtn.active {
+  background: #111318;
+  color: #fff;
+}
+
+body.dark #monthTable,
+body.dark .mepTable,
+body.dark #weekTable {
+  background: #232529;
+  color: #f1f1f1;
+}
+
+body.dark #monthTable th,
+body.dark #monthTable td,
+body.dark .mepTable th,
+body.dark .mepTable td,
+body.dark #weekTable th,
+body.dark #weekTable td {
+  border-color: #444851;
+  color: #f1f1f1;
+}
+
+body.dark #monthTable th,
+body.dark .mepTable th,
+body.dark #weekTable th {
+  background: #2f3238;
+}
+
+body.dark #monthTable td:first-child,
+body.dark #monthTable th:first-child {
+  background: #2a2c30;
+}
+
+body.dark .monthCellSunday,
+body.dark .monthHeadSunday {
+  background: #31343a !important;
+  color: #d0d0d0 !important;
+}
+
+body.dark .nameRoleSub,
+body.dark .small,
+body.dark .miniSub {
+  color: #b8b8b8;
+}
