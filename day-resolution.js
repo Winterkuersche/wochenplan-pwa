@@ -64,6 +64,16 @@ function getResolvedDayEntry({
   const absence = getPriorityAbsenceForEmployeeOnDate(absences, employee.id, isoDate);
   const plannedEntry = getScheduleEntryForEmployeeOnDate(schedule, employee.id, isoDate);
 
+    if (sunday) {
+    return createResolvedDayEntry({
+      type: "off",
+      label: "",
+      minutesForMonth: 0,
+      minutesForBranch: 0,
+      isSunday: true
+    });
+  }
+
   if (holiday) {
     return createResolvedDayEntry({
       type: "holiday",
