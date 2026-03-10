@@ -398,7 +398,7 @@ Ganztag 70 Minuten.
         <input id="shiftDialogFlexEnd" type="time">
       </label>
     </div>
-    <div id="shiftDialogAbsenceFields" class="dialogFields hidden">
+        <div id="shiftDialogAbsenceFields" class="dialogFields hidden">
       <label>
         Von
         <input id="shiftDialogAbsenceFrom" type="date">
@@ -409,6 +409,19 @@ Ganztag 70 Minuten.
         <input id="shiftDialogAbsenceTo" type="date">
       </label>
     </div>
+
+    <div id="shiftDialogExternalHelpFields" class="dialogFields hidden">
+      <label>
+        Zielfiliale
+        <input id="shiftDialogExternalHelpBranch" type="text" placeholder="z. B. Kiel">
+      </label>
+
+      <label>
+        Dauer
+        <input id="shiftDialogExternalHelpDuration" type="time" step="60">
+      </label>
+    </div>
+
     <div class="dialogActions">
       <button id="shiftDialogCancel" type="button">Abbrechen</button>
       <button id="shiftDialogSave" type="button">Speichern</button>
