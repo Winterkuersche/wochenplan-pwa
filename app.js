@@ -788,5 +788,19 @@ window.addEventListener("load", () => {
 
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
+
+  // TEST: Urlaub für emp_1 am ersten Wochentag
+  state.absences = state.absences || [];
+
+  state.absences.push(
+    createAbsenceEntry({
+      employeeId: "emp_1",
+      type: "vacation",
+      from: state.weekFrom,
+      to: state.weekFrom,
+      note: "Testurlaub"
+    })
+  );
+
   renderAll();
 });
