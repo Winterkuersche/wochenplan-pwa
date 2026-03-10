@@ -96,5 +96,5 @@ function getAbsenceDisplayLabel(absenceType) {
 }
 
 function getAbsenceMinutesForEmployee(employee) {
-  return getDailyTargetMinutesFromWeeklyHHMM(employee?.weeklyTarget || "00:00");
+  return getDailyTargetMinutesFromWeeklyHHMM(employee?.target || "00:00");
 }
