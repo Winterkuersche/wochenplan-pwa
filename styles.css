@@ -1,6 +1,22 @@
 /* ============================= */
 /* BASIS                         */
 /* ============================= */
+:root {
+  --bg: #ffffff;
+  --panel: #f6f6f6;
+  --border: #d0d0d0;
+  --text: #222;
+  --subtext: #666;
+  --accent: #0a58ff;
+}
+body.dark {
+  --bg: #1e1f22;
+  --panel: #2a2c30;
+  --border: #3c3f45;
+  --text: #e8e8e8;
+  --subtext: #aaa;
+  --accent: #5c8dff;
+}
 
 * {
   box-sizing: border-box;
@@ -846,4 +862,43 @@ select {
   .mepTable tr {
     page-break-inside: avoid;
   }
+}
+
+/* ========= THEME ========= */
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.topbar,
+.teamsetup,
+.daynav,
+.overview,
+.printSheet,
+.monthOverview {
+  background: var(--panel);
+  color: var(--text);
+}
+
+button {
+  background: var(--panel);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+input,
+select {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+table {
+  background: var(--bg);
+  color: var(--text);
+}
+
+th {
+  background: var(--panel);
 }
