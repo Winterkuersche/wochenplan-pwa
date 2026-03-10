@@ -256,9 +256,18 @@ function buildInitialState() {
   };
 }
 function rebuildScheduleFromLegacyShifts() {
-  state.schedule = state.schedule || {};
-
   const nextSchedule = {};
+
+  // bestehende nicht-legacy Einträge behalten, z. B. AH
+  Object.entries(state.schedule || {}).forEach(([isoDate, dayEntries]) => {
+    Object.entries(dayEntries || {}).forEach(([employeeId, entry]) => {
+      if (!entry) return;
+      if (entry.type === "external-help") {
+        if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
+        nextSchedule[isoDate][employeeId] = { ...entry };
+      }
+    });
+  });
 
   state.employees.forEach((emp) => {
     const shifts = emp.shifts || {};
