@@ -230,6 +230,19 @@ function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
   }
 }
 
+function removeScheduledShiftForEmployeeOnDate(employeeId, isoDate) {
+  if (!state.schedule?.[isoDate]?.[employeeId]) return;
+
+  const entry = state.schedule[isoDate][employeeId];
+  if (entry.type === "shift") {
+    delete state.schedule[isoDate][employeeId];
+
+    if (Object.keys(state.schedule[isoDate]).length === 0) {
+      delete state.schedule[isoDate];
+    }
+  }
+}
+
 function setExternalHelpForEmployeeOnDate(employeeId, isoDate, branch, hhmm) {
   const minutes = hhmmToMinutes(hhmm);
   if (minutes <= 0) return false;
@@ -328,6 +341,7 @@ groupShifts.label = "Schichten";
     const previousValue = currentValue;
 
     removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
 
     if (selectedValue === "U" || selectedValue === "K") {
       const endIso = prompt(
