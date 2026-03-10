@@ -975,3 +975,30 @@ body.dark .small,
 body.dark .miniSub {
   color: #b8b8b8;
 }
+/* Shift cells dark mode */
+body.dark .shiftCell,
+body.dark .monthCell,
+body.dark .weekCell {
+  background: #2a2d33 !important;
+  color: #e8e8e8;
+}
+
+/* Abwesenheiten */
+body.dark .vacation,
+body.dark .sick,
+body.dark .holiday {
+  background: #3a3d45 !important;
+  color: #fff;
+}
+
+/* normale Schichten */
+body.dark .early,
+body.dark .late,
+body.dark .full {
+  background: #2e3137 !important;
+}
+
+/* freie Tage */
+body.dark .free {
+  background: #232529 !important;
+}
