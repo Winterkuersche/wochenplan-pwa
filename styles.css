@@ -721,7 +721,51 @@ select {
 #monthTable .nameRoleCell {
   min-width: 140px;
 }
+.monthViewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
 
+.monthHeadSunday {
+  background: #eee !important;
+  color: #666;
+}
+
+.monthCell {
+  min-width: 34px;
+}
+
+.monthCellSunday {
+  background: #eee;
+  color: #666;
+}
+
+.monthCellHoliday {
+  background: #f3f3f3;
+  font-weight: 700;
+}
+
+.monthCellVacation {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.monthCellSick {
+  background: #f7f7f7;
+  font-weight: 600;
+}
+
+.monthCellExternalHelp {
+  background: #fcfcfc;
+  font-weight: 600;
+}
+
+.monthCellShift {
+  background: #fff;
+}
 
 /* ============================= */
 /* PRINT                         */
