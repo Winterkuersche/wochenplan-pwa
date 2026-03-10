@@ -77,10 +77,12 @@ const dayHoursSubEl = document.getElementById("dayHoursSub");
 
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
+const monthViewEl = document.getElementById("monthView");
 const formViewEl = document.getElementById("formView");
 
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
+const btnViewMonthEl = document.getElementById("btnViewMonth");
 const btnViewFormEl = document.getElementById("btnViewForm");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
@@ -625,10 +627,12 @@ function renderView() {
 
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
+  monthViewEl.classList.toggle("hidden", view !== "month");
   formViewEl.classList.toggle("hidden", view !== "form");
 
   btnViewDayEl.classList.toggle("active", view === "day");
   btnViewWeekEl.classList.toggle("active", view === "week");
+  btnViewMonthEl.classList.toggle("active", view === "month");
   btnViewFormEl.classList.toggle("active", view === "form");
 }
 
@@ -709,6 +713,7 @@ function renderAllViews() {
 
   if (typeof renderDayView === "function") renderDayView();
   if (typeof renderWeekView === "function") renderWeekView();
+  if (typeof renderMonthView === "function") renderMonthView();
   if (typeof renderFormView === "function") renderFormView();
 }
 
@@ -751,6 +756,15 @@ if (btnToggleTeamEl) {
 if (btnViewDayEl) {
   btnViewDayEl.addEventListener("click", () => {
     uiState.currentView = "day";
+    saveUiState();
+    renderView();
+    renderAllViews();
+  });
+}
+
+if (btnViewMonthEl) {
+  btnViewMonthEl.addEventListener("click", () => {
+    uiState.currentView = "month";
     saveUiState();
     renderView();
     renderAllViews();
