@@ -1002,3 +1002,17 @@ body.dark .full {
 body.dark .free {
   background: #232529 !important;
 }
+
+/* Originalformular immer hell lassen */
+body.dark #formView,
+body.dark .printSheet,
+body.dark .mepTable,
+body.dark .mepTable th,
+body.dark .mepTable td {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.dark .mepTable th {
+  background: #e6e6e6 !important;
+}
