@@ -82,7 +82,12 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    const entry = buildFlexShiftEntry(start, end);
+    const entry = buildFlexibleShiftEntry(start, end);
+
+    if (!entry) {
+  alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
+  return;
+}
 
     if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
     state.schedule[isoDate][emp.id] = entry;
