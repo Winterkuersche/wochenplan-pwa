@@ -813,12 +813,33 @@ document.getElementById("btnPrint")?.addEventListener("click", () => {
   window.print();
 });
 
+document.getElementById("btnPrint")?.addEventListener("click", () => {
+  window.print();
+});
+
+/* ========= DARK MODE ========= */
+
+const btnDarkMode = document.getElementById("btnDarkMode");
+
+btnDarkMode?.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+
+  localStorage.setItem(
+    "wochenplan_dark",
+    document.body.classList.contains("dark")
+  );
+});
+
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
   if (!state.weekFrom) {
     const today = new Date();
     state.weekFrom = toIsoDate(today);
   }
+
+  if (localStorage.getItem("wochenplan_dark") === "true") {
+  document.body.classList.add("dark");
+}
 
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
