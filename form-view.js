@@ -38,6 +38,50 @@ function getMonthTotalForEmployeeUntilWeek(emp, currentWeekDays) {
 
   return total;
 }
+
+function getBreakTextForResolvedShift(entry) {
+  if (!entry || entry.type !== "shift") return "";
+
+  const start = entry.start || "";
+  const end = entry.end || "";
+  const breakMinutes = Number(entry.breakMinutes || 0);
+
+  if (!start || !end || breakMinutes <= 0) return "";
+
+  if (entry.mode === "early") return "";
+
+  if (entry.mode === "late") {
+    const startMinutes = hhmmToMinutes(start);
+
+    if (startMinutes <= hhmmToMinutes("14:00")) {
+      return "16:00-16:10";
+    }
+
+    return "17:00-17:10";
+  }
+
+  if (entry.mode === "full") {
+    if (breakMinutes === 70) return "14:00-15:10";
+    if (breakMinutes === 60) return "14:00-15:00";
+  }
+
+  if (entry.mode === "flex") {
+    const startMinutes = hhmmToMinutes(start);
+    const endMinutes = hhmmToMinutes(end);
+    const span = endMinutes - startMinutes;
+
+    if (span <= 0) return "";
+
+    const mid = startMinutes + Math.floor(span / 2);
+    const breakStart = mid - Math.floor(breakMinutes / 2);
+    const breakEnd = breakStart + breakMinutes;
+
+    return `${minutesToHHMM(breakStart)}-${minutesToHHMM(breakEnd)}`;
+  }
+
+  return "";
+}
+
 function getResolvedFormDayData(emp, isoDate) {
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
@@ -73,9 +117,11 @@ function getResolvedFormDayData(emp, isoDate) {
   }
 
   if (resolved.type === "external-help") {
+    const branch = resolved.sourceEntry?.branch || "";
+
     return {
       start: "AH",
-      pause: "",
+      pause: branch,
       end: "",
       sum: minutesToHM(resolved.minutesForMonth)
     };
@@ -86,7 +132,7 @@ function getResolvedFormDayData(emp, isoDate) {
 
     return {
       start: entry.start || "",
-      pause: entry.breakMinutes ? minutesToHM(entry.breakMinutes) : "",
+      pause: getBreakTextForResolvedShift(entry),
       end: entry.end || "",
       sum: minutesToHM(resolved.minutesForMonth)
     };
