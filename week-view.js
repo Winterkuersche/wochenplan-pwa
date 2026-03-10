@@ -16,15 +16,27 @@ const shiftDialogFlexEnd = document.getElementById("shiftDialogFlexEnd");
 const shiftDialogCancel = document.getElementById("shiftDialogCancel");
 const shiftDialogSave = document.getElementById("shiftDialogSave");
 
+const shiftDialogExternalHelpFields = document.getElementById("shiftDialogExternalHelpFields");
+const shiftDialogExternalHelpBranch = document.getElementById("shiftDialogExternalHelpBranch");
+const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExternalHelpDuration");
+
 let shiftDialogContext = null;
 
 function openShiftDialog(type, context) {
   shiftDialogContext = context;
 
-  shiftDialogLateFields.classList.add("hidden");
+    shiftDialogLateFields.classList.add("hidden");
   shiftDialogFullFields.classList.add("hidden");
   shiftDialogFlexFields.classList.add("hidden");
   shiftDialogAbsenceFields.classList.add("hidden");
+  shiftDialogExternalHelpFields.classList.add("hidden");
+
+    if (type === "AH") {
+    shiftDialogTitle.textContent = "Aushilfe";
+    shiftDialogExternalHelpFields.classList.remove("hidden");
+    shiftDialogExternalHelpBranch.value = "";
+    shiftDialogExternalHelpDuration.value = "05:00";
+  }
 
     if (type === "U") {
     shiftDialogTitle.textContent = "Urlaub";
@@ -149,6 +161,25 @@ shiftDialogSave.addEventListener("click", () => {
     removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
     removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
     addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+  }
+    if (type === "AH") {
+    const branch = (shiftDialogExternalHelpBranch.value || "").trim();
+    const hhmm = shiftDialogExternalHelpDuration.value;
+
+    if (!hhmm || !isValidHHMM(hhmm) || hhmmToMinutes(hhmm) <= 0) {
+      alert("Ungültige Dauer für Aushilfe.");
+      return;
+    }
+
+    setShiftForEmployeeOnIso(emp, isoDate, "-");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+
+    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
+    if (!ok) {
+      alert("Aushilfe konnte nicht gespeichert werden.");
+      return;
+    }
   }
 
   savePlanData();
@@ -400,26 +431,9 @@ groupShifts.label = "Schichten";
       return;
     }
 
-        if (selectedValue === "AH") {
-      const branch = prompt("Aushilfe in welcher Filiale?", "") || "";
-      const hhmm = prompt("Aushilfe Dauer (HH:MM):", "05:00");
-
-      if (!hhmm || !isValidHHMM(hhmm) || hhmmToMinutes(hhmm) <= 0) {
-        sel.value = previousValue;
-        return;
-      }
-
-      removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-      setShiftForEmployeeOnIso(emp, isoDate, "-");
-
-      const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
-      if (!ok) {
-        sel.value = previousValue;
-        return;
-      }
-
-      savePlanData();
-      renderAllViews();
+            if (selectedValue === "AH") {
+      openShiftDialog("AH", { emp, isoDate, type: "AH" });
+      sel.value = previousValue;
       return;
     }
 
