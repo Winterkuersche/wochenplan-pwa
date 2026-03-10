@@ -844,6 +844,10 @@ window.addEventListener("load", () => {
     state.weekFrom = toIsoDate(today);
   }
 
+  if (!state.activeMonth) {
+    state.activeMonth = (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
+  }
+
   const savedTheme = localStorage.getItem("wochenplan_dark");
 
   if (savedTheme === "true") {
