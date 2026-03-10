@@ -94,44 +94,44 @@ shiftDialogSave.addEventListener("click", () => {
 
   setShiftForEmployeeOnIso(emp, isoDate, "-");
   removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-
-  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-  state.schedule[isoDate][emp.id] = entry;
-}
-
-  if (type === "G") {
-    const checkout = shiftDialogFullCheckout.value === "yes";
-    const entry = buildFullShiftEntry(checkout);
-
-    setShiftForEmployeeOnIso(emp, isoDate, "-");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-
-    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-    state.schedule[isoDate][emp.id] = entry;
-  }
-
-  if (type === "FLEX") {
-    const start = shiftDialogFlexStart.value;
-    const end = shiftDialogFlexEnd.value;
-
-    if (!start || !end) {
-      alert("Start und Ende wählen.");
-      return;
-    }
-
-    const entry = buildFlexibleShiftEntry(start, end);
-
-    if (!entry) {
-  alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
+  setScheduleEntry(emp.id, isoDate, entry);
+  closeShiftDialog();
   return;
 }
 
-    setShiftForEmployeeOnIso(emp, isoDate, "-");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-    
-    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-    state.schedule[isoDate][emp.id] = entry;
+  if (type === "G") {
+  const checkout = shiftDialogFullCheckout.value === "yes";
+  const entry = buildFullShiftEntry(checkout);
+
+  setShiftForEmployeeOnIso(emp, isoDate, "-");
+  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+  setScheduleEntry(emp.id, isoDate, entry);
+  closeShiftDialog();
+  return;
+}
+
+  if (type === "FLEX") {
+  const start = shiftDialogFlexStart.value;
+  const end = shiftDialogFlexEnd.value;
+
+  if (!start || !end) {
+    alert("Start und Ende wählen.");
+    return;
   }
+
+  const entry = buildFlexibleShiftEntry(start, end);
+
+  if (!entry) {
+    alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
+    return;
+  }
+
+  setShiftForEmployeeOnIso(emp, isoDate, "-");
+  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+  setScheduleEntry(emp.id, isoDate, entry);
+  closeShiftDialog();
+  return;
+}
 
     if (type === "U") {
     const fromIso = shiftDialogAbsenceFrom.value;
