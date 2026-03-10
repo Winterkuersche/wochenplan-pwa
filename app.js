@@ -821,6 +821,11 @@ document.getElementById("btnPrint")?.addEventListener("click", () => {
 
 const btnDarkMode = document.getElementById("btnDarkMode");
 
+function updateDarkModeButton() {
+  if (!btnDarkMode) return;
+  btnDarkMode.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+}
+
 btnDarkMode?.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 
@@ -828,6 +833,8 @@ btnDarkMode?.addEventListener("click", () => {
     "wochenplan_dark",
     document.body.classList.contains("dark")
   );
+
+  updateDarkModeButton();
 });
 
 /* ========= INIT ========= */
@@ -849,6 +856,7 @@ window.addEventListener("load", () => {
     }
   }
 
+  updateDarkModeButton();
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
   renderAll();
