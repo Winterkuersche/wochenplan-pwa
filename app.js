@@ -258,29 +258,24 @@ function buildInitialState() {
 function rebuildScheduleFromLegacyShifts() {
   const nextSchedule = {};
 
-  // Bereits vorhandene neue Einträge behalten:
-  // external-help, late, full, flex, early aus neuem schedule
+  // Neue schedule-Einträge behalten
   Object.entries(state.schedule || {}).forEach(([isoDate, dayEntries]) => {
     Object.entries(dayEntries || {}).forEach(([employeeId, entry]) => {
-      if (!entry || entry.type !== "shift" && entry.type !== "external-help") return;
+      if (!entry) return;
 
-      if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
-      nextSchedule[isoDate][employeeId] = { ...entry };
+      if (entry.type === "shift" || entry.type === "external-help") {
+        if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
+        nextSchedule[isoDate][employeeId] = { ...entry };
+      }
     });
   });
 
-  // Legacy-Schichten aus emp.shifts darüberlegen/aktualisieren
+  // Legacy-Schichten aus emp.shifts ergänzen/aktualisieren
   state.employees.forEach((emp) => {
     const shifts = emp.shifts || {};
 
     Object.entries(shifts).forEach(([isoDate, shiftKey]) => {
       if (!shiftKey || shiftKey === "-") {
-        if (nextSchedule[isoDate]?.[emp.id]?.type === "shift") {
-          delete nextSchedule[isoDate][emp.id];
-          if (Object.keys(nextSchedule[isoDate]).length === 0) {
-            delete nextSchedule[isoDate];
-          }
-        }
         return;
       }
 
@@ -310,16 +305,14 @@ function rebuildScheduleFromLegacyShifts() {
 
       if (!entry) return;
 
-      if (!nextSchedule[isoDate]) {
-        nextSchedule[isoDate] = {};
-      }
-
+      if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
       nextSchedule[isoDate][emp.id] = entry;
     });
   });
 
   state.schedule = nextSchedule;
 }
+
 function saveMasterData() {
   saveJson(MASTER_KEY, {
     employees: state.employees.map((emp) => ({
@@ -338,7 +331,7 @@ function savePlanData() {
   });
 
   rebuildScheduleFromLegacyShifts();
-  
+
   saveJson(PLAN_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
