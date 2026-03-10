@@ -508,9 +508,11 @@ function getResolvedEntryForEmployeeOnIso(emp, isoDate) {
 function getResolvedLabelForEmployeeOnIso(emp, isoDate) {
   return getResolvedEntryForEmployeeOnIso(emp, isoDate).label;
 }
+
 function totalMinutesForEmployeeInWeek(emp, weekDays) {
   return weekDays.reduce((sum, day) => {
-    return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
+    if (day.isOutsideMonth) return sum;
+    return sum + getResolvedEntryForEmployeeOnIso(emp, day.iso).minutesForMonth;
   }, 0);
 }
 
@@ -524,13 +526,16 @@ function deltaMinutes(emp) {
 
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
-    return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, iso));
+    return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;
   }, 0);
 }
 
 function totalMinutesForWeek() {
   const week = getActiveWeekDays();
-  return state.employees.reduce((sum, emp) => sum + totalMinutesForEmployeeInWeek(emp, week), 0);
+  return week.reduce((sum, day) => {
+    if (day.isOutsideMonth) return sum;
+    return sum + totalMinutesForDayIso(day.iso);
+  }, 0);
 }
 
 /* ========= WARNINGS ========= */
