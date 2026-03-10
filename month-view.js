@@ -1,3 +1,11 @@
+document.getElementById("monthPrev")?.addEventListener("click", () => {
+  changeMonth(-1);
+});
+
+document.getElementById("monthNext")?.addEventListener("click", () => {
+  changeMonth(1);
+});
+
 function getMonthViewContentEl() {
   return document.getElementById("monthViewContent");
 }
@@ -63,6 +71,16 @@ function buildMonthHeaderRow(days) {
   return html;
 }
 
+function changeMonth(offset) {
+  const [year, month] = state.activeMonth.split("-").map(Number);
+
+  const date = new Date(year, month - 1 + offset, 1);
+
+  state.activeMonth = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+
+  renderAllViews();
+}
+
 function buildMonthEmployeeRow(emp, days) {
   let html = `
     <tr>
@@ -103,6 +121,18 @@ function renderMonthView() {
     return;
   }
 
+  const title = document.getElementById("monthTitle");
+
+if (title) {
+  const [year, month] = state.activeMonth.split("-");
+  const date = new Date(year, month - 1, 1);
+
+  title.textContent = date.toLocaleDateString("de-DE", {
+    month: "long",
+    year: "numeric"
+  });
+}
+  
   const monthTitle = getMonthTitleFromDays(days);
 
   let html = `
