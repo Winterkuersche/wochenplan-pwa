@@ -18,6 +18,31 @@ function getActiveMonthDays() {
   return days;
 }
 
+function getMonthTitleFromDays(days) {
+  if (!days.length) return "Monat";
+
+  const firstDate = days[0].date;
+  const monthNames = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember"
+  ];
+
+  return `${monthNames[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
+}
+
+function getMonthCellClass(resolved, day) {
+  const classes = ["monthCell"];
+
+  if (day.weekdayIndex === 6) classes.push("monthCellSunday");
+  if (resolved.type === "holiday") classes.push("monthCellHoliday");
+  if (resolved.type === "vacation") classes.push("monthCellVacation");
+  if (resolved.type === "sick") classes.push("monthCellSick");
+  if (resolved.type === "external-help") classes.push("monthCellExternalHelp");
+  if (resolved.type === "shift") classes.push("monthCellShift");
+
+  return classes.join(" ");
+}
+
 function buildMonthHeaderRow(days) {
   let html = `
     <tr>
@@ -26,8 +51,8 @@ function buildMonthHeaderRow(days) {
 
   days.forEach((day) => {
     const isSunday = day.weekdayIndex === 6;
-    const style = isSunday ? ` style="background:#eee;color:#666;"` : "";
-    html += `<th${style}>${day.day}<br>${day.weekdayLabel}</th>`;
+    const className = isSunday ? ` class="monthHeadSunday"` : "";
+    html += `<th${className}>${day.day}<br>${day.weekdayLabel}</th>`;
   });
 
   html += `
@@ -51,12 +76,11 @@ function buildMonthEmployeeRow(emp, days) {
 
   days.forEach((day) => {
     const resolved = getResolvedEntryForEmployeeOnIso(emp, day.iso);
-    const isSunday = day.weekdayIndex === 6;
-    const grayStyle = isSunday ? ` style="background:#eee;color:#666;"` : "";
+    const className = getMonthCellClass(resolved, day);
 
     monthMinutes += resolved.minutesForMonth || 0;
 
-    html += `<td${grayStyle}>${resolved.label || ""}</td>`;
+    html += `<td class="${className}">${resolved.label || ""}</td>`;
   });
 
   html += `
@@ -79,7 +103,14 @@ function renderMonthView() {
     return;
   }
 
+  const monthTitle = getMonthTitleFromDays(days);
+
   let html = `
+    <div class="monthViewHeader">
+      <strong>${monthTitle}</strong>
+      <span class="small">${days.length} Tage im aktuellen Monat</span>
+    </div>
+
     <table id="monthTable">
       <thead>
         ${buildMonthHeaderRow(days)}
