@@ -263,15 +263,21 @@ function createWeekSelect(emp, isoDate) {
     return sel;
   }
 
-  const groupShifts = document.createElement("optgroup");
-  groupShifts.label = "Schichten";
-
-  SHIFTS.forEach((shift) => {
-    const opt = document.createElement("option");
-    opt.value = shift.key;
-    opt.textContent = shift.key;
-    groupShifts.appendChild(opt);
-  });
+  [
+  { value: "-", label: "-" },
+  { value: "F3", label: "F3" },
+  { value: "F4", label: "F4" },
+  { value: "F5", label: "F5" },
+  { value: "F6", label: "F6" },
+  { value: "L", label: "L" },
+  { value: "G", label: "G" },
+  { value: "FLEX", label: "Flex" }
+].forEach((shift) => {
+  const opt = document.createElement("option");
+  opt.value = shift.value;
+  opt.textContent = shift.label;
+  groupShifts.appendChild(opt);
+});
 
   const groupSpecial = document.createElement("optgroup");
   groupSpecial.label = "Abwesenheit / Sonstiges";
