@@ -258,22 +258,31 @@ function buildInitialState() {
 function rebuildScheduleFromLegacyShifts() {
   const nextSchedule = {};
 
-  // bestehende nicht-legacy Einträge behalten, z. B. AH
+  // Bereits vorhandene neue Einträge behalten:
+  // external-help, late, full, flex, early aus neuem schedule
   Object.entries(state.schedule || {}).forEach(([isoDate, dayEntries]) => {
     Object.entries(dayEntries || {}).forEach(([employeeId, entry]) => {
-      if (!entry) return;
-      if (entry.type === "external-help") {
-        if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
-        nextSchedule[isoDate][employeeId] = { ...entry };
-      }
+      if (!entry || entry.type !== "shift" && entry.type !== "external-help") return;
+
+      if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
+      nextSchedule[isoDate][employeeId] = { ...entry };
     });
   });
 
+  // Legacy-Schichten aus emp.shifts darüberlegen/aktualisieren
   state.employees.forEach((emp) => {
     const shifts = emp.shifts || {};
 
     Object.entries(shifts).forEach(([isoDate, shiftKey]) => {
-      if (!shiftKey || shiftKey === "-") return;
+      if (!shiftKey || shiftKey === "-") {
+        if (nextSchedule[isoDate]?.[emp.id]?.type === "shift") {
+          delete nextSchedule[isoDate][emp.id];
+          if (Object.keys(nextSchedule[isoDate]).length === 0) {
+            delete nextSchedule[isoDate];
+          }
+        }
+        return;
+      }
 
       let entry = null;
 
