@@ -412,6 +412,39 @@ groupShifts.label = "Schichten";
 
   sel.value = currentValue;
 
+    sel.addEventListener("click", () => {
+    const currentResolvedValue = getWeekSelectValueForDay(emp, isoDate);
+
+    if (currentResolvedValue === "L") {
+      openShiftDialog("L", { emp, isoDate, type: "L" });
+      return;
+    }
+
+    if (currentResolvedValue === "G") {
+      openShiftDialog("G", { emp, isoDate, type: "G" });
+      return;
+    }
+
+    if (currentResolvedValue === "FLEX") {
+      openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+      return;
+    }
+
+    if (currentResolvedValue === "U") {
+      openShiftDialog("U", { emp, isoDate, type: "U" });
+      return;
+    }
+
+    if (currentResolvedValue === "K") {
+      openShiftDialog("K", { emp, isoDate, type: "K" });
+      return;
+    }
+
+    if (currentResolvedValue === "AH") {
+      openShiftDialog("AH", { emp, isoDate, type: "AH" });
+    }
+  });
+
   sel.addEventListener("change", () => {
     const selectedValue = sel.value;
     const previousValue = currentValue;
