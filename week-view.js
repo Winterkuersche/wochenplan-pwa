@@ -263,7 +263,10 @@ function createWeekSelect(emp, isoDate) {
     return sel;
   }
 
-  [
+  const groupShifts = document.createElement("optgroup");
+groupShifts.label = "Schichten";
+
+[
   { value: "-", label: "-" },
   { value: "F3", label: "F3" },
   { value: "F4", label: "F4" },
