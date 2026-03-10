@@ -52,6 +52,91 @@ let state = buildInitialState();
 state.schedule = state.schedule || {};
 state.absences = state.absences || [];
 rebuildScheduleFromLegacyShifts();
+
+/* ========= PLAN API ========= */
+
+function ensureScheduleDay(isoDate) {
+  if (!state.schedule) state.schedule = {};
+  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+  return state.schedule[isoDate];
+}
+
+function cleanupScheduleDay(isoDate) {
+  const day = state.schedule?.[isoDate];
+  if (!day) return;
+
+  if (Object.keys(day).length === 0) {
+    delete state.schedule[isoDate];
+  }
+}
+
+function getScheduleEntry(employeeId, isoDate) {
+  return state.schedule?.[isoDate]?.[employeeId] || null;
+}
+
+function setScheduleEntry(employeeId, isoDate, entry) {
+  if (!employeeId || !isoDate || !entry) return;
+
+  const day = ensureScheduleDay(isoDate);
+  day[employeeId] = { ...entry };
+
+  savePlanData();
+  renderAllViews();
+}
+
+function clearScheduleEntry(employeeId, isoDate) {
+  if (!employeeId || !isoDate) return;
+
+  if (state.schedule?.[isoDate]?.[employeeId]) {
+    delete state.schedule[isoDate][employeeId];
+    cleanupScheduleDay(isoDate);
+  }
+
+  savePlanData();
+  renderAllViews();
+}
+
+function setShift(employeeId, isoDate, entry) {
+  if (!entry || entry.type !== "shift") return;
+  setScheduleEntry(employeeId, isoDate, entry);
+}
+
+function setExternalHelp(employeeId, isoDate, branch, minutes) {
+  setScheduleEntry(employeeId, isoDate, {
+    type: "external-help",
+    label: "AH",
+    branch,
+    minutes
+  });
+}
+
+function setAbsence(employeeId, from, to, type, note = "") {
+  const absence = {
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `abs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    employeeId,
+    type,
+    from,
+    to,
+    note
+  };
+
+  state.absences.push(absence);
+  state.absences = normalizeAbsences(state.absences);
+
+  savePlanData();
+  renderAllViews();
+
+  return absence;
+}
+
+function removeAbsence(absenceId) {
+  state.absences = state.absences.filter((a) => a.id !== absenceId);
+
+  savePlanData();
+  renderAllViews();
+}
 /* ========= DOM ========= */
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
@@ -545,9 +630,15 @@ function totalMinutesForWeek() {
 }
 
 /* ========= WARNINGS ========= */
+function isClosingResolvedEntry(entry) {
+  if (!entry || entry.type !== "shift") return false;
+  return ["G1", "L1", "L2", "L3", "L4"].includes(entry.code);
+}
+
 function getClosingWorkersForIso(iso) {
   return state.employees.filter((emp) => {
-    return isClosingShift(getShiftForEmployeeOnIso(emp, iso));
+    const entry = getScheduleEntry(emp.id, iso);
+    return isClosingResolvedEntry(entry);
   });
 }
 
@@ -797,7 +888,6 @@ document.getElementById("btnSaveMaster")?.addEventListener("click", () => {
   saveMasterData();
   alert("Stammdaten gespeichert.");
 });
-
 document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   if (!confirm("Wochen-/Monatsplan leeren? Stammdaten bleiben erhalten.")) return;
 
@@ -805,17 +895,17 @@ document.getElementById("btnResetWeek")?.addEventListener("click", () => {
     emp.shifts = {};
   });
 
+  state.schedule = {};
+  state.absences = [];
+
   savePlanData();
   renderAll();
 });
-
 document.getElementById("btnPrint")?.addEventListener("click", () => {
   window.print();
 });
 
-document.getElementById("btnPrint")?.addEventListener("click", () => {
-  window.print();
-});
+
 
 /* ========= DARK MODE ========= */
 
