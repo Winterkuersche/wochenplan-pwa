@@ -248,10 +248,11 @@ function buildInitialState() {
     ? normalizeAbsences(plan.absences)
     : [];
 
-  return {
+    return {
     weekFrom: plan.weekFrom || "",
     weekTo: plan.weekTo || "",
     monthPlan: null,
+    activeMonth: (plan.weekFrom || toIsoDate(new Date())).slice(0, 7),
     employees,
     schedule,
     absences
@@ -402,9 +403,12 @@ function getMonthPlanSafe(dateStr) {
 
 /* ========= ACTIVE WEEK ========= */
 function getActiveMonthPlan() {
-  const startStr = state.weekFrom || weekFromEl?.value || "";
-  if (!startStr) return null;
-  return getMonthPlanSafe(startStr);
+  const activeMonth = state.activeMonth || (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
+  const [year, month] = activeMonth.split("-").map(Number);
+
+  if (!year || !month) return null;
+
+  return buildMonthPlanFallback(year, month - 1);
 }
 
 function syncMonthPlanToState() {
