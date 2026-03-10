@@ -788,9 +788,5 @@ window.addEventListener("load", () => {
 
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
-
-  state.absences = (state.absences || []).filter((entry) => entry.note !== "Testurlaub");
-  savePlanData();
-
   renderAll();
 });
