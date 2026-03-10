@@ -20,24 +20,229 @@ function renderWeekWarnings() {
   });
 }
 
+function shiftIsoDateByDays(isoDate, dayOffset) {
+  const date = fromIsoDate(isoDate);
+  if (!date) return isoDate;
+
+  date.setDate(date.getDate() + dayOffset);
+  return toIsoDate(date);
+}
+
+function subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso) {
+  if (!entry) return [];
+
+  const entryFrom = entry.from;
+  const entryTo = entry.to;
+
+  const hasOverlap = !(removeToIso < entryFrom || removeFromIso > entryTo);
+  if (!hasOverlap) return [entry];
+
+  if (removeFromIso <= entryFrom && removeToIso >= entryTo) {
+    return [];
+  }
+
+  if (removeFromIso <= entryFrom && removeToIso < entryTo) {
+    const nextFrom = shiftIsoDateByDays(removeToIso, 1);
+    const trimmed = createAbsenceEntry({
+      ...entry,
+      id: null,
+      from: nextFrom,
+      to: entryTo
+    });
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (removeFromIso > entryFrom && removeToIso >= entryTo) {
+    const nextTo = shiftIsoDateByDays(removeFromIso, -1);
+    const trimmed = createAbsenceEntry({
+      ...entry,
+      id: null,
+      from: entryFrom,
+      to: nextTo
+    });
+    return trimmed ? [trimmed] : [];
+  }
+
+  const leftTo = shiftIsoDateByDays(removeFromIso, -1);
+  const rightFrom = shiftIsoDateByDays(removeToIso, 1);
+
+  const leftPart = createAbsenceEntry({
+    ...entry,
+    id: null,
+    from: entryFrom,
+    to: leftTo
+  });
+
+  const rightPart = createAbsenceEntry({
+    ...entry,
+    id: null,
+    from: rightFrom,
+    to: entryTo
+  });
+
+  return [leftPart, rightPart].filter(Boolean);
+}
+
+function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso) {
+  state.absences = (state.absences || []).flatMap((entry) => {
+    if (!entry || entry.employeeId !== employeeId) return entry ? [entry] : [];
+    return subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso);
+  });
+}
+
+function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
+  removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
+
+  const entry = createAbsenceEntry({
+    employeeId,
+    type,
+    from: fromIso,
+    to: toIso,
+    note: ""
+  });
+
+  if (entry) {
+    state.absences.push(entry);
+  }
+}
+
+function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
+  if (!state.schedule?.[isoDate]?.[employeeId]) return;
+
+  if (state.schedule[isoDate][employeeId].type === "external-help") {
+    delete state.schedule[isoDate][employeeId];
+
+    if (Object.keys(state.schedule[isoDate]).length === 0) {
+      delete state.schedule[isoDate];
+    }
+  }
+}
+
+function setExternalHelpForEmployeeOnDate(employeeId, isoDate, branch, hhmm) {
+  const minutes = hhmmToMinutes(hhmm);
+  if (minutes <= 0) return false;
+
+  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+  state.schedule[isoDate][employeeId] = {
+    type: "external-help",
+    label: "AH",
+    minutes,
+    branch: branch || ""
+  };
+  return true;
+}
+
+function getWeekSelectValueForDay(emp, isoDate) {
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+
+  if (resolved.type === "holiday") return "H";
+  if (resolved.type === "sick") return "K";
+  if (resolved.type === "vacation") return "U";
+  if (resolved.type === "external-help") return "AH";
+
+  return getShiftForEmployeeOnIso(emp, isoDate);
+}
+
+function buildWeekSelectClass(value) {
+  return `weekSelect ${getShiftClassByKey(value === "U" || value === "K" || value === "AH" || value === "H" ? "-" : value)}`;
+}
+
 function createWeekSelect(emp, isoDate) {
   const sel = document.createElement("select");
-  const currentShift = getShiftForEmployeeOnIso(emp, isoDate);
+  const currentValue = getWeekSelectValueForDay(emp, isoDate);
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
-  sel.className = `weekSelect ${getShiftClassByKey(currentShift)}`;
+  sel.className = buildWeekSelectClass(currentValue);
+
+  if (resolved.type === "holiday") {
+    const opt = document.createElement("option");
+    opt.value = "H";
+    opt.textContent = "H";
+    sel.appendChild(opt);
+    sel.value = "H";
+    sel.disabled = true;
+    return sel;
+  }
+
+  const groupShifts = document.createElement("optgroup");
+  groupShifts.label = "Schichten";
 
   SHIFTS.forEach((shift) => {
     const opt = document.createElement("option");
     opt.value = shift.key;
     opt.textContent = shift.key;
-    sel.appendChild(opt);
+    groupShifts.appendChild(opt);
   });
 
-  sel.value = currentShift;
+  const groupSpecial = document.createElement("optgroup");
+  groupSpecial.label = "Abwesenheit / Sonstiges";
+
+  [
+    { value: "U", label: "U" },
+    { value: "K", label: "K" },
+    { value: "AH", label: "AH" }
+  ].forEach((item) => {
+    const opt = document.createElement("option");
+    opt.value = item.value;
+    opt.textContent = item.label;
+    groupSpecial.appendChild(opt);
+  });
+
+  sel.appendChild(groupShifts);
+  sel.appendChild(groupSpecial);
+
+  sel.value = currentValue;
 
   sel.addEventListener("change", () => {
-    setShiftForEmployeeOnIso(emp, isoDate, sel.value);
-    sel.className = `weekSelect ${getShiftClassByKey(sel.value)}`;
+    const selectedValue = sel.value;
+    const previousValue = currentValue;
+
+    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+
+    if (selectedValue === "U" || selectedValue === "K") {
+      const endIso = prompt(
+        `${selectedValue === "U" ? "Urlaub" : "Krank"} bis (YYYY-MM-DD):`,
+        isoDate
+      );
+
+      if (!endIso || !fromIsoDate(endIso) || endIso < isoDate) {
+        sel.value = previousValue;
+        return;
+      }
+
+      setShiftForEmployeeOnIso(emp, isoDate, "-");
+      addOrReplaceAbsenceForEmployee(emp.id, selectedValue === "U" ? "vacation" : "sick", isoDate, endIso);
+
+      savePlanData();
+      renderAllViews();
+      return;
+    }
+
+    if (selectedValue === "AH") {
+      const branch = prompt("Aushilfe in welcher Filiale?", "") || "";
+      const hhmm = prompt("Aushilfe Dauer (HH:MM):", "05:00");
+
+      if (!hhmm || !isValidHHMM(hhmm) || hhmmToMinutes(hhmm) <= 0) {
+        sel.value = previousValue;
+        return;
+      }
+
+      removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+      setShiftForEmployeeOnIso(emp, isoDate, "-");
+
+      const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
+      if (!ok) {
+        sel.value = previousValue;
+        return;
+      }
+
+      savePlanData();
+      renderAllViews();
+      return;
+    }
+
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+    setShiftForEmployeeOnIso(emp, isoDate, selectedValue);
     savePlanData();
     renderAllViews();
   });
@@ -85,7 +290,7 @@ function renderWeekTable() {
   const weekDays = getActiveWeekDays();
   if (!weekDays.length) return;
 
-  const visibleDays = weekDays.slice(0, 6); // Wochenplan nur Mo-Sa
+  const visibleDays = weekDays.slice(0, 6);
 
   state.employees.forEach((emp) => {
     const tr = document.createElement("tr");
