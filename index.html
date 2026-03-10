@@ -38,6 +38,10 @@ Tagesplanung
 Wochenplan
 </button>
 
+<button id="btnViewMonth" class="viewBtn">
+Monat
+</button>
+
 <button id="btnViewForm" class="viewBtn">
 Original
 </button>
@@ -231,6 +235,22 @@ L1E-L4E ohne Abrechnung
 </table>
 
 </div>
+
+</section>
+
+
+<section id="monthView" class="overview hidden no-print">
+
+  <div class="sectionhead">
+    <h2>Monatsübersicht</h2>
+    <div class="small">
+      Zusatzansicht für Überblick und Monatsstunden
+    </div>
+  </div>
+
+  <div class="tableWrap compactTableWrap">
+    <div id="monthViewContent"></div>
+  </div>
 
 </section>
 
@@ -444,7 +464,7 @@ Ganztag 70 Minuten.
 <script src="./day-view.js"></script>
 <script src="./week-view.js"></script>
 <script src="./form-view.js"></script>
-
+<script src="./month-view.js"></script>
 <script src="./app.js"></script>
 
 
