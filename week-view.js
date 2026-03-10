@@ -24,6 +24,21 @@ function openShiftDialog(type, context) {
   shiftDialogLateFields.classList.add("hidden");
   shiftDialogFullFields.classList.add("hidden");
   shiftDialogFlexFields.classList.add("hidden");
+  shiftDialogAbsenceFields.classList.add("hidden");
+
+    if (type === "U") {
+    shiftDialogTitle.textContent = "Urlaub";
+    shiftDialogAbsenceFields.classList.remove("hidden");
+    shiftDialogAbsenceFrom.value = context.isoDate;
+    shiftDialogAbsenceTo.value = context.isoDate;
+  }
+
+  if (type === "K") {
+    shiftDialogTitle.textContent = "Krank";
+    shiftDialogAbsenceFields.classList.remove("hidden");
+    shiftDialogAbsenceFrom.value = context.isoDate;
+    shiftDialogAbsenceTo.value = context.isoDate;
+  }
 
   if (type === "L") {
     shiftDialogTitle.textContent = "Spätschicht";
@@ -104,6 +119,36 @@ shiftDialogSave.addEventListener("click", () => {
     
     if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
     state.schedule[isoDate][emp.id] = entry;
+  }
+
+    if (type === "U") {
+    const fromIso = shiftDialogAbsenceFrom.value;
+    const toIso = shiftDialogAbsenceTo.value;
+
+    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+      alert("Ungültiger Urlaubszeitraum.");
+      return;
+    }
+
+    setShiftForEmployeeOnIso(emp, isoDate, "-");
+    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+    addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+  }
+
+  if (type === "K") {
+    const fromIso = shiftDialogAbsenceFrom.value;
+    const toIso = shiftDialogAbsenceTo.value;
+
+    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+      alert("Ungültiger Krankzeitraum.");
+      return;
+    }
+
+    setShiftForEmployeeOnIso(emp, isoDate, "-");
+    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+    addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
   }
 
   savePlanData();
@@ -343,22 +388,15 @@ groupShifts.label = "Schichten";
     removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
     removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
 
-    if (selectedValue === "U" || selectedValue === "K") {
-      const endIso = prompt(
-        `${selectedValue === "U" ? "Urlaub" : "Krank"} bis (YYYY-MM-DD):`,
-        isoDate
-      );
+        if (selectedValue === "U") {
+      openShiftDialog("U", { emp, isoDate, type: "U" });
+      sel.value = previousValue;
+      return;
+    }
 
-      if (!endIso || !fromIsoDate(endIso) || endIso < isoDate) {
-        sel.value = previousValue;
-        return;
-      }
-
-      setShiftForEmployeeOnIso(emp, isoDate, "-");
-      addOrReplaceAbsenceForEmployee(emp.id, selectedValue === "U" ? "vacation" : "sick", isoDate, endIso);
-
-      savePlanData();
-      renderAllViews();
+    if (selectedValue === "K") {
+      openShiftDialog("K", { emp, isoDate, type: "K" });
+      sel.value = previousValue;
       return;
     }
 
