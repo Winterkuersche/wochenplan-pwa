@@ -484,6 +484,19 @@ function isClosingShift(shiftKey) {
 }
 
 /* ========= CALCULATIONS ========= */
+function getResolvedEntryForEmployeeOnIso(emp, isoDate) {
+  return getResolvedDayEntry({
+    employee: emp,
+    isoDate,
+    schedule: state.schedule,
+    absences: state.absences,
+    stateKey: APP_META.stateKey
+  });
+}
+
+function getResolvedLabelForEmployeeOnIso(emp, isoDate) {
+  return getResolvedEntryForEmployeeOnIso(emp, isoDate).label;
+}
 function totalMinutesForEmployeeInWeek(emp, weekDays) {
   return weekDays.reduce((sum, day) => {
     return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
