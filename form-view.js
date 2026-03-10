@@ -38,10 +38,93 @@ function getMonthTotalForEmployeeUntilWeek(emp, currentWeekDays) {
 
   return total;
 }
+function getResolvedFormDayData(emp, isoDate) {
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
+  if (!resolved) {
+    return { start: "", pause: "", end: "", sum: "" };
+  }
+
+  if (resolved.type === "holiday") {
+    return {
+      start: "H",
+      pause: "",
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
+  }
+
+  if (resolved.type === "sick") {
+    return {
+      start: "K",
+      pause: "",
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
+  }
+
+  if (resolved.type === "vacation") {
+    return {
+      start: "U",
+      pause: "",
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
+  }
+
+  if (resolved.type === "external-help") {
+    return {
+      start: "AH",
+      pause: "",
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
+  }
+
+  if (resolved.type === "shift" && resolved.sourceEntry) {
+    const entry = resolved.sourceEntry;
+
+    return {
+      start: entry.start || "",
+      pause: entry.breakMinutes ? minutesToHM(entry.breakMinutes) : "",
+      end: entry.end || "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
+  }
+
+  return { start: "", pause: "", end: "", sum: "" };
+}
+
+function getWeekResolvedMinutesForEmployee(emp, weekDays) {
+  return weekDays.reduce((sum, day) => {
+    if (day.isOutsideMonth) return sum;
+    return sum + getResolvedEntryForEmployeeOnIso(emp, day.iso).minutesForMonth;
+  }, 0);
+}
+
+function getMonthResolvedMinutesForEmployeeUntilWeek(emp, currentWeekDays) {
+  const monthPlan = state.monthPlan;
+  if (!monthPlan?.weeks || !currentWeekDays?.length) return 0;
+
+  const currentWeekStartIso = currentWeekDays[0].iso;
+  let total = 0;
+
+  monthPlan.weeks.forEach((week) => {
+    if (!week.length) return;
+
+    const weekStartIso = week[0].iso;
+    if (weekStartIso > currentWeekStartIso) return;
+
+    week.forEach((day) => {
+      if (!day.inCurrentMonth) return;
+      total += getResolvedEntryForEmployeeOnIso(emp, day.iso).minutesForMonth;
+    });
+  });
+
+  return total;
+}
 function getFormDayData(emp, isoDate) {
-  const shiftKey = getShiftForEmployeeOnIso(emp, isoDate);
-  return getFormDataForShift(shiftKey);
+  return getResolvedFormDayData(emp, isoDate);
 }
 
 function buildEmployeeRowsForWeek(emp, weekDays) {
@@ -54,12 +137,9 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
 
   let html = "";
 
-  const weekMinutes = weekDays.reduce((sum, day) => {
-    if (day.isOutsideMonth) return sum;
-    return sum + netMinutesForShift(getShiftForEmployeeOnIso(emp, day.iso));
-  }, 0);
+ const weekMinutes = getWeekResolvedMinutesForEmployee(emp, weekDays);
 
- const monthMinutes = getMonthTotalForEmployeeUntilWeek(emp, weekDays);
+ const monthMinutes = getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
 
   rows.forEach((rowDef, rowIndex) => {
     html += "<tr>";
