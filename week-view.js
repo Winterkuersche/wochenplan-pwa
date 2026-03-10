@@ -1,3 +1,97 @@
+const shiftDialogOverlay = document.getElementById("shiftDialogOverlay");
+const shiftDialogTitle = document.getElementById("shiftDialogTitle");
+
+const shiftDialogLateFields = document.getElementById("shiftDialogLateFields");
+const shiftDialogFullFields = document.getElementById("shiftDialogFullFields");
+const shiftDialogFlexFields = document.getElementById("shiftDialogFlexFields");
+
+const shiftDialogLateStart = document.getElementById("shiftDialogLateStart");
+const shiftDialogLateCheckout = document.getElementById("shiftDialogLateCheckout");
+
+const shiftDialogFullCheckout = document.getElementById("shiftDialogFullCheckout");
+
+const shiftDialogFlexStart = document.getElementById("shiftDialogFlexStart");
+const shiftDialogFlexEnd = document.getElementById("shiftDialogFlexEnd");
+
+const shiftDialogCancel = document.getElementById("shiftDialogCancel");
+const shiftDialogSave = document.getElementById("shiftDialogSave");
+
+let shiftDialogContext = null;
+
+function openShiftDialog(type, context) {
+  shiftDialogContext = context;
+
+  shiftDialogLateFields.classList.add("hidden");
+  shiftDialogFullFields.classList.add("hidden");
+  shiftDialogFlexFields.classList.add("hidden");
+
+  if (type === "L") {
+    shiftDialogTitle.textContent = "Spätschicht";
+    shiftDialogLateFields.classList.remove("hidden");
+  }
+
+  if (type === "G") {
+    shiftDialogTitle.textContent = "Ganztag";
+    shiftDialogFullFields.classList.remove("hidden");
+  }
+
+  if (type === "FLEX") {
+    shiftDialogTitle.textContent = "Flexible Schicht";
+    shiftDialogFlexFields.classList.remove("hidden");
+  }
+
+  shiftDialogOverlay.classList.remove("hidden");
+}
+
+function closeShiftDialog() {
+  shiftDialogOverlay.classList.add("hidden");
+  shiftDialogContext = null;
+}
+shiftDialogCancel.addEventListener("click", () => {
+  closeShiftDialog();
+});
+shiftDialogSave.addEventListener("click", () => {
+  if (!shiftDialogContext) return;
+
+  const { emp, isoDate, type } = shiftDialogContext;
+
+  if (type === "L") {
+    const start = shiftDialogLateStart.value;
+    const checkout = shiftDialogLateCheckout.value === "yes";
+
+    const entry = buildLateShiftEntry(start, checkout);
+
+    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+    state.schedule[isoDate][emp.id] = entry;
+  }
+
+  if (type === "G") {
+    const checkout = shiftDialogFullCheckout.value === "yes";
+    const entry = buildFullShiftEntry(checkout);
+
+    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+    state.schedule[isoDate][emp.id] = entry;
+  }
+
+  if (type === "FLEX") {
+    const start = shiftDialogFlexStart.value;
+    const end = shiftDialogFlexEnd.value;
+
+    if (!start || !end) {
+      alert("Start und Ende wählen.");
+      return;
+    }
+
+    const entry = buildFlexShiftEntry(start, end);
+
+    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+    state.schedule[isoDate][emp.id] = entry;
+  }
+
+  savePlanData();
+  renderAllViews();
+  closeShiftDialog();
+});
 function renderWeekWarnings() {
   if (!weekWarningsEl) return;
 
@@ -218,7 +312,7 @@ function createWeekSelect(emp, isoDate) {
       return;
     }
 
-    if (selectedValue === "AH") {
+        if (selectedValue === "AH") {
       const branch = prompt("Aushilfe in welcher Filiale?", "") || "";
       const hhmm = prompt("Aushilfe Dauer (HH:MM):", "05:00");
 
@@ -238,6 +332,24 @@ function createWeekSelect(emp, isoDate) {
 
       savePlanData();
       renderAllViews();
+      return;
+    }
+
+    if (selectedValue === "L") {
+      openShiftDialog("L", { emp, isoDate, type: "L" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "G") {
+      openShiftDialog("G", { emp, isoDate, type: "G" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "FLEX") {
+      openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+      sel.value = previousValue;
       return;
     }
 
