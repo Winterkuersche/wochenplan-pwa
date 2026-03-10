@@ -837,9 +837,17 @@ window.addEventListener("load", () => {
     state.weekFrom = toIsoDate(today);
   }
 
-  if (localStorage.getItem("wochenplan_dark") === "true") {
-  document.body.classList.add("dark");
-}
+  const savedTheme = localStorage.getItem("wochenplan_dark");
+
+  if (savedTheme === "true") {
+    document.body.classList.add("dark");
+  } else if (savedTheme === "false") {
+    document.body.classList.remove("dark");
+  } else {
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.body.classList.add("dark");
+    }
+  }
 
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
