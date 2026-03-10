@@ -353,7 +353,58 @@ Ganztag 70 Minuten.
 
 </section>
 
+<div id="shiftDialogOverlay" class="dialogOverlay hidden no-print">
+  <div class="dialogBox">
+    <h3 id="shiftDialogTitle">Schicht auswählen</h3>
 
+    <div id="shiftDialogLateFields" class="dialogFields hidden">
+      <label>
+        Startzeit
+        <select id="shiftDialogLateStart">
+          <option value="13:00">13:00</option>
+          <option value="14:00">14:00</option>
+          <option value="15:00">15:00</option>
+          <option value="16:00">16:00</option>
+        </select>
+      </label>
+
+      <label>
+        Abrechnung
+        <select id="shiftDialogLateCheckout">
+          <option value="yes">mit Abrechnung (bis 19:10)</option>
+          <option value="no">ohne Abrechnung (bis 19:00)</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="shiftDialogFullFields" class="dialogFields hidden">
+      <label>
+        Abrechnung
+        <select id="shiftDialogFullCheckout">
+          <option value="yes">mit Abrechnung (bis 19:10)</option>
+          <option value="no">ohne Abrechnung (bis 19:00)</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="shiftDialogFlexFields" class="dialogFields hidden">
+      <label>
+        Beginn
+        <input id="shiftDialogFlexStart" type="time">
+      </label>
+
+      <label>
+        Ende
+        <input id="shiftDialogFlexEnd" type="time">
+      </label>
+    </div>
+
+    <div class="dialogActions">
+      <button id="shiftDialogCancel" type="button">Abbrechen</button>
+      <button id="shiftDialogSave" type="button">Speichern</button>
+    </div>
+  </div>
+</div>
 
 <!-- Scripts -->
 
