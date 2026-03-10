@@ -1,11 +1,3 @@
-document.getElementById("monthPrev")?.addEventListener("click", () => {
-  changeMonth(-1);
-});
-
-document.getElementById("monthNext")?.addEventListener("click", () => {
-  changeMonth(1);
-});
-
 function getMonthViewContentEl() {
   return document.getElementById("monthViewContent");
 }
@@ -71,16 +63,6 @@ function buildMonthHeaderRow(days) {
   return html;
 }
 
-function changeMonth(offset) {
-  const [year, month] = state.activeMonth.split("-").map(Number);
-
-  const date = new Date(year, month - 1 + offset, 1);
-
-  state.activeMonth = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
-
-  renderAllViews();
-}
-
 function buildMonthEmployeeRow(emp, days) {
   let html = `
     <tr>
@@ -109,6 +91,34 @@ function buildMonthEmployeeRow(emp, days) {
   return html;
 }
 
+function changeMonth(offset) {
+  const activeMonth = state.activeMonth || toIsoDate(new Date()).slice(0, 7);
+  const [year, month] = activeMonth.split("-").map(Number);
+  const nextDate = new Date(year, month - 1 + offset, 1);
+
+  state.activeMonth = `${nextDate.getFullYear()}-${pad2(nextDate.getMonth() + 1)}`;
+
+  syncMonthPlanToState();
+  renderAllViews();
+}
+
+function bindMonthNavigation() {
+  document.getElementById("monthPrev")?.addEventListener("click", () => {
+    changeMonth(-1);
+  });
+
+  document.getElementById("monthNext")?.addEventListener("click", () => {
+    changeMonth(1);
+  });
+}
+
+function updateMonthHeaderTitle(days) {
+  const titleEl = document.getElementById("monthTitle");
+  if (!titleEl) return;
+
+  titleEl.textContent = getMonthTitleFromDays(days);
+}
+
 function renderMonthView() {
   const container = getMonthViewContentEl();
   if (!container) return;
@@ -121,23 +131,11 @@ function renderMonthView() {
     return;
   }
 
-  const title = document.getElementById("monthTitle");
-
-if (title) {
-  const [year, month] = state.activeMonth.split("-");
-  const date = new Date(year, month - 1, 1);
-
-  title.textContent = date.toLocaleDateString("de-DE", {
-    month: "long",
-    year: "numeric"
-  });
-}
-  
-  const monthTitle = getMonthTitleFromDays(days);
+  updateMonthHeaderTitle(days);
 
   let html = `
     <div class="monthViewHeader">
-      <strong>${monthTitle}</strong>
+      <strong>${getMonthTitleFromDays(days)}</strong>
       <span class="small">${days.length} Tage im aktuellen Monat</span>
     </div>
 
@@ -159,3 +157,5 @@ if (title) {
 
   container.innerHTML = html;
 }
+
+bindMonthNavigation();
