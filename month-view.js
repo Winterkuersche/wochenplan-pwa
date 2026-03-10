@@ -60,7 +60,7 @@ function buildMonthHeaderRow(days) {
   days.forEach((day) => {
     const isSunday = day.weekdayIndex === 6;
     const className = isSunday ? ` class="monthHeadSunday"` : "";
-    html += `<th${className}>${day.day}<br>${day.weekdayLabel}</th>`;
+    html += `<th${className}>${day.date.getDate()}<br>${day.weekdayLabel}</th>`;
   });
 
   html += `
