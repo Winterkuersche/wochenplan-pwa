@@ -56,18 +56,28 @@ shiftDialogSave.addEventListener("click", () => {
   const { emp, isoDate, type } = shiftDialogContext;
 
   if (type === "L") {
-    const start = shiftDialogLateStart.value;
-    const checkout = shiftDialogLateCheckout.value === "yes";
+  const start = shiftDialogLateStart.value;
+  const checkout = shiftDialogLateCheckout.value === "yes";
 
-    const entry = buildLateShiftEntry(start, checkout);
-
-    if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-    state.schedule[isoDate][emp.id] = entry;
+  const entry = buildLateShiftEntry(start, checkout);
+  if (!entry) {
+    alert("Ungültige Spätschicht.");
+    return;
   }
+
+  setShiftForEmployeeOnIso(emp, isoDate, "-");
+  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+
+  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
+  state.schedule[isoDate][emp.id] = entry;
+}
 
   if (type === "G") {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
+
+    setShiftForEmployeeOnIso(emp, isoDate, "-");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
 
     if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
     state.schedule[isoDate][emp.id] = entry;
@@ -89,6 +99,9 @@ shiftDialogSave.addEventListener("click", () => {
   return;
 }
 
+    setShiftForEmployeeOnIso(emp, isoDate, "-");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
+    
     if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
     state.schedule[isoDate][emp.id] = entry;
   }
@@ -239,7 +252,16 @@ function getWeekSelectValueForDay(emp, isoDate) {
   if (resolved.type === "vacation") return "U";
   if (resolved.type === "external-help") return "AH";
 
-  return getShiftForEmployeeOnIso(emp, isoDate);
+  if (resolved.type === "shift" && resolved.sourceEntry) {
+    const entry = resolved.sourceEntry;
+
+    if (entry.mode === "early") return entry.code || "-";
+    if (entry.mode === "late") return "L";
+    if (entry.mode === "full") return "G";
+    if (entry.mode === "flex") return "FLEX";
+  }
+
+  return "-";
 }
 
 function buildWeekSelectClass(value) {
