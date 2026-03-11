@@ -58,12 +58,25 @@ function buildPlannerCard(emp, isoDate) {
 
   select.value = currentShift;
 
-  select.addEventListener("change", () => {
-    setShiftForEmployeeOnIso(emp, isoDate, select.value);
-    select.className = `weekSelect ${getShiftClassByKey(select.value)}`;
-    savePlanData();
-    renderAllViews();
-  });
+ select.addEventListener("change", () => {
+
+  clearDay(emp.id, isoDate, { commit: false });
+
+  if (select.value !== "-") {
+    const entry = buildEarlyShiftEntry(select.value);
+
+    if (!entry) {
+      alert("Ungültige Schicht.");
+      return;
+    }
+
+    setShift(emp.id, isoDate, entry);
+  } else {
+    commitPlanChange();
+  }
+
+  select.className = `weekSelect ${getShiftClassByKey(select.value)}`;
+});
 
   const info = document.createElement("div");
   info.className = "dayCardSub";
