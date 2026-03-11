@@ -74,24 +74,44 @@ function getScheduleEntry(employeeId, isoDate) {
   return state.schedule?.[isoDate]?.[employeeId] || null;
 }
 
-function setScheduleEntry(employeeId, isoDate, entry) {
-  if (!employeeId || !isoDate || !entry) return;
+function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
+  if (!employeeId || !isoDate || typeof updater !== "function") return null;
+
+  const { commit = true } = options;
+  const currentEntry = getScheduleEntry(employeeId, isoDate);
+  const nextEntry = updater(currentEntry ? { ...currentEntry } : null);
+
+  if (nextEntry == null) {
+    if (state.schedule?.[isoDate]?.[employeeId]) {
+      delete state.schedule[isoDate][employeeId];
+      cleanupScheduleDay(isoDate);
+    }
+
+    if (commit) {
+      commitPlanChange();
+    }
+
+    return null;
+  }
 
   const day = ensureScheduleDay(isoDate);
-  day[employeeId] = { ...entry };
+  day[employeeId] = { ...nextEntry };
 
-  commitPlanChange();
+  if (commit) {
+    commitPlanChange();
+  }
+
+  return day[employeeId];
+}
+
+function setScheduleEntry(employeeId, isoDate, entry) {
+  if (!employeeId || !isoDate || !entry) return;
+  return updateEmployeeDay(employeeId, isoDate, () => ({ ...entry }));
 }
 
 function clearScheduleEntry(employeeId, isoDate) {
   if (!employeeId || !isoDate) return;
-
-  if (state.schedule?.[isoDate]?.[employeeId]) {
-    delete state.schedule[isoDate][employeeId];
-    cleanupScheduleDay(isoDate);
-  }
-
-  commitPlanChange();
+  return updateEmployeeDay(employeeId, isoDate, () => null);
 }
 
 function setShift(employeeId, isoDate, entry) {
