@@ -71,16 +71,7 @@ function cleanupScheduleDay(isoDate) {
 }
 
 function getScheduleEntrySafe(employeeId, isoDate) {
-  const entry = getScheduleEntry(employeeId, isoDate);
-  if (entry) return entry;
-
-  // Fallback für alte gespeicherte Daten
-  const emp = state.employees.find(e => e.id === employeeId);
-  const legacyKey = emp?.shifts?.[isoDate];
-
-  if (!legacyKey || legacyKey === "-") return null;
-
-  return buildEarlyShiftEntry(legacyKey);
+  return getScheduleEntry(employeeId, isoDate);
 }
 
 function getEmployeeDayEntry(employeeId, isoDate) {
@@ -178,10 +169,7 @@ function clearDay(employeeId, isoDate, options = {}) {
 
   const { commit = true } = options;
 
-  const emp = state.employees.find((e) => e.id === employeeId);
-  if (emp?.shifts) {
-    delete emp.shifts[isoDate];
-  }
+ 
 
   if (state.schedule?.[isoDate]?.[employeeId]) {
     delete state.schedule[isoDate][employeeId];
@@ -401,63 +389,7 @@ function buildInitialState() {
     absences
   };
 }
-function rebuildScheduleFromLegacyShifts() {
-  const nextSchedule = {};
 
-  // Neue schedule-Einträge behalten
-  Object.entries(state.schedule || {}).forEach(([isoDate, dayEntries]) => {
-    Object.entries(dayEntries || {}).forEach(([employeeId, entry]) => {
-      if (!entry) return;
-
-      if (entry.type === "shift" || entry.type === "external-help") {
-        if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
-        nextSchedule[isoDate][employeeId] = { ...entry };
-      }
-    });
-  });
-
-  // Legacy-Schichten aus emp.shifts ergänzen/aktualisieren
-  state.employees.forEach((emp) => {
-    const shifts = emp.shifts || {};
-
-    Object.entries(shifts).forEach(([isoDate, shiftKey]) => {
-      if (!shiftKey || shiftKey === "-") {
-        return;
-      }
-
-      let entry = null;
-
-      if (shiftKey === "F3" || shiftKey === "F4" || shiftKey === "F5" || shiftKey === "F6") {
-        entry = buildEarlyShiftEntry(shiftKey);
-      } else if (["L1", "L2", "L3", "L4"].includes(shiftKey)) {
-        const startMap = {
-          L1: "13:00",
-          L2: "14:00",
-          L3: "15:00",
-          L4: "16:00"
-        };
-        entry = buildLateShiftEntry(startMap[shiftKey], true);
-      } else if (["L1E", "L2E", "L3E", "L4E"].includes(shiftKey)) {
-        const startMap = {
-          L1E: "13:00",
-          L2E: "14:00",
-          L3E: "15:00",
-          L4E: "16:00"
-        };
-        entry = buildLateShiftEntry(startMap[shiftKey], false);
-      } else if (shiftKey === "G1") {
-        entry = buildFullShiftEntry(true);
-      }
-
-      if (!entry) return;
-
-      if (!nextSchedule[isoDate]) nextSchedule[isoDate] = {};
-      nextSchedule[isoDate][emp.id] = entry;
-    });
-  });
-
-  state.schedule = nextSchedule;
-}
 
 function saveMasterData() {
   saveJson(MASTER_KEY, {
