@@ -91,6 +91,13 @@ function getEmployeeDayEntry(employeeId, isoDate) {
     : null;
 }
 
+function hasEmployeeWorkEntry(employeeId, isoDate) {
+  const entry = getEmployeeDayEntry(employeeId, isoDate);
+  if (!entry) return false;
+
+  return entry.type === "shift" || entry.type === "external-help";
+}
+
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
 
@@ -717,13 +724,13 @@ function getDayWarningsByIndex(index) {
   }
 
   if (index < 5 && closers.length > 0) {
-    const nextDay = week[index + 1];
-    const hasAnchor = closers.some((emp) => getShiftForEmployeeOnIso(emp, nextDay.iso) !== "-");
+  const nextDay = week[index + 1];
+  const hasAnchor = closers.some((emp) => hasEmployeeWorkEntry(emp.id, nextDay.iso));
 
-    if (!hasAnchor) {
-      warnings.push(`⚠ ${nextDay.weekdayLabel}: niemand vom ${day.weekdayLabel}-Abschluss eingeplant.`);
-    }
+  if (!hasAnchor) {
+    warnings.push(`⚠ ${nextDay.weekdayLabel}: niemand vom ${day.weekdayLabel}-Abschluss eingeplant.`);
   }
+}
 
   return warnings;
 }
