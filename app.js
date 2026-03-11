@@ -69,6 +69,11 @@ function cleanupScheduleDay(isoDate) {
   }
 }
 
+function getScheduleEntry(employeeId, isoDate) {
+  if (!employeeId || !isoDate) return null;
+  return state.schedule?.[isoDate]?.[employeeId] || null;
+}
+
 function getScheduleEntrySafe(employeeId, isoDate) {
   return getScheduleEntry(employeeId, isoDate);
 }
