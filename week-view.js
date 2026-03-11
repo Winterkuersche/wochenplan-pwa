@@ -300,15 +300,11 @@ function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
 }
 
 function removeScheduledShiftForEmployeeOnDate(employeeId, isoDate) {
-  if (!state.schedule?.[isoDate]?.[employeeId]) return;
+  const entry = getScheduleEntry(employeeId, isoDate);
+  if (!entry) return;
 
-  const entry = state.schedule[isoDate][employeeId];
   if (entry.type === "shift") {
-    delete state.schedule[isoDate][employeeId];
-
-    if (Object.keys(state.schedule[isoDate]).length === 0) {
-      delete state.schedule[isoDate];
-    }
+    clearScheduleEntry(employeeId, isoDate);
   }
 }
 
