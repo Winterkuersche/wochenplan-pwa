@@ -870,16 +870,29 @@ document.getElementById("btnSaveMaster")?.addEventListener("click", () => {
   alert("Stammdaten gespeichert.");
 });
 document.getElementById("btnResetWeek")?.addEventListener("click", () => {
-  if (!confirm("Wochen-/Monatsplan leeren? Stammdaten bleiben erhalten.")) return;
+  const weekDays = getActiveWeekDays();
+  if (!weekDays.length) return;
 
-  state.employees.forEach((emp) => {
-    emp.shifts = {};
+  if (!confirm("Aktuell ausgewählte Woche leeren? Stammdaten bleiben erhalten.")) return;
+
+  const weekIsos = weekDays.map((day) => day.iso);
+  const weekStart = weekIsos[0];
+  const weekEnd = weekIsos[weekIsos.length - 1];
+
+  weekIsos.forEach((isoDate) => {
+    delete state.schedule[isoDate];
   });
 
-  state.schedule = {};
-  state.absences = [];
+  state.absences = (state.absences || []).flatMap((entry) => {
+    if (!entry) return [];
 
-  savePlanData();
+    const hasOverlap = !(entry.to < weekStart || entry.from > weekEnd);
+    if (!hasOverlap) return [entry];
+
+    return subtractRangeFromAbsenceEntry(entry, weekStart, weekEnd);
+  });
+
+  commitPlanChange();
   renderAll();
 });
 document.getElementById("btnPrint")?.addEventListener("click", () => {
