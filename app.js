@@ -362,11 +362,9 @@ function defaultPlanState() {
     weekFrom: "",
     weekTo: "",
     schedule: {},
-    absences: [],
-    shiftsByEmployee: {}
+    absences: []
   };
 }
-
 function buildInitialState() {
   const master = loadJson(MASTER_KEY, defaultMasterState());
   const plan = loadJson(PLAN_KEY, defaultPlanState());
@@ -375,17 +373,15 @@ function buildInitialState() {
     ? master.employees
     : defaultMasterState().employees;
 
-  const employees = baseEmployees.map((emp, index) => {
-    const legacyShifts = { ...(plan.shiftsByEmployee?.[emp.id] || {}) };
-
-    return {
-      id: emp.id || `emp_${index + 1}`,
-      name: emp.name || "",
-      roleKey: emp.roleKey || "",
-      target: emp.target || roleToTarget(emp.roleKey || ""),
-      shifts: legacyShifts
-    };
-  });
+ const employees = baseEmployees.map((emp, index) => {
+  return {
+    id: emp.id || `emp_${index + 1}`,
+    name: emp.name || "",
+    roleKey: emp.roleKey || "",
+    target: emp.target || roleToTarget(emp.roleKey || ""),
+    shifts: {}
+  };
+});
 
   const schedule = plan.schedule && typeof plan.schedule === "object"
     ? { ...plan.schedule }
@@ -475,22 +471,13 @@ function saveMasterData() {
 }
 
 function savePlanData() {
-  const shiftsByEmployee = {};
-  state.employees.forEach((emp) => {
-    shiftsByEmployee[emp.id] = { ...emp.shifts };
-  });
-
- 
-
   saveJson(PLAN_KEY, {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
     schedule: state.schedule || {},
-    absences: state.absences || [],
-    shiftsByEmployee
+    absences: state.absences || []
   });
 }
-
 /* ========= MONTH ENGINE FALLBACK ========= */
 function buildMonthPlanFallback(year, monthIndex) {
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
