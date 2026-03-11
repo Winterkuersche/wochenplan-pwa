@@ -202,6 +202,19 @@ function commitPlanChange() {
   savePlanData();
   renderAllViews();
 }
+
+function getScheduleEntrySafe(employeeId, isoDate) {
+  const entry = getScheduleEntry(employeeId, isoDate);
+  if (entry) return entry;
+
+  // Fallback für alte Daten
+  const emp = state.employees.find(e => e.id === employeeId);
+  const legacyKey = emp?.shifts?.[isoDate];
+
+  if (!legacyKey || legacyKey === "-") return null;
+
+  return buildEarlyShiftEntry(legacyKey);
+}
 /* ========= DOM ========= */
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
