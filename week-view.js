@@ -15,6 +15,7 @@ const shiftDialogFlexEnd = document.getElementById("shiftDialogFlexEnd");
 
 const shiftDialogCancel = document.getElementById("shiftDialogCancel");
 const shiftDialogSave = document.getElementById("shiftDialogSave");
+const shiftDialogDelete = document.getElementById("shiftDialogDelete");
 
 const shiftDialogExternalHelpFields = document.getElementById("shiftDialogExternalHelpFields");
 const shiftDialogExternalHelpBranch = document.getElementById("shiftDialogExternalHelpBranch");
@@ -62,20 +63,59 @@ function openShiftDialog(type, context) {
     shiftDialogFullFields.classList.remove("hidden");
   }
 
+  
   if (type === "FLEX") {
-    shiftDialogTitle.textContent = "Flexible Schicht";
-    shiftDialogFlexFields.classList.remove("hidden");
-  }
-  fillShiftDialogFromExisting(type, context);
-  shiftDialogOverlay.classList.remove("hidden");
+  shiftDialogTitle.textContent = "Flexible Schicht";
+  shiftDialogFlexFields.classList.remove("hidden");
+}
+
+if (shiftDialogDelete) {
+  shiftDialogDelete.classList.toggle(
+    "hidden",
+    !["L", "G", "FLEX", "AH", "U", "K"].includes(type)
+  );
+}
+
+fillShiftDialogFromExisting(type, context);
+shiftDialogOverlay.classList.remove("hidden");
 }
 
 function closeShiftDialog() {
   shiftDialogOverlay.classList.add("hidden");
+  if (shiftDialogDelete) {
+    shiftDialogDelete.classList.add("hidden");
+  }
   shiftDialogContext = null;
 }
 shiftDialogCancel.addEventListener("click", () => {
   closeShiftDialog();
+});
+shiftDialogDelete?.addEventListener("click", () => {
+  if (!shiftDialogContext) return;
+
+  const { emp, isoDate, type } = shiftDialogContext;
+
+  if (type === "L" || type === "G" || type === "FLEX" || type === "AH") {
+    clearDay(emp.id, isoDate);
+    closeShiftDialog();
+    return;
+  }
+
+  if (type === "U") {
+    const removed = removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
+    if (removed) {
+      closeShiftDialog();
+    }
+    return;
+  }
+
+  if (type === "K") {
+    const removed = removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
+    if (removed) {
+      closeShiftDialog();
+    }
+    return;
+  }
 });
 shiftDialogSave.addEventListener("click", () => {
   if (!shiftDialogContext) return;
@@ -348,6 +388,15 @@ function minutesToHHMMInput(minutes) {
   const hours = Math.floor(total / 60);
   const mins = total % 60;
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
+  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  if (!entry) return false;
+
+  state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
+  commitPlanChange();
+  return true;
 }
 
 function fillShiftDialogFromExisting(type, context) {
