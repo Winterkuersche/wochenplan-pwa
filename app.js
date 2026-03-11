@@ -70,25 +70,21 @@ function cleanupScheduleDay(isoDate) {
   }
 }
 
-function getScheduleEntry(employeeId, isoDate) {
-  return state.schedule?.[isoDate]?.[employeeId] || null;
+function getScheduleEntrySafe(employeeId, isoDate) {
+  const entry = getScheduleEntry(employeeId, isoDate);
+  if (entry) return entry;
+
+  // Fallback für alte gespeicherte Daten
+  const emp = state.employees.find(e => e.id === employeeId);
+  const legacyKey = emp?.shifts?.[isoDate];
+
+  if (!legacyKey || legacyKey === "-") return null;
+
+  return buildEarlyShiftEntry(legacyKey);
 }
 
 function getEmployeeDayEntry(employeeId, isoDate) {
-  const scheduleEntry = getScheduleEntry(employeeId, isoDate);
-  if (scheduleEntry) {
-    return scheduleEntry;
-  }
-
-  const emp = state.employees.find(e => e.id === employeeId);
-  if (!emp) return null;
-
-  const shiftKey = emp.shifts?.[isoDate];
-  if (!shiftKey || shiftKey === "-") return null;
-
-  return buildEarlyShiftEntry
-    ? buildEarlyShiftEntry(shiftKey)
-    : null;
+  return getScheduleEntrySafe(employeeId, isoDate);
 }
 
 function hasEmployeeWorkEntry(employeeId, isoDate) {
@@ -203,18 +199,6 @@ function commitPlanChange() {
   renderAllViews();
 }
 
-function getScheduleEntrySafe(employeeId, isoDate) {
-  const entry = getScheduleEntry(employeeId, isoDate);
-  if (entry) return entry;
-
-  // Fallback für alte Daten
-  const emp = state.employees.find(e => e.id === employeeId);
-  const legacyKey = emp?.shifts?.[isoDate];
-
-  if (!legacyKey || legacyKey === "-") return null;
-
-  return buildEarlyShiftEntry(legacyKey);
-}
 /* ========= DOM ========= */
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
