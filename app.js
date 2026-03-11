@@ -74,6 +74,23 @@ function getScheduleEntry(employeeId, isoDate) {
   return state.schedule?.[isoDate]?.[employeeId] || null;
 }
 
+function getEmployeeDayEntry(employeeId, isoDate) {
+  const scheduleEntry = getScheduleEntry(employeeId, isoDate);
+  if (scheduleEntry) {
+    return scheduleEntry;
+  }
+
+  const emp = state.employees.find(e => e.id === employeeId);
+  if (!emp) return null;
+
+  const shiftKey = emp.shifts?.[isoDate];
+  if (!shiftKey || shiftKey === "-") return null;
+
+  return buildEarlyShiftEntry
+    ? buildEarlyShiftEntry(shiftKey)
+    : null;
+}
+
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
 
