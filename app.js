@@ -483,7 +483,7 @@ function savePlanData() {
     shiftsByEmployee[emp.id] = { ...emp.shifts };
   });
 
-  rebuildScheduleFromLegacyShifts();
+ 
 
   saveJson(PLAN_KEY, {
     weekFrom: state.weekFrom,
@@ -623,10 +623,6 @@ function getShiftForEmployeeOnIso(emp, iso) {
   return entry.code || "-";
 }
 
-function setShiftForEmployeeOnIso(emp, iso, shiftKey) {
-  if (!emp.shifts) emp.shifts = {};
-  emp.shifts[iso] = shiftKey;
-}
 
 function shiftDurationMinutes(shiftKey) {
   const shift = getShiftByKey(shiftKey);
