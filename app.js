@@ -616,7 +616,11 @@ function getShiftClassByKey(key) {
 }
 
 function getShiftForEmployeeOnIso(emp, iso) {
-  return emp.shifts?.[iso] || "-";
+  const entry = getEmployeeDayEntry(emp.id, iso);
+  if (!entry) return "-";
+
+  if (entry.type !== "shift") return "-";
+  return entry.code || "-";
 }
 
 function setShiftForEmployeeOnIso(emp, iso, shiftKey) {
