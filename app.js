@@ -51,7 +51,6 @@ let uiState = loadUiState();
 let state = buildInitialState();
 state.schedule = state.schedule || {};
 state.absences = state.absences || [];
-rebuildScheduleFromLegacyShifts();
 
 /* ========= PLAN API ========= */
 
