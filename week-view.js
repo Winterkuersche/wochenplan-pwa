@@ -92,22 +92,20 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  setShiftForEmployeeOnIso(emp, isoDate, "-");
-  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-  setScheduleEntry(emp.id, isoDate, entry);
-  closeShiftDialog();
-  return;
+ clearDay(emp.id, isoDate, { commit: false });
+setScheduleEntry(emp.id, isoDate, entry);
+closeShiftDialog();
+return;
 }
 
   if (type === "G") {
   const checkout = shiftDialogFullCheckout.value === "yes";
   const entry = buildFullShiftEntry(checkout);
 
-  setShiftForEmployeeOnIso(emp, isoDate, "-");
-  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-  setScheduleEntry(emp.id, isoDate, entry);
-  closeShiftDialog();
-  return;
+ clearDay(emp.id, isoDate, { commit: false });
+setScheduleEntry(emp.id, isoDate, entry);
+closeShiftDialog();
+return;
 }
 
   if (type === "FLEX") {
@@ -126,11 +124,10 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  setShiftForEmployeeOnIso(emp, isoDate, "-");
-  removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-  setScheduleEntry(emp.id, isoDate, entry);
-  closeShiftDialog();
-  return;
+ clearDay(emp.id, isoDate, { commit: false });
+setScheduleEntry(emp.id, isoDate, entry);
+closeShiftDialog();
+return;
 }
 
   if (type === "U") {
@@ -142,12 +139,10 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  setShiftForEmployeeOnIso(emp, isoDate, "-");
-  removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
-  removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
-  addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
-  closeShiftDialog();
-  return;
+ clearDay(emp.id, isoDate, { commit: false });
+addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+closeShiftDialog();
+return;
 }
 
  if (type === "K") {
@@ -159,12 +154,10 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  setShiftForEmployeeOnIso(emp, isoDate, "-");
-  removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
-  removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
-  addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
-  closeShiftDialog();
-  return;
+  clearDay(emp.id, isoDate, { commit: false });
+addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+closeShiftDialog();
+return;
 }
       if (type === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
@@ -175,11 +168,9 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    setShiftForEmployeeOnIso(emp, isoDate, "-");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+    clearDay(emp.id, isoDate, { commit: false });
 
-    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
+const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
     if (!ok) {
       alert("Aushilfe konnte nicht gespeichert werden.");
       return;
