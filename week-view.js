@@ -285,20 +285,17 @@ function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso
   });
 }
 
-ffunction addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
+function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
   removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
   setAbsence(employeeId, fromIso, toIso, type, "");
 }
 
 function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
-  if (!state.schedule?.[isoDate]?.[employeeId]) return;
+  const entry = getScheduleEntry(employeeId, isoDate);
+  if (!entry) return;
 
-  if (state.schedule[isoDate][employeeId].type === "external-help") {
-    delete state.schedule[isoDate][employeeId];
-
-    if (Object.keys(state.schedule[isoDate]).length === 0) {
-      delete state.schedule[isoDate];
-    }
+  if (entry.type === "external-help") {
+    clearScheduleEntry(employeeId, isoDate);
   }
 }
 
