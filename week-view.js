@@ -444,10 +444,13 @@ groupShifts.label = "Schichten";
       return;
     }
 
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate);
-    setShiftForEmployeeOnIso(emp, isoDate, selectedValue);
-    savePlanData();
-    renderAllViews();
+   clearDay(emp.id, isoDate);
+
+if (selectedValue !== "-") {
+  setShiftForEmployeeOnIso(emp, isoDate, selectedValue);
+}
+
+commitPlanChange();
   });
 
   return sel;
