@@ -80,8 +80,7 @@ function setScheduleEntry(employeeId, isoDate, entry) {
   const day = ensureScheduleDay(isoDate);
   day[employeeId] = { ...entry };
 
-  savePlanData();
-  renderAllViews();
+  commitPlanChange();
 }
 
 function clearScheduleEntry(employeeId, isoDate) {
@@ -92,8 +91,7 @@ function clearScheduleEntry(employeeId, isoDate) {
     cleanupScheduleDay(isoDate);
   }
 
-  savePlanData();
-  renderAllViews();
+  commitPlanChange();
 }
 
 function setShift(employeeId, isoDate, entry) {
@@ -125,8 +123,7 @@ function setAbsence(employeeId, from, to, type, note = "") {
   state.absences.push(absence);
   state.absences = normalizeAbsences(state.absences);
 
-  savePlanData();
-  renderAllViews();
+  commitPlanChange();
 
   return absence;
 }
@@ -134,29 +131,25 @@ function setAbsence(employeeId, from, to, type, note = "") {
 function removeAbsence(absenceId) {
   state.absences = state.absences.filter((a) => a.id !== absenceId);
 
-  savePlanData();
-  renderAllViews();
+  commitPlanChange();
 }
-
 function clearDay(employeeId, isoDate) {
   if (!employeeId || !isoDate) return;
 
-  // Legacy-Schicht entfernen
-  const emp = state.employees.find(e => e.id === employeeId);
+  const emp = state.employees.find((e) => e.id === employeeId);
   if (emp?.shifts) {
     delete emp.shifts[isoDate];
   }
 
-  // Neue Schedule-Einträge entfernen
-  clearScheduleEntry(employeeId, isoDate);
+  if (state.schedule?.[isoDate]?.[employeeId]) {
+    delete state.schedule[isoDate][employeeId];
+    cleanupScheduleDay(isoDate);
+  }
 
-  // Abwesenheiten für diesen Tag entfernen
   removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
 
-  savePlanData();
-  renderAllViews();
+  commitPlanChange();
 }
-
 function commitPlanChange() {
   savePlanData();
   renderAllViews();
