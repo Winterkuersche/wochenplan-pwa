@@ -66,7 +66,7 @@ function openShiftDialog(type, context) {
     shiftDialogTitle.textContent = "Flexible Schicht";
     shiftDialogFlexFields.classList.remove("hidden");
   }
-
+  fillShiftDialogFromExisting(type, context);
   shiftDialogOverlay.classList.remove("hidden");
 }
 
@@ -331,12 +331,82 @@ function buildWeekSelectClass(value) {
   return `weekSelect ${getShiftClassByKey(value === "U" || value === "K" || value === "AH" || value === "H" ? "-" : value)}`;
 }
 
+function isDialogBackedValue(value) {
+  return ["L", "G", "FLEX", "AH", "U", "K"].includes(value);
+}
+
+function getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
+  return (state.absences || []).find((entry) => {
+    if (!entry || entry.employeeId !== employeeId) return false;
+    if (entry.type !== type) return false;
+    return isoDate >= entry.from && isoDate <= entry.to;
+  }) || null;
+}
+
+function minutesToHHMMInput(minutes) {
+  const total = Math.max(0, Number(minutes) || 0);
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
+function fillShiftDialogFromExisting(type, context) {
+  const { emp, isoDate } = context;
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+
+  if (type === "L" && resolved.type === "shift" && resolved.sourceEntry?.mode === "late") {
+    const entry = resolved.sourceEntry;
+    shiftDialogLateStart.value = entry.start || "13:00";
+    shiftDialogLateCheckout.value = entry.end === "19:10" ? "yes" : "no";
+  }
+
+  if (type === "G" && resolved.type === "shift" && resolved.sourceEntry?.mode === "full") {
+    const entry = resolved.sourceEntry;
+    shiftDialogFullCheckout.value = entry.end === "19:10" ? "yes" : "no";
+  }
+
+  if (type === "FLEX" && resolved.type === "shift" && resolved.sourceEntry?.mode === "flex") {
+    const entry = resolved.sourceEntry;
+    shiftDialogFlexStart.value = entry.start || "";
+    shiftDialogFlexEnd.value = entry.end || "";
+  }
+
+  if (type === "AH" && resolved.type === "external-help" && resolved.sourceEntry) {
+    const entry = resolved.sourceEntry;
+    shiftDialogExternalHelpBranch.value = entry.branch || "";
+    shiftDialogExternalHelpDuration.value = minutesToHHMMInput(entry.minutes);
+  }
+
+  if (type === "U") {
+    const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
+    if (absence) {
+      shiftDialogAbsenceFrom.value = absence.from;
+      shiftDialogAbsenceTo.value = absence.to;
+    }
+  }
+
+  if (type === "K") {
+    const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
+    if (absence) {
+      shiftDialogAbsenceFrom.value = absence.from;
+      shiftDialogAbsenceTo.value = absence.to;
+    }
+  }
+}
+
 function createWeekSelect(emp, isoDate) {
-  const sel = document.createElement("select");
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
+  const wrap = document.createElement("div");
+  wrap.className = "weekCellControl";
+  wrap.style.display = "flex";
+  wrap.style.alignItems = "center";
+  wrap.style.gap = "6px";
+
+  const sel = document.createElement("select");
   sel.className = buildWeekSelectClass(currentValue);
+  sel.style.flex = "1";
 
   if (resolved.type === "holiday") {
     const opt = document.createElement("option");
@@ -345,27 +415,28 @@ function createWeekSelect(emp, isoDate) {
     sel.appendChild(opt);
     sel.value = "H";
     sel.disabled = true;
-    return sel;
+    wrap.appendChild(sel);
+    return wrap;
   }
 
   const groupShifts = document.createElement("optgroup");
-groupShifts.label = "Schichten";
+  groupShifts.label = "Schichten";
 
-[
-  { value: "-", label: "-" },
-  { value: "F3", label: "F3" },
-  { value: "F4", label: "F4" },
-  { value: "F5", label: "F5" },
-  { value: "F6", label: "F6" },
-  { value: "L", label: "L" },
-  { value: "G", label: "G" },
-  { value: "FLEX", label: "Flex" }
-].forEach((shift) => {
-  const opt = document.createElement("option");
-  opt.value = shift.value;
-  opt.textContent = shift.label;
-  groupShifts.appendChild(opt);
-});
+  [
+    { value: "-", label: "-" },
+    { value: "F3", label: "F3" },
+    { value: "F4", label: "F4" },
+    { value: "F5", label: "F5" },
+    { value: "F6", label: "F6" },
+    { value: "L", label: "L" },
+    { value: "G", label: "G" },
+    { value: "FLEX", label: "Flex" }
+  ].forEach((shift) => {
+    const opt = document.createElement("option");
+    opt.value = shift.value;
+    opt.textContent = shift.label;
+    groupShifts.appendChild(opt);
+  });
 
   const groupSpecial = document.createElement("optgroup");
   groupSpecial.label = "Abwesenheit / Sonstiges";
@@ -383,71 +454,92 @@ groupShifts.label = "Schichten";
 
   sel.appendChild(groupShifts);
   sel.appendChild(groupSpecial);
-
   sel.value = currentValue;
 
-   
-sel.addEventListener("change", () => {
-  const selectedValue = sel.value;
-  const previousValue = currentValue;
+  sel.addEventListener("change", () => {
+    const selectedValue = sel.value;
+    const previousValue = currentValue;
 
-  if (selectedValue === "U") {
-    openShiftDialog("U", { emp, isoDate, type: "U" });
-    sel.value = previousValue;
-    return;
-  }
-
-  if (selectedValue === "K") {
-    openShiftDialog("K", { emp, isoDate, type: "K" });
-    sel.value = previousValue;
-    return;
-  }
-
-  if (selectedValue === "AH") {
-    openShiftDialog("AH", { emp, isoDate, type: "AH" });
-    sel.value = previousValue;
-    return;
-  }
-
-  if (selectedValue === "L") {
-    openShiftDialog("L", { emp, isoDate, type: "L" });
-    sel.value = previousValue;
-    return;
-  }
-
-  if (selectedValue === "G") {
-    openShiftDialog("G", { emp, isoDate, type: "G" });
-    sel.value = previousValue;
-    return;
-  }
-
-  if (selectedValue === "FLEX") {
-    openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
-    sel.value = previousValue;
-    return;
-  }
-
-  clearDay(emp.id, isoDate, { commit: false });
-
-  if (selectedValue !== "-") {
-    const entry = buildEarlyShiftEntry(selectedValue);
-
-    if (!entry) {
-      alert("Ungültige Frühschicht.");
+    if (selectedValue === "U") {
+      openShiftDialog("U", { emp, isoDate, type: "U" });
       sel.value = previousValue;
       return;
     }
 
-    setShift(emp.id, isoDate, entry);
-    return;
+    if (selectedValue === "K") {
+      openShiftDialog("K", { emp, isoDate, type: "K" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "AH") {
+      openShiftDialog("AH", { emp, isoDate, type: "AH" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "L") {
+      openShiftDialog("L", { emp, isoDate, type: "L" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "G") {
+      openShiftDialog("G", { emp, isoDate, type: "G" });
+      sel.value = previousValue;
+      return;
+    }
+
+    if (selectedValue === "FLEX") {
+      openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+      sel.value = previousValue;
+      return;
+    }
+
+    clearDay(emp.id, isoDate, { commit: false });
+
+    if (selectedValue !== "-") {
+      const entry = buildEarlyShiftEntry(selectedValue);
+
+      if (!entry) {
+        alert("Ungültige Frühschicht.");
+        sel.value = previousValue;
+        return;
+      }
+
+      setShift(emp.id, isoDate, entry);
+      return;
+    }
+
+    commitPlanChange();
+  });
+
+  wrap.appendChild(sel);
+
+  if (isDialogBackedValue(currentValue)) {
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.textContent = "✎";
+    editBtn.title = "Eintrag bearbeiten";
+    editBtn.className = "miniEditBtn";
+    editBtn.style.flex = "0 0 auto";
+    editBtn.style.padding = "4px 8px";
+    editBtn.style.borderRadius = "8px";
+    editBtn.style.border = "1px solid #ccc";
+    editBtn.style.background = "#fff";
+    editBtn.style.cursor = "pointer";
+
+    editBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openShiftDialog(currentValue, { emp, isoDate, type: currentValue });
+    });
+
+    wrap.appendChild(editBtn);
   }
 
-  commitPlanChange();
-});
-
-  return sel;
+  return wrap;
 }
-
 function renderWeekHeader() {
   const table = document.getElementById("weekTable");
   if (!table) return;
