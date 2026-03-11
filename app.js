@@ -133,8 +133,10 @@ function removeAbsence(absenceId) {
 
   commitPlanChange();
 }
-function clearDay(employeeId, isoDate) {
+function clearDay(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;
+
+  const { commit = true } = options;
 
   const emp = state.employees.find((e) => e.id === employeeId);
   if (emp?.shifts) {
@@ -148,7 +150,9 @@ function clearDay(employeeId, isoDate) {
 
   removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
 
-  commitPlanChange();
+  if (commit) {
+    commitPlanChange();
+  }
 }
 function commitPlanChange() {
   savePlanData();
