@@ -223,6 +223,9 @@ const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewMonthEl = document.getElementById("btnViewMonth");
 const btnViewFormEl = document.getElementById("btnViewForm");
+const btnPrevWeekEl = document.getElementById("btnPrevWeek");
+const btnCurrentWeekEl = document.getElementById("btnCurrentWeek");
+const btnNextWeekEl = document.getElementById("btnNextWeek");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -526,6 +529,19 @@ function getCurrentDayIso() {
   return getCurrentDayObject()?.iso || "";
 }
 
+function shiftActiveWeek(days) {
+  const date = fromIsoDate(state.weekFrom);
+  if (!date) return;
+
+  date.setDate(date.getDate() + days);
+  state.weekFrom = toIsoDate(date);
+  state.activeMonth = state.weekFrom.slice(0, 7);
+
+  syncMonthPlanToState();
+  syncWeekRangeFromActiveWeek();
+  commitPlanChange();
+}
+
 /* ========= SHIFT HELPERS ========= */
 function getShiftByKey(key) {
   return SHIFTS.find((s) => s.key === key) || SHIFTS[0];
@@ -803,6 +819,29 @@ function renderAll() {
 }
 
 /* ========= EVENTS ========= */
+if (btnPrevWeekEl) {
+  btnPrevWeekEl.addEventListener("click", () => {
+    shiftActiveWeek(-7);
+  });
+}
+
+if (btnNextWeekEl) {
+  btnNextWeekEl.addEventListener("click", () => {
+    shiftActiveWeek(7);
+  });
+}
+
+if (btnCurrentWeekEl) {
+  btnCurrentWeekEl.addEventListener("click", () => {
+    const today = new Date();
+    state.weekFrom = toIsoDate(today);
+    state.activeMonth = state.weekFrom.slice(0, 7);
+
+    syncMonthPlanToState();
+    syncWeekRangeFromActiveWeek();
+    commitPlanChange();
+  });
+}
 if (weekFromEl) {
   weekFromEl.addEventListener("change", () => {
     state.weekFrom = weekFromEl.value;
