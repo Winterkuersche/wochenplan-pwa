@@ -387,58 +387,63 @@ groupShifts.label = "Schichten";
   sel.value = currentValue;
 
    
+sel.addEventListener("change", () => {
+  const selectedValue = sel.value;
+  const previousValue = currentValue;
 
-  sel.addEventListener("change", () => {
-    const selectedValue = sel.value;
-    const previousValue = currentValue;
+  if (selectedValue === "U") {
+    openShiftDialog("U", { emp, isoDate, type: "U" });
+    sel.value = previousValue;
+    return;
+  }
 
-    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
-    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+  if (selectedValue === "K") {
+    openShiftDialog("K", { emp, isoDate, type: "K" });
+    sel.value = previousValue;
+    return;
+  }
 
-        if (selectedValue === "U") {
-      openShiftDialog("U", { emp, isoDate, type: "U" });
+  if (selectedValue === "AH") {
+    openShiftDialog("AH", { emp, isoDate, type: "AH" });
+    sel.value = previousValue;
+    return;
+  }
+
+  if (selectedValue === "L") {
+    openShiftDialog("L", { emp, isoDate, type: "L" });
+    sel.value = previousValue;
+    return;
+  }
+
+  if (selectedValue === "G") {
+    openShiftDialog("G", { emp, isoDate, type: "G" });
+    sel.value = previousValue;
+    return;
+  }
+
+  if (selectedValue === "FLEX") {
+    openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+    sel.value = previousValue;
+    return;
+  }
+
+  clearDay(emp.id, isoDate, { commit: false });
+
+  if (selectedValue !== "-") {
+    const entry = buildEarlyShiftEntry(selectedValue);
+
+    if (!entry) {
+      alert("Ungültige Frühschicht.");
       sel.value = previousValue;
       return;
     }
 
-    if (selectedValue === "K") {
-      openShiftDialog("K", { emp, isoDate, type: "K" });
-      sel.value = previousValue;
-      return;
-    }
+    setShift(emp.id, isoDate, entry);
+    return;
+  }
 
-            if (selectedValue === "AH") {
-      openShiftDialog("AH", { emp, isoDate, type: "AH" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "L") {
-      openShiftDialog("L", { emp, isoDate, type: "L" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "G") {
-      openShiftDialog("G", { emp, isoDate, type: "G" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "FLEX") {
-      openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
-      sel.value = previousValue;
-      return;
-    }
-
-   clearDay(emp.id, isoDate);
-
-if (selectedValue !== "-") {
-  setShiftForEmployeeOnIso(emp, isoDate, selectedValue);
-}
-
-commitPlanChange();
-  });
+  commitPlanChange();
+});
 
   return sel;
 }
