@@ -1023,3 +1023,21 @@ body.dark .mepTable th {
   opacity: 0.8;
   margin-top: 2px;
 }
+.weekDayHours {
+  display: block;
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+
+.hoursLow {
+  color: #b8860b;
+}
+
+.hoursOk {
+  color: #2e8b57;
+}
+
+.hoursHigh {
+  color: #c0392b;
+  font-weight: 600;
+}
