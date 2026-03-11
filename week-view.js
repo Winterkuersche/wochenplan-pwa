@@ -606,10 +606,20 @@ function renderWeekHeader() {
       <th>Name</th>
   `;
 
-  visibleDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
-    headerHtml += `<th${grayStyle}>${day.weekdayLabel}<br>${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}</th>`;
-  });
+ visibleDays.forEach((day) => {
+  const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
+
+  const minutes = totalMinutesForDayIso(day.iso);
+  const hoursText = minutesToHM(minutes);
+
+  headerHtml += `
+    <th${grayStyle}>
+      ${day.weekdayLabel}<br>
+      ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}<br>
+      <span class="weekDayHours">${hoursText}</span>
+    </th>
+  `;
+});
 
   headerHtml += `
       <th>Ist</th>
