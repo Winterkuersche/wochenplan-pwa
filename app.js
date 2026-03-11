@@ -137,6 +137,30 @@ function removeAbsence(absenceId) {
   savePlanData();
   renderAllViews();
 }
+
+function clearDay(employeeId, isoDate) {
+  if (!employeeId || !isoDate) return;
+
+  // Legacy-Schicht entfernen
+  const emp = state.employees.find(e => e.id === employeeId);
+  if (emp?.shifts) {
+    delete emp.shifts[isoDate];
+  }
+
+  // Neue Schedule-Einträge entfernen
+  clearScheduleEntry(employeeId, isoDate);
+
+  // Abwesenheiten für diesen Tag entfernen
+  removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
+
+  savePlanData();
+  renderAllViews();
+}
+
+function commitPlanChange() {
+  savePlanData();
+  renderAllViews();
+}
 /* ========= DOM ========= */
 const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
