@@ -1041,3 +1041,16 @@ body.dark .mepTable th {
   color: #c0392b;
   font-weight: 600;
 }
+.weekNav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.weekNav button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
