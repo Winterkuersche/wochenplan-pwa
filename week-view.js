@@ -133,36 +133,40 @@ shiftDialogSave.addEventListener("click", () => {
   return;
 }
 
-    if (type === "U") {
-    const fromIso = shiftDialogAbsenceFrom.value;
-    const toIso = shiftDialogAbsenceTo.value;
+  if (type === "U") {
+  const fromIso = shiftDialogAbsenceFrom.value;
+  const toIso = shiftDialogAbsenceTo.value;
 
-    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-      alert("Ungültiger Urlaubszeitraum.");
-      return;
-    }
-
-    setShiftForEmployeeOnIso(emp, isoDate, "-");
-    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
-    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
-    addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+  if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+    alert("Ungültiger Urlaubszeitraum.");
+    return;
   }
 
-  if (type === "K") {
-    const fromIso = shiftDialogAbsenceFrom.value;
-    const toIso = shiftDialogAbsenceTo.value;
+  setShiftForEmployeeOnIso(emp, isoDate, "-");
+  removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+  removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+  addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+  closeShiftDialog();
+  return;
+}
 
-    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-      alert("Ungültiger Krankzeitraum.");
-      return;
-    }
+ if (type === "K") {
+  const fromIso = shiftDialogAbsenceFrom.value;
+  const toIso = shiftDialogAbsenceTo.value;
 
-    setShiftForEmployeeOnIso(emp, isoDate, "-");
-    removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
-    removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
-    addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+  if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+    alert("Ungültiger Krankzeitraum.");
+    return;
   }
-    if (type === "AH") {
+
+  setShiftForEmployeeOnIso(emp, isoDate, "-");
+  removeExternalHelpForEmployeeOnDate(emp.id, isoDate);
+  removeScheduledShiftForEmployeeOnDate(emp.id, isoDate);
+  addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+  closeShiftDialog();
+  return;
+}
+      if (type === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const hhmm = shiftDialogExternalHelpDuration.value;
 
@@ -180,6 +184,9 @@ shiftDialogSave.addEventListener("click", () => {
       alert("Aushilfe konnte nicht gespeichert werden.");
       return;
     }
+
+    closeShiftDialog();
+    return;
   }
 
   savePlanData();
@@ -278,20 +285,9 @@ function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso
   });
 }
 
-function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
+ffunction addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
   removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
-
-  const entry = createAbsenceEntry({
-    employeeId,
-    type,
-    from: fromIso,
-    to: toIso,
-    note: ""
-  });
-
-  if (entry) {
-    state.absences.push(entry);
-  }
+  setAbsence(employeeId, fromIso, toIso, type, "");
 }
 
 function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
@@ -323,13 +319,7 @@ function setExternalHelpForEmployeeOnDate(employeeId, isoDate, branch, hhmm) {
   const minutes = hhmmToMinutes(hhmm);
   if (minutes <= 0) return false;
 
-  if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
-  state.schedule[isoDate][employeeId] = {
-    type: "external-help",
-    label: "AH",
-    minutes,
-    branch: branch || ""
-  };
+  setExternalHelp(employeeId, isoDate, branch || "", minutes);
   return true;
 }
 
