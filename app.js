@@ -650,10 +650,6 @@ function netMinutesForShift(shiftKey) {
   return Math.max(0, duration - appliedPauseMinutes(shiftKey));
 }
 
-function isClosingShift(shiftKey) {
-  return ["G1", "L1", "L2", "L3", "L4"].includes(shiftKey);
-}
-
 /* ========= CALCULATIONS ========= */
 function getResolvedEntryForEmployeeOnIso(emp, isoDate) {
   return getResolvedDayEntry({
