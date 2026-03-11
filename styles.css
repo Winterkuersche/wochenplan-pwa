@@ -1016,3 +1016,10 @@ body.dark .mepTable td {
 body.dark .mepTable th {
   background: #e6e6e6 !important;
 }
+
+.weekDayHours {
+  display: block;
+  font-size: 0.85em;
+  opacity: 0.8;
+  margin-top: 2px;
+}
