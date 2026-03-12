@@ -1300,3 +1300,12 @@ body.dark #monthTable th:first-child {
   text-align: left;
   font-weight: 700;
 }
+#vacationTable td.vacationRangesCell {
+  text-align: left;
+  min-width: 240px;
+}
+
+.vacationRangeItem {
+  padding: 2px 0;
+  white-space: nowrap;
+}
