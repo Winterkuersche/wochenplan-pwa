@@ -1054,3 +1054,19 @@ body.dark .mepTable th {
   background: white;
   cursor: pointer;
 }
+#weekTable th:first-child,
+#weekTable td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+#weekTable thead th:first-child {
+  z-index: 3;
+}
+
+body.dark #weekTable th:first-child,
+body.dark #weekTable td:first-child {
+  background: #1f1f1f;
+}
