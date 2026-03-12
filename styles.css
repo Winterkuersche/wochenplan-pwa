@@ -1277,3 +1277,26 @@ body.dark #monthTable th:first-child {
   background: #2a2c30;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
+
+#vacationTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+#vacationTable th,
+#vacationTable td {
+  border: 1px solid #d0d0d0;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+#vacationTable th {
+  background: #f3f3f3;
+  font-weight: 800;
+}
+
+#vacationTable td:first-child {
+  text-align: left;
+  font-weight: 700;
+}
