@@ -1091,3 +1091,39 @@ body.dark #weekTable thead th {
 body.dark #weekTable thead th {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
+.tableWrap,
+.compactTableWrap {
+  overflow: auto;
+  position: relative;
+  max-height: 70vh;
+}
+
+#weekTable {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+#weekTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+#weekTable th:first-child,
+#weekTable td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+#weekTable thead th:first-child {
+  z-index: 4;
+}
+
+body.dark #weekTable thead th,
+body.dark #weekTable th:first-child,
+body.dark #weekTable td:first-child {
+  background: #1f1f1f;
+}
