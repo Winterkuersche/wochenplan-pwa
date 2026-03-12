@@ -325,19 +325,19 @@ function saveUiState() {
 /* ========= DEFAULT DATA ========= */
 function createDefaultEmployees() {
   return [
-    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", vacationDays: 30, shifts: {} },
-    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", vacationDays: 30, shifts: {} },
-    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", vacationDays: 30, shifts: {} },
-    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", vacationDays: 30, shifts: {} },
-    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", vacationDays: 30, shifts: {} },
-    { id: "emp_6", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_7", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_8", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_9", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_10", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_11", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_12", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} },
-    { id: "emp_13", name: "", roleKey: "", target: "", vacationDays: 30, shifts: {} }
+    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_6", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_7", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_8", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_9", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_10", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_11", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_12", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} },
+    { id: "emp_13", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "", shifts: {} }
   ];
 }
 
@@ -348,7 +348,8 @@ function defaultMasterState() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
-      vacationDays: emp.vacationDays
+      vacationDays: emp.vacationDays,
+      birthDate: emp.birthDate
     }))
   };
 }
@@ -376,6 +377,7 @@ function buildInitialState() {
     roleKey: emp.roleKey || "",
     target: emp.target || roleToTarget(emp.roleKey || ""),
     vacationDays: Number(emp.vacationDays ?? 30),
+    birthDate: emp.birthDate || "",
     shifts: {}
   };
 });
@@ -407,7 +409,8 @@ function saveMasterData() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
-      vacationDays: Number(emp.vacationDays ?? 30)
+      vacationDays: Number(emp.vacationDays ?? 30),
+      birthDate: emp.birthDate || ""
     }))
   });
 }
