@@ -102,20 +102,36 @@ shiftDialogDelete?.addEventListener("click", () => {
   }
 
   if (type === "U") {
-    const removed = removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
-    if (removed) {
-      closeShiftDialog();
-    }
-    return;
+
+  const choice = confirm(
+    "OK = gesamten Urlaub löschen\nAbbrechen = Urlaub ab diesem Tag kürzen"
+  );
+
+  if (choice) {
+    removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
+  } else {
+    trimAbsenceEntryFromIso(emp.id, isoDate, "vacation");
   }
 
-  if (type === "K") {
-    const removed = removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
-    if (removed) {
-      closeShiftDialog();
-    }
-    return;
+  closeShiftDialog();
+  return;
+}
+
+ if (type === "K") {
+
+  const choice = confirm(
+    "OK = gesamte Krankmeldung löschen\nAbbrechen = Krankmeldung ab diesem Tag kürzen"
+  );
+
+  if (choice) {
+    removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
+  } else {
+    trimAbsenceEntryFromIso(emp.id, isoDate, "sick");
   }
+
+  closeShiftDialog();
+  return;
+}
 });
 shiftDialogSave.addEventListener("click", () => {
   if (!shiftDialogContext) return;
@@ -395,6 +411,24 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   if (!entry) return false;
 
   state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
+  commitPlanChange();
+  return true;
+}
+function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
+  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  if (!entry) return false;
+
+  // Wenn der Eintrag genau an diesem Tag beginnt → komplett löschen
+  if (entry.from === isoDate) {
+    state.absences = state.absences.filter((a) => a.id !== entry.id);
+    commitPlanChange();
+    return true;
+  }
+
+  // sonst bis zum Tag davor kürzen
+  const prevDate = shiftIsoDateByDays(isoDate, -1);
+  entry.to = prevDate;
+
   commitPlanChange();
   return true;
 }
