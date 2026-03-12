@@ -80,7 +80,19 @@ function buildMonthEmployeeRow(emp, days) {
 
     monthMinutes += resolved.minutesForMonth || 0;
 
-    html += `<td class="${className}">${resolved.label || ""}</td>`;
+    let cellText = resolved.label || "";
+
+    if (resolved.type === "shift" && resolved.sourceEntry) {
+      const entry = resolved.sourceEntry;
+
+      if (entry.start && entry.end) {
+        cellText = `${entry.start}-${entry.end}`;
+      } else if (entry.code) {
+        cellText = entry.code;
+      }
+    }
+
+    html += `<td class="${className}">${cellText}</td>`;
   });
 
   html += `
