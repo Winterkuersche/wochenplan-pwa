@@ -86,7 +86,7 @@ function buildMonthEmployeeRow(emp, days) {
       const entry = resolved.sourceEntry || resolved;
 
       if (entry.start && entry.end) {
-        cellText = `${entry.start}-${entry.end}`;
+        cellText = `${entry.start.slice(0, 5)}-${entry.end.slice(0, 5)}`;
       } else if (entry.code) {
         cellText = entry.code;
       }
