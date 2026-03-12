@@ -41,6 +41,7 @@ function getUsedVacationDaysForEmployee(emp) {
     return sum + countVacationDaysInRange(entry.from, entry.to);
   }, 0);
 }
+
 function getAgeOnDate(birthDate, isoDate) {
   const birth = fromIsoDate(birthDate);
   const date = fromIsoDate(isoDate);
@@ -64,24 +65,45 @@ function getVacationDaysByAgeForYear(emp, year) {
 
   const ageOnYearStart = getAgeOnDate(emp.birthDate, `${year}-01-01`);
 
-  if (ageOnYearStart >= 50) return 36;
-  if (ageOnYearStart >= 40) return 34;
-  if (ageOnYearStart >= 30) return 32;
+  if (ageOnYearStart >= 30) return 36;
+  if (ageOnYearStart >= 28) return 34;
+  if (ageOnYearStart >= 26) return 32;
+  if (ageOnYearStart >= 24) return 30;
+
   return 30;
+}
+
+function calculateVacationDays(emp, year) {
+  let days = getVacationDaysByAgeForYear(emp, year);
+
+  if (emp?.serviceBonus) {
+    days += 1;
+  }
+
+  return days;
 }
 
 function applyVacationDaysForYear(year) {
   state.employees.forEach((emp) => {
     if (!emp) return;
-    emp.vacationDays = getVacationDaysByAgeForYear(emp, year);
+    emp.vacationDays = calculateVacationDays(emp, year);
   });
 
   saveMasterData();
   renderAllViews();
 }
 
-function getRemainingVacationDaysForEmployee(emp) {
-  const total = Number(emp?.vacationDays || 0);
+function getVacationSummaryForEmployee(emp, year = new Date().getFullYear()) {
+  const total = calculateVacationDays(emp, year);
   const used = getUsedVacationDaysForEmployee(emp);
-  return total - used;
+
+  return {
+    total,
+    used,
+    remaining: total - used
+  };
+}
+
+function getRemainingVacationDaysForEmployee(emp, year = new Date().getFullYear()) {
+  return getVacationSummaryForEmployee(emp, year).remaining;
 }
