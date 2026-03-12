@@ -425,9 +425,9 @@ function saveMasterData() {
       roleKey: emp.roleKey,
       target: emp.target,
       vacationDays: Number(emp.vacationDays ?? 30),
-      serviceBonus: Boolean(emp.serviceBonus).
-      birthDate: emp.birthDate || ""
-    })
+      birthDate: emp.birthDate || "",
+      serviceBonus: Boolean(emp.serviceBonus)
+    }))
   });
 }
 
@@ -805,15 +805,7 @@ function renderTeamSetup() {
       saveMasterData();
       renderAllViews();
     });
-    const serviceBonusInput = document.createElement("input");
-    serviceBonusInput.type = "checkbox";
-    serviceBonusInput.checked = Boolean(emp.serviceBonus);
-
-    serviceBonusInput.addEventListener("change", () => {
-    emp.serviceBonus = serviceBonusInput.checked;
-    saveMasterData();
-    renderAllViews();
-    });
+    
 
     const birthDateInput = document.createElement("input");
     birthDateInput.type = "date";
@@ -823,6 +815,16 @@ function renderTeamSetup() {
       saveMasterData();
       renderAllViews();
     });
+    const serviceBonusInput = document.createElement("input");
+serviceBonusInput.type = "checkbox";
+serviceBonusInput.checked = Boolean(emp.serviceBonus);
+serviceBonusInput.title = "10 Jahre Betriebszugehörigkeit";
+
+serviceBonusInput.addEventListener("change", () => {
+  emp.serviceBonus = serviceBonusInput.checked;
+  saveMasterData();
+  renderAllViews();
+});
 
     row.appendChild(nameInput);
     row.appendChild(roleSel);
