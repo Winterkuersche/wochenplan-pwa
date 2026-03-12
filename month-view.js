@@ -82,8 +82,8 @@ function buildMonthEmployeeRow(emp, days) {
 
     let cellText = resolved.label || "";
 
-    if (resolved.type === "shift" && resolved.sourceEntry) {
-      const entry = resolved.sourceEntry;
+    if (resolved.type === "shift") {
+      const entry = resolved.sourceEntry || resolved;
 
       if (entry.start && entry.end) {
         cellText = `${entry.start}-${entry.end}`;
