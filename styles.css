@@ -1198,3 +1198,82 @@ body.dark #weekTable th:first-child,
 body.dark #weekTable td:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
+
+#monthViewContent {
+  overflow: auto;
+  position: relative;
+  max-height: 70vh;
+}
+
+#monthTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  background: #fff;
+}
+
+#monthTable th,
+#monthTable td {
+  border: 1px solid #d9d9d9;
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+#monthTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #f7f7f7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+#monthTable td:first-child,
+#monthTable th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  text-align: left;
+  min-width: 140px;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+#monthTable th:first-child {
+  z-index: 4;
+  background: #f7f7f7;
+}
+
+#monthTable td:last-child,
+#monthTable th:last-child {
+  font-weight: 600;
+  min-width: 72px;
+}
+
+#monthTable .nameRoleCell {
+  min-width: 140px;
+}
+
+body.dark #monthTable {
+  background: #232529;
+  color: #f1f1f1;
+}
+
+body.dark #monthTable th,
+body.dark #monthTable td {
+  border-color: #444851;
+  color: #f1f1f1;
+}
+
+body.dark #monthTable thead th {
+  background: #2f3238;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+body.dark #monthTable td:first-child,
+body.dark #monthTable th:first-child {
+  background: #2a2c30;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
+}
