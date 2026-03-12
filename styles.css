@@ -223,7 +223,12 @@ select {
 
 .teamRow {
   display: grid;
-  grid-template-columns: minmax(180px, 1.4fr) minmax(90px, 0.6fr) minmax(90px, 0.8fr);
+  grid-template-columns:
+    minmax(180px, 1.4fr)
+    minmax(90px, 0.6fr)
+    minmax(90px, 0.8fr)
+    minmax(80px, 0.6fr)
+    minmax(150px, 1fr);
   gap: 8px;
   align-items: center;
 }
