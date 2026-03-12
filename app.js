@@ -778,14 +778,36 @@ function renderTeamSetup() {
       renderAllViews();
     });
 
+    const vacationInput = document.createElement("input");
+    vacationInput.type = "number";
+    vacationInput.min = "0";
+    vacationInput.max = "60";
+    vacationInput.placeholder = "Urlaub";
+    vacationInput.value = Number(emp.vacationDays ?? 30);
+    vacationInput.addEventListener("change", () => {
+      emp.vacationDays = Number(vacationInput.value || 0);
+      saveMasterData();
+      renderAllViews();
+    });
+
+    const birthDateInput = document.createElement("input");
+    birthDateInput.type = "date";
+    birthDateInput.value = emp.birthDate || "";
+    birthDateInput.addEventListener("change", () => {
+      emp.birthDate = birthDateInput.value;
+      saveMasterData();
+      renderAllViews();
+    });
+
     row.appendChild(nameInput);
     row.appendChild(roleSel);
     row.appendChild(targetInput);
+    row.appendChild(vacationInput);
+    row.appendChild(birthDateInput);
 
     teamListEl.appendChild(row);
   });
 }
-
 function renderSummary() {
   const totalWeek = totalMinutesForWeek();
   const rest = MAX_WEEKLY_MINUTES - totalWeek;
