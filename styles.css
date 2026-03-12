@@ -1070,3 +1070,24 @@ body.dark #weekTable th:first-child,
 body.dark #weekTable td:first-child {
   background: #1f1f1f;
 }
+#weekTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+#weekTable thead th:first-child {
+  z-index: 4;
+}
+
+body.dark #weekTable thead th {
+  background: #1f1f1f;
+}
+#weekTable thead th {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+body.dark #weekTable thead th {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
