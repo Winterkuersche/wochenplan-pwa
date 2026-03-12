@@ -427,7 +427,7 @@ function saveMasterData() {
       vacationDays: Number(emp.vacationDays ?? 30),
       serviceBonus: Boolean(emp.serviceBonus).
       birthDate: emp.birthDate || ""
-    }))
+    })
   });
 }
 
