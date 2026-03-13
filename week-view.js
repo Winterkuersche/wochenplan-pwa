@@ -726,7 +726,7 @@ function renderWeekHeader() {
   visibleDays.forEach((day, index) => {
     const minutes = totalMinutesForDayIso(day.iso);
     const hoursText = minutesToHM(minutes);
-    const meta = getWeekdayHeaderMeta(index, visibleDays);
+    const meta = getWeekDayHeaderMeta(index, visibleDays);
     const isToday = day.iso === toIsoDate(new Date());
 
     let hoursClass = "weekDayHours";
