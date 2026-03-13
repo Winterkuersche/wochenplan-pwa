@@ -635,8 +635,13 @@ input, select {
   cursor: default;
 }
 
-.mepScreenStage { display: block; }
-.mepPrintAll { display: none; }
+.mepScreenStage {
+  display: block;
+}
+
+.mepPrintAll {
+  display: none;
+}
 
 .mepSheet,
 .formPage {
@@ -1044,7 +1049,8 @@ input, select {
   .viewSwitch,
   .toolbar,
   .mepPager,
-  button {
+  button,
+  .mepScreenStage {
     display: none !important;
   }
 
@@ -1056,52 +1062,47 @@ input, select {
     background: #fff !important;
   }
 
-  /* WICHTIG: Bildschirmansicht NICHT drucken */
-  .mepScreenStage {
-    display: none !important;
-  }
-
-  /* WICHTIG: nur Druckseiten drucken */
   .mepPrintAll {
     display: block !important;
   }
 
-  /* NUR der äußere Druckcontainer ist eine Seite */
+  /* genau 1 Druckseite */
   .mepPrintPage {
-  width: 285mm !important;
-  min-height: 198mm !important;
-
-  margin: 0 auto !important;
-
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-  .mepPrintPage:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  /* Der eigentliche Formularinhalt füllt die Seite,
-     ist aber KEINE zusätzliche Druckseite */
-  .mepSheet {
-    width: 100% !important;
-    min-height: 100% !important;
-    margin: 0 !important;
-    padding: 4mm 5mm 4mm !important;
+    width: 285mm !important;
+    height: 198mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
     border: none !important;
     box-shadow: none !important;
-    overflow: visible !important;
-
-    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
     page-break-inside: avoid !important;
-    break-after: auto !important;
+    break-inside: avoid !important;
+  }
+
+  .mepPrintPage:last-child {
     page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  /* Formularinhalt etwas kompakter auf die Seite skalieren */
+  .mepSheet {
+    width: 100% !important;
+    height: 198mm !important;
+    margin: 0 !important;
+    padding: 3mm 4mm 3mm !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: scale(0.92);
+    transform-origin: top left;
   }
 
   .mepTableOuter {
-    overflow: visible !important;
+    overflow: hidden !important;
     border: 0.35mm solid #6f6f6f !important;
   }
 
@@ -1111,45 +1112,37 @@ input, select {
     table-layout: fixed !important;
   }
 
-  .mepTable tr,
-  .mepTable td,
+  /* Druck kompakter machen */
   .mepTable th,
-  .mepEmployeeBlock {
-    break-inside: avoid !important;
+  .mepTable td {
+    height: 3.9mm !important;
+    padding: 0.22mm 0.35mm !important;
+    font-size: 2.2mm !important;
+    line-height: 1.02 !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .mepSubHead {
+    height: 3.6mm !important;
+    font-size: 2.1mm !important;
+  }
+
+  .mepFooterGrid {
+    margin-top: 2mm !important;
+    font-size: 2.5mm !important;
+  }
+
+  .mepFooterHint {
+    margin-top: 1.5mm !important;
+    font-size: 2.4mm !important;
+  }
+
+  .mepFooterStand {
+    margin-top: 1mm !important;
+    font-size: 2.3mm !important;
   }
 }
-
-  /* A4 Seite */
-
-  .mepSheet,
-  .formPage {
-    width: 198mm;
-    min-height: 285mm;
-
-    margin: 0 auto;
-    padding: 4mm 5mm 3mm;
-
-    border: none !important;
-    box-shadow: none !important;
-
-    page-break-after: always;
-  }
-
-  .formPage:last-child {
-    page-break-after: auto;
-  }
-   .mepTableOuter {
-    overflow: visible !important;
-  }
-
-  .mepTable {
-    width: 100%;
-    min-width: 0;
-  }
-
-}
-
 /* =============================
    DARK MODE
    ============================= */
