@@ -1545,3 +1545,73 @@ body.dark #weekTable tbody tr:nth-child(even) td {
     display: block !important;
   }
 }
+
+
+/* ===== Final MEP polish ===== */
+.mepSheet {
+  min-height: 279mm;
+  height: 279mm;
+  box-sizing: border-box;
+}
+
+.mepTable td {
+  vertical-align: middle;
+}
+
+.mepNameCell,
+.mepFuncText,
+.mepPlanText,
+.mepWeekText,
+.mepMonthText,
+.mepDayValueCell {
+  vertical-align: middle;
+}
+
+.mepHand {
+  display: inline-block;
+  line-height: 1.16;
+  color: #1f2a35;
+}
+
+.mepDayValueCell .mepHand,
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepWeekText .mepHand,
+.mepMonthText .mepHand,
+.mepHandField .mepHand,
+.mepMetaLine .mepHand,
+.mepNameCell .mepHand {
+  transform: translateY(0.8mm);
+}
+
+.mepDayName {
+  display: block;
+  line-height: 1;
+}
+
+.mepDayDate {
+  display: inline-block;
+  line-height: 1.05;
+  margin-top: 0.25mm;
+}
+
+.mepSubHead .mepHand {
+  transform: translateY(0.25mm);
+}
+
+.mepTable thead th {
+  vertical-align: middle;
+}
+
+@media print {
+  #formView .mepPager,
+  #formView .mepScreenStage,
+  #formView .viewSwitch,
+  #formView .toolbar {
+    display: none !important;
+  }
+
+  #formView .mepPrintAll {
+    display: block !important;
+  }
+}

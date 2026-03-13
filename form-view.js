@@ -328,7 +328,7 @@ function buildWeekSheet(sheetModel) {
 
   weekDays.forEach((day) => {
     const grayClass = day.isOutsideMonth ? ' class="mepSubHead mepDayCol--out"' : ' class="mepSubHead"';
-    html += `<th${grayClass}>${formatShortDateForm(day.date)}</th>`;
+    html += `<th${grayClass}><span class="mepDayDate">${renderHandText(formatShortDateForm(day.date), `head-date-${day.iso}-${pageIndex}`)}</span></th>`;
   });
 
   html += `
