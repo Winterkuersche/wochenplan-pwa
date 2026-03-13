@@ -131,20 +131,12 @@ function bindMonthCellActions() {
       const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
       if (resolved.type === "vacation") {
-        openShiftDialog("U", {
-          emp,
-          isoDate,
-          type: "U"
-        });
+        openShiftDialog("U", { emp, isoDate, type: "U" });
         return;
       }
 
       if (resolved.type === "sick") {
-        openShiftDialog("K", {
-          emp,
-          isoDate,
-          type: "K"
-        });
+        openShiftDialog("K", { emp, isoDate, type: "K" });
         return;
       }
 
@@ -152,11 +144,7 @@ function bindMonthCellActions() {
         return;
       }
 
-      openShiftDialog("U", {
-        emp,
-        isoDate,
-        type: "U"
-      });
+      openShiftDialog("U", { emp, isoDate, type: "U" });
     });
   });
 }
