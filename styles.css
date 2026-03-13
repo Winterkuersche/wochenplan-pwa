@@ -1066,14 +1066,13 @@ input, select {
     display: block !important;
   }
 
-  /* genau 1 Druckseite */
   .mepPrintPage {
     width: 285mm !important;
-    height: 198mm !important;
+    min-height: 198mm !important;
     margin: 0 auto !important;
     padding: 0 !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     border: none !important;
     box-shadow: none !important;
     page-break-after: always !important;
@@ -1087,22 +1086,20 @@ input, select {
     break-after: auto !important;
   }
 
-  /* Formularinhalt etwas kompakter auf die Seite skalieren */
   .mepSheet {
     width: 100% !important;
-    height: 198mm !important;
+    min-height: 198mm !important;
     margin: 0 !important;
-    padding: 3mm 4mm 3mm !important;
+    padding: 4mm 4mm 4mm !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     border: none !important;
     box-shadow: none !important;
-    transform: scale(0.92);
-    transform-origin: top left;
+    transform: none !important;
   }
 
   .mepTableOuter {
-    overflow: hidden !important;
+    overflow: visible !important;
     border: 0.35mm solid #6f6f6f !important;
   }
 
@@ -1110,21 +1107,22 @@ input, select {
     width: 100% !important;
     min-width: 0 !important;
     table-layout: fixed !important;
+    border-collapse: collapse !important;
   }
 
-  /* Druck kompakter machen */
   .mepTable th,
   .mepTable td {
-    height: 3.9mm !important;
-    padding: 0.22mm 0.35mm !important;
-    font-size: 2.2mm !important;
-    line-height: 1.02 !important;
+    height: 4.2mm !important;
+    padding: 0.28mm 0.4mm !important;
+    font-size: 2.25mm !important;
+    line-height: 1.05 !important;
+    border: 0.26mm solid #6f6f6f !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
   .mepSubHead {
-    height: 3.6mm !important;
+    height: 3.8mm !important;
     font-size: 2.1mm !important;
   }
 
