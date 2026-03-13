@@ -82,16 +82,21 @@ function buildMonthEmployeeRow(emp, days) {
 
     let cellText = resolved.label || "";
 
-    if (resolved.type === "shift") {
-      const entry = resolved.sourceEntry || resolved;
+if (resolved.type === "shift") {
+  const entry = resolved.sourceEntry || resolved;
 
-      if (entry.start && entry.end) {
-        cellText = `${entry.start.slice(0, 5)}-${entry.end.slice(0, 5)}`;
-      } else if (entry.code) {
-        cellText = entry.code;
-      }
-    }
-
+  if (entry.start && entry.end) {
+    cellText = `${entry.start}-${entry.end}`;
+  } else if (entry.code) {
+    cellText = entry.code;
+  }
+} else if (resolved.type === "vacation") {
+  cellText = "U";
+} else if (resolved.type === "sick") {
+  cellText = "K";
+} else if (resolved.type === "external-help") {
+  cellText = "AH";
+}
     html += `<td class="${className}">${cellText}</td>`;
   });
 
