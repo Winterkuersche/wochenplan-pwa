@@ -425,6 +425,21 @@ function bindFormPager(sheetModels) {
     renderFormView();
   });
 }
+function renderFormPager(sheetModels, currentIndex) {
+  const current = sheetModels[currentIndex];
+  if (!current) return "";
+
+  return `
+    <div class="mepPager no-print">
+      <button type="button" id="mepPrevPage">◀</button>
+      <div class="mepPagerInfo">
+        <strong>Originalformular</strong>
+        <span>Woche ${current.weekIndex + 1} · Seite ${current.pageIndex + 1} / ${current.pageCount}</span>
+      </div>
+      <button type="button" id="mepNextPage">▶</button>
+    </div>
+  `;
+}
 function renderFormView() {
   const container = document.getElementById("formView");
   if (!container) return;
