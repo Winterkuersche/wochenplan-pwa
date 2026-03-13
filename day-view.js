@@ -155,6 +155,8 @@ actionCell.appendChild(addBtn);
 tr.appendChild(actionCell);
 
 tr.insertAdjacentHTML("beforeend", monthsHtml);
+
+body.appendChild(tr);
   });
 
   bindVacationRangeActions();
