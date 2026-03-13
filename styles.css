@@ -835,11 +835,11 @@ select {
 }
 
 .mepTableOuter {
-  overflow-x: auto;
-  overflow-y: visible;
-  border: 0.35mm solid #6f6f6f;
-  background: #fff;
-  -webkit-overflow-scrolling: touch;
+  width: fit-content !important;
+  margin: 0 auto !important;
+  overflow: hidden !important;
+  border: 0.35mm solid #6f6f6f !important;
+  background: #fff !important;
 }
 
 .mepTable {
@@ -850,7 +850,7 @@ select {
 }
 
 .mepTable th,
-.mepTable td {
+ td {
   height: 4.7mm;
   padding: 0.45mm 0.6mm;
   border: 0.26mm solid #6f6f6f;
@@ -860,7 +860,7 @@ select {
   vertical-align: middle;
 }
 
-.mepTable thead th {
+ thead th {
   background: #efefef;
   text-align: center;
   vertical-align: middle;
@@ -1300,12 +1300,11 @@ select {
   }
 
   .mepTable {
-    width: 100% !important;
-    min-width: 0 !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
-  }
-
+  width: auto !important;
+  min-width: auto !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
   .mepTable th,
   .mepTable td {
     height: 4.15mm !important;
