@@ -492,12 +492,7 @@ function createWeekSelect(emp, isoDate) {
   sel.className = buildWeekSelectClass(currentValue);
   sel.style.flex = "1";
 
-  if (blockingType === "vacation" || blockingType === "sick") {
-  if (selectedValue !== "U" && selectedValue !== "K" && selectedValue !== "-") {
-    sel.value = previousValue;
-    return;
-  }
-}
+  
 
  if (blockingType === "holiday") {
   const opt = document.createElement("option");
@@ -549,6 +544,13 @@ function createWeekSelect(emp, isoDate) {
   sel.addEventListener("change", () => {
     const selectedValue = sel.value;
     const previousValue = currentValue;
+
+        if (blockingType === "vacation" || blockingType === "sick") {
+      if (selectedValue !== "U" && selectedValue !== "K" && selectedValue !== "-") {
+        sel.value = previousValue;
+        return;
+      }
+    }
 
     if (selectedValue === "U") {
       openShiftDialog("U", { emp, isoDate, type: "U" });
