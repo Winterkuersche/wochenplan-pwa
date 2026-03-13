@@ -1384,3 +1384,36 @@ body.dark .vacMonthCell {
 body.dark .monthCellClickable:hover {
   outline: 2px solid rgba(92, 141, 255, 0.45);
 }
+
+
+.weekDayMeta {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.weekDayMeta--ok {
+  color: #1f7a1f;
+}
+
+.weekDayMeta--low,
+.weekDayMeta--missing {
+  color: #b26a00;
+}
+
+.weekDayMeta--high {
+  color: #b42318;
+}
+
+.weekCellControl.weekCellHandoverOk {
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(31, 122, 31, 0.12);
+  border: 1px solid rgba(31, 122, 31, 0.28);
+}
+
+body.dark .weekCellControl.weekCellHandoverOk {
+  background: rgba(92, 141, 255, 0.16);
+  border-color: rgba(92, 141, 255, 0.3);
+}

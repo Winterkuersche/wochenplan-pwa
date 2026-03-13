@@ -196,7 +196,6 @@ const teamListEl = document.getElementById("teamList");
 const dayTabsEl = document.getElementById("dayTabs");
 const plannerListEl = document.getElementById("plannerList");
 const metaDayNameEl = document.getElementById("metaDayName");
-const lateCountInfoEl = document.getElementById("lateCountInfo");
 const dayWarningsEl = document.getElementById("dayWarnings");
 const dayHoursInfoEl = document.getElementById("dayHoursInfo");
 const weekTableBodyEl = document.getElementById("weekTableBody");
@@ -211,8 +210,6 @@ const btnToggleTeamEl = document.getElementById("btnToggleTeam");
 const weeklyHoursActualEl = document.getElementById("weeklyHoursActual");
 const weeklyHoursRemainingEl = document.getElementById("weeklyHoursRemaining");
 const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
-const dayHoursActualEl = document.getElementById("dayHoursActual");
-const dayHoursSubEl = document.getElementById("dayHoursSub");
 
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
@@ -226,6 +223,9 @@ const btnViewFormEl = document.getElementById("btnViewForm");
 const btnPrevWeekEl = document.getElementById("btnPrevWeek");
 const btnCurrentWeekEl = document.getElementById("btnCurrentWeek");
 const btnNextWeekEl = document.getElementById("btnNextWeek");
+const viewMetaLineEl = document.getElementById("viewMetaLine");
+const topToolbarEl = document.getElementById("topToolbar");
+const btnResetWeekEl = document.getElementById("btnResetWeek");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -683,22 +683,9 @@ function getDayWarningsByIndex(index) {
   const warnings = [];
   const closers = getClosingWorkersForIso(day.iso);
 
-  if (closers.length === 0) {
-    warnings.push(`⚠ ${day.weekdayLabel}: keine Schicht bis 19:10.`);
-  }
-
   if (closers.length > 2) {
     warnings.push(`⚠ ${day.weekdayLabel}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
   }
-
-  if (index < 5 && closers.length > 0) {
-  const nextDay = week[index + 1];
-  const hasAnchor = closers.some((emp) => hasEmployeeWorkEntry(emp.id, nextDay.iso));
-
-  if (!hasAnchor) {
-    warnings.push(`⚠ ${nextDay.weekdayLabel}: niemand vom ${day.weekdayLabel}-Abschluss eingeplant.`);
-  }
-}
 
   return warnings;
 }
@@ -750,6 +737,22 @@ function renderTeamSectionVisibility() {
   btnToggleTeamEl.textContent = uiState.teamCollapsed ? "Team einblenden" : "Team ausblenden";
 }
 
+function isWeekViewActive() {
+  return (uiState.currentView || "week") === "week";
+}
+
+function renderTopbarVisibility() {
+  const isWeek = isWeekViewActive();
+
+  if (viewMetaLineEl) {
+    viewMetaLineEl.classList.toggle("hidden", !isWeek);
+  }
+
+  if (btnResetWeekEl) {
+    btnResetWeekEl.classList.toggle("hidden", !isWeek);
+  }
+}
+
 function renderView() {
   const view = uiState.currentView || "week";
 
@@ -762,6 +765,8 @@ function renderView() {
   btnViewWeekEl.classList.toggle("active", view === "week");
   btnViewMonthEl.classList.toggle("active", view === "month");
   btnViewFormEl.classList.toggle("active", view === "form");
+
+  renderTopbarVisibility();
 }
 
 function renderTeamSetup() {
@@ -859,17 +864,10 @@ serviceBonusInput.addEventListener("change", () => {
 function renderSummary() {
   const totalWeek = totalMinutesForWeek();
   const rest = MAX_WEEKLY_MINUTES - totalWeek;
-  const dayObj = getCurrentDayObject();
-  const dayMinutes = dayObj ? totalMinutesForDayIso(dayObj.iso) : 0;
-  const closers = dayObj ? getClosingWorkersForIso(dayObj.iso).length : 0;
 
   weeklyHoursActualEl.textContent = minutesToHM(totalWeek);
   weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(rest));
   weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
-
-  dayHoursActualEl.textContent = minutesToHM(dayMinutes);
-  dayHoursSubEl.textContent = dayObj ? dayObj.weekdayLabel : "—";
-  lateCountInfoEl.textContent = `${closers} / 2`;
 
   if (mepWeekFromEl) mepWeekFromEl.textContent = state.weekFrom || "____________";
   if (mepWeekToEl) mepWeekToEl.textContent = state.weekTo || "____________";

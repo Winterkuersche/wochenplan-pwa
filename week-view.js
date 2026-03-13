@@ -498,6 +498,12 @@ function createWeekSelect(emp, isoDate) {
 
   const wrap = document.createElement("div");
   wrap.className = "weekCellControl";
+
+  const cellFlags = getWeekCellFlags(emp, isoDate);
+  if (cellFlags.isLateToEarlyBridge) {
+    wrap.classList.add("weekCellHandoverOk");
+    wrap.title = "Vortag bis 19:10 und heute Frühstart";
+  }
   wrap.style.display = "flex";
   wrap.style.alignItems = "center";
   wrap.style.gap = "6px";
@@ -646,6 +652,60 @@ commitPlanChange();
 
   return wrap;
 }
+function isEarlyStartEntry(entry) {
+  if (!entry || entry.type !== "shift") return false;
+
+  if (entry.mode === "early" || entry.mode === "full") return true;
+
+  if (!entry.start) return false;
+  return hhmmToMinutes(entry.start) <= hhmmToMinutes("09:00");
+}
+
+function getWeekDayHeaderMeta(index, visibleDays) {
+  const day = visibleDays[index];
+  if (!day) return null;
+
+  const closers = getClosingWorkersForIso(day.iso);
+  const hasClosingCoverage = closers.length > 0;
+  const hasTooManyClosers = closers.length > 2;
+
+  let handoverState = "none";
+  let handoverText = "Übergabe —";
+
+  if (index > 0) {
+    const prevDay = visibleDays[index - 1];
+    const prevClosers = prevDay ? getClosingWorkersForIso(prevDay.iso) : [];
+
+    if (prevClosers.length > 0) {
+      const hasEarlyHandover = prevClosers.some((emp) => {
+        const entry = getScheduleEntry(emp.id, day.iso);
+        return isEarlyStartEntry(entry);
+      });
+
+      handoverState = hasEarlyHandover ? "ok" : "missing";
+      handoverText = hasEarlyHandover ? "Übergabe ✓" : "Übergabe ✗";
+    }
+  }
+
+  return {
+    closers,
+    closersText: `19:10 ${closers.length}/2`,
+    closersState: hasTooManyClosers ? "high" : hasClosingCoverage ? "ok" : "low",
+    handoverState,
+    handoverText
+  };
+}
+
+function getWeekCellFlags(emp, isoDate) {
+  const prevIso = shiftIsoDateByDays(isoDate, -1);
+  const prevEntry = getScheduleEntry(emp.id, prevIso);
+  const currentEntry = getScheduleEntry(emp.id, isoDate);
+
+  return {
+    isLateToEarlyBridge: isClosingResolvedEntry(prevEntry) && isEarlyStartEntry(currentEntry)
+  };
+}
+
 function renderWeekHeader() {
   const table = document.getElementById("weekTable");
   if (!table) return;
@@ -663,30 +723,33 @@ function renderWeekHeader() {
       <th>Name</th>
   `;
 
-visibleDays.forEach((day) => {
-  const minutes = totalMinutesForDayIso(day.iso);
-  const hoursText = minutesToHM(minutes);
+  visibleDays.forEach((day, index) => {
+    const minutes = totalMinutesForDayIso(day.iso);
+    const hoursText = minutesToHM(minutes);
+    const meta = getWeekDayHeaderMeta(index, visibleDays);
 
-  let hoursClass = "weekDayHours";
+    let hoursClass = "weekDayHours";
 
-  if (minutes < 600) {
-    hoursClass += " hoursLow";
-  } else if (minutes > 1200) {
-    hoursClass += " hoursHigh";
-  } else {
-    hoursClass += " hoursOk";
-  }
+    if (minutes < 600) {
+      hoursClass += " hoursLow";
+    } else if (minutes > 1200) {
+      hoursClass += " hoursHigh";
+    } else {
+      hoursClass += " hoursOk";
+    }
 
-  const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
+    const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
 
-  headerHtml += `
-    <th${grayStyle}>
-      ${day.weekdayLabel}<br>
-      ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}<br>
-      <span class="${hoursClass}">${hoursText}</span>
-    </th>
-  `;
-});
+    headerHtml += `
+      <th${grayStyle}>
+        ${day.weekdayLabel}<br>
+        ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}<br>
+        <span class="${hoursClass}">${hoursText}</span><br>
+        <span class="weekDayMeta weekDayMeta--${meta.closersState}">${meta.closersText}</span>
+        ${meta.handoverState !== "none" ? `<br><span class="weekDayMeta weekDayMeta--${meta.handoverState}">${meta.handoverText}</span>` : ""}
+      </th>
+    `;
+  });
 
   headerHtml += `
       <th>Ist</th>
