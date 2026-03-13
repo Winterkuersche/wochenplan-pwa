@@ -139,95 +139,84 @@ shiftDialogSave.addEventListener("click", () => {
   const { emp, isoDate, type } = shiftDialogContext;
 
   if (type === "L") {
-  const start = shiftDialogLateStart.value;
-  const checkout = shiftDialogLateCheckout.value === "yes";
+    const start = shiftDialogLateStart.value;
+    const checkout = shiftDialogLateCheckout.value === "yes";
 
-  const entry = buildLateShiftEntry(start, checkout);
-  if (!entry) {
-    alert("Ungültige Spätschicht.");
+    const entry = buildLateShiftEntry(start, checkout);
+    if (!entry) {
+      alert("Ungültige Spätschicht.");
+      return;
+    }
+
+    clearDay(emp.id, isoDate, { commit: false });
+    setScheduleEntry(emp.id, isoDate, entry);
+    closeShiftDialog();
     return;
   }
-
- clearDay(emp.id, isoDate, { commit: false });
-setScheduleEntry(emp.id, isoDate, entry);
-closeShiftDialog();
-return;
-}
 
   if (type === "G") {
-  const checkout = shiftDialogFullCheckout.value === "yes";
-  const entry = buildFullShiftEntry(checkout);
+    const checkout = shiftDialogFullCheckout.value === "yes";
+    const entry = buildFullShiftEntry(checkout);
 
- clearDay(emp.id, isoDate, { commit: false });
-setScheduleEntry(emp.id, isoDate, entry);
-closeShiftDialog();
-return;
-}
+    clearDay(emp.id, isoDate, { commit: false });
+    setScheduleEntry(emp.id, isoDate, entry);
+    closeShiftDialog();
+    return;
+  }
 
   if (type === "FLEX") {
-  const start = shiftDialogFlexStart.value;
-  const end = shiftDialogFlexEnd.value;
+    const start = shiftDialogFlexStart.value;
+    const end = shiftDialogFlexEnd.value;
 
-  if (!start || !end) {
-    alert("Start und Ende wählen.");
+    if (!start || !end) {
+      alert("Start und Ende wählen.");
+      return;
+    }
+
+    const entry = buildFlexibleShiftEntry(start, end);
+
+    if (!entry) {
+      alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
+      return;
+    }
+
+    clearDay(emp.id, isoDate, { commit: false });
+    setScheduleEntry(emp.id, isoDate, entry);
+    closeShiftDialog();
     return;
   }
 
-  const entry = buildFlexibleShiftEntry(start, end);
+  if (type === "U") {
+    const fromIso = shiftDialogAbsenceFrom.value;
+    const toIso = shiftDialogAbsenceTo.value;
 
-  if (!entry) {
-    alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
+    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+      alert("Ungültiger Urlaubszeitraum.");
+      return;
+    }
+
+    clearDayRange(emp.id, fromIso, toIso, { commit: false });
+    addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+    closeShiftDialog();
     return;
   }
 
- clearDay(emp.id, isoDate, { commit: false });
-setScheduleEntry(emp.id, isoDate, entry);
-closeShiftDialog();
-return;
-}
+  if (type === "K") {
+    const fromIso = shiftDialogAbsenceFrom.value;
+    const toIso = shiftDialogAbsenceTo.value;
 
- if (type === "U") {
-  const fromIso = shiftDialogAbsenceFrom.value;
-  const toIso = shiftDialogAbsenceTo.value;
+    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
+      alert("Ungültiger Krankzeitraum.");
+      return;
+    }
 
-  if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-    alert("Ungültiger Urlaubszeitraum.");
+    clearDayRange(emp.id, fromIso, toIso, { commit: false });
+    addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+    closeShiftDialog();
     return;
   }
 
-  clearDayRange(emp.id, fromIso, toIso, { commit: false });
-  addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
-  closeShiftDialog();
-  return;
-}
-
- clearDay(emp.id, isoDate, { commit: false });
-addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
-closeShiftDialog();
-return;
-}
-
- if (type === "K") {
-  const fromIso = shiftDialogAbsenceFrom.value;
-  const toIso = shiftDialogAbsenceTo.value;
-
-  if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-    alert("Ungültiger Krankzeitraum.");
-    return;
-  }
-
-  clearDayRange(emp.id, fromIso, toIso, { commit: false });
-  addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
-  closeShiftDialog();
-  return;
-}
-
-  clearDay(emp.id, isoDate, { commit: false });
-addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
-closeShiftDialog();
-return;
-}
-      if (type === "AH") {
+  if (type === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const hhmm = shiftDialogExternalHelpDuration.value;
 
@@ -238,7 +227,7 @@ return;
 
     clearDay(emp.id, isoDate, { commit: false });
 
-const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
+    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
     if (!ok) {
       alert("Aushilfe konnte nicht gespeichert werden.");
       return;
@@ -252,6 +241,7 @@ const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
   renderAllViews();
   closeShiftDialog();
 });
+
 function renderWeekWarnings() {
   if (!weekWarningsEl) return;
 

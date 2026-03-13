@@ -102,7 +102,7 @@ if (resolved.type === "shift") {
     class="${className} monthCellClickable"
     data-emp-id="${emp.id}"
     data-iso="${day.iso}"
-    title="Klicken zum Urlaub planen"
+    title="Klicken zum Bearbeiten"
   >
     ${cellText}
   </td>
@@ -130,6 +130,8 @@ function bindMonthCellActions() {
 
       const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
+      if (resolved.type === "holiday") return;
+
       if (resolved.type === "vacation") {
         openShiftDialog("U", { emp, isoDate, type: "U" });
         return;
@@ -140,8 +142,28 @@ function bindMonthCellActions() {
         return;
       }
 
-      if (resolved.type === "holiday") {
+      if (resolved.type === "external-help") {
+        openShiftDialog("AH", { emp, isoDate, type: "AH" });
         return;
+      }
+
+      if (resolved.type === "shift" && resolved.sourceEntry) {
+        const entry = resolved.sourceEntry;
+
+        if (entry.mode === "late") {
+          openShiftDialog("L", { emp, isoDate, type: "L" });
+          return;
+        }
+
+        if (entry.mode === "full") {
+          openShiftDialog("G", { emp, isoDate, type: "G" });
+          return;
+        }
+
+        if (entry.mode === "flex") {
+          openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+          return;
+        }
       }
 
       openShiftDialog("U", { emp, isoDate, type: "U" });
