@@ -97,7 +97,16 @@ if (resolved.type === "shift") {
 } else if (resolved.type === "external-help") {
   cellText = "AH";
 }
-    html += `<td class="${className}">${cellText}</td>`;
+    html += `
+  <td
+    class="${className} monthCellClickable"
+    data-emp-id="${emp.id}"
+    data-iso="${day.iso}"
+    title="Klicken zum Urlaub planen"
+  >
+    ${cellText}
+  </td>
+`;
   });
 
   html += `
@@ -106,6 +115,26 @@ if (resolved.type === "shift") {
   `;
 
   return html;
+}
+function bindMonthCellActions() {
+  const table = document.getElementById("monthTable");
+  if (!table) return;
+
+  table.querySelectorAll(".monthCellClickable").forEach((cell) => {
+    cell.addEventListener("click", () => {
+      const empId = cell.dataset.empId;
+      const isoDate = cell.dataset.iso;
+
+      const emp = state.employees.find((e) => e.id === empId);
+      if (!emp || !isoDate) return;
+
+      openShiftDialog("U", {
+        emp,
+        isoDate,
+        type: "U"
+      });
+    });
+  });
 }
 
 function changeMonth(offset) {
@@ -141,6 +170,7 @@ function renderMonthView() {
   if (!container) return;
 
   container.innerHTML = "";
+  bindMonthCellActions();
 
   const days = getActiveMonthDays();
   if (!days.length) {
