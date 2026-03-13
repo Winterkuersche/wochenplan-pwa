@@ -590,20 +590,20 @@ function createWeekSelect(emp, isoDate) {
 
     clearDay(emp.id, isoDate, { commit: false });
 
-    if (selectedValue !== "-") {
-      const entry = buildEarlyShiftEntry(selectedValue);
+   if (selectedValue !== "-") {
+  const entry = buildEarlyShiftEntry(selectedValue);
 
-      if (!entry) {
-        alert("Ungültige Frühschicht.");
-        sel.value = previousValue;
-        return;
-      }
+  if (!entry) {
+    alert("Ungültige Frühschicht.");
+    sel.value = previousValue;
+    return;
+  }
 
-      setShift(emp.id, isoDate, entry);
-      return;
-    }
+  setScheduleEntry(emp.id, isoDate, entry);
+  return;
+}
 
-    commitPlanChange();
+commitPlanChange();
   });
 
   wrap.appendChild(sel);
