@@ -1314,3 +1314,70 @@ body.dark .formPage {
 body.dark .mepTable th {
   background: #e6e6e6 !important;
 }
+/* =========================
+   DRUCKLAYOUT A4 LANDSCAPE
+   ========================= */
+
+@media print {
+
+  @page {
+    size: A4 landscape;
+    margin: 6mm;
+  }
+
+  html, body {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  .mepPrintPage {
+    width: 285mm !important;
+    min-height: 198mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    display: block !important;
+  }
+
+  .mepSheet {
+    width: 285mm !important;
+    min-height: 198mm !important;
+    margin: 0 !important;
+    padding: 4mm 5mm 3mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: none !important;
+  }
+
+  /* verhindert kaputte Tabellenumbrüche */
+
+  table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  td, th {
+    page-break-inside: avoid !important;
+  }
+
+  /* UI Elemente der App nicht drucken */
+
+  .topbar,
+  .sidebar,
+  .controls,
+  .buttons,
+  .nav,
+  .dialogOverlay {
+    display: none !important;
+  }
+
+}
