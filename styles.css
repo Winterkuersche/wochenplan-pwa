@@ -752,17 +752,10 @@ select {
 
 .mepSheet,
 .formPage {
-  width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto 12mm;
-  padding: 5mm 6mm 4mm;
-  box-sizing: border-box;
-  background: #fff;
-  color: #111;
-  border: none;
-  border-radius: 0;
-  box-shadow: 0 0 0 1px #ddd;
-  padding-bottom: 12mm !important;
+  width: 277mm !important;
+  height: 188mm !important;
+  min-height: 188mm !important;
+  padding: 3.2mm 4.2mm 6.8mm !important;
 }
 
 .mepScreenMeta {
@@ -785,13 +778,8 @@ select {
 
 .mepTitleBox,
 .mepBranchBox {
-  padding: 0.7mm 1.2mm;
-  border: 0.35mm solid #6f6f6f;
-  font-size: 4.2mm;
-  font-weight: 700;
-  line-height: 1.15;
+  font-size: 3.5mm !important;
 }
-
 .mepBranchBox {
   text-align: left;
   white-space: nowrap;
@@ -810,14 +798,10 @@ select {
   margin-bottom: 3mm;
 }
 
-.mepMetaField {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: end;
-  column-gap: 1.4mm;
-  font-size: 3.1mm;
+.mepMetaField,
+.mepMetaStorage {
+  font-size: 2.45mm !important;
 }
-
 .mepMetaLabel {
   white-space: nowrap;
 }
@@ -851,14 +835,10 @@ select {
 }
 
 .mepTable th,
- td {
-  height: 4.7mm;
-  padding: 0.45mm 0.6mm;
-  border: 0.26mm solid #6f6f6f;
-  background: #fff;
-  font-size: 2.55mm;
-  line-height: 1.08;
-  vertical-align: middle;
+.mepTable td {
+  border: 0.22mm solid #6f6f6f !important;
+  font-size: 1.95mm !important;
+  height: 3.85mm !important;
 }
 
  thead th {
@@ -1018,10 +998,7 @@ select {
 }
 
 .mepFooterGrid {
-  display: grid;
-  grid-template-columns: 1.2fr 1.6fr;
-  gap: 9mm;
-  font-size: 3mm;
+  font-size: 2mm !important;
 }
 
 .mepFooterLeft,
@@ -1041,17 +1018,9 @@ select {
   grid-column: 1 / -1;
 }
 
-.mepFooterHint {
-  margin-top: 2.4mm;
-  font-size: 2.9mm;
-  color: #333;
-}
-
+.mepFooterHint,
 .mepFooterStand {
-  margin-top: 2mm;
-  text-align: right;
-  font-size: 2.8mm;
-  color: #555;
+  font-size: 1.85mm !important;
 }
 
 .formPreviewWrap {
