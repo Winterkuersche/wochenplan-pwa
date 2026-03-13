@@ -819,19 +819,17 @@ select {
   font-size: 3mm;
 }
 
+.mepTable {
+  width: auto !important;
+  min-width: auto !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
 .mepTableOuter {
   width: fit-content !important;
   margin: 0 auto !important;
   overflow: hidden !important;
-  border: 0.35mm solid #6f6f6f !important;
-  background: #fff !important;
-}
-
-.mepTable {
-  width: max-content;
-  min-width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
 }
 
 .mepTable th,
