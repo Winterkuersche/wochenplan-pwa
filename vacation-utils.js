@@ -28,17 +28,42 @@ function countVacationDaysInRange(fromIso, toIso) {
   return count;
 }
 
+function countVacationDaysInRangeForYear(fromIso, toIso, year) {
+  const from = fromIsoDate(fromIso);
+  const to = fromIsoDate(toIso);
+
+  if (!from || !to || to < from) return 0;
+  if (!year) return countVacationDaysInRange(fromIso, toIso);
+
+  let count = 0;
+  const cursor = new Date(from);
+
+  while (cursor <= to) {
+    if (cursor.getFullYear() === year) {
+      const iso = toIsoDate(cursor);
+
+      if (isWorkdayForVacation(iso)) {
+        count += 1;
+      }
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return count;
+}
+
 function getVacationEntriesForEmployee(employeeId) {
   return (state.absences || []).filter((entry) => {
     return entry?.employeeId === employeeId && entry.type === "vacation";
   });
 }
 
-function getUsedVacationDaysForEmployee(emp) {
+function getUsedVacationDaysForEmployee(emp, year = null) {
   if (!emp?.id) return 0;
 
   return getVacationEntriesForEmployee(emp.id).reduce((sum, entry) => {
-    return sum + countVacationDaysInRange(entry.from, entry.to);
+    return sum + countVacationDaysInRangeForYear(entry.from, entry.to, year);
   }, 0);
 }
 
@@ -95,7 +120,7 @@ function applyVacationDaysForYear(year) {
 
 function getVacationSummaryForEmployee(emp, year = new Date().getFullYear()) {
   const total = calculateVacationDays(emp, year);
-  const used = getUsedVacationDaysForEmployee(emp);
+  const used = getUsedVacationDaysForEmployee(emp, year);
 
   return {
     total,
