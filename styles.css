@@ -762,6 +762,7 @@ select {
   border: none;
   border-radius: 0;
   box-shadow: 0 0 0 1px #ddd;
+  padding-bottom: 12mm !important;
 }
 
 .mepScreenMeta {
@@ -1227,6 +1228,10 @@ select {
   .mepPrintAll {
     display: block !important;
   }
+* {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 
   .mepPrintPage {
     width: 285mm !important;
