@@ -6,6 +6,15 @@ function formatMonthYearFromDateForm(date) {
   return `${pad2Form(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
+function formatMonthYearLongForm(date) {
+  const monthNames = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni",
+    "Juli", "August", "September", "Oktober", "November", "Dezember"
+  ];
+
+  return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+}
+
 function formatShortDateForm(date) {
   return `${pad2Form(date.getDate())}.${pad2Form(date.getMonth() + 1)}`;
 }
@@ -47,17 +56,11 @@ function getBreakTextForResolvedShift(entry) {
   const breakMinutes = Number(entry.breakMinutes || 0);
 
   if (!start || !end || breakMinutes <= 0) return "";
-
   if (entry.mode === "early") return "";
 
   if (entry.mode === "late") {
     const startMinutes = hhmmToMinutes(start);
-
-    if (startMinutes <= hhmmToMinutes("14:00")) {
-      return "16:00-16:10";
-    }
-
-    return "17:00-17:10";
+    return startMinutes <= hhmmToMinutes("14:00") ? "16:00-16:10" : "17:00-17:10";
   }
 
   if (entry.mode === "full") {
@@ -69,7 +72,6 @@ function getBreakTextForResolvedShift(entry) {
     const startMinutes = hhmmToMinutes(start);
     const endMinutes = hhmmToMinutes(end);
     const span = endMinutes - startMinutes;
-
     if (span <= 0) return "";
 
     const mid = startMinutes + Math.floor(span / 2);
@@ -85,51 +87,27 @@ function getBreakTextForResolvedShift(entry) {
 function getResolvedFormDayData(emp, isoDate) {
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
-  if (!resolved) {
-    return { start: "", pause: "", end: "", sum: "" };
-  }
+  if (!resolved) return { start: "", pause: "", end: "", sum: "" };
 
   if (resolved.type === "holiday") {
-    return {
-      start: "H",
-      pause: "",
-      end: "",
-      sum: minutesToHM(resolved.minutesForMonth)
-    };
+    return { start: "Feiertag", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
   }
 
   if (resolved.type === "sick") {
-    return {
-      start: "K",
-      pause: "",
-      end: "",
-      sum: minutesToHM(resolved.minutesForMonth)
-    };
+    return { start: "K", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
   }
 
   if (resolved.type === "vacation") {
-    return {
-      start: "U",
-      pause: "",
-      end: "",
-      sum: minutesToHM(resolved.minutesForMonth)
-    };
+    return { start: "U", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
   }
 
   if (resolved.type === "external-help") {
     const branch = resolved.sourceEntry?.branch || "";
-
-    return {
-      start: "AH",
-      pause: branch,
-      end: "",
-      sum: minutesToHM(resolved.minutesForMonth)
-    };
+    return { start: "AH", pause: branch, end: "", sum: minutesToHM(resolved.minutesForMonth) };
   }
 
   if (resolved.type === "shift" && resolved.sourceEntry) {
     const entry = resolved.sourceEntry;
-
     return {
       start: entry.start || "",
       pause: getBreakTextForResolvedShift(entry),
@@ -169,8 +147,21 @@ function getMonthResolvedMinutesForEmployeeUntilWeek(emp, currentWeekDays) {
 
   return total;
 }
+
 function getFormDayData(emp, isoDate) {
   return getResolvedFormDayData(emp, isoDate);
+}
+
+function getHandwriteClass(seedText = "") {
+  let sum = 0;
+  for (let i = 0; i < seedText.length; i += 1) sum += seedText.charCodeAt(i);
+  return `handVar${(sum % 4) + 1}`;
+}
+
+function renderHandText(text, seedText = "") {
+  const safeText = text || "";
+  const handClass = getHandwriteClass(seedText || safeText);
+  return `<span class="mepHand ${handClass}">${safeText}</span>`;
 }
 
 function buildEmployeeRowsForWeek(emp, weekDays) {
@@ -178,23 +169,21 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
     { label: "Beginn", key: "start" },
     { label: "Pause", key: "pause" },
     { label: "Ende", key: "end" },
-    { label: "Summe", key: "sum" }
+    { label: "Summe / Tag", key: "sum" }
   ];
 
   let html = "";
-
- const weekMinutes = getWeekResolvedMinutesForEmployee(emp, weekDays);
-
- const monthMinutes = getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
+  const weekMinutes = getWeekResolvedMinutesForEmployee(emp, weekDays);
+  const monthMinutes = getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
 
   rows.forEach((rowDef, rowIndex) => {
-    html += "<tr>";
+    html += '<tr>';
 
     if (rowIndex === 0) {
       html += `
-        <td class="mepNameCell" rowspan="4">${emp.name || "—"}</td>
-        <td class="mepFuncText" rowspan="4">${emp.roleKey || "-"}</td>
-        <td class="mepPlanText" rowspan="4">${emp.target || "-"}</td>
+        <td class="mepNameCell" rowspan="4">${renderHandText(emp.name || "", `name-${emp.id}`)}</td>
+        <td class="mepFuncText" rowspan="4">${renderHandText(emp.roleKey || "", `role-${emp.id}`)}</td>
+        <td class="mepPlanText" rowspan="4">${renderHandText(emp.target || "", `target-${emp.id}`)}</td>
       `;
     }
 
@@ -202,23 +191,24 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
 
     weekDays.forEach((day) => {
       const dayData = getFormDayData(emp, day.iso);
-      const grayStyle = day.isOutsideMonth ? "background:#eee;" : "";
+      const value = dayData[rowDef.key] || "";
+      const grayClass = day.isOutsideMonth ? ' mepDayValueCell--out' : '';
 
       html += `
-        <td class="mepDayValueCell" style="${grayStyle}">
-          ${dayData[rowDef.key] || ""}
+        <td class="mepDayValueCell${grayClass}">
+          ${value ? renderHandText(value, `${emp.id}-${day.iso}-${rowDef.key}`) : ""}
         </td>
       `;
     });
 
     if (rowIndex === 0) {
       html += `
-        <td class="mepWeekText" rowspan="4">${minutesToHM(weekMinutes)}</td>
-        <td class="mepMonthText" rowspan="4">${minutesToHM(monthMinutes)}</td>
+        <td class="mepWeekText" rowspan="4">${renderHandText(minutesToHM(weekMinutes), `week-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
+        <td class="mepMonthText" rowspan="4">${renderHandText(minutesToHM(monthMinutes), `month-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
       `;
     }
 
-    html += "</tr>";
+    html += '</tr>';
   });
 
   return html;
@@ -227,60 +217,71 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
 function buildWeekSheet(weekDays) {
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
-
   if (!weekStart || !weekEnd) return "";
 
-  let html = `
-    <div class="printSheet">
-      <h2>Mitarbeiter-Einsatz-Planung (MEP)</h2>
+  const filiale = state.branchName || state.storeName || state.branch || "";
+  const monthYearText = formatMonthYearLongForm(weekStart);
 
-      <div class="mepMeta">
-        <div><strong>Filiale:</strong> __________</div>
-        <div><strong>Monat/Jahr</strong> ${formatMonthYearFromDateForm(weekStart)}</div>
-        <div><strong>Woche vom</strong> ${formatIsoDateForm(weekStart)}</div>
-        <div><strong>bis</strong> ${formatIsoDateForm(weekEnd)}</div>
+  let html = `
+    <div class="printSheet mepSheet">
+      <div class="mepHeaderTop">
+        <div class="mepTitleBox">Mitarbeiter-Einsatz-Planung (MEP)</div>
+        <div class="mepBranchBox">Filiale: <span class="mepHandField">${renderHandText(filiale, `branch-${weekDays[0].iso}`)}</span></div>
+      </div>
+
+      <div class="mepHeaderMeta">
+        <div class="mepMetaField mepMetaMonth">
+          <span class="mepMetaLabel">Monat/ Jahr</span>
+          <span class="mepMetaLine">${renderHandText(monthYearText, `month-year-${weekDays[0].iso}`)}</span>
+        </div>
+        <div class="mepMetaField mepMetaFrom">
+          <span class="mepMetaLabel">Woche vom:</span>
+          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}`)}</span>
+        </div>
+        <div class="mepMetaField mepMetaTo">
+          <span class="mepMetaLabel">bis:</span>
+          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}`)}</span>
+        </div>
+        <div class="mepMetaStorage">Aufbewahrung in der Filiale: 2 Jahre</div>
       </div>
 
       <div class="mepTableOuter">
         <table class="mepTable">
           <thead>
             <tr>
-              <th class="mepNameCol" rowspan="3">Name / Vorname</th>
+              <th class="mepNameCol" rowspan="3">Name, Vorname</th>
               <th class="mepFuncCol" rowspan="3">Funktion</th>
               <th class="mepPlanCol" rowspan="3">Plan / Woche</th>
-
               <th class="mepTypeCol">Wochentag</th>
   `;
 
   weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
-    html += `<th class="mepDayCol"${grayStyle}>${day.weekdayLabel}</th>`;
+    const grayClass = day.isOutsideMonth ? ' class="mepDayCol mepDayCol--out"' : ' class="mepDayCol"';
+    html += `<th${grayClass}>${day.weekdayLabel}</th>`;
   });
 
   html += `
-              <th class="mepWeekCol" rowspan="3">Summe / Woche</th>
-              <th class="mepMonthCol" rowspan="3">Summe / Monat</th>
+              <th class="mepWeekCol" rowspan="3">Summe /<br>Woche</th>
+              <th class="mepMonthCol" rowspan="3">Summe /<br>Monat</th>
             </tr>
-
             <tr>
               <th class="mepTypeCol">Datum</th>
   `;
 
   weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
-    html += `<th class="mepSubHead"${grayStyle}>${formatShortDateForm(day.date)}</th>`;
+    const grayClass = day.isOutsideMonth ? ' class="mepSubHead mepDayCol--out"' : ' class="mepSubHead"';
+    html += `<th${grayClass}>${formatShortDateForm(day.date)}</th>`;
   });
 
   html += `
             </tr>
-
             <tr>
               <th class="mepTypeCol">Warentag</th>
   `;
 
   weekDays.forEach((day) => {
-    const grayStyle = day.isOutsideMonth ? ` style="background:#eee;"` : "";
-    html += `<th class="mepSubHead"${grayStyle}></th>`;
+    const grayClass = day.isOutsideMonth ? ' class="mepSubHead mepDayCol--out"' : ' class="mepSubHead"';
+    html += `<th${grayClass}></th>`;
   });
 
   html += `
@@ -298,10 +299,30 @@ function buildWeekSheet(weekDays) {
         </table>
       </div>
 
-      <div class="mepFooterHint">
-        Pausenzeiten: bis 6 Stunden keine Pause, über 6 Stunden 60 Minuten,
-        Spätschichten mit Abrechnung 10 Minuten, Ganztag 70 Minuten.
+      <div class="mepFooterGrid">
+        <div class="mepFooterLeft">
+          <div><strong>Pausenzeiten:</strong></div>
+          <div>bis 6 Stunden: keine Pause</div>
+          <div>mehr als 6 Stunden: 60 Minuten</div>
+        </div>
+
+        <div class="mepFooterCenter">
+          <div><strong>Abwesenheiten:</strong></div>
+          <div>Feiertag</div>
+          <div>Freizeit</div>
+          <div>Krankheit (AU-Bescheinigung)</div>
+          <div>Schule (Führungsnachwuchskraft)</div>
+          <div>Urlaub</div>
+        </div>
       </div>
+
+      <div class="mepFooterHint">
+        <strong>Anwesenheiten:</strong>
+        Arbeitszeitbeginn bis Arbeitszeitende inkl. Pausenzeiten und die Tagesstunden eintragen.
+        Am Ende der Woche: wöchentliche und monatliche Summe eintragen.
+      </div>
+
+      <div class="mepFooterStand">Stand: Oktober 2014</div>
     </div>
   `;
 
