@@ -1386,3 +1386,108 @@ body.dark #weekTable td.weekSummaryCol {
 body.dark #weekTable tbody tr:nth-child(even) td {
   background-color: rgba(255, 255, 255, 0.03);
 }
+
+/* ===== Originalformular paging + print ===== */
+.mepPager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.mepPagerInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 220px;
+  font-size: 0.95rem;
+}
+
+.mepPager button {
+  min-width: 44px;
+  min-height: 40px;
+  font-weight: 700;
+}
+
+.mepPager button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mepScreenStage {
+  display: block;
+}
+
+.mepPrintAll {
+  display: none;
+}
+
+.mepScreenMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8mm;
+  margin-bottom: 2.2mm;
+  font-size: 3mm;
+  color: #444;
+}
+
+.mepTable td {
+  height: 4.6mm;
+}
+
+.mepNameCell,
+.mepFuncText,
+.mepPlanText,
+.mepWeekText,
+.mepMonthText,
+.mepDayValueCell {
+  vertical-align: middle;
+  padding-top: 0.45mm;
+  padding-bottom: 0.15mm;
+}
+
+.mepHand {
+  line-height: 1.02;
+}
+
+.mepNameCell .mepHand,
+.mepWeekText .mepHand,
+.mepMonthText .mepHand {
+  transform-origin: left center;
+}
+
+@media print {
+  #formView {
+    display: block !important;
+    background: #fff !important;
+  }
+
+  #formView .mepPager,
+  #formView .mepScreenStage {
+    display: none !important;
+  }
+
+  #formView .mepPrintAll {
+    display: block !important;
+  }
+
+  #formView .mepPrintPage {
+    break-after: page;
+    page-break-after: always;
+  }
+
+  #formView .mepPrintPage:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  #formView .mepSheet {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 4mm 5mm 3mm;
+  }
+}

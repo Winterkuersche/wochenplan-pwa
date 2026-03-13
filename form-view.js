@@ -214,33 +214,91 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
   return html;
 }
 
-function buildWeekSheet(weekDays) {
+function getFormEmployeesPerPage() {
+  return 9;
+}
+
+function chunkEmployeesForForm(employees, size = getFormEmployeesPerPage()) {
+  const chunks = [];
+  for (let i = 0; i < employees.length; i += size) {
+    chunks.push(employees.slice(i, i + size));
+  }
+  return chunks.length ? chunks : [[]];
+}
+
+function getFormSheetModels() {
+  const monthPlan = state.monthPlan;
+  if (!monthPlan || !Array.isArray(monthPlan.weeks)) return [];
+
+  const employeeChunks = chunkEmployeesForForm(state.employees || []);
+  const models = [];
+
+  monthPlan.weeks.forEach((weekDays, weekIndex) => {
+    employeeChunks.forEach((employees, pageIndex) => {
+      models.push({
+        id: `week-${weekIndex + 1}-page-${pageIndex + 1}`,
+        weekIndex,
+        pageIndex,
+        weekDays,
+        employees,
+        pageCount: employeeChunks.length
+      });
+    });
+  });
+
+  return models;
+}
+
+function getCurrentFormSheetIndex(sheetModels) {
+  const maxIndex = Math.max(0, sheetModels.length - 1);
+  const saved = Number(state.formSheetIndex || 0);
+  if (!Number.isFinite(saved)) return 0;
+  return Math.min(Math.max(0, saved), maxIndex);
+}
+
+function setCurrentFormSheetIndex(nextIndex, sheetModels) {
+  state.formSheetIndex = Math.min(Math.max(0, nextIndex), Math.max(0, sheetModels.length - 1));
+}
+
+function buildWeekSheet(sheetModel, options = {}) {
+  const { weekDays, employees, weekIndex, pageIndex, pageCount } = sheetModel;
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
   if (!weekStart || !weekEnd) return "";
 
+  const showScreenMeta = options.showScreenMeta !== false;
   const filiale = state.branchName || state.storeName || state.branch || "";
   const monthYearText = formatMonthYearLongForm(weekStart);
+  const weekLabel = `Woche ${weekIndex + 1}`;
+  const pageLabel = `Seite ${pageIndex + 1} / ${pageCount}`;
 
   let html = `
     <div class="printSheet mepSheet">
+      ${showScreenMeta ? `
+        <div class="mepScreenMeta">
+          <span>${weekLabel}</span>
+          <span>${pageLabel}</span>
+          <span>${employees.length} / ${getFormEmployeesPerPage()} MA</span>
+        </div>
+      ` : ""}
+
       <div class="mepHeaderTop">
         <div class="mepTitleBox">Mitarbeiter-Einsatz-Planung (MEP)</div>
-        <div class="mepBranchBox">Filiale: <span class="mepHandField">${renderHandText(filiale, `branch-${weekDays[0].iso}`)}</span></div>
+        <div class="mepBranchBox">Filiale: <span class="mepHandField">${renderHandText(filiale, `branch-${weekDays[0].iso}-${pageIndex}`)}</span></div>
       </div>
 
       <div class="mepHeaderMeta">
         <div class="mepMetaField mepMetaMonth">
           <span class="mepMetaLabel">Monat/ Jahr</span>
-          <span class="mepMetaLine">${renderHandText(monthYearText, `month-year-${weekDays[0].iso}`)}</span>
+          <span class="mepMetaLine">${renderHandText(monthYearText, `month-year-${weekDays[0].iso}-${pageIndex}`)}</span>
         </div>
         <div class="mepMetaField mepMetaFrom">
           <span class="mepMetaLabel">Woche vom:</span>
-          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}`)}</span>
+          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}-${pageIndex}`)}</span>
         </div>
         <div class="mepMetaField mepMetaTo">
           <span class="mepMetaLabel">bis:</span>
-          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}`)}</span>
+          <span class="mepMetaLine">${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}-${pageIndex}`)}</span>
         </div>
         <div class="mepMetaStorage">Aufbewahrung in der Filiale: 2 Jahre</div>
       </div>
@@ -290,7 +348,7 @@ function buildWeekSheet(weekDays) {
           <tbody>
   `;
 
-  state.employees.forEach((emp) => {
+  employees.forEach((emp) => {
     html += buildEmployeeRowsForWeek(emp, weekDays);
   });
 
@@ -329,15 +387,62 @@ function buildWeekSheet(weekDays) {
   return html;
 }
 
+function renderFormPager(sheetModels, currentIndex) {
+  const current = sheetModels[currentIndex];
+  if (!current) return "";
+
+  return `
+    <div class="mepPager no-print">
+      <button type="button" id="mepPrevPage">◀</button>
+      <div class="mepPagerInfo">
+        <strong>Originalformular</strong>
+        <span>Woche ${current.weekIndex + 1} · Seite ${current.pageIndex + 1} / ${current.pageCount}</span>
+      </div>
+      <button type="button" id="mepNextPage">▶</button>
+    </div>
+  `;
+}
+
+function bindFormPager(sheetModels) {
+  const prevBtn = document.getElementById("mepPrevPage");
+  const nextBtn = document.getElementById("mepNextPage");
+  if (!prevBtn || !nextBtn) return;
+
+  prevBtn.disabled = getCurrentFormSheetIndex(sheetModels) <= 0;
+  nextBtn.disabled = getCurrentFormSheetIndex(sheetModels) >= sheetModels.length - 1;
+
+  prevBtn.addEventListener("click", () => {
+    setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) - 1, sheetModels);
+    renderFormView();
+  });
+
+  nextBtn.addEventListener("click", () => {
+    setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) + 1, sheetModels);
+    renderFormView();
+  });
+}
+
 function renderFormView() {
   if (!formViewEl) return;
 
   formViewEl.innerHTML = "";
 
-  const monthPlan = state.monthPlan;
-  if (!monthPlan || !Array.isArray(monthPlan.weeks)) return;
+  const sheetModels = getFormSheetModels();
+  if (!sheetModels.length) return;
 
-  monthPlan.weeks.forEach((weekDays) => {
-    formViewEl.innerHTML += buildWeekSheet(weekDays);
-  });
+  const currentIndex = getCurrentFormSheetIndex(sheetModels);
+  const currentSheet = sheetModels[currentIndex];
+
+  const screenHtml = buildWeekSheet(currentSheet, { showScreenMeta: true });
+  const printHtml = sheetModels
+    .map((sheet) => `<div class="mepPrintPage">${buildWeekSheet(sheet, { showScreenMeta: false })}</div>`)
+    .join("");
+
+  formViewEl.innerHTML = `
+    ${renderFormPager(sheetModels, currentIndex)}
+    <div class="mepScreenStage">${screenHtml}</div>
+    <div class="mepPrintAll">${printHtml}</div>
+  `;
+
+  bindFormPager(sheetModels);
 }
