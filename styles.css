@@ -1045,7 +1045,6 @@ input, select {
   .viewSwitch,
   .toolbar,
   .mepPager,
-  .mepScreenStage,
   button {
     display: none !important;
   }
@@ -1058,32 +1057,54 @@ input, select {
     background: #fff !important;
   }
 
+  /* WICHTIG: Bildschirmansicht NICHT drucken */
+  .mepScreenStage {
+    display: none !important;
+  }
+
+  /* WICHTIG: nur Druckseiten drucken */
   .mepPrintAll {
     display: block !important;
   }
 
-  .mepPrintPage,
-  .formPage,
-  .mepSheet {
+  /* NUR der äußere Druckcontainer ist eine Seite */
+  .mepPrintPage {
     width: 285mm !important;
     min-height: 198mm !important;
     margin: 0 auto !important;
-    padding: 4mm 5mm 4mm !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
     border: none !important;
     box-shadow: none !important;
     overflow: visible !important;
+
     break-inside: avoid !important;
     page-break-inside: avoid !important;
     break-after: page;
     page-break-after: always;
   }
 
-  .mepPrintPage:last-child,
-  .formPage:last-child,
-  .mepSheet:last-child {
+  .mepPrintPage:last-child {
     break-after: auto;
     page-break-after: auto;
+  }
+
+  /* Der eigentliche Formularinhalt füllt die Seite,
+     ist aber KEINE zusätzliche Druckseite */
+  .mepSheet {
+    width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 4mm 5mm 4mm !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
   }
 
   .mepTableOuter {
