@@ -1027,6 +1027,7 @@ input, select {
    PRINT
    ============================= */
 @media print {
+
   @page {
     size: A4 portrait;
     margin: 6mm;
@@ -1034,66 +1035,51 @@ input, select {
 
   body {
     padding: 0 !important;
-    background: #fff !important;
+    background: white !important;
   }
+
+  /* App UI ausblenden */
 
   .topbar,
   .teamsetup,
   #dayView,
   #weekView,
   .mepPager,
-  .mepScreenStage,
   .viewSwitch,
   .toolbar,
   button {
     display: none !important;
   }
 
+  /* Formular anzeigen */
+
   #formView {
     display: block !important;
     margin: 0;
     padding: 0;
     border: none;
-    background: #fff !important;
   }
 
-  .mepPrintAll {
-    display: block !important;
-  }
+  /* A4 Seite */
 
-  .mepPrintPage,
-  .formPage,
-  .mepSheet {
+  .mepSheet,
+  .formPage {
     width: 198mm;
     min-height: 285mm;
+
     margin: 0 auto;
     padding: 4mm 5mm 3mm;
+
     border: none !important;
     box-shadow: none !important;
+
     page-break-after: always;
-    break-after: page;
   }
 
-  .mepPrintPage:last-child,
-  .formPage:last-child,
-  .mepSheet:last-child {
+  .formPage:last-child {
     page-break-after: auto;
-    break-after: auto;
   }
 
-  .mepTableOuter {
-    overflow: visible;
-    border-color: #6f6f6f;
-  }
-
-  .mepTable {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .mepTable tr {
-    page-break-inside: avoid;
-  }
 }
 
 /* =============================
