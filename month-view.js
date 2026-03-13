@@ -182,7 +182,6 @@ function renderMonthView() {
   if (!container) return;
 
   container.innerHTML = "";
-  bindMonthCellActions();
 
   const days = getActiveMonthDays();
   if (!days.length) {
@@ -215,6 +214,6 @@ function renderMonthView() {
   `;
 
   container.innerHTML = html;
-}
 
-bindMonthNavigation();
+  bindMonthCellActions();
+}
