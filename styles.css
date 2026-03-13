@@ -1129,3 +1129,28 @@ body.dark .mepTable th {
   font-size: 0.72rem;
   margin-top: 1px;
 }
+/* leichte Tages-Trennung */
+
+#weekTable td:nth-child(odd):not(:first-child),
+#weekTable th:nth-child(odd):not(:first-child) {
+  background: #fafafa;
+}
+
+body.dark #weekTable td:nth-child(odd):not(:first-child),
+body.dark #weekTable th:nth-child(odd):not(:first-child) {
+  background: #26282d;
+}
+#weekTable tbody tr:hover {
+  background: rgba(10, 88, 255, 0.05);
+}
+
+body.dark #weekTable tbody tr:hover {
+  background: rgba(92, 141, 255, 0.08);
+}
+#weekTable thead th {
+  background: linear-gradient(#f7f7f7, #f0f0f0);
+}
+
+body.dark #weekTable thead th {
+  background: linear-gradient(#2f3238, #2a2c30);
+}
