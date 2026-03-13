@@ -684,9 +684,9 @@ input, select {
   white-space: nowrap;
 }
 
-.mepHandField {
-  display: inline-block;
-  min-width: 18mm;
+.mepHand {
+  font-family: "Patrick Hand", "Segoe Print", cursive;
+  transform: rotate(-1deg);
 }
 
 .mepHeaderMeta {
@@ -816,9 +816,8 @@ input, select {
 }
 
 .mepDayDate {
-  display: inline-block;
-  margin-top: 0.25mm;
-  line-height: 1.05;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .mepHand,
@@ -1069,21 +1068,15 @@ input, select {
 
   /* NUR der äußere Druckcontainer ist eine Seite */
   .mepPrintPage {
-    width: 285mm !important;
-    min-height: 198mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    border: none !important;
-    box-shadow: none !important;
-    overflow: visible !important;
+  width: 285mm !important;
+  min-height: 198mm !important;
 
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    break-after: page;
-    page-break-after: always;
-  }
+  margin: 0 auto !important;
 
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
   .mepPrintPage:last-child {
     break-after: auto;
     page-break-after: auto;
