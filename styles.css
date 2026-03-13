@@ -9,6 +9,7 @@
   --subtext: #666;
   --accent: #0a58ff;
 }
+
 body.dark {
   --bg: #1e1f22;
   --panel: #2a2c30;
@@ -26,8 +27,8 @@ body {
   font-family: system-ui, Arial, sans-serif;
   margin: 0;
   padding: 16px;
-  background: #f5f5f5;
-  color: #222;
+  background: var(--bg);
+  color: var(--text);
 }
 
 h1,
@@ -45,9 +46,9 @@ input {
 button {
   padding: 8px 14px;
   border-radius: 12px;
-  border: 1px solid #cfcfcf;
-  background: #fff;
-  color: #1677ff;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -57,11 +58,11 @@ button:hover {
 
 input,
 select {
-  border: 1px solid #d2d2d2;
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 8px 10px;
-  background: #fff;
-  color: #222;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .hidden {
@@ -73,28 +74,27 @@ select {
 }
 
 .small {
-  color: #666;
+  color: var(--subtext);
   font-size: 0.95rem;
 }
-
 
 /* ============================= */
 /* TOPBAR                        */
 /* ============================= */
-
 .topbar {
   display: flex;
   flex-direction: column;
   gap: 14px;
   margin-bottom: 18px;
   padding: 18px;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid #d8d8d8;
   border-radius: 18px;
 }
 
-.compactTopbar {
-  gap: 14px;
+.compactTopbar,
+.compactToolbar {
+  gap: 10px;
 }
 
 .titleLine {
@@ -112,13 +112,22 @@ select {
   margin-bottom: 8px;
 }
 
-.viewSwitch {
+.viewSwitch,
+.toolbar,
+.tabs,
+.weekNav {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.viewBtn.active {
+.weekNav {
+  align-items: center;
+  gap: 8px;
+}
+
+.viewBtn.active,
+.tabs button.active {
   background: #111;
   color: #fff;
   border-color: #111;
@@ -151,14 +160,14 @@ select {
   justify-content: center;
   min-width: 150px;
   padding: 12px 14px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--border);
   border-radius: 16px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .miniLabel {
   font-size: 0.95rem;
-  color: #666;
+  color: var(--subtext);
   margin-bottom: 2px;
 }
 
@@ -168,30 +177,18 @@ select {
 }
 
 .miniSub {
-  color: #666;
+  color: var(--subtext);
 }
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.compactToolbar {
-  gap: 10px;
-}
-
 
 /* ============================= */
 /* SECTION WRAPPER               */
 /* ============================= */
-
 .teamsetup,
 .daynav,
 .overview,
 #printView,
 #formView {
-  background: #fff;
+  background: var(--panel);
   border: 1px solid #d8d8d8;
   border-radius: 18px;
   padding: 18px;
@@ -211,11 +208,9 @@ select {
   line-height: 1.05;
 }
 
-
 /* ============================= */
 /* STAMMDATEN                    */
 /* ============================= */
-
 .teamlist {
   display: grid;
   gap: 12px;
@@ -239,26 +234,15 @@ select {
   font-weight: 800;
 }
 
-
 /* ============================= */
-/* TAGESPLANUNG                  */
+/* URLAUB / TAGESPLANUNG         */
 /* ============================= */
-
 .tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   margin-bottom: 14px;
 }
 
 .tabs button {
   color: #1677ff;
-}
-
-.tabs button.active {
-  background: #111;
-  color: #fff;
-  border-color: #111;
 }
 
 .daymeta {
@@ -270,9 +254,9 @@ select {
 
 .metaBox {
   padding: 12px 14px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .warnText {
@@ -288,7 +272,7 @@ select {
   border: 1px solid #d8d8d8;
   border-radius: 14px;
   padding: 12px;
-  background: #fff;
+  background: var(--panel);
 }
 
 .dayCardTitle {
@@ -297,14 +281,12 @@ select {
 }
 
 .dayCardSub {
-  color: #666;
+  color: var(--subtext);
 }
-
 
 /* ============================= */
 /* WEEK VIEW                     */
 /* ============================= */
-
 .weekWarningsBox {
   display: grid;
   gap: 8px;
@@ -322,13 +304,15 @@ select {
 
 .legendCompact {
   margin-bottom: 10px;
-  color: #666;
+  color: var(--subtext);
   font-weight: 600;
 }
 
 .tableWrap,
 .compactTableWrap {
-  overflow-x: auto;
+  overflow: auto;
+  position: relative;
+  max-height: 70vh;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -336,8 +320,10 @@ select {
 .weekTable {
   width: 100%;
   min-width: 980px;
-  border-collapse: collapse;
-  background: #fff;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--bg);
+  color: var(--text);
 }
 
 #weekTable th,
@@ -345,7 +331,7 @@ select {
 .weekTable th,
 .weekTable td {
   border: 1px solid #d0d0d0;
-  padding: 10px 12px;
+  padding: 6px 8px;
   vertical-align: middle;
 }
 
@@ -357,56 +343,67 @@ select {
   white-space: nowrap;
 }
 
-.nameRoleCell {
-  width: 150px;
-  min-width: 150px;
-  max-width: 150px;
+#weekTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+  padding: 8px 6px 6px;
+  line-height: 1.15;
+  vertical-align: middle;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
+
+#weekTable th:first-child,
+#weekTable td:first-child,
+.nameRoleCell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  background: #fff;
+}
+
+#weekTable th:first-child,
+#weekTable td:first-child {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+#weekTable thead th:first-child {
+  z-index: 4;
+}
+
 .nameRoleName {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .nameRoleSub {
-  font-size: 11px;
+  font-size: 10px;
+  line-height: 1.1;
+  margin-top: 2px;
   opacity: 0.7;
 }
 
 .weekSelect {
   width: 100%;
-  min-width: 92px;
-  padding: 8px 10px;
-  border-radius: 12px;
+  min-width: 78px;
+  padding: 6px 8px;
+  border-radius: 10px;
   border: 2px solid #d0d0d0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   background: #fff;
 }
 
-/* Schichtfarben */
-.weekSelect.free {
-  background: #f0f0f0;
-}
-
-.weekSelect.early {
-  background: #dff1ff;
-  border-color: #9ecfff;
-}
-
-.weekSelect.full {
-  background: #ffe9bf;
-  border-color: #f1cb74;
-}
-
-.weekSelect.late {
-  background: #ffdede;
-  border-color: #f1a6a6;
-}
-
-.weekSelect.lateNo {
-  background: #eedfff;
-  border-color: #c8a6ee;
-}
+.weekSelect.free { background: #f0f0f0; }
+.weekSelect.early { background: #dff1ff; border-color: #9ecfff; }
+.weekSelect.full { background: #ffe9bf; border-color: #f1cb74; }
+.weekSelect.late { background: #ffdede; border-color: #f1a6a6; }
+.weekSelect.lateNo { background: #eedfff; border-color: #c8a6ee; }
 
 .weekHoursCell,
 .weekTargetCell,
@@ -414,25 +411,59 @@ select {
   text-align: center;
   font-weight: 800;
   white-space: nowrap;
+  font-size: 0.95rem;
+  padding: 6px 8px;
 }
 
-.deltaPos {
-  color: #167a2f;
+.deltaPos { color: #167a2f; }
+.deltaNeg { color: #b46300; }
+.deltaZero { color: #555; }
+
+.weekDayHours {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 2px;
+  line-height: 1.1;
 }
 
-.deltaNeg {
-  color: #b46300;
+.hoursLow { color: #b8860b; }
+.hoursOk { color: #2e8b57; }
+.hoursHigh {
+  color: #c0392b;
+  font-weight: 600;
 }
 
-.deltaZero {
-  color: #555;
+.weekDayMeta {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  line-height: 1.1;
+  font-weight: 700;
 }
 
+.weekDayMeta--ok { color: #1f7a1f; }
+.weekDayMeta--low,
+.weekDayMeta--missing { color: #b26a00; }
+.weekDayMeta--high { color: #b42318; }
+
+.weekCellControl.weekCellHandoverOk {
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(31, 122, 31, 0.12);
+  border: 1px solid rgba(31, 122, 31, 0.28);
+}
+
+.weekNav button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
 
 /* ============================= */
 /* MEP / ORIGINAL                */
 /* ============================= */
-
 .printSheet {
   width: 100%;
   max-width: 297mm;
@@ -494,36 +525,18 @@ select {
   word-break: normal;
 }
 
-.mepNameCol {
-  width: 34mm;
-}
-
-.mepFuncCol {
-  width: 18mm;
-}
-
-.mepPlanCol {
-  width: 20mm;
-}
-
+.mepNameCol { width: 34mm; }
+.mepFuncCol { width: 18mm; }
+.mepPlanCol { width: 20mm; }
 .mepTypeCol {
   width: 18mm;
   text-align: center;
   vertical-align: middle;
   font-weight: 700;
 }
-
-.mepDayCol {
-  width: 26mm;
-}
-
-.mepWeekCol {
-  width: 20mm;
-}
-
-.mepMonthCol {
-  width: 20mm;
-}
+.mepDayCol { width: 26mm; }
+.mepWeekCol { width: 20mm; }
+.mepMonthCol { width: 20mm; }
 
 .mepNameCell,
 .mepFuncText,
@@ -561,11 +574,194 @@ select {
   color: #555;
 }
 
+/* ============================= */
+/* MONTH VIEW                    */
+/* ============================= */
+#monthViewContent {
+  overflow: auto;
+  position: relative;
+  max-height: 70vh;
+}
+
+#monthTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+  background: #fff;
+}
+
+#monthTable th,
+#monthTable td {
+  border: 1px solid #d9d9d9;
+  padding: 6px 8px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+#monthTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #f7f7f7;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+#monthTable td:first-child,
+#monthTable th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  text-align: left;
+  min-width: 140px;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+#monthTable th:first-child {
+  z-index: 4;
+  background: #f7f7f7;
+}
+
+#monthTable td:last-child,
+#monthTable th:last-child {
+  font-weight: 600;
+  min-width: 72px;
+}
+
+#monthTable .nameRoleCell {
+  min-width: 140px;
+}
+
+.monthViewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.monthHeadSunday {
+  background: #eee !important;
+  color: #666;
+}
+
+.monthCell { min-width: 34px; }
+.monthCellSunday {
+  background: #eee;
+  color: #666;
+}
+.monthCellHoliday {
+  background: #f3f3f3;
+  font-weight: 700;
+}
+.monthCellVacation {
+  background: #fff7cc;
+  font-weight: 700;
+}
+.monthCellSick {
+  background: #ffd9d9;
+  font-weight: 700;
+}
+.monthCellExternalHelp {
+  background: #dff1ff;
+  font-weight: 700;
+}
+.monthCellShift {
+  background: #fff;
+}
+
+.monthHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monthHeader button {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.monthHeader button:hover {
+  background: #eee;
+}
+
+.monthCellClickable {
+  cursor: pointer;
+}
+
+.monthCellClickable:hover {
+  outline: 2px solid rgba(10, 88, 255, 0.25);
+  outline-offset: -2px;
+}
+
+/* ============================= */
+/* VACATION TABLE                */
+/* ============================= */
+#vacationTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+#vacationTable th,
+#vacationTable td {
+  border: 1px solid #d0d0d0;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+#vacationTable th {
+  background: #f3f3f3;
+  font-weight: 800;
+}
+
+#vacationTable td:first-child {
+  text-align: left;
+  font-weight: 700;
+}
+
+#vacationTable td.vacationRangesCell {
+  text-align: left;
+  min-width: 280px;
+}
+
+.vacationRangeItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.vacationRangeText {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.vacationRangeEditBtn,
+.vacationRangeDeleteBtn {
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.vacMonthCell {
+  text-align: center;
+  font-weight: 700;
+  min-width: 36px;
+  background: #f8f8f8;
+}
 
 /* ============================= */
 /* RESPONSIVE                    */
 /* ============================= */
-
 @media (max-width: 920px) {
   body {
     padding: 10px;
@@ -580,10 +776,7 @@ select {
     border-radius: 16px;
   }
 
-  .titleLine {
-    flex-direction: column;
-  }
-
+  .titleLine,
   .metaLine {
     flex-direction: column;
   }
@@ -621,7 +814,9 @@ select {
   }
 }
 
-/* ===== Dialog Styles ===== */
+/* ============================= */
+/* DIALOG                        */
+/* ============================= */
 .dialogOverlay {
   position: fixed;
   inset: 0;
@@ -690,125 +885,8 @@ select {
 }
 
 /* ============================= */
-/* MONTH VIEW                    */
-/* ============================= */
-
-#monthViewContent {
-  overflow-x: auto;
-}
-
-#monthTable {
-  border-collapse: collapse;
-  width: max-content;
-  min-width: 100%;
-  background: #fff;
-}
-
-#monthTable th,
-#monthTable td {
-  border: 1px solid #d9d9d9;
-  padding: 6px 8px;
-  text-align: center;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-#monthTable th {
-  background: #f7f7f7;
-  font-weight: 600;
-}
-
-#monthTable td:first-child,
-#monthTable th:first-child {
-  position: sticky;
-  left: 0;
-  background: #fff;
-  z-index: 1;
-  text-align: left;
-  min-width: 140px;
-}
-
-#monthTable th:first-child {
-  z-index: 2;
-  background: #f7f7f7;
-}
-
-#monthTable td:last-child,
-#monthTable th:last-child {
-  font-weight: 600;
-  min-width: 72px;
-}
-
-#monthTable .nameRoleCell {
-  min-width: 140px;
-}
-.monthViewHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.monthHeadSunday {
-  background: #eee !important;
-  color: #666;
-}
-
-.monthCell {
-  min-width: 34px;
-}
-
-.monthCellSunday {
-  background: #eee;
-  color: #666;
-}
-
-.monthCellHoliday {
-  background: #f3f3f3;
-  font-weight: 700;
-}
-
-.monthCellVacation {
-  background: #fafafa;
-  font-weight: 600;
-}
-
-.monthCellSick {
-  background: #f7f7f7;
-  font-weight: 600;
-}
-
-.monthCellExternalHelp {
-  background: #fcfcfc;
-  font-weight: 600;
-}
-
-.monthCellShift {
-  background: #fff;
-}
-
-.monthHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.monthHeader button {
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 4px 8px;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.monthHeader button:hover {
-  background: #eee;
-}
-/* ============================= */
 /* PRINT                         */
 /* ============================= */
-
 @page {
   size: A4 landscape;
   margin: 6mm;
@@ -869,45 +947,9 @@ select {
   }
 }
 
-/* ========= THEME ========= */
-
-body {
-  background: var(--bg);
-  color: var(--text);
-}
-
-.topbar,
-.teamsetup,
-.daynav,
-.overview,
-.printSheet,
-.monthOverview {
-  background: var(--panel);
-  color: var(--text);
-}
-
-button {
-  background: var(--panel);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-input,
-select {
-  background: var(--bg);
-  color: var(--text);
-  border-color: var(--border);
-}
-
-table {
-  background: var(--bg);
-  color: var(--text);
-}
-
-th {
-  background: var(--panel);
-}
-
+/* ============================= */
+/* DARK MODE                     */
+/* ============================= */
 body.dark .topbar,
 body.dark .teamsetup,
 body.dark .daynav,
@@ -964,231 +1006,6 @@ body.dark #weekTable th {
   background: #2f3238;
 }
 
-body.dark #monthTable td:first-child,
-body.dark #monthTable th:first-child {
-  background: #2a2c30;
-}
-
-body.dark .monthCellSunday,
-body.dark .monthHeadSunday {
-  background: #31343a !important;
-  color: #d0d0d0 !important;
-}
-
-body.dark .nameRoleSub,
-body.dark .small,
-body.dark .miniSub {
-  color: #b8b8b8;
-}
-/* Shift cells dark mode */
-body.dark .shiftCell,
-body.dark .monthCell,
-body.dark .weekCell {
-  background: #2a2d33 !important;
-  color: #e8e8e8;
-}
-
-/* Abwesenheiten */
-body.dark .vacation,
-body.dark .sick,
-body.dark .holiday {
-  background: #3a3d45 !important;
-  color: #fff;
-}
-
-/* normale Schichten */
-body.dark .early,
-body.dark .late,
-body.dark .full {
-  background: #2e3137 !important;
-}
-
-/* freie Tage */
-body.dark .free {
-  background: #232529 !important;
-}
-
-/* Originalformular immer hell lassen */
-body.dark #formView,
-body.dark .printSheet,
-body.dark .mepTable,
-body.dark .mepTable th,
-body.dark .mepTable td {
-  background: #ffffff !important;
-  color: #000000 !important;
-}
-
-body.dark .mepTable th {
-  background: #e6e6e6 !important;
-}
-
-
-
-.hoursLow {
-  color: #b8860b;
-}
-
-.hoursOk {
-  color: #2e8b57;
-}
-
-.hoursHigh {
-  color: #c0392b;
-  font-weight: 600;
-}
-.weekNav {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.weekNav button {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-}
-#weekTable th:first-child,
-#weekTable td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: #fff;
-}
-
-#weekTable thead th:first-child {
-  z-index: 3;
-}
-
-body.dark #weekTable th:first-child,
-body.dark #weekTable td:first-child {
-  background: #1f1f1f;
-}
-#weekTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #fff;
-}
-
-#weekTable thead th:first-child {
-  z-index: 4;
-}
-
-body.dark #weekTable thead th {
-  background: #1f1f1f;
-}
-#weekTable thead th {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-body.dark #weekTable thead th {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
-}
-.tableWrap,
-.compactTableWrap {
-  overflow: auto;
-  position: relative;
-  max-height: 70vh;
-}
-
-#weekTable {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-#weekTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: #fff;
-}
-
-#weekTable th:first-child,
-#weekTable td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: #fff;
-}
-
-#weekTable thead th:first-child {
-  z-index: 4;
-}
-
-body.dark #weekTable thead th,
-body.dark #weekTable th:first-child,
-body.dark #weekTable td:first-child {
-  background: #1f1f1f;
-}
-.weekDayHours {
-  display: block;
-  font-size: 0.85em;
-  margin-top: 2px;
-  opacity: 0.8;
-}
-
-.hoursLow {
-  color: #b8860b;
-}
-
-.hoursOk {
-  color: #2e8b57;
-}
-
-.hoursHigh {
-  color: #c0392b;
-  font-weight: 600;
-}
-
-.weekNav {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.weekNav button {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-}
-
-.tableWrap,
-.compactTableWrap {
-  overflow: auto;
-  position: relative;
-  max-height: 70vh;
-}
-
-#weekTable {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-#weekTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-#weekTable th:first-child,
-#weekTable td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: #fff;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
-}
-
-#weekTable thead th:first-child {
-  z-index: 4;
-}
-
 body.dark #weekTable thead th,
 body.dark #weekTable th:first-child,
 body.dark #weekTable td:first-child {
@@ -1202,74 +1019,6 @@ body.dark #weekTable thead th {
 body.dark #weekTable th:first-child,
 body.dark #weekTable td:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
-}
-
-#monthViewContent {
-  overflow: auto;
-  position: relative;
-  max-height: 70vh;
-}
-
-#monthTable {
-  border-collapse: separate;
-  border-spacing: 0;
-  width: max-content;
-  min-width: 100%;
-  background: #fff;
-}
-
-#monthTable th,
-#monthTable td {
-  border: 1px solid #d9d9d9;
-  padding: 6px 8px;
-  text-align: center;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-#monthTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: #f7f7f7;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-#monthTable td:first-child,
-#monthTable th:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: #fff;
-  text-align: left;
-  min-width: 140px;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
-}
-
-#monthTable th:first-child {
-  z-index: 4;
-  background: #f7f7f7;
-}
-
-#monthTable td:last-child,
-#monthTable th:last-child {
-  font-weight: 600;
-  min-width: 72px;
-}
-
-#monthTable .nameRoleCell {
-  min-width: 140px;
-}
-
-body.dark #monthTable {
-  background: #232529;
-  color: #f1f1f1;
-}
-
-body.dark #monthTable th,
-body.dark #monthTable td {
-  border-color: #444851;
-  color: #f1f1f1;
 }
 
 body.dark #monthTable thead th {
@@ -1283,66 +1032,40 @@ body.dark #monthTable th:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
 
-#vacationTable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 420px;
+body.dark .monthCellSunday,
+body.dark .monthHeadSunday {
+  background: #31343a !important;
+  color: #d0d0d0 !important;
 }
 
-#vacationTable th,
-#vacationTable td {
-  border: 1px solid #d0d0d0;
-  padding: 10px 12px;
-  text-align: center;
+body.dark .nameRoleSub,
+body.dark .small,
+body.dark .miniSub {
+  color: #b8b8b8;
 }
 
-#vacationTable th {
-  background: #f3f3f3;
-  font-weight: 800;
+body.dark .shiftCell,
+body.dark .monthCell,
+body.dark .weekCell {
+  background: #2a2d33 !important;
+  color: #e8e8e8;
 }
 
-#vacationTable td:first-child {
-  text-align: left;
-  font-weight: 700;
-}
-#vacationTable td.vacationRangesCell {
-  text-align: left;
-  min-width: 280px;
+body.dark .vacation,
+body.dark .sick,
+body.dark .holiday {
+  background: #3a3d45 !important;
+  color: #fff;
 }
 
-.vacationRangeItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 0;
+body.dark .early,
+body.dark .late,
+body.dark .full {
+  background: #2e3137 !important;
 }
 
-.vacationRangeText {
-  flex: 1;
-  white-space: nowrap;
-}
-
-.vacationRangeEditBtn,
-.vacationRangeDeleteBtn {
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
-}
-.monthCellVacation {
-  background: #fff7cc;
-  font-weight: 700;
-}
-
-.monthCellSick {
-  background: #ffd9d9;
-  font-weight: 700;
-}
-
-.monthCellExternalHelp {
-  background: #dff1ff;
-  font-weight: 700;
+body.dark .free {
+  background: #232529 !important;
 }
 
 body.dark .monthCellVacation {
@@ -1359,120 +1082,30 @@ body.dark .monthCellExternalHelp {
   background: #23465c !important;
   color: #fff !important;
 }
-.vacMonthCell {
-  text-align: center;
-  font-weight: 700;
-  min-width: 36px;
-}
-
-.vacMonthCell {
-  background: #f8f8f8;
-}
 
 body.dark .vacMonthCell {
   background: #2f3238;
 }
-.monthCellClickable {
-  cursor: pointer;
-}
 
-.monthCellClickable:hover {
-  outline: 2px solid rgba(10, 88, 255, 0.25);
-  outline-offset: -2px;
-}
 body.dark .monthCellClickable:hover {
   outline: 2px solid rgba(92, 141, 255, 0.45);
-}
-
-
-.weekDayMeta {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 0.84rem;
-  font-weight: 700;
-}
-
-.weekDayMeta--ok {
-  color: #1f7a1f;
-}
-
-.weekDayMeta--low,
-.weekDayMeta--missing {
-  color: #b26a00;
-}
-
-.weekDayMeta--high {
-  color: #b42318;
-}
-
-.weekCellControl.weekCellHandoverOk {
-  padding: 4px;
-  border-radius: 12px;
-  background: rgba(31, 122, 31, 0.12);
-  border: 1px solid rgba(31, 122, 31, 0.28);
 }
 
 body.dark .weekCellControl.weekCellHandoverOk {
   background: rgba(92, 141, 255, 0.16);
   border-color: rgba(92, 141, 255, 0.3);
 }
-/* ===== Wochenplan kompakter ===== */
 
-#weekTable th,
-#weekTable td {
-  padding: 6px 8px;
+/* Originalformular immer hell lassen */
+body.dark #formView,
+body.dark .printSheet,
+body.dark .mepTable,
+body.dark .mepTable th,
+body.dark .mepTable td {
+  background: #ffffff !important;
+  color: #000000 !important;
 }
 
-#weekTable thead th {
-  padding: 8px 6px 6px;
-  line-height: 1.15;
-  vertical-align: middle;
-}
-
-#weekTable th:first-child,
-#weekTable td:first-child,
-.nameRoleCell {
-  width: 130px;
-  min-width: 130px;
-  max-width: 130px;
-}
-
-.nameRoleName {
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.nameRoleSub {
-  font-size: 10px;
-  line-height: 1.1;
-  margin-top: 2px;
-}
-
-.weekSelect {
-  min-width: 78px;
-  padding: 6px 8px;
-  font-size: 0.95rem;
-  border-radius: 10px;
-}
-
-.weekDayHours {
-  display: block;
-  font-size: 0.78rem;
-  margin-top: 2px;
-  line-height: 1.1;
-}
-
-.weekDayMeta {
-  display: block;
-  margin-top: 3px;
-  font-size: 0.78rem;
-  line-height: 1.1;
-}
-
-.weekHoursCell,
-.weekTargetCell,
-.weekDeltaCell {
-  font-size: 0.95rem;
-  padding: 6px 8px;
+body.dark .mepTable th {
+  background: #e6e6e6 !important;
 }
