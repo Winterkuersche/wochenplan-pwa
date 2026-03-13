@@ -499,7 +499,7 @@ function createWeekSelect(emp, isoDate) {
   }
 }
 
-  if (blockingType === "holiday") {
+ if (blockingType === "holiday") {
   const opt = document.createElement("option");
   opt.value = "H";
   opt.textContent = "H";
