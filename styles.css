@@ -1615,3 +1615,99 @@ body.dark #weekTable tbody tr:nth-child(even) td {
     display: block !important;
   }
 }
+/* ===== Originalformular / Druck ===== */
+
+.formPage {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 12mm;
+  background: #fff;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+
+  body {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  /* alles außer Formularseiten und deren Inhalt ausblenden */
+  body * {
+    visibility: hidden;
+  }
+
+  .formPage,
+  .formPage * {
+    visibility: visible;
+  }
+
+  .formPage {
+    position: relative;
+    width: 198mm;
+    min-height: 285mm;
+    margin: 0 auto;
+    page-break-after: always;
+    break-after: page;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .formPage:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* UI-Navigation nie drucken */
+  .formPager,
+  .formPagerWrap,
+  .originalFormNav,
+  .toolbar,
+  .topbar,
+  .viewSwitch,
+  button {
+    display: none !important;
+  }
+}
+.mepHandwrite,
+.handwrite,
+.formHandwrite {
+  display: inline-block;
+  line-height: 1.15;
+  transform: translateY(4px) rotate(-0.6deg);
+  color: #1f2a35;
+}
+.mepTable td {
+  vertical-align: middle;
+}
+.mepDayName {
+  line-height: 1;
+}
+
+.mepDayDate {
+  line-height: 1.1;
+  margin-top: 1px;
+}
+.mepFooter {
+  margin-top: 14px;
+}
+.formPreviewWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.formPage {
+  box-shadow: 0 0 0 1px #ddd;
+}
+.formPage {
+  width: 210mm;
+  min-height: 297mm;
+}
+.formPage {
+  width: 198mm;
+  min-height: 285mm;
+  page-break-after: always;
+}
