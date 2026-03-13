@@ -15,22 +15,95 @@ function formatVacationRange(entry) {
 }
 
 function openVacationDialog(emp) {
-  const from = prompt("Urlaub von (YYYY-MM-DD):");
-  if (!from) return;
+  const defaultIso = state.weekFrom || toIsoDate(new Date());
 
-  const to = prompt("Urlaub bis (YYYY-MM-DD):");
-  if (!to) return;
+  openShiftDialog("U", {
+    emp,
+    isoDate: defaultIso,
+    type: "U"
+  });
+}
 
-  const fromDate = fromIsoDate(from);
-  const toDate = fromIsoDate(to);
+function openVacationEntryDialog(emp, entry) {
+  if (!emp || !entry) return;
 
-  if (!fromDate || !toDate || to < from) {
-    alert("Ungültiger Urlaubszeitraum.");
-    return;
+  openShiftDialog("U", {
+    emp,
+    isoDate: entry.from,
+    type: "U"
+  });
+
+  if (typeof shiftDialogAbsenceFrom !== "undefined" && shiftDialogAbsenceFrom) {
+    shiftDialogAbsenceFrom.value = entry.from;
   }
 
-  setAbsence(emp.id, from, to, "vacation", "");
-  renderAllViews();
+  if (typeof shiftDialogAbsenceTo !== "undefined" && shiftDialogAbsenceTo) {
+    shiftDialogAbsenceTo.value = entry.to;
+  }
+}
+
+function renderVacationRangesForEmployee(emp) {
+  const entries = getVacationEntriesForEmployee(emp.id)
+    .slice()
+    .sort((a, b) => a.from.localeCompare(b.from));
+
+  if (!entries.length) {
+    return `<span class="small">—</span>`;
+  }
+
+  return entries
+    .map((entry) => {
+      const text = formatVacationRange(entry);
+
+      return `
+        <div class="vacationRangeItem">
+          <span class="vacationRangeText">${text}</span>
+          <button
+            type="button"
+            class="vacationRangeEditBtn"
+            data-emp-id="${emp.id}"
+            data-entry-id="${entry.id}"
+            title="Urlaub bearbeiten"
+          >✎</button>
+          <button
+            type="button"
+            class="vacationRangeDeleteBtn"
+            data-entry-id="${entry.id}"
+            title="Urlaub löschen"
+          >🗑</button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function bindVacationRangeActions() {
+  document.querySelectorAll(".vacationRangeEditBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const empId = btn.dataset.empId;
+      const entryId = btn.dataset.entryId;
+
+      const emp = state.employees.find((e) => e.id === empId);
+      const entry = (state.absences || []).find((a) => a.id === entryId);
+
+      if (!emp || !entry) return;
+
+      openVacationEntryDialog(emp, entry);
+    });
+  });
+
+  document.querySelectorAll(".vacationRangeDeleteBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const entryId = btn.dataset.entryId;
+      const entry = (state.absences || []).find((a) => a.id === entryId);
+
+      if (!entry) return;
+
+      if (!confirm("Diesen Urlaubszeitraum löschen?")) return;
+
+      removeAbsence(entryId);
+    });
+  });
 }
 
 function renderDayView() {
@@ -43,14 +116,7 @@ function renderDayView() {
 
   state.employees.forEach((emp) => {
     const summary = getVacationSummaryForEmployee(emp, year);
-    const entries = getVacationEntriesForEmployee(emp.id);
-
-    const rangesHtml = entries.length
-      ? entries
-          .sort((a, b) => a.from.localeCompare(b.from))
-          .map((entry) => `<div class="vacationRangeItem">${formatVacationRange(entry)}</div>`)
-          .join("")
-      : `<span class="small">—</span>`;
+    const rangesHtml = renderVacationRangesForEmployee(emp);
 
     const tr = document.createElement("tr");
 
@@ -76,4 +142,6 @@ function renderDayView() {
 
     body.appendChild(tr);
   });
+
+  bindVacationRangeActions();
 }
