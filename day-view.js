@@ -122,7 +122,7 @@ function renderDayView() {
     const tr = document.createElement("tr");
 
 
-    const monthNames = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+   
 
 let monthsHtml = "";
 
@@ -140,22 +140,21 @@ months.forEach((hasVacation, i) => {
 <td>${summary.used}</td>
 <td>${summary.remaining}</td>
 <td class="vacationRangesCell">${rangesHtml}</td>
-${monthsHtml}
 `;
 
-    const actionCell = document.createElement("td");
+const actionCell = document.createElement("td");
 
-    const addBtn = document.createElement("button");
-    addBtn.type = "button";
-    addBtn.textContent = "+ Urlaub";
-    addBtn.addEventListener("click", () => {
-      openVacationDialog(emp);
-    });
+const addBtn = document.createElement("button");
+addBtn.type = "button";
+addBtn.textContent = "+ Urlaub";
+addBtn.addEventListener("click", () => {
+  openVacationDialog(emp);
+});
 
-    actionCell.appendChild(addBtn);
-    tr.appendChild(actionCell);
+actionCell.appendChild(addBtn);
+tr.appendChild(actionCell);
 
-    body.appendChild(tr);
+tr.insertAdjacentHTML("beforeend", monthsHtml);
   });
 
   bindVacationRangeActions();
