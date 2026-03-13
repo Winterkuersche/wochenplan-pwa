@@ -316,8 +316,24 @@ function buildWeekSheet(sheetModel) {
           <div class="mepMetaStorage">Aufbewahrung in der Filiale: 2 Jahre</div>
         </div>
 
-        <div class="mepTableOuter">
-          <table class="mepTable">
+       <div class="mepTableOuter">
+  <table class="mepTable">
+    <colgroup>
+      <col style="width:27mm">
+      <col style="width:13mm">
+      <col style="width:14mm">
+      <col style="width:15mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:20.8mm">
+      <col style="width:13mm">
+      <col style="width:13mm">
+    </colgroup>
+    <thead>
             <thead>
               <tr>
                 <th class="mepNameCol" rowspan="3">Name, Vorname</th>
