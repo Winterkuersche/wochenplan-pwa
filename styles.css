@@ -848,13 +848,13 @@ select {
   background: #efefef;
 }
 
-.mepNameCol { width: 31mm; }
-.mepFuncCol { width: 15mm; }
-.mepPlanCol { width: 16mm; }
+.mepNameCol { width: 27mm; }
+.mepFuncCol { width: 13mm; }
+.mepPlanCol { width: 14mm; }
 .mepTypeCol { width: 15mm; }
-.mepDayCol { width: 20mm; }
-.mepWeekCol { width: 16mm; }
-.mepMonthCol { width: 16mm; }
+.mepDayCol { width: 20.8mm; }
+.mepWeekCol { width: 13mm; }
+.mepMonthCol { width: 13mm; }
 
 .mepNameCell,
 .mepFuncText,
@@ -863,10 +863,26 @@ select {
 .mepMonthText,
 .mepDayValueCell {
   vertical-align: middle;
+  padding-top: 0.2mm;
+  padding-bottom: 0.2mm;
 }
 
 .mepNameCell {
   text-align: left;
+}
+
+.mepFuncText,
+.mepPlanText,
+.mepWeekText,
+.mepMonthText {
+  text-align: center;
+}
+
+
+.mepWeekText,
+.mepMonthText {
+  padding-left: 0.4mm;
+  padding-right: 0.4mm;
 }
 
 .mepTypeCell {
@@ -888,28 +904,28 @@ select {
 .mepHand {
   display: inline-block;
   font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-  font-size: 4.2mm;
-  line-height: 1;
+  font-size: 3.8mm;
+  line-height: 0.98;
   color: #1e1e1e;
   font-weight: 400;
-  letter-spacing: 0.02mm;
+  letter-spacing: 0.01mm;
 }
 
 .mepNameCell .mepHand {
-  font-size: 4.6mm;
+  font-size: 4.1mm;
 }
 
 .mepFuncText .mepHand,
 .mepPlanText .mepHand,
 .mepWeekText .mepHand,
 .mepMonthText .mepHand {
-  font-size: 4.1mm;
+  font-size: 3.6mm;
 }
 
-.handVar1 { transform: rotate(-1.5deg) translateY(0.2mm); }
-.handVar2 { transform: rotate(0.8deg) translateY(-0.1mm); }
-.handVar3 { transform: rotate(-0.5deg) translateY(0.1mm); }
-.handVar4 { transform: rotate(1.2deg) translateY(0.15mm); }
+.handVar1 { transform: rotate(-1deg) translateY(0.15mm); }
+.handVar2 { transform: rotate(0.6deg) translateY(-0.05mm); }
+.handVar3 { transform: rotate(-0.35deg) translateY(0.08mm); }
+.handVar4 { transform: rotate(0.9deg) translateY(0.1mm); }
 
 .mepFooterGrid {
   display: grid;
