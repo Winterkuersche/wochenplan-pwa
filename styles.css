@@ -778,7 +778,7 @@ select {
 
 .mepTitleBox,
 .mepBranchBox {
-  font-size: 3.5mm !important;
+  font-size: 3.95mm !important;
 }
 .mepBranchBox {
   text-align: left;
@@ -800,19 +800,15 @@ select {
 
 .mepMetaField,
 .mepMetaStorage {
-  font-size: 2.45mm !important;
+  font-size: 2.8mm !important;
 }
 .mepMetaLabel {
   white-space: nowrap;
 }
 
 .mepMetaLine {
-  display: inline-block;
-  min-height: 5.2mm;
-  padding: 0 0.8mm 0.2mm;
-  border-bottom: 0.3mm solid #6f6f6f;
+  min-height: 4.8mm !important;
 }
-
 .mepMetaStorage {
   white-space: nowrap;
   text-align: right;
@@ -992,11 +988,11 @@ select {
 
 .mepFooterGrid,
 .mepFooter {
-  margin-top: 14px;
+  margin-top: 1.6mm !important;
 }
-
 .mepFooterGrid {
-  font-size: 2mm !important;
+  gap: 6.5mm !important;
+  font-size: 2.15mm !important;
 }
 
 .mepFooterLeft,
@@ -1016,9 +1012,16 @@ select {
   grid-column: 1 / -1;
 }
 
-.mepFooterHint,
+.mepFooterHint {
+  margin-top: 1mm !important;
+  font-size: 2mm !important;
+  line-height: 1.08 !important;
+}
+
 .mepFooterStand {
-  font-size: 1.85mm !important;
+  margin-top: 0.6mm !important;
+  font-size: 1.9mm !important;
+  line-height: 1.05 !important;
 }
 
 .formPreviewWrap {
@@ -1201,43 +1204,41 @@ select {
 }
 
   .mepPrintPage {
-    width: 285mm !important;
-    min-height: 198mm !important;
-    height: 198mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
-    border: none !important;
-    box-shadow: none !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
+  width: 293mm !important;
+  min-height: 202mm !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  border: none !important;
+  box-shadow: none !important;
+  page-break-after: always !important;
+  break-after: page !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
 
-  .mepPrintPage:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
+.mepPrintPage:last-child {
+  page-break-after: auto !important;
+  break-after: auto !important;
+}
 
-  .mepSheet,
-  .formPage {
-    width: 285mm !important;
-    min-height: 198mm !important;
-    height: 198mm !important;
-    margin: 0 !important;
-    padding: 4mm 5mm 3mm !important;
-    box-sizing: border-box !important;
-    background: #fff !important;
-    color: #111 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    max-width: none !important;
-    overflow: hidden !important;
-  }
+.mepSheet,
+.formPage {
+  width: 286mm !important;
+  min-height: 194mm !important;
+  margin: 0 auto !important;
+  padding: 3.6mm 4.5mm 6mm !important;
+  box-sizing: border-box !important;
+  background: #fff !important;
+  color: #111 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
 
   .mepScreenMeta {
     display: none !important;
@@ -1277,18 +1278,18 @@ select {
   table-layout: fixed !important;
   border-collapse: collapse !important;
 }
-  .mepTable th,
-  .mepTable td {
-    height: 4.15mm !important;
-    padding: 0.22mm 0.35mm !important;
-    border: 0.26mm solid #6f6f6f !important;
-    background: #fff !important;
-    font-size: 2.18mm !important;
-    line-height: 1.03 !important;
-    vertical-align: middle !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
+ .mepTable th,
+.mepTable td {
+  height: 4.2mm !important;
+  padding: 0.22mm 0.34mm !important;
+  border: 0.22mm solid #6f6f6f !important;
+  background: #fff !important;
+  font-size: 2.14mm !important;
+  line-height: 1.03 !important;
+  vertical-align: middle !important;
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
 
   .mepTable thead th {
     background: #efefef !important;
