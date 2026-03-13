@@ -1027,38 +1027,84 @@ input, select {
    PRINT
    ============================= */
 @media print {
-
- @page {
-  size: A4 landscape;
-  margin: 6mm;
-}
-
-  body {
-    padding: 0 !important;
-    background: white !important;
+  @page {
+    size: A4 landscape;
+    margin: 6mm;
   }
 
-  /* App UI ausblenden */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
 
   .topbar,
   .teamsetup,
   #dayView,
   #weekView,
-  .mepPager,
   .viewSwitch,
   .toolbar,
+  .mepPager,
+  .mepScreenStage,
   button {
     display: none !important;
   }
 
-  /* Formular anzeigen */
-
   #formView {
     display: block !important;
-    margin: 0;
-    padding: 0;
-    border: none;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #fff !important;
   }
+
+  .mepPrintAll {
+    display: block !important;
+  }
+
+  .mepPrintPage,
+  .formPage,
+  .mepSheet {
+    width: 285mm !important;
+    min-height: 198mm !important;
+    margin: 0 auto !important;
+    padding: 4mm 5mm 4mm !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .mepPrintPage:last-child,
+  .formPage:last-child,
+  .mepSheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .mepTableOuter {
+    overflow: visible !important;
+    border: 0.35mm solid #6f6f6f !important;
+  }
+
+  .mepTable {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+  }
+
+  .mepTable tr,
+  .mepTable td,
+  .mepTable th,
+  .mepEmployeeBlock {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
 
   /* A4 Seite */
 
