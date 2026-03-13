@@ -74,3 +74,14 @@ tr.appendChild(actionCell);
 body.appendChild(tr);
   });
 }
+function openVacationDialog(emp) {
+  const from = prompt("Urlaub von (YYYY-MM-DD):");
+  if (!from) return;
+
+  const to = prompt("Urlaub bis (YYYY-MM-DD):");
+  if (!to) return;
+
+  setAbsence(emp.id, from, to, "vacation", "");
+
+  renderAllViews();
+}
