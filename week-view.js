@@ -186,7 +186,7 @@ closeShiftDialog();
 return;
 }
 
-  if (type === "U") {
+ if (type === "U") {
   const fromIso = shiftDialogAbsenceFrom.value;
   const toIso = shiftDialogAbsenceTo.value;
 
@@ -194,6 +194,12 @@ return;
     alert("Ungültiger Urlaubszeitraum.");
     return;
   }
+
+  clearDayRange(emp.id, fromIso, toIso, { commit: false });
+  addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
+  closeShiftDialog();
+  return;
+}
 
  clearDay(emp.id, isoDate, { commit: false });
 addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
@@ -209,6 +215,12 @@ return;
     alert("Ungültiger Krankzeitraum.");
     return;
   }
+
+  clearDayRange(emp.id, fromIso, toIso, { commit: false });
+  addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+  closeShiftDialog();
+  return;
+}
 
   clearDay(emp.id, isoDate, { commit: false });
 addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
@@ -268,6 +280,18 @@ function shiftIsoDateByDays(isoDate, dayOffset) {
 
   date.setDate(date.getDate() + dayOffset);
   return toIsoDate(date);
+}
+function clearDayRange(employeeId, fromIso, toIso, options = {}) {
+  let current = fromIso;
+
+  while (current <= toIso) {
+    clearDay(employeeId, current, { commit: false });
+    current = shiftIsoDateByDays(current, 1);
+  }
+
+  if (options.commit !== false) {
+    commitPlanChange();
+  }
 }
 
 function subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso) {
