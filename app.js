@@ -618,6 +618,20 @@ function getResolvedEntryForEmployeeOnIso(emp, isoDate) {
 function getResolvedLabelForEmployeeOnIso(emp, isoDate) {
   return getResolvedEntryForEmployeeOnIso(emp, isoDate).label;
 }
+function getBlockingTypeForEmployeeOnIso(emp, isoDate) {
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+
+  if (!resolved) return null;
+  if (resolved.type === "vacation") return "vacation";
+  if (resolved.type === "sick") return "sick";
+  if (resolved.type === "holiday") return "holiday";
+
+  return null;
+}
+
+function isEmployeeBlockedOnIso(emp, isoDate) {
+  return Boolean(getBlockingTypeForEmployeeOnIso(emp, isoDate));
+}
 
 function totalMinutesForEmployeeInWeek(emp, weekDays) {
   return weekDays.reduce((sum, day) => {
@@ -808,16 +822,22 @@ function renderTeamSetup() {
     });
 
     const vacationInput = document.createElement("input");
-    vacationInput.type = "number";
-    vacationInput.min = "0";
-    vacationInput.max = "60";
-    vacationInput.placeholder = "Urlaub";
-    vacationInput.value = Number(emp.vacationDays ?? 30);
-    vacationInput.addEventListener("change", () => {
-      emp.vacationDays = Number(vacationInput.value || 0);
-      saveMasterData();
-      renderAllViews();
-    });
+vacationInput.type = "number";
+vacationInput.min = "0";
+vacationInput.max = "36";
+vacationInput.placeholder = "Urlaub";
+vacationInput.value = Number(emp.vacationDays ?? 30);
+
+vacationInput.addEventListener("change", () => {
+  const raw = Number(vacationInput.value || 0);
+  const clamped = Math.max(0, Math.min(36, raw));
+
+  emp.vacationDays = clamped;
+  vacationInput.value = clamped;
+
+  saveMasterData();
+  renderAllViews();
+});
     
 
     const birthDateInput = document.createElement("input");
