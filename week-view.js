@@ -726,7 +726,8 @@ function renderWeekHeader() {
   visibleDays.forEach((day, index) => {
     const minutes = totalMinutesForDayIso(day.iso);
     const hoursText = minutesToHM(minutes);
-    const meta = getWeekDayHeaderMeta(index, visibleDays);
+    const meta = getWeekdayHeaderMeta(index, visibleDays);
+    const isToday = day.iso === toIsoDate(new Date());
 
     let hoursClass = "weekDayHours";
 
@@ -738,10 +739,14 @@ function renderWeekHeader() {
       hoursClass += " hoursOk";
     }
 
+    const classes = [];
+    if (isToday) classes.push("todayCol");
+
+    const classAttr = classes.length ? ` class="${classes.join(" ")}"` : "";
     const grayStyle = day.isOutsideMonth ? ` style="background:#eee;color:#666;"` : "";
 
     headerHtml += `
-      <th${grayStyle}>
+      <th${classAttr}${grayStyle}>
         ${day.weekdayLabel}<br>
         ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}<br>
         <span class="${hoursClass}">${hoursText}</span><br>
@@ -752,9 +757,9 @@ function renderWeekHeader() {
   });
 
   headerHtml += `
-      <th>Ist</th>
-      <th>Δ</th>
-      <th>Soll</th>
+      <th class="weekSummaryCol">Ist</th>
+      <th class="weekSummaryCol">Δ</th>
+      <th class="weekSummaryCol">Soll</th>
     </tr>
   `;
 
@@ -789,25 +794,29 @@ function renderWeekTable() {
         td.style.background = "#eee";
       }
 
+      if (day.iso === toIsoDate(new Date())) {
+        td.classList.add("todayCol");
+      }
+
       td.appendChild(createWeekSelect(emp, day.iso));
       tr.appendChild(td);
     });
 
     const tdActual = document.createElement("td");
-    tdActual.className = "weekHoursCell";
+    tdActual.className = "weekHoursCell weekSummaryCol";
     tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
     tr.appendChild(tdActual);
 
     const delta = deltaMinutes(emp);
     const tdDelta = document.createElement("td");
-    tdDelta.className = `weekDeltaCell ${
+    tdDelta.className = `weekDeltaCell weekSummaryCol ${
       delta < 0 ? "deltaNeg" : delta > 0 ? "deltaPos" : "deltaZero"
     }`;
     tdDelta.textContent = formatSignedMinutes(delta);
     tr.appendChild(tdDelta);
 
     const tdTarget = document.createElement("td");
-    tdTarget.className = "weekTargetCell";
+    tdTarget.className = "weekTargetCell weekSummaryCol";
     tdTarget.textContent = emp.target || "0:00";
     tr.appendChild(tdTarget);
 
