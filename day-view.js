@@ -51,14 +51,26 @@ function renderDayView() {
 
     const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${emp.name || "—"}</td>
-      <td>${summary.total}</td>
-      <td>${summary.used}</td>
-      <td>${summary.remaining}</td>
-      <td class="vacationRangesCell">${rangesHtml}</td>
-    `;
+const addBtn = document.createElement("button");
+addBtn.textContent = "+ Urlaub";
 
-    body.appendChild(tr);
+addBtn.addEventListener("click", () => {
+  openVacationDialog(emp);
+});
+
+tr.innerHTML = `
+<td>${emp.name || "—"}</td>
+<td>${summary.total}</td>
+<td>${summary.used}</td>
+<td>${summary.remaining}</td>
+<td class="vacationRangesCell">${rangesHtml}</td>
+`;
+
+const actionCell = document.createElement("td");
+actionCell.appendChild(addBtn);
+
+tr.appendChild(actionCell);
+
+body.appendChild(tr);
   });
 }
