@@ -1491,3 +1491,57 @@ body.dark #weekTable tbody tr:nth-child(even) td {
     padding: 4mm 5mm 3mm;
   }
 }
+
+
+/* ===== MEP paging + handwriting fine tuning ===== */
+.mepTable td {
+  height: 4.7mm;
+}
+
+.mepNameCell,
+.mepFuncText,
+.mepPlanText,
+.mepWeekText,
+.mepMonthText,
+.mepDayValueCell {
+  vertical-align: middle;
+  padding-top: 0.55mm;
+  padding-bottom: 0.15mm;
+}
+
+.mepHand {
+  vertical-align: middle;
+  line-height: 1.08;
+}
+
+.mepDayValueCell .mepHand,
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepWeekText .mepHand,
+.mepMonthText .mepHand {
+  transform: translateY(0.5mm);
+}
+
+.mepNameCell .mepHand {
+  transform: translateY(0.35mm);
+}
+
+.handVar1 { transform: rotate(-1deg) translateY(0.5mm); }
+.handVar2 { transform: rotate(0.6deg) translateY(0.38mm); }
+.handVar3 { transform: rotate(-0.35deg) translateY(0.46mm); }
+.handVar4 { transform: rotate(0.9deg) translateY(0.42mm); }
+
+.mepSheet {
+  min-height: 279mm;
+}
+
+@media print {
+  #formView .mepPager,
+  #formView .mepScreenStage {
+    display: none !important;
+  }
+
+  #formView .mepPrintAll {
+    display: block !important;
+  }
+}

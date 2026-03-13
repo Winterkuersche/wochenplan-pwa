@@ -172,25 +172,26 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
     { label: "Summe / Tag", key: "sum" }
   ];
 
+  const isPlaceholder = !emp || emp._placeholder;
   let html = "";
-  const weekMinutes = getWeekResolvedMinutesForEmployee(emp, weekDays);
-  const monthMinutes = getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
+  const weekMinutes = isPlaceholder ? 0 : getWeekResolvedMinutesForEmployee(emp, weekDays);
+  const monthMinutes = isPlaceholder ? 0 : getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
 
   rows.forEach((rowDef, rowIndex) => {
     html += '<tr>';
 
     if (rowIndex === 0) {
       html += `
-        <td class="mepNameCell" rowspan="4">${renderHandText(emp.name || "", `name-${emp.id}`)}</td>
-        <td class="mepFuncText" rowspan="4">${renderHandText(emp.roleKey || "", `role-${emp.id}`)}</td>
-        <td class="mepPlanText" rowspan="4">${renderHandText(emp.target || "", `target-${emp.id}`)}</td>
+        <td class="mepNameCell" rowspan="4">${isPlaceholder ? "" : renderHandText(emp.name || "", `name-${emp.id}`)}</td>
+        <td class="mepFuncText" rowspan="4">${isPlaceholder ? "" : renderHandText(emp.roleKey || "", `role-${emp.id}`)}</td>
+        <td class="mepPlanText" rowspan="4">${isPlaceholder ? "" : renderHandText(emp.target || "", `target-${emp.id}`)}</td>
       `;
     }
 
     html += `<td class="mepTypeCell">${rowDef.label}</td>`;
 
     weekDays.forEach((day) => {
-      const dayData = getFormDayData(emp, day.iso);
+      const dayData = isPlaceholder ? { start: "", pause: "", end: "", sum: "" } : getFormDayData(emp, day.iso);
       const value = dayData[rowDef.key] || "";
       const grayClass = day.isOutsideMonth ? ' mepDayValueCell--out' : '';
 
@@ -203,8 +204,8 @@ function buildEmployeeRowsForWeek(emp, weekDays) {
 
     if (rowIndex === 0) {
       html += `
-        <td class="mepWeekText" rowspan="4">${renderHandText(minutesToHM(weekMinutes), `week-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
-        <td class="mepMonthText" rowspan="4">${renderHandText(minutesToHM(monthMinutes), `month-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
+        <td class="mepWeekText" rowspan="4">${isPlaceholder || weekMinutes <= 0 ? "" : renderHandText(minutesToHM(weekMinutes), `week-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
+        <td class="mepMonthText" rowspan="4">${isPlaceholder || monthMinutes <= 0 ? "" : renderHandText(minutesToHM(monthMinutes), `month-${emp.id}-${weekDays[0]?.iso || ''}`)}</td>
       `;
     }
 
@@ -260,28 +261,27 @@ function setCurrentFormSheetIndex(nextIndex, sheetModels) {
   state.formSheetIndex = Math.min(Math.max(0, nextIndex), Math.max(0, sheetModels.length - 1));
 }
 
-function buildWeekSheet(sheetModel, options = {}) {
+function buildWeekSheet(sheetModel) {
   const { weekDays, employees, weekIndex, pageIndex, pageCount } = sheetModel;
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
   if (!weekStart || !weekEnd) return "";
 
-  const showScreenMeta = options.showScreenMeta !== false;
   const filiale = state.branchName || state.storeName || state.branch || "";
   const monthYearText = formatMonthYearLongForm(weekStart);
-  const weekLabel = `Woche ${weekIndex + 1}`;
-  const pageLabel = `Seite ${pageIndex + 1} / ${pageCount}`;
+  const pageEmployees = employees.slice();
+  while (pageEmployees.length < getFormEmployeesPerPage()) {
+    pageEmployees.push({
+      id: `empty-${weekIndex + 1}-${pageIndex + 1}-${pageEmployees.length + 1}`,
+      _placeholder: true,
+      name: "",
+      roleKey: "",
+      target: ""
+    });
+  }
 
   let html = `
     <div class="printSheet mepSheet">
-      ${showScreenMeta ? `
-        <div class="mepScreenMeta">
-          <span>${weekLabel}</span>
-          <span>${pageLabel}</span>
-          <span>${employees.length} / ${getFormEmployeesPerPage()} MA</span>
-        </div>
-      ` : ""}
-
       <div class="mepHeaderTop">
         <div class="mepTitleBox">Mitarbeiter-Einsatz-Planung (MEP)</div>
         <div class="mepBranchBox">Filiale: <span class="mepHandField">${renderHandText(filiale, `branch-${weekDays[0].iso}-${pageIndex}`)}</span></div>
@@ -348,7 +348,7 @@ function buildWeekSheet(sheetModel, options = {}) {
           <tbody>
   `;
 
-  employees.forEach((emp) => {
+  pageEmployees.forEach((emp) => {
     html += buildEmployeeRowsForWeek(emp, weekDays);
   });
 
@@ -433,9 +433,9 @@ function renderFormView() {
   const currentIndex = getCurrentFormSheetIndex(sheetModels);
   const currentSheet = sheetModels[currentIndex];
 
-  const screenHtml = buildWeekSheet(currentSheet, { showScreenMeta: true });
+  const screenHtml = buildWeekSheet(currentSheet);
   const printHtml = sheetModels
-    .map((sheet) => `<div class="mepPrintPage">${buildWeekSheet(sheet, { showScreenMeta: false })}</div>`)
+    .map((sheet) => `<div class="mepPrintPage">${buildWeekSheet(sheet)}</div>`)
     .join("");
 
   formViewEl.innerHTML = `
