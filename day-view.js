@@ -14,20 +14,23 @@ function formatVacationRange(entry) {
   return `${fromText} – ${toText}`;
 }
 
-function formatVacationRange(entry) {
-  if (!entry?.from || !entry?.to) return "—";
+function openVacationDialog(emp) {
+  const from = prompt("Urlaub von (YYYY-MM-DD):");
+  if (!from) return;
 
-  const from = fromIsoDate(entry.from);
-  const to = fromIsoDate(entry.to);
+  const to = prompt("Urlaub bis (YYYY-MM-DD):");
+  if (!to) return;
 
-  if (!from || !to) {
-    return `${entry.from} – ${entry.to}`;
+  const fromDate = fromIsoDate(from);
+  const toDate = fromIsoDate(to);
+
+  if (!fromDate || !toDate || to < from) {
+    alert("Ungültiger Urlaubszeitraum.");
+    return;
   }
 
-  const fromText = `${pad2(from.getDate())}.${pad2(from.getMonth() + 1)}.${from.getFullYear()}`;
-  const toText = `${pad2(to.getDate())}.${pad2(to.getMonth() + 1)}.${to.getFullYear()}`;
-
-  return `${fromText} – ${toText}`;
+  setAbsence(emp.id, from, to, "vacation", "");
+  renderAllViews();
 }
 
 function renderDayView() {
@@ -51,37 +54,26 @@ function renderDayView() {
 
     const tr = document.createElement("tr");
 
-const addBtn = document.createElement("button");
-addBtn.textContent = "+ Urlaub";
+    tr.innerHTML = `
+      <td>${emp.name || "—"}</td>
+      <td>${summary.total}</td>
+      <td>${summary.used}</td>
+      <td>${summary.remaining}</td>
+      <td class="vacationRangesCell">${rangesHtml}</td>
+    `;
 
-addBtn.addEventListener("click", () => {
-  openVacationDialog(emp);
-});
+    const actionCell = document.createElement("td");
 
-tr.innerHTML = `
-<td>${emp.name || "—"}</td>
-<td>${summary.total}</td>
-<td>${summary.used}</td>
-<td>${summary.remaining}</td>
-<td class="vacationRangesCell">${rangesHtml}</td>
-`;
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.textContent = "+ Urlaub";
+    addBtn.addEventListener("click", () => {
+      openVacationDialog(emp);
+    });
 
-const actionCell = document.createElement("td");
-actionCell.appendChild(addBtn);
+    actionCell.appendChild(addBtn);
+    tr.appendChild(actionCell);
 
-tr.appendChild(actionCell);
-
-body.appendChild(tr);
+    body.appendChild(tr);
   });
-}
-function openVacationDialog(emp) {
-  const from = prompt("Urlaub von (YYYY-MM-DD):");
-  if (!from) return;
-
-  const to = prompt("Urlaub bis (YYYY-MM-DD):");
-  if (!to) return;
-
-  setAbsence(emp.id, from, to, "vacation", "");
-
-  renderAllViews();
 }
