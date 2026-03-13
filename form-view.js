@@ -301,39 +301,42 @@ function buildWeekSheet(sheetModel) {
               ${renderHandText(monthYearText, `month-year-${weekDays[0].iso}-${pageIndex}`)}
             </span>
           </div>
+
           <div class="mepMetaField mepMetaFrom">
             <span class="mepMetaLabel">Woche vom:</span>
             <span class="mepMetaLine">
               ${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}-${pageIndex}`)}
             </span>
           </div>
+
           <div class="mepMetaField mepMetaTo">
             <span class="mepMetaLabel">bis:</span>
             <span class="mepMetaLine">
               ${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}-${pageIndex}`)}
             </span>
           </div>
+
           <div class="mepMetaStorage">Aufbewahrung in der Filiale: 2 Jahre</div>
         </div>
 
-       <div class="mepTableOuter">
-  <table class="mepTable">
-    <colgroup>
-      <col style="width:27mm">
-      <col style="width:13mm">
-      <col style="width:14mm">
-      <col style="width:15mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:20.8mm">
-      <col style="width:13mm">
-      <col style="width:13mm">
-    </colgroup>
-    <thead>
+        <div class="mepTableOuter">
+          <table class="mepTable">
+            <colgroup>
+              <col style="width:30mm">
+              <col style="width:11mm">
+              <col style="width:12mm">
+              <col style="width:14mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:19.2mm">
+              <col style="width:12mm">
+              <col style="width:12mm">
+            </colgroup>
+
             <thead>
               <tr>
                 <th class="mepNameCol" rowspan="3">Name, Vorname</th>
@@ -346,6 +349,7 @@ function buildWeekSheet(sheetModel) {
     const grayClass = day.isOutsideMonth
       ? ' class="mepDayCol mepDayCol--out"'
       : ' class="mepDayCol"';
+
     html += `<th${grayClass}>${day.weekdayLabel}</th>`;
   });
 
@@ -353,6 +357,7 @@ function buildWeekSheet(sheetModel) {
                 <th class="mepWeekCol" rowspan="3">Summe /<br>Woche</th>
                 <th class="mepMonthCol" rowspan="3">Summe /<br>Monat</th>
               </tr>
+
               <tr>
                 <th class="mepTypeCol">Datum</th>
   `;
@@ -361,11 +366,19 @@ function buildWeekSheet(sheetModel) {
     const grayClass = day.isOutsideMonth
       ? ' class="mepSubHead mepDayCol--out"'
       : ' class="mepSubHead"';
-    html += `<th${grayClass}><span class="mepDayDate">${renderHandText(formatShortDateForm(day.date), `head-date-${day.iso}-${pageIndex}`)}</span></th>`;
+
+    html += `
+      <th${grayClass}>
+        <span class="mepDayDate">
+          ${renderHandText(formatShortDateForm(day.date), `head-date-${day.iso}-${pageIndex}`)}
+        </span>
+      </th>
+    `;
   });
 
   html += `
               </tr>
+
               <tr>
                 <th class="mepTypeCol">Warentag</th>
   `;
@@ -374,12 +387,14 @@ function buildWeekSheet(sheetModel) {
     const grayClass = day.isOutsideMonth
       ? ' class="mepSubHead mepDayCol--out"'
       : ' class="mepSubHead"';
+
     html += `<th${grayClass}></th>`;
   });
 
   html += `
               </tr>
             </thead>
+
             <tbody>
   `;
 
@@ -422,7 +437,6 @@ function buildWeekSheet(sheetModel) {
 
   return html;
 }
-
 function bindFormPager(sheetModels) {
   const prevBtn = document.getElementById("mepPrevPage");
   const nextBtn = document.getElementById("mepNextPage");
