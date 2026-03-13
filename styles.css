@@ -1080,24 +1080,15 @@ input, select {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
+.mepPrintPage {
+  display: flex;
+  justify-content: center;
+}
 
-  .mepPrintPage:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-
-  .mepSheet {
-    width: 100% !important;
-    min-height: 198mm !important;
-    margin: 0 !important;
-    padding: 4mm 4mm 4mm !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-    border: none !important;
-    box-shadow: none !important;
-    transform: none !important;
-  }
-
+ .mepSheet {
+  max-width: 1300px;
+}
+  
   .mepTableOuter {
     overflow: visible !important;
     border: 0.35mm solid #6f6f6f !important;
