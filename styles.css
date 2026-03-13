@@ -1331,3 +1331,32 @@ body.dark #monthTable th:first-child {
   background: #fff;
   cursor: pointer;
 }
+.monthCellVacation {
+  background: #fff7cc;
+  font-weight: 700;
+}
+
+.monthCellSick {
+  background: #ffd9d9;
+  font-weight: 700;
+}
+
+.monthCellExternalHelp {
+  background: #dff1ff;
+  font-weight: 700;
+}
+
+body.dark .monthCellVacation {
+  background: #6a5a1a !important;
+  color: #fff !important;
+}
+
+body.dark .monthCellSick {
+  background: #6a2a2a !important;
+  color: #fff !important;
+}
+
+body.dark .monthCellExternalHelp {
+  background: #23465c !important;
+  color: #fff !important;
+}
