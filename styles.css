@@ -1,6 +1,6 @@
-/* ============================= */
-/* BASIS                         */
-/* ============================= */
+/* =============================
+   BASIS
+   ============================= */
 :root {
   --bg: #ffffff;
   --panel: #f6f6f6;
@@ -19,97 +19,77 @@ body.dark {
   --accent: #5c8dff;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-  font-family: system-ui, Arial, sans-serif;
   margin: 0;
   padding: 16px;
+  font-family: system-ui, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
 
-h1,
-h2,
-h3 {
-  margin: 0;
-}
+h1, h2, h3 { margin: 0; }
 
-button,
-select,
-input {
-  font: inherit;
-}
+button, select, input { font: inherit; }
 
 button {
   padding: 8px 14px;
-  border-radius: 12px;
   border: 1px solid var(--border);
+  border-radius: 12px;
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
 }
 
-button:hover {
-  background: #f4f4f4;
-}
+button:hover { background: #f4f4f4; }
 
-input,
-select {
+input, select {
+  padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 8px 10px;
   background: var(--bg);
   color: var(--text);
 }
 
-.hidden {
-  display: none !important;
-}
-
-.no-print {
-  display: block;
-}
+.hidden { display: none !important; }
+.no-print { display: block; }
 
 .small {
-  color: var(--subtext);
   font-size: 0.95rem;
+  color: var(--subtext);
 }
 
-/* ============================= */
-/* TOPBAR                        */
-/* ============================= */
+/* =============================
+   TOPBAR
+   ============================= */
 .topbar {
   display: flex;
   flex-direction: column;
   gap: 14px;
   margin-bottom: 18px;
   padding: 18px;
-  background: var(--panel);
   border: 1px solid #d8d8d8;
   border-radius: 18px;
+  background: var(--panel);
 }
 
 .compactTopbar,
-.compactToolbar {
-  gap: 10px;
-}
+.compactToolbar { gap: 10px; }
 
 .titleLine {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 14px 22px;
   align-items: flex-start;
+  gap: 14px 22px;
 }
 
 .titleLine h1 {
+  margin-bottom: 8px;
   font-size: clamp(2.2rem, 4vw, 3.4rem);
   font-weight: 800;
   line-height: 1;
-  margin-bottom: 8px;
 }
 
 .viewSwitch,
@@ -128,30 +108,30 @@ select {
 
 .viewBtn.active,
 .tabs button.active {
+  border-color: #111;
   background: #111;
   color: #fff;
-  border-color: #111;
 }
 
 .metaLine {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px 18px;
   align-items: stretch;
+  gap: 14px 18px;
 }
 
 .metaLine label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-weight: 700;
   min-width: 150px;
+  font-weight: 700;
 }
 
 .metaLine input[type="date"] {
   min-width: 150px;
-  background: #efefef;
   border-color: #e0e0e0;
+  background: #efefef;
 }
 
 .miniStat {
@@ -166,9 +146,9 @@ select {
 }
 
 .miniLabel {
+  margin-bottom: 2px;
   font-size: 0.95rem;
   color: var(--subtext);
-  margin-bottom: 2px;
 }
 
 .miniStat strong {
@@ -176,23 +156,21 @@ select {
   line-height: 1.1;
 }
 
-.miniSub {
-  color: var(--subtext);
-}
+.miniSub { color: var(--subtext); }
 
-/* ============================= */
-/* SECTION WRAPPER               */
-/* ============================= */
+/* =============================
+   SECTION WRAPPER
+   ============================= */
 .teamsetup,
 .daynav,
 .overview,
 #printView,
 #formView {
-  background: var(--panel);
+  margin-bottom: 18px;
+  padding: 18px;
   border: 1px solid #d8d8d8;
   border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 18px;
+  background: var(--panel);
 }
 
 .sectionhead {
@@ -208,9 +186,9 @@ select {
   line-height: 1.05;
 }
 
-/* ============================= */
-/* STAMMDATEN                    */
-/* ============================= */
+/* =============================
+   STAMMDATEN
+   ============================= */
 .teamlist {
   display: grid;
   gap: 12px;
@@ -234,16 +212,11 @@ select {
   font-weight: 800;
 }
 
-/* ============================= */
-/* URLAUB / TAGESPLANUNG         */
-/* ============================= */
-.tabs {
-  margin-bottom: 14px;
-}
-
-.tabs button {
-  color: #1677ff;
-}
+/* =============================
+   URLAUB / TAGESPLANUNG
+   ============================= */
+.tabs { margin-bottom: 14px; }
+.tabs button { color: #1677ff; }
 
 .daymeta {
   display: grid;
@@ -259,9 +232,7 @@ select {
   background: var(--panel);
 }
 
-.warnText {
-  color: #7a4a00;
-}
+.warnText { color: #7a4a00; }
 
 .plannerList {
   display: grid;
@@ -269,24 +240,22 @@ select {
 }
 
 .dayCard {
+  padding: 12px;
   border: 1px solid #d8d8d8;
   border-radius: 14px;
-  padding: 12px;
   background: var(--panel);
 }
 
 .dayCardTitle {
-  font-weight: 800;
   margin-bottom: 6px;
+  font-weight: 800;
 }
 
-.dayCardSub {
-  color: var(--subtext);
-}
+.dayCardSub { color: var(--subtext); }
 
-/* ============================= */
-/* WEEK VIEW                     */
-/* ============================= */
+/* =============================
+   WEEK VIEW
+   ============================= */
 .weekWarningsBox {
   display: grid;
   gap: 8px;
@@ -310,8 +279,8 @@ select {
 
 .tableWrap,
 .compactTableWrap {
-  overflow: auto;
   position: relative;
+  overflow: auto;
   max-height: 70vh;
   -webkit-overflow-scrolling: touch;
 }
@@ -330,31 +299,25 @@ select {
 #weekTable td,
 .weekTable th,
 .weekTable td {
-  border: 1px solid #d0d0d0;
   padding: 6px 8px;
+  border: 1px solid #d0d0d0;
   vertical-align: middle;
 }
 
 #weekTable th,
 .weekTable th {
+  padding: 4px 6px;
+  background: linear-gradient(#f7f7f7, #f0f0f0);
   text-align: center;
-  font-weight: 800;
-  background: #f3f3f3;
   white-space: nowrap;
-}
-#weekTable th {
-  padding: 6px 8px;
-  line-height: 1.15;
+  font-weight: 800;
+  line-height: 1.1;
 }
 
 #weekTable thead th {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: #fff;
-  padding: 8px 6px 6px;
-  line-height: 1.15;
-  vertical-align: middle;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
@@ -375,9 +338,7 @@ select {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
 }
 
-#weekTable thead th:first-child {
-  z-index: 4;
-}
+#weekTable thead th:first-child { z-index: 4; }
 
 .nameRoleName {
   font-size: 12px;
@@ -386,9 +347,9 @@ select {
 }
 
 .nameRoleSub {
+  margin-top: 2px;
   font-size: 10px;
   line-height: 1.1;
-  margin-top: 2px;
   opacity: 0.7;
 }
 
@@ -396,11 +357,11 @@ select {
   width: 100%;
   min-width: 78px;
   padding: 6px 8px;
-  border-radius: 10px;
   border: 2px solid #d0d0d0;
+  border-radius: 10px;
+  background: #fff;
   font-size: 0.95rem;
   font-weight: 700;
-  background: #fff;
 }
 
 .weekSelect.free { background: #f0f0f0; }
@@ -412,11 +373,11 @@ select {
 .weekHoursCell,
 .weekTargetCell,
 .weekDeltaCell {
+  padding: 6px 8px;
   text-align: center;
-  font-weight: 800;
   white-space: nowrap;
   font-size: 0.95rem;
-  padding: 6px 8px;
+  font-weight: 800;
 }
 
 .deltaPos { color: #167a2f; }
@@ -425,22 +386,19 @@ select {
 
 .weekDayHours {
   display: block;
-  font-size: 0.78rem;
-  margin-top: 2px;
+  margin-top: 1px;
+  font-size: 0.72rem;
   opacity: 0.8;
 }
 
 .hoursLow { color: #b8860b; }
 .hoursOk { color: #2e8b57; }
-.hoursHigh {
-  color: #c0392b;
-  font-weight: 600;
-}
+.hoursHigh { color: #c0392b; font-weight: 600; }
 
 .weekDayMeta {
   display: block;
-  font-size: 0.72rem;
   margin-top: 1px;
+  font-size: 0.72rem;
 }
 
 .weekDayMeta--ok { color: #1f7a1f; }
@@ -450,156 +408,65 @@ select {
 
 .weekCellControl.weekCellHandoverOk {
   padding: 4px;
+  border: 1px solid rgba(31, 122, 31, 0.28);
   border-radius: 12px;
   background: rgba(31, 122, 31, 0.12);
-  border: 1px solid rgba(31, 122, 31, 0.28);
 }
 
 .weekNav button {
   padding: 6px 10px;
-  border-radius: 6px;
   border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-}
-
-/* ============================= */
-/* MEP / ORIGINAL                */
-/* ============================= */
-.printSheet {
-  width: 100%;
-  max-width: 297mm;
-  background: #fff;
-  margin: 0 auto;
-  padding: 8px;
-  border-radius: 8px;
-  color: #111;
-}
-
-.printSheet h2 {
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  font-weight: 800;
-  margin-bottom: 18px;
-}
-
-.mepMeta {
-  margin-bottom: 16px;
-  line-height: 1.25;
-  font-size: clamp(1.15rem, 2.6vw, 2rem);
-  font-weight: 800;
-}
-
-.mepMeta > div {
-  margin-bottom: 6px;
-}
-
-.mepTableOuter {
-  border: 0.4mm solid #8e8e8e;
-  overflow-x: auto;
-  overflow-y: visible;
-  background: #fff;
-  -webkit-overflow-scrolling: touch;
-}
-
-.mepTable {
-  width: max-content;
-  min-width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.mepTable th,
-.mepTable td {
-  border: 0.3mm solid #9b9b9b;
-  padding: 1mm;
-  font-size: 3mm;
-  line-height: 1.15;
-  vertical-align: top;
+  border-radius: 6px;
   background: #fff;
 }
 
-.mepTable thead th {
-  text-align: center;
-  font-weight: 700;
-  vertical-align: middle;
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
+#weekTable td:nth-child(odd):not(:first-child),
+#weekTable th:nth-child(odd):not(:first-child) {
+  background: #fafafa;
 }
 
-.mepNameCol { width: 34mm; }
-.mepFuncCol { width: 18mm; }
-.mepPlanCol { width: 20mm; }
-.mepTypeCol {
-  width: 18mm;
-  text-align: center;
-  vertical-align: middle;
-  font-weight: 700;
-}
-.mepDayCol { width: 26mm; }
-.mepWeekCol { width: 20mm; }
-.mepMonthCol { width: 20mm; }
-
-.mepNameCell,
-.mepFuncText,
-.mepPlanText,
-.mepWeekText,
-.mepMonthText {
-  vertical-align: top;
-  white-space: normal;
-  overflow-wrap: break-word;
+#weekTable tbody tr:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
-.mepTypeCell {
-  font-weight: 700;
-  white-space: nowrap;
+#weekTable tbody tr:hover {
+  background: rgba(10, 88, 255, 0.05);
 }
 
-.mepDayValueCell {
-  text-align: center;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
+#weekTable th.todayCol,
+#weekTable td.todayCol {
+  background: rgba(10, 88, 255, 0.08) !important;
 }
 
-.mepSubHead {
-  height: 6mm;
-  font-size: 2.6mm;
-  font-weight: 500;
-  text-align: center;
-  vertical-align: middle;
-  white-space: nowrap;
+#weekTable th.weekSummaryCol,
+#weekTable td.weekSummaryCol {
+  background: #f7f7f7;
 }
 
-.mepFooterHint {
-  margin-top: 4mm;
-  font-size: 2.8mm;
-  color: #555;
-}
-
-/* ============================= */
-/* MONTH VIEW                    */
-/* ============================= */
+/* =============================
+   MONTH VIEW
+   ============================= */
 #monthViewContent {
-  overflow: auto;
   position: relative;
+  overflow: auto;
   max-height: 70vh;
 }
 
 #monthTable {
-  border-collapse: separate;
-  border-spacing: 0;
   width: max-content;
   min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
   background: #fff;
 }
 
 #monthTable th,
 #monthTable td {
-  border: 1px solid #d9d9d9;
   padding: 6px 8px;
+  border: 1px solid #d9d9d9;
   text-align: center;
-  font-size: 13px;
   white-space: nowrap;
+  font-size: 13px;
 }
 
 #monthTable thead th {
@@ -607,8 +474,8 @@ select {
   top: 0;
   z-index: 3;
   background: #f7f7f7;
-  font-weight: 600;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
 }
 
 #monthTable td:first-child,
@@ -616,10 +483,10 @@ select {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: #fff;
-  text-align: left;
   min-width: 140px;
+  background: #fff;
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+  text-align: left;
 }
 
 #monthTable th:first-child {
@@ -629,13 +496,11 @@ select {
 
 #monthTable td:last-child,
 #monthTable th:last-child {
-  font-weight: 600;
   min-width: 72px;
+  font-weight: 600;
 }
 
-#monthTable .nameRoleCell {
-  min-width: 140px;
-}
+#monthTable .nameRoleCell { min-width: 140px; }
 
 .monthViewHeader {
   display: flex;
@@ -651,29 +516,12 @@ select {
 }
 
 .monthCell { min-width: 34px; }
-.monthCellSunday {
-  background: #eee;
-  color: #666;
-}
-.monthCellHoliday {
-  background: #f3f3f3;
-  font-weight: 700;
-}
-.monthCellVacation {
-  background: #fff7cc;
-  font-weight: 700;
-}
-.monthCellSick {
-  background: #ffd9d9;
-  font-weight: 700;
-}
-.monthCellExternalHelp {
-  background: #dff1ff;
-  font-weight: 700;
-}
-.monthCellShift {
-  background: #fff;
-}
+.monthCellSunday { background: #eee; color: #666; }
+.monthCellHoliday { background: #f3f3f3; font-weight: 700; }
+.monthCellVacation { background: #fff7cc; font-weight: 700; }
+.monthCellSick { background: #ffd9d9; font-weight: 700; }
+.monthCellExternalHelp { background: #dff1ff; font-weight: 700; }
+.monthCellShift { background: #fff; }
 
 .monthHeader {
   display: flex;
@@ -682,39 +530,34 @@ select {
 }
 
 .monthHeader button {
-  border: 1px solid #ccc;
-  background: #fff;
   padding: 4px 8px;
-  cursor: pointer;
+  border: 1px solid #ccc;
   border-radius: 4px;
+  background: #fff;
 }
 
-.monthHeader button:hover {
-  background: #eee;
-}
+.monthHeader button:hover { background: #eee; }
 
-.monthCellClickable {
-  cursor: pointer;
-}
+.monthCellClickable { cursor: pointer; }
 
 .monthCellClickable:hover {
   outline: 2px solid rgba(10, 88, 255, 0.25);
   outline-offset: -2px;
 }
 
-/* ============================= */
-/* VACATION TABLE                */
-/* ============================= */
+/* =============================
+   VACATION TABLE
+   ============================= */
 #vacationTable {
   width: 100%;
-  border-collapse: collapse;
   min-width: 420px;
+  border-collapse: collapse;
 }
 
 #vacationTable th,
 #vacationTable td {
-  border: 1px solid #d0d0d0;
   padding: 10px 12px;
+  border: 1px solid #d0d0d0;
   text-align: center;
 }
 
@@ -729,8 +572,8 @@ select {
 }
 
 #vacationTable td.vacationRangesCell {
-  text-align: left;
   min-width: 280px;
+  text-align: left;
 }
 
 .vacationRangeItem {
@@ -748,27 +591,75 @@ select {
 .vacationRangeEditBtn,
 .vacationRangeDeleteBtn {
   padding: 2px 8px;
-  border-radius: 6px;
   border: 1px solid #ccc;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
 }
 
 .vacMonthCell {
-  text-align: center;
-  font-weight: 700;
   min-width: 36px;
   background: #f8f8f8;
+  text-align: center;
+  font-weight: 700;
 }
 
+/* =============================
+   ORIGINALFORMULAR / MEP
+   ============================= */
+.mepPager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
 
-/* ===== MEP original closer look ===== */
-.mepSheet {
-  max-width: 297mm;
+.mepPagerInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 220px;
+  font-size: 0.95rem;
+}
+
+.mepPager button {
+  min-width: 44px;
+  min-height: 40px;
+  font-weight: 700;
+}
+
+.mepPager button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mepScreenStage { display: block; }
+.mepPrintAll { display: none; }
+
+.mepSheet,
+.formPage {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 12mm;
   padding: 5mm 6mm 4mm;
-  border-radius: 0;
-  box-shadow: none;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
   border: none;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+.mepScreenMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8mm;
+  margin-bottom: 2.2mm;
+  font-size: 3mm;
+  color: #444;
 }
 
 .mepHeaderTop {
@@ -781,11 +672,11 @@ select {
 
 .mepTitleBox,
 .mepBranchBox {
-  border: 0.35mm solid #6f6f6f;
-  font-weight: 700;
-  font-size: 4.2mm;
-  line-height: 1.15;
   padding: 0.7mm 1.2mm;
+  border: 0.35mm solid #6f6f6f;
+  font-size: 4.2mm;
+  font-weight: 700;
+  line-height: 1.15;
 }
 
 .mepBranchBox {
@@ -801,8 +692,8 @@ select {
 .mepHeaderMeta {
   display: grid;
   grid-template-columns: 1.3fr 1fr 0.8fr auto;
-  gap: 4mm;
   align-items: end;
+  gap: 4mm;
   margin-bottom: 3mm;
 }
 
@@ -814,44 +705,61 @@ select {
   font-size: 3.1mm;
 }
 
-.mepMetaLabel {
-  white-space: nowrap;
-}
+.mepMetaLabel { white-space: nowrap; }
 
 .mepMetaLine {
   display: inline-block;
   min-height: 5.2mm;
-  border-bottom: 0.3mm solid #6f6f6f;
   padding: 0 0.8mm 0.2mm;
+  border-bottom: 0.3mm solid #6f6f6f;
 }
 
 .mepMetaStorage {
-  font-size: 3mm;
   white-space: nowrap;
   text-align: right;
+  font-size: 3mm;
 }
 
 .mepTableOuter {
-  border-width: 0.35mm;
+  overflow-x: auto;
+  overflow-y: visible;
+  border: 0.35mm solid #6f6f6f;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mepTable {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .mepTable th,
 .mepTable td {
-  border-width: 0.26mm;
-  border-color: #6f6f6f;
+  height: 4.7mm;
   padding: 0.45mm 0.6mm;
+  border: 0.26mm solid #6f6f6f;
+  background: #fff;
   font-size: 2.55mm;
   line-height: 1.08;
+  vertical-align: middle;
 }
 
 .mepTable thead th {
   background: #efefef;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  font-weight: 700;
 }
 
 .mepNameCol { width: 27mm; }
 .mepFuncCol { width: 13mm; }
 .mepPlanCol { width: 14mm; }
-.mepTypeCol { width: 15mm; }
+.mepTypeCol { width: 15mm; text-align: center; }
 .mepDayCol { width: 20.8mm; }
 .mepWeekCol { width: 13mm; }
 .mepMonthCol { width: 13mm; }
@@ -862,30 +770,28 @@ select {
 .mepWeekText,
 .mepMonthText,
 .mepDayValueCell {
+  padding-top: 0.55mm;
+  padding-bottom: 0.15mm;
   vertical-align: middle;
-  padding-top: 0.2mm;
-  padding-bottom: 0.2mm;
 }
 
 .mepNameCell {
   text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .mepFuncText,
 .mepPlanText,
 .mepWeekText,
-.mepMonthText {
+.mepMonthText,
+.mepDayValueCell {
   text-align: center;
-}
-
-
-.mepWeekText,
-.mepMonthText {
-  padding-left: 0.4mm;
-  padding-right: 0.4mm;
+  white-space: nowrap;
 }
 
 .mepTypeCell {
+  white-space: nowrap;
   font-weight: 400;
 }
 
@@ -893,6 +799,9 @@ select {
   height: 4.6mm;
   font-size: 2.45mm;
   font-weight: 500;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .mepDayCol--out,
@@ -901,51 +810,76 @@ select {
   color: #777;
 }
 
-.mepHand {
+.mepDayName {
+  display: block;
+  line-height: 1;
+}
+
+.mepDayDate {
   display: inline-block;
+  margin-top: 0.25mm;
+  line-height: 1.05;
+}
+
+.mepHand,
+.mepHandwrite,
+.handwrite,
+.formHandwrite {
+  display: inline-block;
+  vertical-align: middle;
   font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
   font-size: 3.8mm;
-  line-height: 0.98;
-  color: #1e1e1e;
+  line-height: 1.16;
+  color: #1f2a35;
   font-weight: 400;
   letter-spacing: 0.01mm;
 }
 
-.mepNameCell .mepHand {
-  font-size: 4.1mm;
-}
-
+.mepNameCell .mepHand { font-size: 4.1mm; }
 .mepFuncText .mepHand,
 .mepPlanText .mepHand,
 .mepWeekText .mepHand,
-.mepMonthText .mepHand {
-  font-size: 3.6mm;
+.mepMonthText .mepHand { font-size: 3.6mm; }
+
+.mepDayValueCell .mepHand,
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepWeekText .mepHand,
+.mepMonthText .mepHand,
+.mepHandField .mepHand,
+.mepMetaLine .mepHand,
+.mepNameCell .mepHand {
+  transform: translateY(0.8mm);
 }
 
-.handVar1 { transform: rotate(-1deg) translateY(0.15mm); }
-.handVar2 { transform: rotate(0.6deg) translateY(-0.05mm); }
-.handVar3 { transform: rotate(-0.35deg) translateY(0.08mm); }
-.handVar4 { transform: rotate(0.9deg) translateY(0.1mm); }
+.mepSubHead .mepHand {
+  transform: translateY(0.25mm);
+}
+
+.handVar1 { transform: rotate(-1deg) translateY(0.5mm); }
+.handVar2 { transform: rotate(0.6deg) translateY(0.38mm); }
+.handVar3 { transform: rotate(-0.35deg) translateY(0.46mm); }
+.handVar4 { transform: rotate(0.9deg) translateY(0.42mm); }
+
+.mepFooterGrid,
+.mepFooter { margin-top: 14px; }
 
 .mepFooterGrid {
   display: grid;
   grid-template-columns: 1.2fr 1.6fr;
   gap: 9mm;
-  margin-top: 3mm;
   font-size: 3mm;
 }
 
 .mepFooterLeft,
-.mepFooterCenter {
-  line-height: 1.3;
-}
+.mepFooterCenter { line-height: 1.3; }
 
 .mepFooterCenter {
   display: grid;
   grid-template-columns: auto auto auto;
+  align-items: start;
   column-gap: 5mm;
   row-gap: 0.5mm;
-  align-items: start;
 }
 
 .mepFooterCenter strong {
@@ -965,14 +899,86 @@ select {
   color: #555;
 }
 
+.formPreviewWrap {
+  display: flex;
+  justify-content: center;
+}
 
-/* ============================= */
-/* RESPONSIVE                    */
-/* ============================= */
+/* =============================
+   DIALOG
+   ============================= */
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.dialogBox {
+  width: min(100%, 420px);
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.dialogBox h3 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.dialogFields {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dialogFields label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.dialogFields select,
+.dialogFields input[type="time"] {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialogActions button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dialogActions button:last-child {
+  font-weight: 600;
+}
+
+/* =============================
+   RESPONSIVE
+   ============================= */
 @media (max-width: 920px) {
-  body {
-    padding: 10px;
-  }
+  body { padding: 10px; }
 
   .topbar,
   .teamsetup,
@@ -1015,100 +1021,31 @@ select {
     padding: 0;
     border-radius: 0;
   }
-
-  .mepMeta {
-    font-size: 1.15rem;
-  }
 }
 
-/* ============================= */
-/* DIALOG                        */
-/* ============================= */
-.dialogOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 9999;
-}
-
-.dialogBox {
-  width: min(100%, 420px);
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-  padding: 16px;
-}
-
-.dialogBox h3 {
-  margin: 0 0 14px;
-  font-size: 18px;
-}
-
-.dialogFields {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.dialogFields label {
-  display: grid;
-  gap: 6px;
-  font-size: 14px;
-}
-
-.dialogFields select,
-.dialogFields input[type="time"] {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
-  border: 1px solid #cfcfcf;
-  border-radius: 8px;
-  font: inherit;
-  background: #fff;
-}
-
-.dialogActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.dialogActions button {
-  min-height: 40px;
-  padding: 8px 14px;
-  border: 1px solid #cfcfcf;
-  border-radius: 8px;
-  background: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.dialogActions button:last-child {
-  font-weight: 600;
-}
-
-/* ============================= */
-/* PRINT                         */
-/* ============================= */
-@page {
-  size: A4 landscape;
-  margin: 6mm;
-}
-
+/* =============================
+   PRINT
+   ============================= */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+
   body {
-    padding: 0;
-    background: #fff;
+    padding: 0 !important;
+    background: #fff !important;
   }
 
   .topbar,
   .teamsetup,
   #dayView,
-  #weekView {
+  #weekView,
+  .mepPager,
+  .mepScreenStage,
+  .viewSwitch,
+  .toolbar,
+  button {
     display: none !important;
   }
 
@@ -1117,21 +1054,36 @@ select {
     margin: 0;
     padding: 0;
     border: none;
-    background: #fff;
+    background: #fff !important;
   }
 
-  .printSheet {
-    width: 100%;
-    max-width: none;
-    min-height: auto;
-    margin: 0;
-    padding: 0;
-    border-radius: 0;
+  .mepPrintAll {
+    display: block !important;
+  }
+
+  .mepPrintPage,
+  .formPage,
+  .mepSheet {
+    width: 198mm;
+    min-height: 285mm;
+    margin: 0 auto;
+    padding: 4mm 5mm 3mm;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .mepPrintPage:last-child,
+  .formPage:last-child,
+  .mepSheet:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
 
   .mepTableOuter {
     overflow: visible;
-    border: none;
+    border-color: #6f6f6f;
   }
 
   .mepTable {
@@ -1139,24 +1091,14 @@ select {
     min-width: 0;
   }
 
-  .mepTable th,
-  .mepTable td {
-    font-size: 2.6mm;
-    padding: 0.8mm;
-  }
-
-  .mepDayCol {
-    width: auto;
-  }
-
   .mepTable tr {
     page-break-inside: avoid;
   }
 }
 
-/* ============================= */
-/* DARK MODE                     */
-/* ============================= */
+/* =============================
+   DARK MODE
+   ============================= */
 body.dark .topbar,
 body.dark .teamsetup,
 body.dark .daynav,
@@ -1166,23 +1108,23 @@ body.dark .metaBox,
 body.dark .miniStat,
 body.dark .tableWrap,
 body.dark .compactTableWrap {
+  border-color: #3c3f45;
   background: #2a2c30;
   color: #e8e8e8;
-  border-color: #3c3f45;
 }
 
 body.dark input,
 body.dark select,
 body.dark textarea {
+  border: 1px solid #4a4d55;
   background: #232529;
   color: #f1f1f1;
-  border: 1px solid #4a4d55;
 }
 
 body.dark button {
+  border: 1px solid #4a4d55;
   background: #2a2c30;
   color: #f1f1f1;
-  border: 1px solid #4a4d55;
 }
 
 body.dark .viewBtn.active {
@@ -1207,10 +1149,9 @@ body.dark #weekTable td {
   color: #f1f1f1;
 }
 
-body.dark #monthTable th,
-body.dark .mepTable th,
-body.dark #weekTable th {
-  background: #2f3238;
+body.dark #weekTable th,
+body.dark #monthTable thead th {
+  background: linear-gradient(#2f3238, #2a2c30);
 }
 
 body.dark #weekTable thead th,
@@ -1224,19 +1165,15 @@ body.dark #weekTable thead th {
 }
 
 body.dark #weekTable th:first-child,
-body.dark #weekTable td:first-child {
+body.dark #weekTable td:first-child,
+body.dark #monthTable td:first-child,
+body.dark #monthTable th:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
-}
-
-body.dark #monthTable thead th {
-  background: #2f3238;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
 body.dark #monthTable td:first-child,
 body.dark #monthTable th:first-child {
   background: #2a2c30;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
 
 body.dark .monthCellSunday,
@@ -1303,411 +1240,41 @@ body.dark .weekCellControl.weekCellHandoverOk {
   border-color: rgba(92, 141, 255, 0.3);
 }
 
-/* Originalformular immer hell lassen */
-body.dark #formView,
-body.dark .printSheet,
-body.dark .mepTable,
-body.dark .mepTable th,
-body.dark .mepTable td {
-  background: #ffffff !important;
-  color: #000000 !important;
-}
-
-body.dark .mepTable th {
-  background: #e6e6e6 !important;
-}
-/* ===== Wochenkopf kompakter ===== */
-
-#weekTable thead th {
-  padding: 4px 6px;
-  line-height: 1.1;
-}
-
-#weekTable thead th div {
-  margin: 0;
-}
-
-.weekDayHours {
-  font-size: 0.72rem;
-  margin-top: 1px;
-}
-
-.weekDayMeta {
-  font-size: 0.72rem;
-  margin-top: 1px;
-}
-/* leichte Tages-Trennung */
-
-#weekTable td:nth-child(odd):not(:first-child),
-#weekTable th:nth-child(odd):not(:first-child) {
-  background: #fafafa;
-}
-
 body.dark #weekTable td:nth-child(odd):not(:first-child),
 body.dark #weekTable th:nth-child(odd):not(:first-child) {
   background: #26282d;
-}
-#weekTable tbody tr:hover {
-  background: rgba(10, 88, 255, 0.05);
-}
-
-body.dark #weekTable tbody tr:hover {
-  background: rgba(92, 141, 255, 0.08);
-}
-#weekTable thead th {
-  background: linear-gradient(#f7f7f7, #f0f0f0);
-}
-
-body.dark #weekTable thead th {
-  background: linear-gradient(#2f3238, #2a2c30);
-}
-#weekTable th.todayCol,
-#weekTable td.todayCol {
-  background: rgba(10, 88, 255, 0.08) !important;
-}
-
-body.dark #weekTable th.todayCol,
-body.dark #weekTable td.todayCol {
-  background: rgba(92, 141, 255, 0.12) !important;
-}
-#weekTable th.weekSummaryCol,
-#weekTable td.weekSummaryCol {
-  background: #f7f7f7;
-}
-
-body.dark #weekTable th.weekSummaryCol,
-body.dark #weekTable td.weekSummaryCol {
-  background: #2b2e34;
-}
-#weekTable tbody tr:nth-child(even) td {
-  background-color: rgba(0, 0, 0, 0.02);
 }
 
 body.dark #weekTable tbody tr:nth-child(even) td {
   background-color: rgba(255, 255, 255, 0.03);
 }
 
-/* ===== Originalformular paging + print ===== */
-.mepPager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 12px;
+body.dark #weekTable tbody tr:hover {
+  background: rgba(92, 141, 255, 0.08);
 }
 
-.mepPagerInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 220px;
-  font-size: 0.95rem;
+body.dark #weekTable th.todayCol,
+body.dark #weekTable td.todayCol {
+  background: rgba(92, 141, 255, 0.12) !important;
 }
 
-.mepPager button {
-  min-width: 44px;
-  min-height: 40px;
-  font-weight: 700;
+body.dark #weekTable th.weekSummaryCol,
+body.dark #weekTable td.weekSummaryCol {
+  background: #2b2e34;
 }
 
-.mepPager button:disabled {
-  opacity: 0.45;
-  cursor: default;
+/* Originalformular immer hell lassen */
+body.dark #formView,
+body.dark .printSheet,
+body.dark .mepTable,
+body.dark .mepTable th,
+body.dark .mepTable td,
+body.dark .mepSheet,
+body.dark .formPage {
+  background: #fff !important;
+  color: #000 !important;
 }
 
-.mepScreenStage {
-  display: block;
-}
-
-.mepPrintAll {
-  display: none;
-}
-
-.mepScreenMeta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8mm;
-  margin-bottom: 2.2mm;
-  font-size: 3mm;
-  color: #444;
-}
-
-.mepTable td {
-  height: 4.6mm;
-}
-
-.mepNameCell,
-.mepFuncText,
-.mepPlanText,
-.mepWeekText,
-.mepMonthText,
-.mepDayValueCell {
-  vertical-align: middle;
-  padding-top: 0.45mm;
-  padding-bottom: 0.15mm;
-}
-
-.mepHand {
-  line-height: 1.02;
-}
-
-.mepNameCell .mepHand,
-.mepWeekText .mepHand,
-.mepMonthText .mepHand {
-  transform-origin: left center;
-}
-
-@media print {
-  #formView {
-    display: block !important;
-    background: #fff !important;
-  }
-
-  #formView .mepPager,
-  #formView .mepScreenStage {
-    display: none !important;
-  }
-
-  #formView .mepPrintAll {
-    display: block !important;
-  }
-
-  #formView .mepPrintPage {
-    break-after: page;
-    page-break-after: always;
-  }
-
-  #formView .mepPrintPage:last-child {
-    break-after: auto;
-    page-break-after: auto;
-  }
-
-  #formView .mepSheet {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 4mm 5mm 3mm;
-  }
-}
-
-
-/* ===== MEP paging + handwriting fine tuning ===== */
-.mepTable td {
-  height: 4.7mm;
-}
-
-.mepNameCell,
-.mepFuncText,
-.mepPlanText,
-.mepWeekText,
-.mepMonthText,
-.mepDayValueCell {
-  vertical-align: middle;
-  padding-top: 0.55mm;
-  padding-bottom: 0.15mm;
-}
-
-.mepHand {
-  vertical-align: middle;
-  line-height: 1.08;
-}
-
-.mepDayValueCell .mepHand,
-.mepFuncText .mepHand,
-.mepPlanText .mepHand,
-.mepWeekText .mepHand,
-.mepMonthText .mepHand {
-  transform: translateY(0.5mm);
-}
-
-.mepNameCell .mepHand {
-  transform: translateY(0.35mm);
-}
-
-.handVar1 { transform: rotate(-1deg) translateY(0.5mm); }
-.handVar2 { transform: rotate(0.6deg) translateY(0.38mm); }
-.handVar3 { transform: rotate(-0.35deg) translateY(0.46mm); }
-.handVar4 { transform: rotate(0.9deg) translateY(0.42mm); }
-
-.mepSheet {
-  min-height: 279mm;
-}
-
-@media print {
-  #formView .mepPager,
-  #formView .mepScreenStage {
-    display: none !important;
-  }
-
-  #formView .mepPrintAll {
-    display: block !important;
-  }
-}
-
-
-/* ===== Final MEP polish ===== */
-.mepSheet {
-  min-height: 279mm;
-  height: 279mm;
-  box-sizing: border-box;
-}
-
-.mepTable td {
-  vertical-align: middle;
-}
-
-.mepNameCell,
-.mepFuncText,
-.mepPlanText,
-.mepWeekText,
-.mepMonthText,
-.mepDayValueCell {
-  vertical-align: middle;
-}
-
-.mepHand {
-  display: inline-block;
-  line-height: 1.16;
-  color: #1f2a35;
-}
-
-.mepDayValueCell .mepHand,
-.mepFuncText .mepHand,
-.mepPlanText .mepHand,
-.mepWeekText .mepHand,
-.mepMonthText .mepHand,
-.mepHandField .mepHand,
-.mepMetaLine .mepHand,
-.mepNameCell .mepHand {
-  transform: translateY(0.8mm);
-}
-
-.mepDayName {
-  display: block;
-  line-height: 1;
-}
-
-.mepDayDate {
-  display: inline-block;
-  line-height: 1.05;
-  margin-top: 0.25mm;
-}
-
-.mepSubHead .mepHand {
-  transform: translateY(0.25mm);
-}
-
-.mepTable thead th {
-  vertical-align: middle;
-}
-
-@media print {
-  #formView .mepPager,
-  #formView .mepScreenStage,
-  #formView .viewSwitch,
-  #formView .toolbar {
-    display: none !important;
-  }
-
-  #formView .mepPrintAll {
-    display: block !important;
-  }
-}
-/* ===== Originalformular / Druck ===== */
-
-.formPage {
-  width: 210mm;
-  min-height: 297mm;
-  margin: 0 auto 12mm;
-  background: #fff;
-}
-
-@media print {
-  @page {
-    size: A4 portrait;
-    margin: 6mm;
-  }
-
-  body {
-    background: #fff !important;
-    padding: 0 !important;
-  }
-
-  /* alles außer Formularseiten und deren Inhalt ausblenden */
-  body * {
-    visibility: hidden;
-  }
-
-  .formPage,
-  .formPage * {
-    visibility: visible;
-  }
-
-  .formPage {
-    position: relative;
-    width: 198mm;
-    min-height: 285mm;
-    margin: 0 auto;
-    page-break-after: always;
-    break-after: page;
-    box-shadow: none !important;
-    border: none !important;
-  }
-
-  .formPage:last-child {
-    page-break-after: auto;
-    break-after: auto;
-  }
-
-  /* UI-Navigation nie drucken */
-  .formPager,
-  .formPagerWrap,
-  .originalFormNav,
-  .toolbar,
-  .topbar,
-  .viewSwitch,
-  button {
-    display: none !important;
-  }
-}
-.mepHandwrite,
-.handwrite,
-.formHandwrite {
-  display: inline-block;
-  line-height: 1.15;
-  transform: translateY(4px) rotate(-0.6deg);
-  color: #1f2a35;
-}
-.mepTable td {
-  vertical-align: middle;
-}
-.mepDayName {
-  line-height: 1;
-}
-
-.mepDayDate {
-  line-height: 1.1;
-  margin-top: 1px;
-}
-.mepFooter {
-  margin-top: 14px;
-}
-.formPreviewWrap {
-  display: flex;
-  justify-content: center;
-}
-
-.formPage {
-  box-shadow: 0 0 0 1px #ddd;
-}
-.formPage {
-  width: 210mm;
-  min-height: 297mm;
-}
-.formPage {
-  width: 198mm;
-  min-height: 285mm;
-  page-break-after: always;
+body.dark .mepTable th {
+  background: #e6e6e6 !important;
 }
