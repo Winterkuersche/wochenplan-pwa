@@ -1360,3 +1360,16 @@ body.dark .monthCellExternalHelp {
   background: #23465c !important;
   color: #fff !important;
 }
+.vacMonthCell {
+  text-align: center;
+  font-weight: 700;
+  min-width: 36px;
+}
+
+.vacMonthCell {
+  background: #f8f8f8;
+}
+
+body.dark .vacMonthCell {
+  background: #2f3238;
+}
