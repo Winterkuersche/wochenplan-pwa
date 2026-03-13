@@ -647,7 +647,20 @@ function totalMinutesForWeek() {
     return sum + totalMinutesForDayIso(day.iso);
   }, 0);
 }
+function getBlockingTypeForEmployeeOnIso(emp, isoDate) {
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
+  if (!resolved) return null;
+  if (resolved.type === "vacation") return "vacation";
+  if (resolved.type === "sick") return "sick";
+  if (resolved.type === "holiday") return "holiday";
+
+  return null;
+}
+
+function isEmployeeBlockedOnIso(emp, isoDate) {
+  return Boolean(getBlockingTypeForEmployeeOnIso(emp, isoDate));
+}
 /* ========= WARNINGS ========= */
 function isClosingResolvedEntry(entry) {
   if (!entry || entry.type !== "shift") return false;
