@@ -116,17 +116,32 @@ function renderDayView() {
 
   state.employees.forEach((emp) => {
     const summary = getVacationSummaryForEmployee(emp, year);
+    const months = getVacationMonthsForEmployee(emp, year);
     const rangesHtml = renderVacationRangesForEmployee(emp);
 
     const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${emp.name || "—"}</td>
-      <td>${summary.total}</td>
-      <td>${summary.used}</td>
-      <td>${summary.remaining}</td>
-      <td class="vacationRangesCell">${rangesHtml}</td>
-    `;
+
+    const monthNames = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+
+let monthsHtml = "";
+
+months.forEach((hasVacation, i) => {
+  monthsHtml += `
+    <td class="vacMonthCell">
+      ${hasVacation ? "U" : "-"}
+    </td>
+  `;
+});
+    
+   tr.innerHTML = `
+<td>${emp.name || "—"}</td>
+<td>${summary.total}</td>
+<td>${summary.used}</td>
+<td>${summary.remaining}</td>
+<td class="vacationRangesCell">${rangesHtml}</td>
+${monthsHtml}
+`;
 
     const actionCell = document.createElement("td");
 
@@ -144,4 +159,29 @@ function renderDayView() {
   });
 
   bindVacationRangeActions();
+}
+function getVacationMonthsForEmployee(emp, year) {
+  const months = new Array(12).fill(false);
+
+  const entries = getVacationEntriesForEmployee(emp.id);
+
+  entries.forEach((entry) => {
+    const from = fromIsoDate(entry.from);
+    const to = fromIsoDate(entry.to);
+
+    if (!from || !to) return;
+
+    const cursor = new Date(from);
+
+    while (cursor <= to) {
+      if (cursor.getFullYear() === year) {
+        const m = cursor.getMonth();
+        months[m] = true;
+      }
+
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  });
+
+  return months;
 }
