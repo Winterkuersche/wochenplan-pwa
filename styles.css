@@ -1373,3 +1373,14 @@ body.dark .monthCellExternalHelp {
 body.dark .vacMonthCell {
   background: #2f3238;
 }
+.monthCellClickable {
+  cursor: pointer;
+}
+
+.monthCellClickable:hover {
+  outline: 2px solid rgba(10, 88, 255, 0.25);
+  outline-offset: -2px;
+}
+body.dark .monthCellClickable:hover {
+  outline: 2px solid rgba(92, 141, 255, 0.45);
+}
