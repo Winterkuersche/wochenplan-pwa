@@ -1154,3 +1154,28 @@ body.dark #weekTable tbody tr:hover {
 body.dark #weekTable thead th {
   background: linear-gradient(#2f3238, #2a2c30);
 }
+#weekTable th.todayCol,
+#weekTable td.todayCol {
+  background: rgba(10, 88, 255, 0.08) !important;
+}
+
+body.dark #weekTable th.todayCol,
+body.dark #weekTable td.todayCol {
+  background: rgba(92, 141, 255, 0.12) !important;
+}
+#weekTable th.weekSummaryCol,
+#weekTable td.weekSummaryCol {
+  background: #f7f7f7;
+}
+
+body.dark #weekTable th.weekSummaryCol,
+body.dark #weekTable td.weekSummaryCol {
+  background: #2b2e34;
+}
+#weekTable tbody tr:nth-child(even) td {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.dark #weekTable tbody tr:nth-child(even) td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
