@@ -97,7 +97,7 @@ if (resolved.type === "shift") {
 } else if (resolved.type === "external-help") {
   cellText = "AH";
 }
-    html += `
+   html += `
   <td
     class="${className} monthCellClickable"
     data-emp-id="${emp.id}"
@@ -127,6 +127,30 @@ function bindMonthCellActions() {
 
       const emp = state.employees.find((e) => e.id === empId);
       if (!emp || !isoDate) return;
+
+      const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+
+      if (resolved.type === "vacation") {
+        openShiftDialog("U", {
+          emp,
+          isoDate,
+          type: "U"
+        });
+        return;
+      }
+
+      if (resolved.type === "sick") {
+        openShiftDialog("K", {
+          emp,
+          isoDate,
+          type: "K"
+        });
+        return;
+      }
+
+      if (resolved.type === "holiday") {
+        return;
+      }
 
       openShiftDialog("U", {
         emp,
