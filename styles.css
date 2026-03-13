@@ -342,6 +342,10 @@ select {
   background: #f3f3f3;
   white-space: nowrap;
 }
+#weekTable th {
+  padding: 6px 8px;
+  line-height: 1.15;
+}
 
 #weekTable thead th {
   position: sticky;
@@ -423,7 +427,7 @@ select {
   display: block;
   font-size: 0.78rem;
   margin-top: 2px;
-  line-height: 1.1;
+  opacity: 0.8;
 }
 
 .hoursLow { color: #b8860b; }
@@ -435,10 +439,8 @@ select {
 
 .weekDayMeta {
   display: block;
-  margin-top: 3px;
-  font-size: 0.78rem;
-  line-height: 1.1;
-  font-weight: 700;
+  font-size: 0.72rem;
+  margin-top: 1px;
 }
 
 .weekDayMeta--ok { color: #1f7a1f; }
