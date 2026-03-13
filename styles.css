@@ -1308,10 +1308,26 @@ body.dark #monthTable th:first-child {
 }
 #vacationTable td.vacationRangesCell {
   text-align: left;
-  min-width: 240px;
+  min-width: 280px;
 }
 
 .vacationRangeItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 2px 0;
+}
+
+.vacationRangeText {
+  flex: 1;
   white-space: nowrap;
+}
+
+.vacationRangeEditBtn,
+.vacationRangeDeleteBtn {
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
 }
