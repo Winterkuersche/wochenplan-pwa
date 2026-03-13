@@ -480,6 +480,7 @@ function fillShiftDialogFromExisting(type, context) {
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+  const blockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
 
   const wrap = document.createElement("div");
   wrap.className = "weekCellControl";
@@ -491,17 +492,23 @@ function createWeekSelect(emp, isoDate) {
   sel.className = buildWeekSelectClass(currentValue);
   sel.style.flex = "1";
 
-  if (resolved.type === "holiday") {
-    const opt = document.createElement("option");
-    opt.value = "H";
-    opt.textContent = "H";
-    sel.appendChild(opt);
-    sel.value = "H";
-    sel.disabled = true;
-    wrap.appendChild(sel);
-    return wrap;
+  if (blockingType === "vacation" || blockingType === "sick") {
+  if (selectedValue !== "U" && selectedValue !== "K" && selectedValue !== "-") {
+    sel.value = previousValue;
+    return;
   }
+}
 
+  if (blockingType === "holiday") {
+  const opt = document.createElement("option");
+  opt.value = "H";
+  opt.textContent = "H";
+  sel.appendChild(opt);
+  sel.value = "H";
+  sel.disabled = true;
+  wrap.appendChild(sel);
+  return wrap;
+}
   const groupShifts = document.createElement("optgroup");
   groupShifts.label = "Schichten";
 
