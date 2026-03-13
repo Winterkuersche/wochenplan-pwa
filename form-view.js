@@ -281,8 +281,8 @@ function buildWeekSheet(sheetModel) {
   }
 
   let html = `
+  <section class="mepPrintPage">
     <div class="printSheet mepSheet">
-      <div class="mepHeaderTop">
         <div class="mepTitleBox">Mitarbeiter-Einsatz-Planung (MEP)</div>
         <div class="mepBranchBox">Filiale: <span class="mepHandField">${renderHandText(filiale, `branch-${weekDays[0].iso}-${pageIndex}`)}</span></div>
       </div>
@@ -353,9 +353,9 @@ function buildWeekSheet(sheetModel) {
   });
 
   html += `
-          </tbody>
-        </table>
-      </div>
+            </div>
+  </section>
+`;
 
       <div class="mepFooterGrid">
         <div class="mepFooterLeft">
