@@ -358,19 +358,18 @@ select {
 }
 
 .nameRoleCell {
-  min-width: 220px;
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
 }
-
 .nameRoleName {
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .nameRoleSub {
-  color: #666;
-  font-weight: 600;
+  font-size: 11px;
+  opacity: 0.7;
 }
 
 .weekSelect {
@@ -1416,4 +1415,64 @@ body.dark .monthCellClickable:hover {
 body.dark .weekCellControl.weekCellHandoverOk {
   background: rgba(92, 141, 255, 0.16);
   border-color: rgba(92, 141, 255, 0.3);
+}
+/* ===== Wochenplan kompakter ===== */
+
+#weekTable th,
+#weekTable td {
+  padding: 6px 8px;
+}
+
+#weekTable thead th {
+  padding: 8px 6px 6px;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+
+#weekTable th:first-child,
+#weekTable td:first-child,
+.nameRoleCell {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+}
+
+.nameRoleName {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.nameRoleSub {
+  font-size: 10px;
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+.weekSelect {
+  min-width: 78px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+}
+
+.weekDayHours {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 2px;
+  line-height: 1.1;
+}
+
+.weekDayMeta {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  line-height: 1.1;
+}
+
+.weekHoursCell,
+.weekTargetCell,
+.weekDeltaCell {
+  font-size: 0.95rem;
+  padding: 6px 8px;
 }
