@@ -19,7 +19,9 @@ body.dark {
   --accent: #5c8dff;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -29,9 +31,17 @@ body {
   color: var(--text);
 }
 
-h1, h2, h3 { margin: 0; }
+h1,
+h2,
+h3 {
+  margin: 0;
+}
 
-button, select, input { font: inherit; }
+button,
+select,
+input {
+  font: inherit;
+}
 
 button {
   padding: 8px 14px;
@@ -42,9 +52,12 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #f4f4f4; }
+button:hover {
+  background: #f4f4f4;
+}
 
-input, select {
+input,
+select {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -52,8 +65,13 @@ input, select {
   color: var(--text);
 }
 
-.hidden { display: none !important; }
-.no-print { display: block; }
+.hidden {
+  display: none !important;
+}
+
+.no-print {
+  display: block;
+}
 
 .small {
   font-size: 0.95rem;
@@ -75,7 +93,9 @@ input, select {
 }
 
 .compactTopbar,
-.compactToolbar { gap: 10px; }
+.compactToolbar {
+  gap: 10px;
+}
 
 .titleLine {
   display: flex;
@@ -156,7 +176,9 @@ input, select {
   line-height: 1.1;
 }
 
-.miniSub { color: var(--subtext); }
+.miniSub {
+  color: var(--subtext);
+}
 
 /* =============================
    SECTION WRAPPER
@@ -215,8 +237,13 @@ input, select {
 /* =============================
    URLAUB / TAGESPLANUNG
    ============================= */
-.tabs { margin-bottom: 14px; }
-.tabs button { color: #1677ff; }
+.tabs {
+  margin-bottom: 14px;
+}
+
+.tabs button {
+  color: #1677ff;
+}
 
 .daymeta {
   display: grid;
@@ -232,7 +259,9 @@ input, select {
   background: var(--panel);
 }
 
-.warnText { color: #7a4a00; }
+.warnText {
+  color: #7a4a00;
+}
 
 .plannerList {
   display: grid;
@@ -251,7 +280,9 @@ input, select {
   font-weight: 800;
 }
 
-.dayCardSub { color: var(--subtext); }
+.dayCardSub {
+  color: var(--subtext);
+}
 
 /* =============================
    WEEK VIEW
@@ -338,7 +369,9 @@ input, select {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
 }
 
-#weekTable thead th:first-child { z-index: 4; }
+#weekTable thead th:first-child {
+  z-index: 4;
+}
 
 .nameRoleName {
   font-size: 12px;
@@ -364,11 +397,29 @@ input, select {
   font-weight: 700;
 }
 
-.weekSelect.free { background: #f0f0f0; }
-.weekSelect.early { background: #dff1ff; border-color: #9ecfff; }
-.weekSelect.full { background: #ffe9bf; border-color: #f1cb74; }
-.weekSelect.late { background: #ffdede; border-color: #f1a6a6; }
-.weekSelect.lateNo { background: #eedfff; border-color: #c8a6ee; }
+.weekSelect.free {
+  background: #f0f0f0;
+}
+
+.weekSelect.early {
+  background: #dff1ff;
+  border-color: #9ecfff;
+}
+
+.weekSelect.full {
+  background: #ffe9bf;
+  border-color: #f1cb74;
+}
+
+.weekSelect.late {
+  background: #ffdede;
+  border-color: #f1a6a6;
+}
+
+.weekSelect.lateNo {
+  background: #eedfff;
+  border-color: #c8a6ee;
+}
 
 .weekHoursCell,
 .weekTargetCell,
@@ -380,9 +431,17 @@ input, select {
   font-weight: 800;
 }
 
-.deltaPos { color: #167a2f; }
-.deltaNeg { color: #b46300; }
-.deltaZero { color: #555; }
+.deltaPos {
+  color: #167a2f;
+}
+
+.deltaNeg {
+  color: #b46300;
+}
+
+.deltaZero {
+  color: #555;
+}
 
 .weekDayHours {
   display: block;
@@ -391,9 +450,18 @@ input, select {
   opacity: 0.8;
 }
 
-.hoursLow { color: #b8860b; }
-.hoursOk { color: #2e8b57; }
-.hoursHigh { color: #c0392b; font-weight: 600; }
+.hoursLow {
+  color: #b8860b;
+}
+
+.hoursOk {
+  color: #2e8b57;
+}
+
+.hoursHigh {
+  color: #c0392b;
+  font-weight: 600;
+}
 
 .weekDayMeta {
   display: block;
@@ -401,10 +469,18 @@ input, select {
   font-size: 0.72rem;
 }
 
-.weekDayMeta--ok { color: #1f7a1f; }
+.weekDayMeta--ok {
+  color: #1f7a1f;
+}
+
 .weekDayMeta--low,
-.weekDayMeta--missing { color: #b26a00; }
-.weekDayMeta--high { color: #b42318; }
+.weekDayMeta--missing {
+  color: #b26a00;
+}
+
+.weekDayMeta--high {
+  color: #b42318;
+}
 
 .weekCellControl.weekCellHandoverOk {
   padding: 4px;
@@ -500,7 +576,9 @@ input, select {
   font-weight: 600;
 }
 
-#monthTable .nameRoleCell { min-width: 140px; }
+#monthTable .nameRoleCell {
+  min-width: 140px;
+}
 
 .monthViewHeader {
   display: flex;
@@ -515,13 +593,38 @@ input, select {
   color: #666;
 }
 
-.monthCell { min-width: 34px; }
-.monthCellSunday { background: #eee; color: #666; }
-.monthCellHoliday { background: #f3f3f3; font-weight: 700; }
-.monthCellVacation { background: #fff7cc; font-weight: 700; }
-.monthCellSick { background: #ffd9d9; font-weight: 700; }
-.monthCellExternalHelp { background: #dff1ff; font-weight: 700; }
-.monthCellShift { background: #fff; }
+.monthCell {
+  min-width: 34px;
+}
+
+.monthCellSunday {
+  background: #eee;
+  color: #666;
+}
+
+.monthCellHoliday {
+  background: #f3f3f3;
+  font-weight: 700;
+}
+
+.monthCellVacation {
+  background: #fff7cc;
+  font-weight: 700;
+}
+
+.monthCellSick {
+  background: #ffd9d9;
+  font-weight: 700;
+}
+
+.monthCellExternalHelp {
+  background: #dff1ff;
+  font-weight: 700;
+}
+
+.monthCellShift {
+  background: #fff;
+}
 
 .monthHeader {
   display: flex;
@@ -536,9 +639,13 @@ input, select {
   background: #fff;
 }
 
-.monthHeader button:hover { background: #eee; }
+.monthHeader button:hover {
+  background: #eee;
+}
 
-.monthCellClickable { cursor: pointer; }
+.monthCellClickable {
+  cursor: pointer;
+}
 
 .monthCellClickable:hover {
   outline: 2px solid rgba(10, 88, 255, 0.25);
@@ -710,7 +817,9 @@ input, select {
   font-size: 3.1mm;
 }
 
-.mepMetaLabel { white-space: nowrap; }
+.mepMetaLabel {
+  white-space: nowrap;
+}
 
 .mepMetaLine {
   display: inline-block;
@@ -761,13 +870,34 @@ input, select {
   font-weight: 700;
 }
 
-.mepNameCol { width: 27mm; }
-.mepFuncCol { width: 13mm; }
-.mepPlanCol { width: 14mm; }
-.mepTypeCol { width: 15mm; text-align: center; }
-.mepDayCol { width: 20.8mm; }
-.mepWeekCol { width: 13mm; }
-.mepMonthCol { width: 13mm; }
+.mepNameCol {
+  width: 27mm;
+}
+
+.mepFuncCol {
+  width: 13mm;
+}
+
+.mepPlanCol {
+  width: 14mm;
+}
+
+.mepTypeCol {
+  width: 15mm;
+  text-align: center;
+}
+
+.mepDayCol {
+  width: 20.8mm;
+}
+
+.mepWeekCol {
+  width: 13mm;
+}
+
+.mepMonthCol {
+  width: 13mm;
+}
 
 .mepNameCell,
 .mepFuncText,
@@ -839,11 +969,16 @@ input, select {
   letter-spacing: 0.01mm;
 }
 
-.mepNameCell .mepHand { font-size: 4.1mm; }
+.mepNameCell .mepHand {
+  font-size: 4.1mm;
+}
+
 .mepFuncText .mepHand,
 .mepPlanText .mepHand,
 .mepWeekText .mepHand,
-.mepMonthText .mepHand { font-size: 3.6mm; }
+.mepMonthText .mepHand {
+  font-size: 3.6mm;
+}
 
 .mepDayValueCell .mepHand,
 .mepFuncText .mepHand,
@@ -860,13 +995,26 @@ input, select {
   transform: translateY(0.25mm);
 }
 
-.handVar1 { transform: rotate(-1deg) translateY(0.5mm); }
-.handVar2 { transform: rotate(0.6deg) translateY(0.38mm); }
-.handVar3 { transform: rotate(-0.35deg) translateY(0.46mm); }
-.handVar4 { transform: rotate(0.9deg) translateY(0.42mm); }
+.handVar1 {
+  transform: rotate(-1deg) translateY(0.5mm);
+}
+
+.handVar2 {
+  transform: rotate(0.6deg) translateY(0.38mm);
+}
+
+.handVar3 {
+  transform: rotate(-0.35deg) translateY(0.46mm);
+}
+
+.handVar4 {
+  transform: rotate(0.9deg) translateY(0.42mm);
+}
 
 .mepFooterGrid,
-.mepFooter { margin-top: 14px; }
+.mepFooter {
+  margin-top: 14px;
+}
 
 .mepFooterGrid {
   display: grid;
@@ -876,7 +1024,9 @@ input, select {
 }
 
 .mepFooterLeft,
-.mepFooterCenter { line-height: 1.3; }
+.mepFooterCenter {
+  line-height: 1.3;
+}
 
 .mepFooterCenter {
   display: grid;
@@ -982,7 +1132,9 @@ input, select {
    RESPONSIVE
    ============================= */
 @media (max-width: 920px) {
-  body { padding: 10px; }
+  body {
+    padding: 10px;
+  }
 
   .topbar,
   .teamsetup,
@@ -1036,10 +1188,17 @@ input, select {
     margin: 6mm;
   }
 
+  html,
   body {
+    width: 297mm;
+    height: 210mm;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
+  }
+
+  body {
+    overflow: visible !important;
   }
 
   .topbar,
@@ -1050,7 +1209,8 @@ input, select {
   .toolbar,
   .mepPager,
   button,
-  .mepScreenStage {
+  .mepScreenStage,
+  .dialogOverlay {
     display: none !important;
   }
 
@@ -1059,7 +1219,9 @@ input, select {
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
+    border-radius: 0 !important;
     background: #fff !important;
+    box-shadow: none !important;
   }
 
   .mepPrintAll {
@@ -1069,10 +1231,12 @@ input, select {
   .mepPrintPage {
     width: 285mm !important;
     min-height: 198mm !important;
-    margin: 0 auto !important;
+    height: 198mm !important;
+    margin: 0 !important;
     padding: 0 !important;
+    display: block !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     border: none !important;
     box-shadow: none !important;
     page-break-after: always !important;
@@ -1080,18 +1244,59 @@ input, select {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-.mepPrintPage {
-  display: flex;
-  justify-content: center;
-}
 
- .mepSheet {
-  max-width: 1300px;
-}
-  
+  .mepPrintPage:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .mepSheet,
+  .formPage {
+    width: 285mm !important;
+    min-height: 198mm !important;
+    height: 198mm !important;
+    margin: 0 !important;
+    padding: 4mm 5mm 3mm !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    overflow: hidden !important;
+  }
+
+  .mepScreenMeta {
+    display: none !important;
+  }
+
+  .mepHeaderTop {
+    margin-bottom: 1.6mm !important;
+  }
+
+  .mepHeaderMeta {
+    margin-bottom: 2.2mm !important;
+  }
+
+  .mepTitleBox,
+  .mepBranchBox {
+    font-size: 3.9mm !important;
+  }
+
+  .mepMetaField,
+  .mepMetaStorage {
+    font-size: 2.8mm !important;
+  }
+
+  .mepMetaLine {
+    min-height: 4.6mm !important;
+  }
+
   .mepTableOuter {
-    overflow: visible !important;
+    overflow: hidden !important;
     border: 0.35mm solid #6f6f6f !important;
+    background: #fff !important;
   }
 
   .mepTable {
@@ -1103,35 +1308,107 @@ input, select {
 
   .mepTable th,
   .mepTable td {
-    height: 4.2mm !important;
-    padding: 0.28mm 0.4mm !important;
-    font-size: 2.25mm !important;
-    line-height: 1.05 !important;
+    height: 4.15mm !important;
+    padding: 0.22mm 0.35mm !important;
     border: 0.26mm solid #6f6f6f !important;
+    background: #fff !important;
+    font-size: 2.18mm !important;
+    line-height: 1.03 !important;
+    vertical-align: middle !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
 
+  .mepTable thead th {
+    background: #efefef !important;
+    font-weight: 700 !important;
+  }
+
   .mepSubHead {
-    height: 3.8mm !important;
-    font-size: 2.1mm !important;
+    height: 3.75mm !important;
+    font-size: 2.02mm !important;
+    line-height: 1.02 !important;
+  }
+
+  .mepDayDate {
+    font-size: 2.6mm !important;
+  }
+
+  .mepHand,
+  .mepHandwrite,
+  .handwrite,
+  .formHandwrite {
+    font-size: 3.35mm !important;
+    line-height: 1.05 !important;
+  }
+
+  .mepNameCell .mepHand {
+    font-size: 3.6mm !important;
+  }
+
+  .mepFuncText .mepHand,
+  .mepPlanText .mepHand,
+  .mepWeekText .mepHand,
+  .mepMonthText .mepHand {
+    font-size: 3.15mm !important;
+  }
+
+  .mepDayValueCell .mepHand,
+  .mepFuncText .mepHand,
+  .mepPlanText .mepHand,
+  .mepWeekText .mepHand,
+  .mepMonthText .mepHand,
+  .mepHandField .mepHand,
+  .mepMetaLine .mepHand,
+  .mepNameCell .mepHand {
+    transform: translateY(0.55mm) !important;
+  }
+
+  .mepSubHead .mepHand {
+    transform: translateY(0.16mm) !important;
+  }
+
+  .mepFooterGrid,
+  .mepFooter {
+    margin-top: 2.2mm !important;
   }
 
   .mepFooterGrid {
-    margin-top: 2mm !important;
-    font-size: 2.5mm !important;
+    gap: 7mm !important;
+    font-size: 2.45mm !important;
+  }
+
+  .mepFooterLeft,
+  .mepFooterCenter {
+    line-height: 1.16 !important;
+  }
+
+  .mepFooterCenter {
+    column-gap: 4mm !important;
+    row-gap: 0.3mm !important;
   }
 
   .mepFooterHint {
     margin-top: 1.5mm !important;
-    font-size: 2.4mm !important;
+    font-size: 2.28mm !important;
+    line-height: 1.12 !important;
   }
 
   .mepFooterStand {
     margin-top: 1mm !important;
-    font-size: 2.3mm !important;
+    font-size: 2.15mm !important;
+    line-height: 1.1 !important;
+  }
+
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
+
 /* =============================
    DARK MODE
    ============================= */
@@ -1313,71 +1590,4 @@ body.dark .formPage {
 
 body.dark .mepTable th {
   background: #e6e6e6 !important;
-}
-/* =========================
-   DRUCKLAYOUT A4 LANDSCAPE
-   ========================= */
-
-@media print {
-
-  @page {
-    size: A4 landscape;
-    margin: 6mm;
-  }
-
-  html, body {
-    width: 297mm;
-    height: 210mm;
-    margin: 0;
-    padding: 0;
-    background: white;
-  }
-
-  .mepPrintPage {
-    width: 285mm !important;
-    min-height: 198mm !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    display: block !important;
-  }
-
-  .mepSheet {
-    width: 285mm !important;
-    min-height: 198mm !important;
-    margin: 0 !important;
-    padding: 4mm 5mm 3mm !important;
-    box-shadow: none !important;
-    border: none !important;
-    max-width: none !important;
-  }
-
-  /* verhindert kaputte Tabellenumbrüche */
-
-  table {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  tr {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  td, th {
-    page-break-inside: avoid !important;
-  }
-
-  /* UI Elemente der App nicht drucken */
-
-  .topbar,
-  .sidebar,
-  .controls,
-  .buttons,
-  .nav,
-  .dialogOverlay {
-    display: none !important;
-  }
-
 }
