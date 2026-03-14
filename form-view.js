@@ -256,7 +256,9 @@ function buildMepHeader(sheetModel) {
   `;
 }
 
-function buildMepMainTable(weekDays, pageEmployees, pageIndex) {
+function buildMepMainTable(sheetModel) {
+
+  const { weekDays, employees, pageIndex } = sheetModel;
   let html = `
   <div class="mepMainTableWrap">
   <div class="mepTableOuter">
