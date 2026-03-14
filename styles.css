@@ -2044,3 +2044,57 @@ body.dark .mepTable th {
     break-inside: avoid !important;
   }
 }
+/* =========================
+   Hauptmatrix (Schritt 1)
+   ========================= */
+
+.mepBody {
+  display: flex;
+  align-items: flex-start;
+  gap: 2.4mm;
+}
+
+/* Wrapper damit wir die Tabelle exakt positionieren können */
+.mepMainTableWrap{
+  margin-left:1.6mm;
+  margin-top:7.2mm;
+}
+
+/* Außenrahmen der Matrix */
+.mepTableOuter {
+  width:196.8mm;
+  border:0.28mm solid #6f6f6f;
+  background:#fff;
+}
+
+/* Tabelle selbst */
+.mepTable{
+  width:196.8mm;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+
+/* Zellen */
+.mepTable th,
+.mepTable td{
+  border:0.22mm solid #6f6f6f;
+  height:4.22mm;
+  padding:0.08mm 0.25mm;
+  font-size:2.05mm;
+  line-height:1.02;
+  vertical-align:middle;
+}
+
+.mepTable thead th{
+  text-align:center;
+  font-weight:700;
+}
+
+.mepSubHead{
+  height:3.45mm !important;
+  font-size:1.9mm !important;
+}
+
+.mepDayDate{
+  font-size:2.25mm;
+}
