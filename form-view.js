@@ -261,19 +261,19 @@ function buildMepMainTable(weekDays, pageEmployees, pageIndex) {
   <div class="mepMainTableWrap">
   <div class="mepTableOuter">
     <table class="mepTable">
-        <colgroup>
-          <col style="width:30mm">
-          <col style="width:11mm">
-          <col style="width:12mm">
-          <col style="width:14mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-          <col style="width:19.2mm">
-        </colgroup>
+       <colgroup>
+  <col style="width:29mm">
+  <col style="width:10mm">
+  <col style="width:11mm">
+  <col style="width:14mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+  <col style="width:15.4mm">
+</colgroup>
         <thead>
           <tr>
             <th class="mepNameCol" rowspan="3">Name, Vorname</th>
