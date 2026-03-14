@@ -1610,9 +1610,437 @@ body.dark .formPage {
 body.dark .mepTable th {
   background: #e6e6e6 !important;
 }
-.mepUseTemplate {
+
+
+/* =============================
+   MEP REBUILD / FINAL OVERRIDES
+   ============================= */
+.mepSheet,
+.formPage {
+  width: 289mm;
+  min-height: 196mm;
+  margin: 0 auto 10mm;
+  padding: 2.2mm 2.2mm 3.2mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+.mepContentFrame {
+  width: 227.8mm;
+  position: relative;
+}
+
+.mepHeader {
+  width: 227.8mm;
+  margin-bottom: 1.2mm;
+}
+
+.mepHeaderTop {
+  display: grid;
+  grid-template-columns: 1fr 42mm;
+  align-items: end;
+  gap: 2.4mm;
+  margin-bottom: 1.05mm;
+}
+
+.mepTitleBox,
+.mepBranchBox {
+  padding: 0.42mm 0.85mm;
+  border: 0.30mm solid #6f6f6f;
+  font-size: 3.45mm;
+  font-weight: 700;
+  line-height: 1.02;
+}
+
+.mepBranchBox {
+  white-space: nowrap;
+}
+
+.mepHeaderMeta {
+  width: 227.8mm;
+  display: grid;
+  grid-template-columns: 1.18fr 0.98fr 0.72fr auto;
+  align-items: end;
+  gap: 2.4mm;
+  margin-bottom: 1.35mm;
+}
+
+.mepMetaField {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  column-gap: 1.2mm;
+  font-size: 2.45mm;
+}
+
+.mepMetaLine {
+  display: inline-block;
+  min-height: 3.95mm;
+  padding: 0 0.45mm 0.05mm;
+  border-bottom: 0.22mm solid #6f6f6f;
+}
+
+.mepMetaStorage {
+  white-space: nowrap;
+  text-align: right;
+  font-size: 2.45mm;
+}
+
+.mepBodyLayout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.8mm;
+  width: 227.8mm;
+}
+
+.mepTableOuter {
+  width: 201.4mm;
+  margin: 0;
+  overflow: hidden;
+  border: 0.28mm solid #6f6f6f;
+  background: #fff;
+}
+
+.mepTable {
+  width: 201.4mm;
+  min-width: 201.4mm;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.mepTable th,
+.mepTable td {
+  height: 4.22mm;
+  padding: 0.18mm 0.28mm;
+  border: 0.24mm solid #6f6f6f;
+  background: #fff;
+  font-size: 2.06mm;
+  line-height: 1.02;
+  vertical-align: middle;
+}
+
+.mepTable thead th {
+  background: #efefef;
+  text-align: center;
+  vertical-align: middle;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font-weight: 700;
+}
+
+.mepNameCol { width: 30mm; }
+.mepFuncCol { width: 11mm; }
+.mepPlanCol { width: 12mm; }
+.mepTypeCol { width: 14mm; text-align: center; }
+.mepDayCol { width: 19.2mm; }
+
+.mepNameCell,
+.mepFuncText,
+.mepPlanText,
+.mepDayValueCell,
+.mepTypeCell {
+  padding-top: 0.45mm;
+  padding-bottom: 0.1mm;
+}
+
+.mepNameCell {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.mepFuncText,
+.mepPlanText,
+.mepDayValueCell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.mepTypeCell,
+.mepSubHead {
+  white-space: nowrap;
+}
+
+.mepSubHead {
+  height: 3.65mm;
+  font-size: 1.92mm;
+  font-weight: 600;
+}
+
+.mepDayDate {
+  font-size: 2.55mm;
+  line-height: 1;
+}
+
+.mepSumBlock {
+  width: 24.6mm;
+  flex: 0 0 24.6mm;
+}
+
+.mepSumHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 12.06mm;
+  border-top: 0.30mm solid #6f6f6f;
+  border-right: 0.30mm solid #6f6f6f;
+  border-bottom: 0.24mm solid #6f6f6f;
+  border-left: 0.30mm solid #6f6f6f;
+  background: #efefef;
+}
+
+.mepSumHeaderCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3mm;
+  border-left: 0.24mm solid #6f6f6f;
+  font-size: 2.28mm;
+  font-weight: 700;
+  line-height: 1.02;
+  text-align: center;
+}
+
+.mepSumHeaderCell:first-child {
+  border-left: none;
+}
+
+.mepSumRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 17.12mm;
+  margin-top: 4.22mm;
+}
+
+.mepSumCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.30mm solid #6f6f6f;
+  font-size: 3.05mm;
+  line-height: 1.02;
+  background: #fff;
+}
+
+.mepSumCell + .mepSumCell {
+  border-left-width: 0.24mm;
+}
+
+.mepHand,
+.mepHandwrite,
+.handwrite,
+.formHandwrite {
+  display: inline-block;
+  vertical-align: middle;
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 3.35mm;
+  line-height: 1.04;
+  color: #1f2a35;
+  font-weight: 400;
+  letter-spacing: 0.01mm;
+}
+
+.mepNameCell .mepHand { font-size: 3.65mm; }
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepSumCell .mepHand { font-size: 3.1mm; }
+
+.mepDayValueCell .mepHand,
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepHandField .mepHand,
+.mepMetaLine .mepHand,
+.mepNameCell .mepHand,
+.mepSumCell .mepHand {
+  transform: translateY(0.42mm);
+}
+
+.mepSubHead .mepHand {
+  transform: translateY(0.1mm);
+}
+
+.mepFooter {
+  width: 227.8mm;
+  margin-top: 1.15mm;
+}
+
+.mepFooterGrid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.95fr;
+  gap: 5.1mm;
+  font-size: 1.95mm;
+}
+
+.mepFooterLeft,
+.mepFooterCenter {
+  line-height: 1.08;
+}
+
+.mepFooterCenter {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: start;
+  column-gap: 4mm;
+  row-gap: 0.22mm;
+}
+
+.mepFooterCenter strong {
+  grid-column: 1 / -1;
+}
+
+.mepFooterHint {
+  margin-top: 0.72mm;
+  font-size: 1.92mm;
+  line-height: 1.04;
+}
+
+.mepFooterStand {
+  margin-top: 0.45mm;
+  text-align: right;
+  font-size: 1.82mm;
+  line-height: 1;
+}
+
+/* Optionaler Kalibriermodus mit Referenzbild */
+.mepSheet.mepUseTemplate {
+  position: relative;
+  --mep-template-x: 0mm;
+  --mep-template-y: 0mm;
+  --mep-template-width: 289mm;
+  --mep-template-height: 196mm;
+  --mep-template-opacity: 0.16;
+}
+
+.mepSheet.mepUseTemplate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background-image: url("assets/mep-template-reference.jpg");
-  background-size: contain;
   background-repeat: no-repeat;
-  opacity: 0.4;
+  background-position: var(--mep-template-x) var(--mep-template-y);
+  background-size: var(--mep-template-width) var(--mep-template-height);
+  opacity: var(--mep-template-opacity);
+  pointer-events: none;
+}
+
+.mepSheet.mepUseTemplate .mepContentFrame {
+  position: relative;
+  z-index: 1;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 4mm;
+  }
+
+  html,
+  body {
+    width: 297mm;
+    height: 210mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .topbar,
+  .teamsetup,
+  #dayView,
+  #weekView,
+  .viewSwitch,
+  .toolbar,
+  .mepPager,
+  button,
+  .mepScreenStage,
+  .dialogOverlay {
+    display: none !important;
+  }
+
+  #formView {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .mepPrintAll {
+    display: block !important;
+  }
+
+  .mepPrintPage {
+    width: 289mm !important;
+    min-height: 202mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .mepPrintPage:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .mepSheet,
+  .formPage {
+    width: 289mm !important;
+    min-height: 196mm !important;
+    margin: 0 !important;
+    padding: 2.2mm 2.2mm 3.2mm !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .mepContentFrame,
+  .mepHeader,
+  .mepHeaderMeta,
+  .mepFooter,
+  .mepBodyLayout {
+    width: 227.8mm !important;
+  }
+
+  .mepTableOuter {
+    width: 201.4mm !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: 0.28mm solid #6f6f6f !important;
+  }
+
+  .mepTable {
+    width: 201.4mm !important;
+    min-width: 201.4mm !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+
+  .mepTable th,
+  .mepTable td,
+  .mepSumCell,
+  .mepSumHeader,
+  .mepSumHeaderCell {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
