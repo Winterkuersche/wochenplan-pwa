@@ -2055,21 +2055,21 @@ body.dark .mepTable th {
 }
 
 /* Wrapper damit wir die Tabelle exakt positionieren können */
-.mepMainTableWrap{
-  margin-left:1.6mm;
-  margin-top:7.2mm;
+.mepMainTableWrap {
+  margin-left: 1.6mm;
+  margin-top: 9.6mm;
 }
 
 /* Außenrahmen der Matrix */
 .mepTableOuter {
-  width:196.8mm;
+ width: 194.8mm;
   border:0.28mm solid #6f6f6f;
   background:#fff;
 }
 
 /* Tabelle selbst */
 .mepTable{
-  width:196.8mm;
+  width: 194.8mm;
   border-collapse:collapse;
   table-layout:fixed;
 }
