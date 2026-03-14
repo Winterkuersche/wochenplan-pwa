@@ -1784,6 +1784,9 @@ body.dark .mepTable th {
 }
 .mepSumWrap {
   grid-column: 2;
+  margin-top: 9.55mm;
+  margin-left: 2.4mm;
+  width: 32.5mm;
   display: flex;
   flex-direction: column;
 }
@@ -2061,8 +2064,8 @@ body.dark .mepTable th {
 
 .mepBody {
   display: grid;
-  grid-template-columns: 194.8mm 31mm;
-  column-gap: 2.2mm;
+  grid-template-columns: 194.8mm 32.5mm;
+  column-gap: 2.6mm;
   align-items: start;
 }
 
