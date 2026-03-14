@@ -283,7 +283,7 @@ function buildWeekSheet(sheetModel) {
 
   let html = `
     <section class="mepPrintPage">
-      <div class="printSheet mepSheet">
+      <div class="printSheet mepSheet mepUseTemplate">
         <div class="mepHeaderTop">
           <div class="mepTitleBox">Mitarbeiter-Einsatz-Planung (MEP)</div>
           <div class="mepBranchBox">
