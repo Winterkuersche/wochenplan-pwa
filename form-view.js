@@ -335,9 +335,22 @@ function buildMepMainTable(weekDays, pageEmployees, pageIndex) {
   return html;
 }
 
-function buildMepSumBlock(pageEmployees, weekDays) {
+function buildMepSumBlock(sheetModel) {
+  const { employees } = sheetModel;
+  const pageEmployees = employees.slice();
+
+  while (pageEmployees.length < getFormEmployeesPerPage()) {
+    pageEmployees.push({
+      id: `sum-empty-${pageEmployees.length + 1}`,
+      _placeholder: true,
+      name: "",
+      roleKey: "",
+      target: ""
+    });
+  }
+
   let html = `
-    <div class="mepSumBlock" aria-hidden="true">
+    <div class="mepSumWrap">
       <div class="mepSumHeader">
         <div class="mepSumHeaderCell">Summe /<br>Woche</div>
         <div class="mepSumHeaderCell">Summe /<br>Monat</div>
@@ -345,22 +358,28 @@ function buildMepSumBlock(pageEmployees, weekDays) {
   `;
 
   pageEmployees.forEach((emp) => {
-    const isPlaceholder = !emp || emp._placeholder;
-    const weekMinutes = isPlaceholder ? 0 : getWeekResolvedMinutesForEmployee(emp, weekDays);
-    const monthMinutes = isPlaceholder ? 0 : getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays);
+    const weekText = emp._placeholder
+      ? ""
+      : renderHandText(formatMinutesAsHourText(getWeekResolvedMinutesForEmployee(emp, state.currentWeekDays || [])), `sum-week-${emp.id}`);
+
+    const monthText = emp._placeholder
+      ? ""
+      : renderHandText(formatMinutesAsHourText(getMonthTotalForEmployee(emp)), `sum-month-${emp.id}`);
 
     html += `
       <div class="mepSumRow">
-        <div class="mepSumCell mepSumCellWeek">${isPlaceholder || weekMinutes <= 0 ? "" : renderHandText(minutesToHM(weekMinutes), `week-${emp.id}-${weekDays[0]?.iso || ''}`)}</div>
-        <div class="mepSumCell mepSumCellMonth">${isPlaceholder || monthMinutes <= 0 ? "" : renderHandText(minutesToHM(monthMinutes), `month-${emp.id}-${weekDays[0]?.iso || ''}`)}</div>
+        <div class="mepSumCell mepSumWeekCell">${weekText}</div>
+        <div class="mepSumCell mepSumMonthCell">${monthText}</div>
       </div>
     `;
   });
 
-  html += `</div>`;
+  html += `
+    </div>
+  `;
+
   return html;
 }
-
 function buildMepFooter() {
   return `
     <div class="mepFooter">
@@ -466,10 +485,10 @@ function buildWeekSheet(sheetModel) {
         <div class="mepContentFrame">
           ${buildMepHeader({ ...sheetModel, employees: pageEmployees })}
 
-          <div class="mepBodyLayout">
-            ${buildMepMainTable(weekDays, pageEmployees, pageIndex)}
-            ${buildMepSumBlock(pageEmployees, weekDays)}
-          </div>
+         <div class="mepBody">
+  ${buildMepMainTable(sheetModel)}
+  ${buildMepSumBlock(sheetModel)}
+</div>
 
           ${buildMepFooter()}
         </div>
