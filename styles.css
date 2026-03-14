@@ -2075,13 +2075,7 @@ body.dark .mepTable th {
   margin-top: 9.6mm;
 }
 
-.mepSumWrap {
-  grid-column: 2;
-  margin-top: 9.55mm;
-  width: 31mm;
-  display: flex;
-  flex-direction: column;
-}
+
 
 .mepSumRow + .mepSumRow {
   margin-top: 0;
