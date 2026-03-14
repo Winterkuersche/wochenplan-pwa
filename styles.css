@@ -2022,13 +2022,13 @@ body.dark .mepTable th {
     overflow: visible !important;
   }
 
-  .mepContentFrame,
-  .mepHeader,
-  .mepHeaderMeta,
-  .mepFooter,
-  .mepBodyLayout {
-    width: 227.8mm !important;
-  }
+ .mepContentFrame,
+.mepHeader,
+.mepHeaderMeta,
+.mepFooter,
+.mepBody {
+  width: 227.8mm !important;
+}
 
   .mepTableOuter {
     width: 201.4mm !important;
