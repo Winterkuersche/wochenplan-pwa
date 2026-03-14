@@ -1784,8 +1784,8 @@ body.dark .mepTable th {
 }
 .mepSumWrap {
   grid-column: 2;
-  margin-top: 9.55mm;
-  margin-left: 2.4mm;
+   margin-top: var(--mep-sum-offset-y, 9.45mm);
+  margin-left: var(--mep-sum-offset-x, 2.2mm);
   width: 32.5mm;
   display: flex;
   flex-direction: column;
