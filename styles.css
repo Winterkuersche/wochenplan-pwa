@@ -2055,21 +2055,28 @@ body.dark .mepTable th {
   }
 }
 /* =========================
-   Hauptmatrix (Schritt 1)
+   Hauptmatrix + Summenblock
    ========================= */
 
 .mepBody {
   display: grid;
-  grid-template-columns: auto 36mm;
-  column-gap: 4mm;
+  grid-template-columns: 194.8mm 31mm;
+  column-gap: 2.2mm;
   align-items: start;
 }
 
-
-/* Wrapper damit wir die Tabelle exakt positionieren können */
 .mepMainTableWrap {
   grid-column: 1;
+  margin-left: 1.6mm;
+  margin-top: 9.6mm;
 }
+
+.mepSumWrap {
+  grid-column: 2;
+  margin-top: 9.6mm;
+  width: 31mm;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Außenrahmen der Matrix */
@@ -2082,33 +2089,81 @@ body.dark .mepTable th {
 }
 
 /* Tabelle selbst */
-.mepTable{
+.mepTable {
   width: 194.8mm;
-  border-collapse:collapse;
-  table-layout:fixed;
+  min-width: 194.8mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
 }
 
 /* Zellen */
 .mepTable th,
-.mepTable td{
-  border:0.22mm solid #6f6f6f;
-  height:4.22mm;
-  padding:0.08mm 0.25mm;
-  font-size:2.05mm;
-  line-height:1.02;
-  vertical-align:middle;
+.mepTable td {
+  border: 0.22mm solid #6f6f6f;
+  height: 4.22mm;
+  padding: 0.08mm 0.25mm;
+  font-size: 2.05mm;
+  line-height: 1.02;
+  vertical-align: middle;
 }
 
-.mepTable thead th{
-  text-align:center;
-  font-weight:700;
+.mepTable thead th {
+  text-align: center;
+  font-weight: 700;
 }
 
-.mepSubHead{
-  height:3.45mm !important;
-  font-size:1.9mm !important;
+.mepSubHead {
+  height: 3.45mm !important;
+  font-size: 1.9mm !important;
 }
 
-.mepDayDate{
-  font-size:2.25mm;
+.mepDayDate {
+  font-size: 2.25mm;
+}
+
+/* Summenblock rechts */
+.mepSumHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 31mm;
+  height: 11.2mm;
+  margin-bottom: 1.95mm;
+}
+
+.mepSumHeaderCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.28mm solid #6f6f6f;
+  background: #fff;
+  font-size: 2.15mm;
+  line-height: 1.05;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mepSumRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 31mm;
+  height: 13.95mm;
+  margin-bottom: 2.02mm;
+}
+
+.mepSumCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.28mm solid #6f6f6f;
+  background: #fff;
+  font-size: 3.1mm;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+}
+
+.mepSumCell .mepHand {
+  font-size: 3.15mm;
+  transform: translateY(0.25mm);
 }
