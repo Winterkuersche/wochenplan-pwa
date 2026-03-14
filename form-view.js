@@ -22,7 +22,14 @@ function formatShortDateForm(date) {
 function formatIsoDateForm(date) {
   return `${date.getFullYear()}-${pad2Form(date.getMonth() + 1)}-${pad2Form(date.getDate())}`;
 }
+function formatMinutesAsHourText(minutes) {
+  if (!minutes || minutes <= 0) return "";
 
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
 function getMonthTotalForEmployeeUntilWeek(emp, currentWeekDays) {
   const monthPlan = state.monthPlan;
   if (!monthPlan?.weeks || !currentWeekDays?.length) return 0;
