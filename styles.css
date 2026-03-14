@@ -843,10 +843,11 @@ select {
 }
 
 .mepTable {
-  width: auto;
-  min-width: auto;
+  width: 194.8mm;
+  min-width: 194.8mm;
   border-collapse: collapse;
   table-layout: fixed;
+  background: #fff;
 }
 
 .mepTable th,
@@ -1706,10 +1707,11 @@ body.dark .mepTable th {
 }
 
 .mepTable {
-  width: 201.4mm;
-  min-width: 201.4mm;
-  table-layout: fixed;
+  width: 194.8mm;
+  min-width: 194.8mm;
   border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
 }
 
 .mepTable th,
@@ -1780,27 +1782,30 @@ body.dark .mepTable th {
   width: 24.6mm;
   flex: 0 0 24.6mm;
 }
+.mepSumWrap {
+  width: 31mm;
+  margin-top: 9.6mm;
+  flex: 0 0 31mm;
+}
 
 .mepSumHeader {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 12.06mm;
-  border-top: 0.30mm solid #6f6f6f;
-  border-right: 0.30mm solid #6f6f6f;
-  border-bottom: 0.24mm solid #6f6f6f;
-  border-left: 0.30mm solid #6f6f6f;
-  background: #efefef;
+  width: 31mm;
+  height: 11.2mm;
+  margin-bottom: 1.95mm;
 }
+
 
 .mepSumHeaderCell {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3mm;
-  border-left: 0.24mm solid #6f6f6f;
-  font-size: 2.28mm;
+  border: 0.28mm solid #6f6f6f;
+  background: #fff;
+  font-size: 2.15mm;
+  line-height: 1.05;
   font-weight: 700;
-  line-height: 1.02;
   text-align: center;
 }
 
@@ -1819,16 +1824,20 @@ body.dark .mepTable th {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 0.30mm solid #6f6f6f;
-  font-size: 3.05mm;
-  line-height: 1.02;
+  border: 0.28mm solid #6f6f6f;
   background: #fff;
+  font-size: 3.1mm;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
 }
-
 .mepSumCell + .mepSumCell {
   border-left-width: 0.24mm;
 }
-
+.mepSumCell .mepHand {
+  font-size: 3.15mm;
+  transform: translateY(0.25mm);
+}
 .mepHand,
 .mepHandwrite,
 .handwrite,
@@ -2028,12 +2037,13 @@ body.dark .mepTable th {
     border: 0.28mm solid #6f6f6f !important;
   }
 
-  .mepTable {
-    width: 201.4mm !important;
-    min-width: 201.4mm !important;
-    table-layout: fixed !important;
-    border-collapse: collapse !important;
-  }
+.mepTable {
+  width: 194.8mm;
+  min-width: 194.8mm;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+}
 
   .mepTable th,
   .mepTable td,
@@ -2048,11 +2058,12 @@ body.dark .mepTable th {
    Hauptmatrix (Schritt 1)
    ========================= */
 
-.mepBody {
+.mepBody {.mepBody {
   display: flex;
   align-items: flex-start;
-  gap: 2.4mm;
+  gap: 2.2mm;
 }
+
 
 /* Wrapper damit wir die Tabelle exakt positionieren können */
 .mepMainTableWrap {
@@ -2062,9 +2073,11 @@ body.dark .mepTable th {
 
 /* Außenrahmen der Matrix */
 .mepTableOuter {
- width: 194.8mm;
-  border:0.28mm solid #6f6f6f;
-  background:#fff;
+  width: 194.8mm;
+  margin: 0;
+  overflow: hidden;
+  border: 0.28mm solid #6f6f6f;
+  background: #fff;
 }
 
 /* Tabelle selbst */
