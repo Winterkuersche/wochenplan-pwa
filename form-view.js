@@ -323,7 +323,7 @@ function buildMepMainTable(sheetModel) {
         <tbody>
   `;
 
-  pageEmployees.forEach((emp) => {
+ employees.forEach((emp) => {
     html += buildEmployeeMainRowsForWeek(emp, weekDays);
   });
 
@@ -338,7 +338,7 @@ function buildMepMainTable(sheetModel) {
 }
 
 function buildMepSumBlock(sheetModel) {
-  const { employees } = sheetModel;
+  const { employees, weekDays } = sheetModel;
   const pageEmployees = employees.slice();
 
   while (pageEmployees.length < getFormEmployeesPerPage()) {
@@ -362,11 +362,17 @@ function buildMepSumBlock(sheetModel) {
   pageEmployees.forEach((emp) => {
     const weekText = emp._placeholder
       ? ""
-      : renderHandText(formatMinutesAsHourText(getWeekResolvedMinutesForEmployee(emp, state.currentWeekDays || [])), `sum-week-${emp.id}`);
+      : renderHandText(
+          formatMinutesAsHourText(getWeekResolvedMinutesForEmployee(emp, weekDays)),
+          `sum-week-${emp.id}`
+        );
 
     const monthText = emp._placeholder
       ? ""
-      : renderHandText(formatMinutesAsHourText(getMonthTotalForEmployee(emp)), `sum-month-${emp.id}`);
+      : renderHandText(
+          formatMinutesAsHourText(getMonthResolvedMinutesForEmployeeUntilWeek(emp, weekDays)),
+          `sum-month-${emp.id}`
+        );
 
     html += `
       <div class="mepSumRow">
@@ -488,8 +494,8 @@ function buildWeekSheet(sheetModel) {
           ${buildMepHeader({ ...sheetModel, employees: pageEmployees })}
 
          <div class="mepBody">
-  ${buildMepMainTable(sheetModel)}
-  ${buildMepSumBlock(sheetModel)}
+  ${buildMepMainTable({ ...sheetModel, employees: pageEmployees })}
+  ${buildMepSumBlock({ ...sheetModel, employees: pageEmployees })}
 </div>
 
           ${buildMepFooter()}
