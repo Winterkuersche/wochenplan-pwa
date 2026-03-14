@@ -390,6 +390,56 @@ function buildMepFooter() {
   `;
 }
 
+
+function getFormEmployeesPerPage() {
+  return 9;
+}
+
+function chunkEmployeesForForm(employees, size = getFormEmployeesPerPage()) {
+  const chunks = [];
+  for (let i = 0; i < employees.length; i += size) {
+    chunks.push(employees.slice(i, i + size));
+  }
+  return chunks.length ? chunks : [[]];
+}
+
+function getFormSheetModels() {
+  const monthPlan = state.monthPlan;
+  if (!monthPlan || !Array.isArray(monthPlan.weeks)) return [];
+
+  const employeeChunks = chunkEmployeesForForm(state.employees || []);
+  const models = [];
+
+  monthPlan.weeks.forEach((weekDays, weekIndex) => {
+    employeeChunks.forEach((employees, pageIndex) => {
+      models.push({
+        id: `week-${weekIndex + 1}-page-${pageIndex + 1}`,
+        weekIndex,
+        pageIndex,
+        weekDays,
+        employees,
+        pageCount: employeeChunks.length
+      });
+    });
+  });
+
+  return models;
+}
+
+function getCurrentFormSheetIndex(sheetModels) {
+  const maxIndex = Math.max(0, sheetModels.length - 1);
+  const saved = Number(state.formSheetIndex || 0);
+  if (!Number.isFinite(saved)) return 0;
+  return Math.min(Math.max(0, saved), maxIndex);
+}
+
+function setCurrentFormSheetIndex(nextIndex, sheetModels) {
+  state.formSheetIndex = Math.min(
+    Math.max(0, nextIndex),
+    Math.max(0, sheetModels.length - 1)
+  );
+}
+
 function buildWeekSheet(sheetModel) {
   const { weekDays, employees, weekIndex, pageIndex } = sheetModel;
   const weekStart = weekDays[0]?.date;
