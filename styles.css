@@ -1783,6 +1783,7 @@ body.dark .mepTable th {
   flex: 0 0 24.6mm;
 }
 .mepSumWrap {
+  grid-column: 2;
   width: 31mm;
   margin-top: 9.6mm;
   flex: 0 0 31mm;
@@ -2058,15 +2059,17 @@ body.dark .mepTable th {
    Hauptmatrix (Schritt 1)
    ========================= */
 
-.mepBody {.mepBody {
-  display: flex;
-  align-items: flex-start;
-  gap: 2.2mm;
+.mepBody {
+  display: grid;
+  grid-template-columns: auto 34mm;
+  column-gap: 3mm;
+  align-items: start;
 }
 
 
 /* Wrapper damit wir die Tabelle exakt positionieren können */
 .mepMainTableWrap {
+  grid-column: 1;
   margin-left: 1.6mm;
   margin-top: 9.6mm;
 }
