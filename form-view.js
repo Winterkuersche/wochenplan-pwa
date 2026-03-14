@@ -258,8 +258,9 @@ function buildMepHeader(sheetModel) {
 
 function buildMepMainTable(weekDays, pageEmployees, pageIndex) {
   let html = `
-    <div class="mepTableOuter">
-      <table class="mepTable">
+  <div class="mepMainTableWrap">
+  <div class="mepTableOuter">
+    <table class="mepTable">
         <colgroup>
           <col style="width:30mm">
           <col style="width:11mm">
@@ -326,8 +327,9 @@ function buildMepMainTable(weekDays, pageEmployees, pageIndex) {
 
   html += `
         </tbody>
-      </table>
-    </div>
+          </table>
+  </div>
+</div>
   `;
 
   return html;
