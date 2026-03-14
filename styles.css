@@ -1610,3 +1610,9 @@ body.dark .formPage {
 body.dark .mepTable th {
   background: #e6e6e6 !important;
 }
+.mepUseTemplate {
+  background-image: url("assets/mep-template-reference.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.4;
+}
