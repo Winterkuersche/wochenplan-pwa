@@ -2079,6 +2079,8 @@ body.dark .mepTable th {
 
 .mepMainTableWrap {
   grid-column: 1 !important;
+  display: inline-block !important;
+  width: fit-content !important;
   margin-left: var(--mep-main-offset-x) !important;
   margin-top: calc(9.6mm + var(--mep-main-offset-y)) !important;
 }
