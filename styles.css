@@ -2056,10 +2056,10 @@ body.dark .mepTable th {
   --mep-main-offset-y: 0mm;
 
   --mep-sum-page-right: 1.4mm;
-  --mep-sum-page-top: 17.9mm;
+  --mep-sum-page-top: 18.6mm;
   --mep-sum-offset-y: 0mm;
 
-  --mep-row-h: 4.05mm;
+  --mep-row-h: 4.00mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
   --mep-sum-total-w: 35.5mm;
@@ -2079,20 +2079,22 @@ body.dark .mepTable th {
 
 .mepMainTableWrap {
   grid-column: 1 !important;
+  display: inline-block !important;
+  width: fit-content !important;
   margin-left: var(--mep-main-offset-x) !important;
   margin-top: calc(9.6mm + var(--mep-main-offset-y)) !important;
 }
 
 .mepTableOuter {
-  width: 196.8mm !important;
+  width: 195.0mm !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
 .mepTable {
-  width: 196.8mm !important;
-  min-width: 196.8mm !important;
+  width: 195.0mm !important;
+  min-width: 195.0mm !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
