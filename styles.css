@@ -2179,8 +2179,8 @@ body.dark .mepTable th {
   --mep-main-offset-x: 3.6mm;
   --mep-main-offset-y: 0mm;
 
- --mep-sum-offset-x: 9mm;
-  --mep-sum-offset-y: 0mm;
+ --mep-sum-offset-x: 10.8mm;
+--mep-sum-offset-y: 0.8mm;
 }
 
 .mepContentFrame {
