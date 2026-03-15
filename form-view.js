@@ -264,34 +264,34 @@ function buildMepHeader(sheetModel) {
 }
 
 function buildMepMainTable(sheetModel) {
-
   const { weekDays, employees, pageIndex } = sheetModel;
+
   let html = `
-  <div class="mepMainTableWrap">
-  <div class="mepTableOuter">
-    <table class="mepTable">
-       <colgroup>
-  <col style="width:29mm">
-  <col style="width:10mm">
-  <col style="width:11mm">
-  <col style="width:14mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-  <col style="width:15.4mm">
-</colgroup>
-        <thead>
-          <tr>
-            <th class="mepNameCol" rowspan="3">Name, Vorname</th>
-            <th class="mepFuncCol" rowspan="3">Funktion</th>
-            <th class="mepPlanCol" rowspan="3">Plan / Woche</th>
-            <th class="mepTypeCol">Wochentag</th>
+    <div class="mepMainTableWrap">
+      <div class="mepTableOuter">
+        <table class="mepTable">
+          <colgroup>
+            <col style="width:31mm">
+            <col style="width:10.5mm">
+            <col style="width:11.5mm">
+            <col style="width:15mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+            <col style="width:16.2mm">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="mepNameCol" rowspan="3">Name, Vorname</th>
+              <th class="mepFuncCol" rowspan="3">Funktion</th>
+              <th class="mepPlanCol" rowspan="3">Plan / Woche</th>
+              <th class="mepTypeCol">Wochentag</th>
   `;
 
-  weekDays.forEach((day) => {
+   weekDays.forEach((day) => {
     const grayClass = day.isOutsideMonth
       ? ' class="mepDayCol mepDayCol--out"'
       : ' class="mepDayCol"';
@@ -299,9 +299,9 @@ function buildMepMainTable(sheetModel) {
   });
 
   html += `
-          </tr>
-          <tr>
-            <th class="mepTypeCol">Datum</th>
+            </tr>
+            <tr>
+              <th class="mepTypeCol">Datum</th>
   `;
 
   weekDays.forEach((day) => {
@@ -312,9 +312,9 @@ function buildMepMainTable(sheetModel) {
   });
 
   html += `
-          </tr>
-          <tr>
-            <th class="mepTypeCol">Warentag</th>
+            </tr>
+            <tr>
+              <th class="mepTypeCol">Warentag</th>
   `;
 
   weekDays.forEach((day) => {
@@ -325,20 +325,20 @@ function buildMepMainTable(sheetModel) {
   });
 
   html += `
-          </tr>
-        </thead>
-        <tbody>
+            </tr>
+          </thead>
+          <tbody>
   `;
 
- employees.forEach((emp) => {
+  employees.forEach((emp) => {
     html += buildEmployeeMainRowsForWeek(emp, weekDays);
   });
 
   html += `
-        </tbody>
-          </table>
-  </div>
-</div>
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 
   return html;
@@ -494,16 +494,18 @@ function buildWeekSheet(sheetModel) {
     });
   }
 
+  const filledSheetModel = { ...sheetModel, employees: pageEmployees };
+
   return `
     <section class="mepPrintPage">
       <div class="printSheet mepSheet mepUseTemplate">
         <div class="mepContentFrame">
-          ${buildMepHeader({ ...sheetModel, employees: pageEmployees })}
+          ${buildMepHeader(filledSheetModel)}
 
-         <div class="mepBody">
-  ${buildMepMainTable({ ...sheetModel, employees: pageEmployees })}
-  ${buildMepSumBlock({ ...sheetModel, employees: pageEmployees })}
-</div>
+          <div class="mepBody">
+            ${buildMepMainTable(filledSheetModel)}
+            ${buildMepSumBlock(filledSheetModel)}
+          </div>
 
           ${buildMepFooter()}
         </div>
