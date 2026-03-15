@@ -2020,11 +2020,11 @@ body.dark .mepTable th {
 /* Optionaler Kalibriermodus mit Referenzbild */
 .mepSheet.mepUseTemplate {
   position: relative;
-  --mep-template-x: 0mm;
-  --mep-template-y: 0mm;
-  --mep-template-width: 289mm;
-  --mep-template-height: 196mm;
-  --mep-template-opacity: 0.16;
+  --mep-template-x: var(--mep-content-offset-x);
+  --mep-template-y: var(--mep-content-offset-y);
+  --mep-template-width: var(--mep-body-width);
+  --mep-template-height: var(--mep-body-height);
+  --mep-template-opacity: 0.22;
 }
 
 .mepSheet.mepUseTemplate::before {
@@ -2052,12 +2052,8 @@ body.dark .mepTable th {
   --mep-content-offset-x: 3mm;
   --mep-content-offset-y: 0mm;
 
-  --mep-main-offset-x: 3.6mm;
-  --mep-main-offset-y: 0mm;
-
-  --mep-sum-page-right: 2mm;
-  --mep-sum-page-top: 20.2mm;
-  --mep-sum-offset-y: 0mm;
+  --mep-body-width: 227.8mm;
+  --mep-body-height: 155mm;
 
   --mep-main-left: 3.6mm;
   --mep-main-top: 9.6mm;
@@ -2078,7 +2074,7 @@ body.dark .mepTable th {
   --mep-row-h: 4.05mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-col-w: 11.6mm;
+  --mep-sum-col-w: calc(var(--mep-sum-w) / 2);
   --mep-sum-total-w: calc(var(--mep-sum-col-w) * 2);
 }
 .mepContentFrame {
@@ -2089,29 +2085,29 @@ body.dark .mepTable th {
 
 .mepBody {
   display: block !important;
-  width: 227.8mm !important;
-  min-height: 155mm !important;
+  width: var(--mep-body-width) !important;
+  min-height: var(--mep-body-height) !important;
 }
 
 .mepMainTableWrap {
   grid-column: 1 !important;
   display: inline-block !important;
-  width: auto !important;
+  width: var(--mep-main-w) !important;
   margin-left: var(--mep-main-left) !important;
   margin-top: var(--mep-main-top) !important;
 }
 
 .mepTableOuter {
-  width: 207.2mm !important;
+  width: var(--mep-main-w) !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
 .mepTable {
-  width: 206.6mm !important;
-  min-width: 206.6mm !important;
-  max-width: 206.6mm !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
@@ -2244,6 +2240,36 @@ body.dark .mepTable th {
 /* Rahmen des Formulars */
 :root[data-debug="1"] .mepContentFrame {
   outline: 2px dashed red;
+}
+
+:root[data-debug="1"] .mepContentFrame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  background-image:
+    linear-gradient(to right, rgba(0, 80, 255, 0.95), rgba(0, 80, 255, 0.95)),
+    linear-gradient(to right, rgba(0, 80, 255, 0.95), rgba(0, 80, 255, 0.95)),
+    linear-gradient(to right, rgba(255, 140, 0, 0.95), rgba(255, 140, 0, 0.95)),
+    linear-gradient(to right, rgba(255, 140, 0, 0.95), rgba(255, 140, 0, 0.95)),
+    linear-gradient(to bottom, rgba(0, 80, 255, 0.95), rgba(0, 80, 255, 0.95)),
+    linear-gradient(to bottom, rgba(255, 140, 0, 0.95), rgba(255, 140, 0, 0.95));
+  background-repeat: no-repeat;
+  background-size:
+    0.35mm 100%,
+    0.35mm 100%,
+    0.35mm 100%,
+    0.35mm 100%,
+    100% 0.35mm,
+    100% 0.35mm;
+  background-position:
+    var(--mep-main-left) 0,
+    var(--mep-main-right) 0,
+    var(--mep-sum-left) 0,
+    var(--mep-sum-right) 0,
+    0 var(--mep-main-top),
+    0 var(--mep-sum-top);
 }
 
 /* Hauptmatrix */
