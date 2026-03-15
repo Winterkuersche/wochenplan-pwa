@@ -1953,14 +1953,8 @@ body.dark .mepTable th {
 @media print {
   html,
   body {
-    margin: 0;
-    padding: 0;
-  }
-}
-  html,
-  body {
-    width: 297mm;
-    height: 210mm;
+    width: 297mm !important;
+    height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
@@ -1975,6 +1969,7 @@ body.dark .mepTable th {
   .teamsetup,
   #dayView,
   #weekView,
+  #monthView,
   .viewSwitch,
   .toolbar,
   .mepPager,
@@ -1999,8 +1994,8 @@ body.dark .mepTable th {
   }
 
   .mepPrintPage {
-    width: 289mm !important;
-    min-height: 202mm !important;
+    width: 297mm !important;
+    min-height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
@@ -2018,42 +2013,25 @@ body.dark .mepTable th {
   }
 
   .mepSheet,
-.formPage {
-  width: 297mm;
-  min-height: 210mm;
-  margin: 0 auto 10mm;
-  padding: 0;
-  box-sizing: border-box;
-  background: #fff;
-  color: #111;
-  border: none;
-  border-radius: 0;
-  box-shadow: 0 0 0 1px #ddd;
-  position: relative;
-}
-
- .mepContentFrame,
-.mepHeader,
-.mepHeaderMeta,
-.mepFooter,
-.mepBody {
-  width: 227.8mm !important;
-}
-
-  .mepTableOuter {
-    width: 201.4mm !important;
+  .formPage {
+    width: 297mm !important;
+    min-height: 210mm !important;
     margin: 0 !important;
-    overflow: hidden !important;
-    border: 0.28mm solid #6f6f6f !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    overflow: visible !important;
+    position: relative !important;
   }
 
-.mepTable {
-  width: 194.8mm;
-  min-width: 194.8mm;
-  border-collapse: collapse;
-  table-layout: fixed;
-  background: #fff;
-}
+  .mepScreenMeta {
+    display: none !important;
+  }
 
   .mepTable th,
   .mepTable td,
@@ -2185,17 +2163,15 @@ body.dark .mepTable th {
   --mep-main-offset-x: 3.6mm;
   --mep-main-offset-y: 0mm;
 
-  /* jetzt seitenbezogen statt nur nach links/rechts zu schieben */
---mep-sum-page-right: -1.2mm;
---mep-sum-page-top: 18.5mm;
+  --mep-sum-page-right: 1.4mm;
+  --mep-sum-page-top: 18.5mm;
   --mep-sum-offset-y: 0mm;
 
   --mep-row-h: 4.10mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
-
-  /* aus der Blattproportion des Originals abgeleitet */
- --mep-sum-total-w: 35.5mm;
+  --mep-sum-total-w: 35.5mm;
+}
 
 .mepContentFrame {
   position: relative;
@@ -2208,6 +2184,7 @@ body.dark .mepTable th {
   width: 227.8mm !important;
   min-height: 160mm !important;
 }
+
 .mepMainTableWrap {
   grid-column: 1 !important;
   margin-left: var(--mep-main-offset-x) !important;
