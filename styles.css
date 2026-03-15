@@ -2182,7 +2182,7 @@ body.dark .mepTable th {
 .mepBody {
   display: block !important;
   width: 227.8mm !important;
-  min-height: 160mm !important;
+  min-height: 155mm !important;
 }
 
 .mepMainTableWrap {
@@ -2192,13 +2192,13 @@ body.dark .mepTable th {
 }
 
 .mepTableOuter {
-  width: 197.8mm !important;
+  width: 199.8mm !important;
+  max-height: 144.5mm !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
-
 .mepTable {
   width: 197.8mm !important;
   min-width: 197.8mm !important;
