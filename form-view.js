@@ -180,7 +180,8 @@ const MEP_MEASURE_FIELDS = [
   { cssVar: "--mep-sum-top", label: "sum-top" },
   { cssVar: "--mep-row-h", label: "row-h" },
   { cssVar: "--mep-footer-offset-y", label: "footer-offset-y" },
-  { cssVar: "--mep-body-height", label: "body-height" }
+  { cssVar: "--mep-body-height", label: "body-height" },
+  { cssVar: "--mep-gap-main-sum", label: "gap-main-sum" }
 ];
 
 const MEP_CALIBRATION_STORAGE_KEY = "mep-calibration";
@@ -193,7 +194,8 @@ const MEP_CALIBRATION_DEFAULTS = {
   "--mep-sum-top": 19.5,
   "--mep-row-h": 4.05,
   "--mep-footer-offset-y": 1.15,
-  "--mep-body-height": 155
+  "--mep-body-height": 155,
+  "--mep-gap-main-sum": 0.9
 };
 
 let mepCalibrationBootstrapped = false;
@@ -211,12 +213,27 @@ function formatMepMm(value) {
 }
 
 function applyMepMeasureVar(cssVar, value) {
+  if (cssVar === "--mep-sum-left") {
+    const mainRight = getMepCssVarValue("--mep-main-right");
+    const gap = Number(value) - mainRight;
+    document.documentElement.style.setProperty("--mep-gap-main-sum", formatMepMm(gap));
+    return;
+  }
+
   document.documentElement.style.setProperty(cssVar, formatMepMm(value));
+}
+
+function getMepMeasureDisplayValue(cssVar) {
+  if (cssVar === "--mep-sum-left") {
+    return getMepCssVarValue("--mep-main-right") + getMepCssVarValue("--mep-gap-main-sum");
+  }
+
+  return getMepCssVarValue(cssVar);
 }
 
 function collectMepCalibrationSnapshot() {
   return MEP_MEASURE_FIELDS.reduce((acc, { cssVar }) => {
-    acc[cssVar] = getMepCssVarValue(cssVar);
+    acc[cssVar] = getMepMeasureDisplayValue(cssVar);
     return acc;
   }, {});
 }
@@ -286,7 +303,7 @@ function updateMepMeasureDynamicGuides() {
   const frameRect = frame.getBoundingClientRect();
   const guideMap = [
     { line: "main-bottom", selector: ".mepMainTableWrap .mepTableOuter", mode: "bottom" },
-    { line: "sum-last-bottom", selector: ".mepSumWrap .mepSumRow:last-child", mode: "bottom" },
+    { line: "sum-bottom", selector: ".mepSumWrap", mode: "sum-bottom" },
     { line: "footer-top", selector: ".mepFooter", mode: "top" },
     { line: "stand-bottom", selector: ".mepFooterStand", mode: "bottom" }
   ];
@@ -297,14 +314,17 @@ function updateMepMeasureDynamicGuides() {
     if (!target || !guide) return;
 
     const rect = target.getBoundingClientRect();
-    const top = (mode === "top" ? rect.top : rect.bottom) - frameRect.top;
+    let anchor = rect.bottom;
+    if (mode === "top") anchor = rect.top;
+    if (mode === "sum-bottom") anchor = frameRect.top + getMepCssVarValue("--mep-sum-bottom");
+    const top = anchor - frameRect.top;
     guide.style.top = `${Math.max(0, top)}px`;
   });
 }
 
 function buildMepMeasurementOverlay() {
   const labels = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     return `<span class="mepMeasureLabel" data-mep-var="${cssVar}">${label}: ${formatMepMm(value)}</span>`;
   }).join("");
 
@@ -313,7 +333,7 @@ function buildMepMeasurementOverlay() {
       <div class="mepMeasureGrid"></div>
       <div class="mepMeasureGuides">${labels}</div>
       <div class="mepMeasureGuideLine mepMeasureGuideLine--main" data-guide="main-bottom"></div>
-      <div class="mepMeasureGuideLine mepMeasureGuideLine--sum" data-guide="sum-last-bottom"></div>
+      <div class="mepMeasureGuideLine mepMeasureGuideLine--sum" data-guide="sum-bottom"></div>
       <div class="mepMeasureGuideLine mepMeasureGuideLine--footer" data-guide="footer-top"></div>
       <div class="mepMeasureGuideLine mepMeasureGuideLine--stand" data-guide="stand-bottom"></div>
     </div>
@@ -322,7 +342,7 @@ function buildMepMeasurementOverlay() {
 
 function renderMepMeasureControls() {
   const rows = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     return `
       <label class="mepMeasureControlRow">
         <span>${label}</span>
@@ -347,7 +367,7 @@ function renderMepMeasureControls() {
 
 function refreshMepMeasureUI() {
   MEP_MEASURE_FIELDS.forEach(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     const formatted = formatMepMm(value);
 
     document.querySelectorAll(`.mepMeasureLabel[data-mep-var="${cssVar}"]`).forEach((el) => {

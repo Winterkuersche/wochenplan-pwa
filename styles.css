@@ -1980,6 +1980,17 @@ body.dark .mepTable th {
   margin-top: var(--mep-footer-offset-y);
 }
 
+.mepScreenStage .mepContentFrame {
+  min-height: calc(var(--mep-footer-top) + 26mm);
+}
+
+.mepScreenStage .mepFooter {
+  position: absolute;
+  top: var(--mep-footer-top);
+  left: 0;
+  margin-top: 0;
+}
+
 .mepFooterGrid {
   display: grid;
   grid-template-columns: 1.05fr 1.95fr;
@@ -2059,12 +2070,21 @@ body.dark .mepTable th {
   --mep-main-top: 8.2mm;
   --mep-main-right: 176.1mm;
 
-  --mep-sum-left: 177mm;
+  --mep-gap-main-sum: 0.9mm;
+  --mep-sum-left: calc(var(--mep-main-right) + var(--mep-gap-main-sum));
   --mep-sum-top: 19.5mm;
   --mep-sum-right: 210mm;
 
   --mep-row-h: 4.05mm;
-  --mep-footer-offset-y: 1.15mm;
+  --mep-header-h: 12.2mm;
+  --mep-employee-block-h: calc(var(--mep-row-h) * 4);
+  --mep-employee-count: 9;
+  --mep-main-grid-h: calc(var(--mep-header-h) + (var(--mep-employee-block-h) * var(--mep-employee-count)));
+  --mep-main-bottom: calc(var(--mep-main-top) + var(--mep-main-grid-h));
+
+  --mep-sum-header-h: 8.9mm;
+  --mep-sum-header-gap: calc(var(--mep-row-h) * 1.5);
+  --mep-sum-row-count: 9;
 
   --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
   --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
@@ -2072,6 +2092,17 @@ body.dark .mepTable th {
   --mep-sum-total-w: calc(var(--mep-sum-col-w) * 2);
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
+  --mep-sum-bottom: calc(
+    var(--mep-sum-top)
+    + var(--mep-sum-header-h)
+    + var(--mep-sum-header-gap)
+    + (var(--mep-sum-box-h) * var(--mep-sum-row-count))
+    + (var(--mep-sum-gap-h) * (var(--mep-sum-row-count) - 1))
+  );
+
+  --mep-footer-gap: 0mm;
+  --mep-footer-offset-y: 1.15mm;
+  --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-gap) + var(--mep-footer-offset-y));
 }
 .mepContentFrame {
   position: relative;
@@ -2154,8 +2185,8 @@ body.dark .mepTable th {
   display: grid !important;
   grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w) !important;
   width: var(--mep-sum-total-w) !important;
-  height: 8.6mm !important;
-  margin-bottom: 0.3mm !important;
+  height: var(--mep-sum-header-h) !important;
+  margin-bottom: 0 !important;
 }
 
 .mepSumHeaderCell {
@@ -2185,7 +2216,7 @@ body.dark .mepTable th {
 }
 
 .mepSumHeader + .mepSumRow {
-  margin-top: calc(var(--mep-row-h) * 1.5) !important;
+  margin-top: var(--mep-sum-header-gap) !important;
 }
 
 .mepSumCell {
