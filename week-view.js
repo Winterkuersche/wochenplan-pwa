@@ -348,7 +348,13 @@ function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso
 
 function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
   removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
-  setAbsence(employeeId, fromIso, toIso, type, "");
+  setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
+
+  if (type === "vacation") {
+    syncVacationScheduleFromAbsences(employeeId);
+  }
+
+  commitPlanChange();
 }
 
 function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
@@ -398,7 +404,8 @@ function getWeekSelectValueForDay(emp, isoDate) {
 }
 
 function buildWeekSelectClass(value) {
-  return `weekSelect ${getShiftClassByKey(value === "U" || value === "K" || value === "AH" || value === "H" ? "-" : value)}`;
+  if (value === "U") return "weekSelect vacation";
+  return `weekSelect ${getShiftClassByKey(value === "K" || value === "AH" || value === "H" ? "-" : value)}`;
 }
 
 function isDialogBackedValue(value) {
@@ -425,6 +432,9 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   if (!entry) return false;
 
   state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
+  if (type === "vacation") {
+    syncVacationScheduleFromAbsences(employeeId);
+  }
   commitPlanChange();
   return true;
 }
@@ -442,6 +452,10 @@ function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
   // sonst bis zum Tag davor kürzen
   const prevDate = shiftIsoDateByDays(isoDate, -1);
   entry.to = prevDate;
+
+  if (type === "vacation") {
+    syncVacationScheduleFromAbsences(employeeId);
+  }
 
   commitPlanChange();
   return true;

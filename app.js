@@ -65,6 +65,7 @@ function normalizePlanEntry(entry) {
 
   const rawType = entry.type || entry.status || "off";
   const isExternalHelp = rawType === "external-help" || Boolean(entry.externalHelp);
+  const isVacation = rawType === "vacation";
   const type = isExternalHelp ? "external-help" : rawType;
   const status = entry.status || type;
 
@@ -74,7 +75,9 @@ function normalizePlanEntry(entry) {
 
   let minutes = 0;
 
-  if (typeof entry.minutes === "number") {
+  if (isVacation) {
+    minutes = 0;
+  } else if (typeof entry.minutes === "number") {
     minutes = Math.max(0, entry.minutes);
   } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
     minutes = hhmmToMinutes(entry.minutes);
@@ -101,8 +104,87 @@ function normalizePlanEntry(entry) {
     branch: entry.branch || "",
     externalHelp: isExternalHelp,
     minutes,
-    label: entry.label || (isExternalHelp ? "AH" : shiftKey || "")
+    label: entry.label || (isExternalHelp ? "AH" : isVacation ? "U" : shiftKey || "")
   };
+}
+
+function isVacationScheduleEntry(entry) {
+  return Boolean(entry) && entry.type === "vacation";
+}
+
+function setVacationEntry(employeeId, isoDate, options = {}) {
+  if (!employeeId || !isoDate) return null;
+
+  return updateEmployeeDay(
+    employeeId,
+    isoDate,
+    () => ({
+      type: "vacation",
+      status: "vacation",
+      label: "U",
+      minutes: 0,
+      note: options.note || ""
+    }),
+    { commit: options.commit !== false }
+  );
+}
+
+function clearVacationEntry(employeeId, isoDate, options = {}) {
+  const current = getPlanEntry(employeeId, isoDate);
+  if (!isVacationScheduleEntry(current)) return;
+  clearPlanEntry(employeeId, isoDate, options);
+}
+
+function syncVacationScheduleFromAbsences(employeeId = null) {
+  const targetEmployeeIds = employeeId
+    ? [employeeId]
+    : state.employees.map((emp) => emp.id);
+
+  targetEmployeeIds.forEach((empId) => {
+    Object.entries(state.schedule || {}).forEach(([isoDate, dayEntries]) => {
+      if (!dayEntries || !dayEntries[empId]) return;
+      if (isVacationScheduleEntry(dayEntries[empId])) {
+        delete dayEntries[empId];
+        cleanupScheduleDay(isoDate);
+      }
+    });
+
+    (state.absences || [])
+      .filter((entry) => entry?.employeeId === empId && entry.type === "vacation")
+      .forEach((entry) => {
+        let cursor = entry.from;
+
+        while (cursor <= entry.to) {
+          setVacationEntry(empId, cursor, { commit: false, note: entry.note || "" });
+          cursor = shiftIsoDateByDays(cursor, 1);
+        }
+      });
+  });
+}
+
+function getUsedVacationDaysFromScheduleForEmployee(employeeId, year = new Date().getFullYear()) {
+  if (!employeeId || !year) return 0;
+
+  return Object.entries(state.schedule || {}).reduce((sum, [isoDate, dayEntries]) => {
+    if (!isoDate.startsWith(`${year}-`)) return sum;
+    if (!isWorkdayForVacation(isoDate)) return sum;
+
+    const entry = dayEntries?.[employeeId];
+    return sum + (isVacationScheduleEntry(entry) ? 1 : 0);
+  }, 0);
+}
+
+function refreshEmployeeVacationCounters(year = new Date().getFullYear()) {
+  state.employees.forEach((emp) => {
+    const totalVacationDays = Number(emp.totalVacationDays ?? emp.vacationDays ?? 30) || 0;
+    const usedVacationDays = getUsedVacationDaysFromScheduleForEmployee(emp.id, year);
+    const remainingVacationDays = totalVacationDays - usedVacationDays;
+
+    emp.totalVacationDays = totalVacationDays;
+    emp.vacationDays = totalVacationDays;
+    emp.usedVacationDays = usedVacationDays;
+    emp.remainingVacationDays = remainingVacationDays;
+  });
 }
 
 function normalizeSchedule(schedule) {
@@ -243,7 +325,8 @@ function setExternalHelp(employeeId, isoDate, branch, minutes) {
   });
 }
 
-function setAbsence(employeeId, from, to, type, note = "") {
+function setAbsence(employeeId, from, to, type, note = "", options = {}) {
+  const { commit = true } = options;
   const absence = {
     id: crypto.randomUUID
       ? crypto.randomUUID()
@@ -258,7 +341,9 @@ function setAbsence(employeeId, from, to, type, note = "") {
   state.absences.push(absence);
   state.absences = normalizeAbsences(state.absences);
 
-  commitPlanChange();
+  if (commit) {
+    commitPlanChange();
+  }
 
   return absence;
 }
@@ -278,12 +363,15 @@ function clearDay(employeeId, isoDate, options = {}) {
   clearPlanEntry(employeeId, isoDate, { commit: false });
 
   removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
+  syncVacationScheduleFromAbsences(employeeId);
 
   if (commit) {
     commitPlanChange();
   }
 }
 function commitPlanChange() {
+  refreshEmployeeVacationCounters();
+  saveMasterData();
   savePlanData();
   renderAllViews();
 }
@@ -422,31 +510,31 @@ function saveUiState() {
 /* ========= DEFAULT DATA ========= */
 function createDefaultEmployees() {
   return [
-    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", vacationDays: 30, birthDate: "",
+    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", vacationDays: 30, birthDate: "",
+    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", vacationDays: 30, birthDate: "",
+    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", vacationDays: 30, birthDate: "",
+    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", vacationDays: 30, birthDate: "",
+    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_6", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_6", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_7", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_7", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_8", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_8", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_9", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_9", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_10", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_10", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_11", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_11", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_12", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_12", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_13", name: "", roleKey: "", target: "", vacationDays: 30, birthDate: "",
+    { id: "emp_13", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} }
   ];
 }
@@ -458,7 +546,10 @@ function defaultMasterState() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
-      vacationDays: emp.vacationDays,
+      totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
+      usedVacationDays: Number(emp.usedVacationDays ?? 0),
+      remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
+      vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate,
       serviceBonus: emp.serviceBonus
     }))
@@ -487,7 +578,10 @@ function buildInitialState() {
     name: emp.name || "",
     roleKey: emp.roleKey || "",
     target: emp.target || roleToTarget(emp.roleKey || ""),
-    vacationDays: Number(emp.vacationDays ?? 30),
+    totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
+    usedVacationDays: Number(emp.usedVacationDays ?? 0),
+    remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
+    vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
     birthDate: emp.birthDate || "",
     serviceBonus: Boolean(emp.serviceBonus),
     shifts: {}
@@ -521,7 +615,10 @@ function saveMasterData() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
-      vacationDays: Number(emp.vacationDays ?? 30),
+      totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
+      usedVacationDays: Number(emp.usedVacationDays ?? 0),
+      remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
+      vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate || "",
       serviceBonus: Boolean(emp.serviceBonus)
     }))
@@ -915,18 +1012,32 @@ vacationInput.type = "number";
 vacationInput.min = "0";
 vacationInput.max = "36";
 vacationInput.placeholder = "Urlaub";
-vacationInput.value = Number(emp.vacationDays ?? 30);
+vacationInput.value = Number(emp.totalVacationDays ?? emp.vacationDays ?? 30);
 
 vacationInput.addEventListener("change", () => {
   const raw = Number(vacationInput.value || 0);
   const clamped = Math.max(0, Math.min(36, raw));
 
+  emp.totalVacationDays = clamped;
   emp.vacationDays = clamped;
+  emp.remainingVacationDays = clamped - Number(emp.usedVacationDays ?? 0);
   vacationInput.value = clamped;
 
   saveMasterData();
   renderAllViews();
 });
+
+    const usedVacationInfo = document.createElement("input");
+    usedVacationInfo.type = "text";
+    usedVacationInfo.value = String(Number(emp.usedVacationDays ?? 0));
+    usedVacationInfo.title = "Genommene Urlaubstage";
+    usedVacationInfo.readOnly = true;
+
+    const remainingVacationInfo = document.createElement("input");
+    remainingVacationInfo.type = "text";
+    remainingVacationInfo.value = String(Number(emp.remainingVacationDays ?? 0));
+    remainingVacationInfo.title = "Resturlaub";
+    remainingVacationInfo.readOnly = true;
     
 
     const birthDateInput = document.createElement("input");
@@ -952,6 +1063,8 @@ serviceBonusInput.addEventListener("change", () => {
     row.appendChild(roleSel);
     row.appendChild(targetInput);
     row.appendChild(vacationInput);
+    row.appendChild(usedVacationInfo);
+    row.appendChild(remainingVacationInfo);
     row.appendChild(birthDateInput);
     row.appendChild(serviceBonusInput);
 
@@ -1155,6 +1268,8 @@ window.addEventListener("load", () => {
   }
 
   updateDarkModeButton();
+  syncVacationScheduleFromAbsences();
+  refreshEmployeeVacationCounters();
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
   renderAll();
