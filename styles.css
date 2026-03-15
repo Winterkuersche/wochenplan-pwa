@@ -2181,8 +2181,8 @@ body.dark .mepTable th {
   --mep-main-offset-y: 0mm;
 
   /* jetzt seitenbezogen statt nur nach links/rechts zu schieben */
- --mep-sum-page-right: 7mm;
---mep-sum-page-top: 44mm;
+ --mep-sum-page-right: 2.5mm;
+--mep-sum-page-top: 17.5mm;
   --mep-sum-offset-y: 0mm;
 
   --mep-row-h: 4.10mm;
