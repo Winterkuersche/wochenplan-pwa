@@ -1062,3 +1062,11 @@ window.addEventListener("load", () => {
   syncWeekRangeFromActiveWeek();
   renderAll();
 });
+// DEBUG toggle with key "D"
+document.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() === "d") {
+    const root = document.documentElement;
+    const active = root.getAttribute("data-debug") === "1";
+    root.setAttribute("data-debug", active ? "0" : "1");
+  }
+});
