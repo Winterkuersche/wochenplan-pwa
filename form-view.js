@@ -171,6 +171,83 @@ function renderHandText(text, seedText = "") {
   return `<span class="mepHand ${handClass}">${safeText}</span>`;
 }
 
+const MEP_MEASURE_FIELDS = [
+  { cssVar: "--mep-main-left", label: "main-left" },
+  { cssVar: "--mep-main-right", label: "main-right" },
+  { cssVar: "--mep-sum-left", label: "sum-left" },
+  { cssVar: "--mep-sum-right", label: "sum-right" },
+  { cssVar: "--mep-sum-top", label: "sum-top" }
+];
+
+let mepMeasureModeEnabled = false;
+
+function getMepCssVarValue(cssVar) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  const match = value.match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function formatMepMm(value) {
+  return `${Number(value).toFixed(2)}mm`;
+}
+
+function applyMepMeasureVar(cssVar, value) {
+  document.documentElement.style.setProperty(cssVar, formatMepMm(value));
+}
+
+function buildMepMeasurementOverlay() {
+  const labels = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
+    const value = getMepCssVarValue(cssVar);
+    return `<span class="mepMeasureLabel" data-mep-var="${cssVar}">${label}: ${formatMepMm(value)}</span>`;
+  }).join("");
+
+  return `
+    <div class="mepMeasureOverlay no-print" aria-hidden="true">
+      <div class="mepMeasureGrid"></div>
+      <div class="mepMeasureGuides">${labels}</div>
+    </div>
+  `;
+}
+
+function renderMepMeasureControls() {
+  const rows = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
+    const value = getMepCssVarValue(cssVar);
+    return `
+      <label class="mepMeasureControlRow">
+        <span>${label}</span>
+        <div class="mepMeasureControlInputWrap">
+          <button type="button" data-step="-0.1" data-mep-var="${cssVar}">−</button>
+          <input type="number" step="0.1" value="${value.toFixed(2)}" data-mep-var="${cssVar}">
+          <span>mm</span>
+          <button type="button" data-step="0.1" data-mep-var="${cssVar}">+</button>
+        </div>
+      </label>
+    `;
+  }).join("");
+
+  return `
+    <div id="mepMeasurePanel" class="mepMeasurePanel no-print" ${mepMeasureModeEnabled ? "" : "hidden"}>
+      <strong>MEP Messwerte</strong>
+      ${rows}
+    </div>
+  `;
+}
+
+function refreshMepMeasureUI() {
+  MEP_MEASURE_FIELDS.forEach(({ cssVar, label }) => {
+    const value = getMepCssVarValue(cssVar);
+    const formatted = formatMepMm(value);
+
+    document.querySelectorAll(`.mepMeasureLabel[data-mep-var="${cssVar}"]`).forEach((el) => {
+      el.textContent = `${label}: ${formatted}`;
+    });
+
+    document.querySelectorAll(`.mepMeasureControlInputWrap input[data-mep-var="${cssVar}"]`).forEach((el) => {
+      el.value = value.toFixed(2);
+    });
+  });
+}
+
 
 function buildEmployeeMainRowsForWeek(emp, weekDays) {
   const rows = [
@@ -498,6 +575,7 @@ function buildWeekSheet(sheetModel) {
     <section class="mepPrintPage">
       <div class="printSheet mepSheet mepUseTemplate">
         <div class="mepContentFrame">
+          ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
           ${buildMepHeader(filledSheetModel)}
 
           <div class="mepBody">
@@ -514,20 +592,58 @@ function buildWeekSheet(sheetModel) {
 function bindFormPager(sheetModels) {
   const prevBtn = document.getElementById("mepPrevPage");
   const nextBtn = document.getElementById("mepNextPage");
-  if (!prevBtn || !nextBtn) return;
+  const measureModeToggle = document.getElementById("mepMeasureModeToggle");
 
-  prevBtn.disabled = getCurrentFormSheetIndex(sheetModels) <= 0;
-  nextBtn.disabled = getCurrentFormSheetIndex(sheetModels) >= sheetModels.length - 1;
+  if (prevBtn && nextBtn) {
+    prevBtn.disabled = getCurrentFormSheetIndex(sheetModels) <= 0;
+    nextBtn.disabled = getCurrentFormSheetIndex(sheetModels) >= sheetModels.length - 1;
 
-  prevBtn.addEventListener("click", () => {
-    setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) - 1, sheetModels);
-    renderFormView();
-  });
+    prevBtn.addEventListener("click", () => {
+      setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) - 1, sheetModels);
+      renderFormView();
+    });
 
-  nextBtn.addEventListener("click", () => {
-    setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) + 1, sheetModels);
-    renderFormView();
-  });
+    nextBtn.addEventListener("click", () => {
+      setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) + 1, sheetModels);
+      renderFormView();
+    });
+  }
+
+  if (measureModeToggle) {
+    measureModeToggle.checked = mepMeasureModeEnabled;
+    measureModeToggle.addEventListener("change", (event) => {
+      mepMeasureModeEnabled = Boolean(event.target.checked);
+      renderFormView();
+    });
+  }
+
+  const measurePanel = document.getElementById("mepMeasurePanel");
+  if (measurePanel) {
+    measurePanel.addEventListener("click", (event) => {
+      const btn = event.target.closest("button[data-mep-var]");
+      if (!btn) return;
+
+      const cssVar = btn.dataset.mepVar;
+      const step = Number(btn.dataset.step || 0);
+      if (!cssVar || !Number.isFinite(step)) return;
+
+      const nextValue = getMepCssVarValue(cssVar) + step;
+      applyMepMeasureVar(cssVar, nextValue);
+      refreshMepMeasureUI();
+    });
+
+    measurePanel.addEventListener("input", (event) => {
+      const input = event.target.closest("input[data-mep-var]");
+      if (!input) return;
+
+      const cssVar = input.dataset.mepVar;
+      const value = Number(input.value);
+      if (!cssVar || !Number.isFinite(value)) return;
+
+      applyMepMeasureVar(cssVar, value);
+      refreshMepMeasureUI();
+    });
+  }
 }
 function renderFormPager(sheetModels, currentIndex) {
   const current = sheetModels[currentIndex];
@@ -540,8 +656,13 @@ function renderFormPager(sheetModels, currentIndex) {
         <strong>Originalformular</strong>
         <span>Woche ${current.weekIndex + 1} · Seite ${current.pageIndex + 1} / ${current.pageCount}</span>
       </div>
+      <label class="mepMeasureToggle">
+        <input type="checkbox" id="mepMeasureModeToggle" ${mepMeasureModeEnabled ? "checked" : ""}>
+        MEP Messmodus
+      </label>
       <button type="button" id="mepNextPage">▶</button>
     </div>
+    ${renderMepMeasureControls()}
   `;
 }
 function renderFormView() {
@@ -568,7 +689,7 @@ function renderFormView() {
   container.innerHTML = `
     ${renderFormPager(sheetModels, currentIndex)}
 
-    <div class="mepScreenStage">
+    <div class="mepScreenStage ${mepMeasureModeEnabled ? "mepMeasureMode" : ""}">
       ${screenHtml}
     </div>
 
@@ -579,4 +700,3 @@ function renderFormView() {
 
   bindFormPager(sheetModels);
 }
-
