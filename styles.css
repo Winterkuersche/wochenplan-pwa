@@ -2191,8 +2191,8 @@ body.dark .mepTable th {
 
 .mepBody {
   display: grid !important;
-  grid-template-columns: 201.8mm 40mm !important;
-  column-gap: 4.8mm !important;
+  grid-template-columns: 201.8mm 39.5mm !important;
+  column-gap: 4.6mm !important;
   align-items: start !important;
 }
 
