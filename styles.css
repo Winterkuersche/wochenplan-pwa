@@ -2168,7 +2168,7 @@ body.dark .mepTable th {
 }
 
 .mepSumHeader + .mepSumRow {
-  margin-top: var(--mep-row-h) !important;
+  margin-top: calc(var(--mep-row-h) * 0.5) !important;
 }
 
 .mepSumCell {
