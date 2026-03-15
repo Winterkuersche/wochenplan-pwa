@@ -2201,7 +2201,6 @@ body.dark .mepTable th {
 
 .mepBody {
   display: block !important;
-  position: relative !important;
   width: 227.8mm !important;
   min-height: 160mm !important;
 }
