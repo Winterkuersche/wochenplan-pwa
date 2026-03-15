@@ -706,6 +706,7 @@ function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
   return `
     <section class="mepPrintPage">
       <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
+        ${useTemplate ? '<img class="mepTemplateReference" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
         <div class="mepContentFrame">
           ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
           ${buildMepHeader(filledSheetModel)}

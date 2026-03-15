@@ -2062,23 +2062,18 @@ body.dark .mepTable th {
 /* Optionaler Kalibriermodus mit Referenzbild */
 .mepSheet.mepUseTemplate {
   position: relative;
-  --mep-template-x: var(--mep-frame-left);
-  --mep-template-y: var(--mep-frame-top);
-  --mep-template-width: var(--mep-body-width);
-  --mep-template-height: var(--mep-body-height);
   --mep-template-opacity: 0.22;
 }
 
-.mepSheet.mepUseTemplate::before {
-  content: "";
+.mepTemplateReference {
   position: absolute;
-  inset: 0;
-  background-image: url("assets/mep-template-reference.jpg");
-  background-repeat: no-repeat;
-  background-position: var(--mep-template-x) var(--mep-template-y);
-  background-size: var(--mep-template-width) var(--mep-template-height);
+  left: var(--mep-main-left);
+  top: var(--mep-main-top);
+  width: var(--mep-body-width);
+  height: var(--mep-body-height);
   opacity: var(--mep-template-opacity);
   pointer-events: none;
+  z-index: 0;
 }
 
 .mepSheet.mepUseTemplate .mepContentFrame {
