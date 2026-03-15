@@ -1,3 +1,8 @@
+function getVacationEntryById(entryId) {
+  if (!entryId) return null;
+  return (state.absences || []).find((entry) => entry?.id === entryId) || null;
+}
+
 function formatVacationRange(entry) {
   if (!entry?.from || !entry?.to) return "—";
 
@@ -84,7 +89,7 @@ function bindVacationRangeActions() {
       const entryId = btn.dataset.entryId;
 
       const emp = state.employees.find((e) => e.id === empId);
-      const entry = (state.absences || []).find((a) => a.id === entryId);
+      const entry = getVacationEntryById(entryId);
 
       if (!emp || !entry) return;
 
@@ -95,7 +100,7 @@ function bindVacationRangeActions() {
   document.querySelectorAll(".vacationRangeDeleteBtn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const entryId = btn.dataset.entryId;
-      const entry = (state.absences || []).find((a) => a.id === entryId);
+      const entry = getVacationEntryById(entryId);
 
       if (!entry) return;
 
