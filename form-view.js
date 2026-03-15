@@ -189,18 +189,18 @@ const MEP_MEASURE_FIELDS = [
 
 const MEP_CALIBRATION_STORAGE_KEY = "mep-calibration";
 const MEP_CALIBRATION_DEFAULTS = {
-  "--mep-main-left": 15.0,
-  "--mep-main-top": 8.9,
-  "--mep-main-right": 176.0,
-  "--mep-sum-left": 177.3,
-  "--mep-sum-right": 209.5,
-  "--mep-sum-top": 19.9,
-  "--mep-ref-left": 13,
-  "--mep-ref-top": 6,
-  "--mep-ref-width": 198,
-  "--mep-row-h": 4.05,
+  "--mep-main-left": 23.5,
+  "--mep-main-top": 31,
+  "--mep-main-right": 232.5,
+  "--mep-sum-left": 243,
+  "--mep-sum-right": 276,
+  "--mep-sum-top": 31,
+  "--mep-ref-left": 0,
+  "--mep-ref-top": 0,
+  "--mep-ref-width": 297,
+  "--mep-row-h": 3.85,
   "--mep-footer-offset-y": 1.15,
-  "--mep-body-height": 156.6,
+  "--mep-body-height": 156,
   "--mep-gap-main-sum": 1.3
 };
 
@@ -218,20 +218,62 @@ function formatMepMm(value) {
   return `${Number(value).toFixed(2)}mm`;
 }
 
+function getMepCalibrationRange(cssVar) {
+  const pageWidth = 297;
+  const pageHeight = 210;
+  const ranges = {
+    "--mep-main-left": [0, pageWidth],
+    "--mep-main-right": [0, pageWidth],
+    "--mep-sum-left": [0, pageWidth],
+    "--mep-sum-right": [0, pageWidth],
+    "--mep-main-top": [0, pageHeight],
+    "--mep-sum-top": [0, pageHeight],
+    "--mep-ref-left": [0, pageWidth],
+    "--mep-ref-top": [0, pageHeight],
+    "--mep-ref-width": [1, pageWidth],
+    "--mep-row-h": [0.5, 10],
+    "--mep-footer-offset-y": [-20, 20],
+    "--mep-body-height": [10, pageHeight],
+    "--mep-gap-main-sum": [-50, 50]
+  };
+
+  return ranges[cssVar] || [-1000, 1000];
+}
+
+function isFiniteMepCalibrationValue(cssVar, value) {
+  if (!Number.isFinite(value)) return false;
+  const [min, max] = getMepCalibrationRange(cssVar);
+  return value >= min && value <= max;
+}
+
+function syncMepGapMainSumVar() {
+  const gap = getMepCssVarValue("--mep-sum-left") - getMepCssVarValue("--mep-main-right");
+  document.documentElement.style.setProperty("--mep-gap-main-sum", formatMepMm(gap));
+}
+
 function applyMepMeasureVar(cssVar, value) {
-  if (cssVar === "--mep-sum-left") {
-    const mainRight = getMepCssVarValue("--mep-main-right");
-    const gap = Number(value) - mainRight;
-    document.documentElement.style.setProperty("--mep-gap-main-sum", formatMepMm(gap));
+  if (!isFiniteMepCalibrationValue(cssVar, Number(value))) {
     return;
   }
 
-  document.documentElement.style.setProperty(cssVar, formatMepMm(value));
+  if (cssVar === "--mep-gap-main-sum") {
+    const mainRight = getMepCssVarValue("--mep-main-right");
+    const nextSumLeft = mainRight + Number(value);
+    document.documentElement.style.setProperty("--mep-sum-left", formatMepMm(nextSumLeft));
+    syncMepGapMainSumVar();
+    return;
+  }
+
+  document.documentElement.style.setProperty(cssVar, formatMepMm(Number(value)));
+
+  if (cssVar === "--mep-main-right" || cssVar === "--mep-sum-left") {
+    syncMepGapMainSumVar();
+  }
 }
 
 function getMepMeasureDisplayValue(cssVar) {
-  if (cssVar === "--mep-sum-left") {
-    return getMepCssVarValue("--mep-main-right") + getMepCssVarValue("--mep-gap-main-sum");
+  if (cssVar === "--mep-gap-main-sum") {
+    return getMepCssVarValue("--mep-sum-left") - getMepCssVarValue("--mep-main-right");
   }
 
   return getMepCssVarValue(cssVar);
@@ -273,11 +315,11 @@ function initMepCalibration() {
     const storedValue = stored ? Number(stored[cssVar]) : NaN;
     const cssValue = Number(cssSnapshot[cssVar]);
     const fallback = Number(MEP_CALIBRATION_DEFAULTS[cssVar]);
-    const nextValue = Number.isFinite(storedValue)
+    const nextValue = isFiniteMepCalibrationValue(cssVar, storedValue)
       ? storedValue
-      : (Number.isFinite(cssValue) && cssValue !== 0 ? cssValue : fallback);
+      : (isFiniteMepCalibrationValue(cssVar, cssValue) ? cssValue : fallback);
 
-    if (Number.isFinite(nextValue)) {
+    if (isFiniteMepCalibrationValue(cssVar, nextValue)) {
       applyMepMeasureVar(cssVar, nextValue);
     }
   });
