@@ -2181,8 +2181,8 @@ body.dark .mepTable th {
   --mep-main-offset-y: 0mm;
 
   /* jetzt seitenbezogen statt nur nach links/rechts zu schieben */
-  --mep-sum-page-right: 8.5mm;
-  --mep-sum-page-top: 37.8mm;
+  --mep-sum-page-right: 5.5mm;
+  --mep-sum-page-top: 46mm;
   --mep-sum-offset-y: 0mm;
 
   --mep-row-h: 4.10mm;
@@ -2190,7 +2190,7 @@ body.dark .mepTable th {
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
 
   /* aus der Blattproportion des Originals abgeleitet */
-  --mep-sum-total-w: 43.2mm;
+  --mep-sum-total-w: 32mm;
 }
 
 .mepContentFrame {
