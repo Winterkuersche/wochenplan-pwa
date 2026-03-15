@@ -2193,15 +2193,14 @@ body.dark .mepTable th {
 
 .mepTableOuter {
   width: 199.8mm !important;
-  max-height: 144.5mm !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
 .mepTable {
-  width: 197.8mm !important;
-  min-width: 197.8mm !important;
+  width: 199.8mm !important;
+  min-width: 199.8mm !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
