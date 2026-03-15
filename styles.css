@@ -2065,8 +2065,8 @@ body.dark .mepTable th {
   --mep-main-right: 196.1mm;
   --mep-main-bottom: 0mm;
 
-  --mep-sum-left: 190.5mm;
-  --mep-sum-top: 19.2mm;
+  --mep-sum-left: 210.2mm;
+  --mep-sum-top: 18.7mm;
   --mep-sum-right: 226mm;
   --mep-sum-bottom: 0mm;
 
@@ -2079,7 +2079,8 @@ body.dark .mepTable th {
   --mep-row-h: 4.05mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-total-w: 56mm;
+  --mep-sum-col-w: 11.8mm;
+  --mep-sum-total-w: calc(var(--mep-sum-col-w) * 2);
 }
 
 .mepContentFrame {
@@ -2097,25 +2098,30 @@ body.dark .mepTable th {
 .mepMainTableWrap {
   grid-column: 1 !important;
   display: inline-block !important;
-  width: fit-content !important;
+  width: auto !important;
   margin-left: var(--mep-main-left) !important;
   margin-top: var(--mep-main-top) !important;
 }
 
 .mepTableOuter {
-  width: 214mm !important;
+  width: 207.2mm !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
 .mepTable {
-  width: 208.4mm !important;
-  min-width: 208.4mm !important;
+  width: 206.6mm !important;
+  min-width: 206.6mm !important;
+  max-width: 206.6mm !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
 }
+
+.mepDayCol { width: 19.8mm !important; }
+.mepWeekCol { width: 11.8mm !important; }
+.mepMonthCol { width: 11.8mm !important; }
 
 .mepTable th,
 .mepTable td {
@@ -2156,7 +2162,7 @@ body.dark .mepTable th {
 
 .mepSumHeader {
   display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w) !important;
   width: var(--mep-sum-total-w) !important;
   height: 8.6mm !important;
   margin-bottom: 0.3mm !important;
@@ -2169,15 +2175,16 @@ body.dark .mepTable th {
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
   font-size: 2.0mm !important;
-  line-height: 1.02 !important;
-  padding: 0 0 0.5mm 0 !important;
+  line-height: 1 !important;
+  padding: 0.05mm 0 0.35mm 0 !important;
   font-weight: 700 !important;
   text-align: center !important;
+  vertical-align: middle !important;
 }
 
 .mepSumRow {
   display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
+  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w) !important;
   width: var(--mep-sum-total-w) !important;
   height: var(--mep-sum-box-h) !important;
   margin: 0 0 var(--mep-sum-gap-h) 0 !important;
