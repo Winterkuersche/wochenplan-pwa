@@ -1764,6 +1764,11 @@ body.dark .mepTable th {
   --mep-footer-offset-y: 1.15mm;
   --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-offset-y));
 
+  /* Referenzbild-Kalibrierung (eigenständige Geometrie) */
+  --mep-ref-left: 13mm;
+  --mep-ref-top: 6mm;
+  --mep-ref-width: 198mm;
+
   /* Hilfswerte für Overlay/Template */
   --mep-body-width: 227.8mm;
   --mep-body-height: 156.6mm;
@@ -2065,16 +2070,17 @@ body.dark .mepTable th {
   --mep-template-opacity: 0.22;
 }
 
-.mepTemplateReference {
+.mepReferenceImage {
   position: absolute;
-  left: var(--mep-main-left);
-  top: var(--mep-main-top);
-  width: var(--mep-body-width);
+  left: var(--mep-ref-left);
+  top: var(--mep-ref-top);
+  width: var(--mep-ref-width);
   height: auto;
   display: block;
   opacity: var(--mep-template-opacity);
   pointer-events: none;
   z-index: 0;
+  object-fit: contain;
 }
 
 .mepSheet.mepUseTemplate .mepContentFrame {
@@ -2247,6 +2253,21 @@ body.dark .mepTable th {
 .mepMeasureLabel[data-mep-var="--mep-sum-top"] {
   left: calc(var(--mep-sum-left) + 1.4mm);
   top: var(--mep-sum-top);
+}
+
+.mepMeasureLabel[data-mep-var="--mep-ref-left"] {
+  left: var(--mep-ref-left);
+  top: 13.6mm;
+}
+
+.mepMeasureLabel[data-mep-var="--mep-ref-top"] {
+  left: calc(var(--mep-ref-left) + 1.4mm);
+  top: var(--mep-ref-top);
+}
+
+.mepMeasureLabel[data-mep-var="--mep-ref-width"] {
+  left: calc(var(--mep-ref-left) + var(--mep-ref-width) - 21mm);
+  top: 16.8mm;
 }
 
 @media print {
