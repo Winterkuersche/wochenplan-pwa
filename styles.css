@@ -889,17 +889,18 @@ select {
   text-align: center;
 }
 
+
 .mepDayCol {
-  width: 19.2mm;
+  width: 20.2mm;
 }
 
 .mepWeekCol {
-  width: 12mm;
+  width: 12.6mm;
   border-left-width: 0.32mm !important;
 }
 
 .mepMonthCol {
-  width: 12mm;
+  width: 12.6mm;
 }
 
 .mepNameCell,
@@ -1837,7 +1838,7 @@ body.dark .mepTable th {
 .mepFuncCol { width: 11mm; }
 .mepPlanCol { width: 12mm; }
 .mepTypeCol { width: 14mm; text-align: center; }
-.mepDayCol { width: 19.2mm; }
+.mepDayCol { width: 20.2mm; }
 
 .mepNameCell,
 .mepFuncText,
@@ -2109,8 +2110,8 @@ body.dark .mepTable th {
   background: #fff !important;
 }
 .mepTable {
-  width: 214mm !important;
-  min-width: 214mm !important;
+  width: 208.4mm !important;
+  min-width: 208.4mm !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
@@ -2169,6 +2170,7 @@ body.dark .mepTable th {
   background: #fff !important;
   font-size: 2.0mm !important;
   line-height: 1.02 !important;
+  padding: 0 0 0.5mm 0 !important;
   font-weight: 700 !important;
   text-align: center !important;
 }
