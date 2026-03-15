@@ -1820,7 +1820,7 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 31mm;
-  height: 13.95mm;
+  height: 14.6mm;
   margin-bottom: 2.02mm;
 }
 
@@ -2148,7 +2148,7 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 31mm;
-  height: 13.95mm;
+  height: 14.6mm;
   margin-bottom: 2.02mm;
 }
 
@@ -2176,10 +2176,10 @@ body.dark .mepTable th {
   --mep-content-offset-x: 3mm;
   --mep-content-offset-y: 0mm;
 
-  --mep-main-offset-x: 1.6mm;
+  --mep-main-offset-x: 3.6mm;
   --mep-main-offset-y: 0mm;
 
-  --mep-sum-offset-x: 6.5mm;
+ --mep-sum-offset-x: 9mm;
   --mep-sum-offset-y: 0mm;
 }
 
@@ -2248,7 +2248,7 @@ body.dark .mepTable th {
   grid-column: 2 !important;
   margin-top: calc(9.9mm + var(--mep-sum-offset-y)) !important;
   margin-left: var(--mep-sum-offset-x) !important;
-  width: 40mm !important;
+ width: 43mm; 
   display: flex !important;
   flex-direction: column !important;
 }
@@ -2256,7 +2256,7 @@ body.dark .mepTable th {
 .mepSumHeader {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  width: 40mm !important;
+  width: 43mm;
   height: 11.4mm !important;
   margin-bottom: 1mm !important;
 }
@@ -2276,8 +2276,8 @@ body.dark .mepTable th {
 .mepSumRow {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  width: 40mm !important;
-  height: 15.8mm !important;
+ width: 43mm;
+  height: 14.6mm;
   margin-bottom: 0 !important;
 }
 
