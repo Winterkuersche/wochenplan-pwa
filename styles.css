@@ -1747,6 +1747,23 @@ body.dark .mepTable th {
   --mep-header-line-height: 1.02;
   --mep-header-label-font-size: 1.85mm;
 
+  --mep-cell-value-font-size: 2.78mm;
+  --mep-cell-value-line-height: 0.9;
+  --mep-cell-value-offset-y: 0.24mm;
+
+  --mep-mini-label-font-size: 1.72mm;
+  --mep-mini-label-line-height: 0.96;
+
+  --mep-name-font-size: 3.48mm;
+  --mep-side-meta-font-size: 2.92mm;
+  --mep-side-meta-line-height: 0.98;
+  --mep-side-meta-offset-y: 0.34mm;
+
+  --mep-sum-value-font-size: 2.58mm;
+  --mep-sum-label-font-size: 1.92mm;
+  --mep-sum-label-line-height: 0.96;
+  --mep-sum-value-offset-y: 0.3mm;
+
   --mep-footer-font-size: 1.72mm;
   --mep-footer-line-height: 1.03;
   --mep-footer-heading-size: 1.78mm;
@@ -1931,6 +1948,15 @@ body.dark .mepTable th {
   vertical-align: middle;
 }
 
+.mepNameCell,
+.mepFuncText,
+.mepPlanText,
+.mepTypeCell,
+.mepDayValueCell {
+  padding-top: 0.06mm;
+  padding-bottom: 0.04mm;
+}
+
 .mepTable thead th {
   text-align: center;
   font-weight: 700;
@@ -1946,6 +1972,14 @@ body.dark .mepTable th {
   height: 3.45mm;
   font-size: 1.9mm;
   line-height: 1;
+}
+
+.mepTypeCell {
+  font-size: var(--mep-mini-label-font-size);
+  line-height: var(--mep-mini-label-line-height);
+  text-align: center;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .mepDayDate {
@@ -1978,9 +2012,9 @@ body.dark .mepTable th {
   justify-content: center;
   border: 0.28mm solid #6f6f6f;
   background: #fff;
-  font-size: 2mm;
-  line-height: 1;
-  padding: 0.05mm 0 0.35mm 0;
+  font-size: var(--mep-sum-label-font-size);
+  line-height: var(--mep-sum-label-line-height);
+  padding: 0.05mm 0 0.22mm 0;
   font-weight: 700;
   text-align: center;
 }
@@ -2007,8 +2041,8 @@ body.dark .mepTable th {
   justify-content: center;
   border: 0.28mm solid #6f6f6f;
   background: #fff;
-  font-size: 2.75mm;
-  line-height: 1;
+  font-size: var(--mep-sum-value-font-size);
+  line-height: 0.94;
   text-align: center;
   overflow: hidden;
 }
@@ -2076,10 +2110,26 @@ body.dark .mepTable th {
   letter-spacing: 0.01mm;
 }
 
-.mepNameCell .mepHand { font-size: 3.65mm; }
+.mepNameCell .mepHand {
+  font-size: var(--mep-name-font-size);
+  line-height: 0.96;
+}
 .mepFuncText .mepHand,
 .mepPlanText .mepHand,
-.mepSumCell .mepHand { font-size: 3.1mm; }
+.mepSumCell .mepHand {
+  font-size: var(--mep-side-meta-font-size);
+  line-height: var(--mep-side-meta-line-height);
+}
+
+.mepDayValueCell .mepHand {
+  font-size: var(--mep-cell-value-font-size);
+  line-height: var(--mep-cell-value-line-height);
+}
+
+.mepTypeCell .mepHand {
+  font-size: var(--mep-mini-label-font-size);
+  line-height: var(--mep-mini-label-line-height);
+}
 
 .mepDayValueCell .mepHand,
 .mepFuncText .mepHand,
@@ -2088,7 +2138,15 @@ body.dark .mepTable th {
 .mepMetaLine .mepHand,
 .mepNameCell .mepHand,
 .mepSumCell .mepHand {
-  transform: translateY(0.42mm);
+  transform: translateY(var(--mep-side-meta-offset-y));
+}
+
+.mepDayValueCell .mepHand {
+  transform: translateY(var(--mep-cell-value-offset-y));
+}
+
+.mepSumCell .mepHand {
+  transform: translateY(var(--mep-sum-value-offset-y));
 }
 
 .mepSubHead .mepHand {
