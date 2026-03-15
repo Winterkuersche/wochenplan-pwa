@@ -13,6 +13,11 @@ const shiftDialogFullCheckout = document.getElementById("shiftDialogFullCheckout
 const shiftDialogFlexStart = document.getElementById("shiftDialogFlexStart");
 const shiftDialogFlexEnd = document.getElementById("shiftDialogFlexEnd");
 
+const shiftDialogAbsenceFields = document.getElementById("shiftDialogAbsenceFields");
+const shiftDialogAbsenceType = document.getElementById("shiftDialogAbsenceType");
+const shiftDialogAbsenceFrom = document.getElementById("shiftDialogAbsenceFrom");
+const shiftDialogAbsenceTo = document.getElementById("shiftDialogAbsenceTo");
+
 const shiftDialogCancel = document.getElementById("shiftDialogCancel");
 const shiftDialogSave = document.getElementById("shiftDialogSave");
 const shiftDialogDelete = document.getElementById("shiftDialogDelete");
@@ -23,34 +28,69 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 
 let shiftDialogContext = null;
 
+function getAbsenceTypeMeta(type) {
+  if (type === "sick") {
+    return {
+      dialogType: "K",
+      title: "Krank",
+      invalidRangeMessage: "Ungültiger Krankzeitraum.",
+      confirmDeleteMessage: "OK = gesamte Krankmeldung löschen\nAbbrechen = Krankmeldung ab diesem Tag kürzen"
+    };
+  }
+
+  return {
+    dialogType: "U",
+    title: "Urlaub",
+    invalidRangeMessage: "Ungültiger Urlaubszeitraum.",
+    confirmDeleteMessage: "OK = gesamten Urlaub löschen\nAbbrechen = Urlaub ab diesem Tag kürzen"
+  };
+}
+
+function getAbsenceTypeFromDialogContext(type) {
+  if (shiftDialogAbsenceType?.value === "sick") return "sick";
+  return type === "K" ? "sick" : "vacation";
+}
+
+function resetShiftDialogInputs(isoDate) {
+  shiftDialogLateStart.value = "13:00";
+  shiftDialogLateCheckout.value = "yes";
+  shiftDialogFullCheckout.value = "yes";
+  shiftDialogFlexStart.value = "";
+  shiftDialogFlexEnd.value = "";
+
+  shiftDialogExternalHelpBranch.value = "";
+  shiftDialogExternalHelpDuration.value = "05:00";
+
+  shiftDialogAbsenceType.value = "vacation";
+  shiftDialogAbsenceFrom.value = isoDate || "";
+  shiftDialogAbsenceTo.value = isoDate || "";
+}
+
+function updateAbsenceDialogTitle() {
+  if (!shiftDialogContext) return;
+  const absenceType = getAbsenceTypeFromDialogContext(shiftDialogContext.type);
+  shiftDialogTitle.textContent = getAbsenceTypeMeta(absenceType).title;
+}
+
 function openShiftDialog(type, context) {
   shiftDialogContext = context;
+  resetShiftDialogInputs(context.isoDate);
 
-    shiftDialogLateFields.classList.add("hidden");
+  shiftDialogLateFields.classList.add("hidden");
   shiftDialogFullFields.classList.add("hidden");
   shiftDialogFlexFields.classList.add("hidden");
   shiftDialogAbsenceFields.classList.add("hidden");
   shiftDialogExternalHelpFields.classList.add("hidden");
 
-    if (type === "AH") {
+  if (type === "AH") {
     shiftDialogTitle.textContent = "Aushilfe";
     shiftDialogExternalHelpFields.classList.remove("hidden");
-    shiftDialogExternalHelpBranch.value = "";
-    shiftDialogExternalHelpDuration.value = "05:00";
   }
 
-    if (type === "U") {
-    shiftDialogTitle.textContent = "Urlaub";
+  if (type === "U" || type === "K") {
+    shiftDialogAbsenceType.value = type === "K" ? "sick" : "vacation";
     shiftDialogAbsenceFields.classList.remove("hidden");
-    shiftDialogAbsenceFrom.value = context.isoDate;
-    shiftDialogAbsenceTo.value = context.isoDate;
-  }
-
-  if (type === "K") {
-    shiftDialogTitle.textContent = "Krank";
-    shiftDialogAbsenceFields.classList.remove("hidden");
-    shiftDialogAbsenceFrom.value = context.isoDate;
-    shiftDialogAbsenceTo.value = context.isoDate;
+    updateAbsenceDialogTitle();
   }
 
   if (type === "L") {
@@ -76,8 +116,8 @@ if (shiftDialogDelete) {
   );
 }
 
-fillShiftDialogFromExisting(type, context);
-shiftDialogOverlay.classList.remove("hidden");
+  fillShiftDialogFromExisting(type, context);
+  shiftDialogOverlay.classList.remove("hidden");
 }
 
 function closeShiftDialog() {
@@ -101,37 +141,20 @@ shiftDialogDelete?.addEventListener("click", () => {
     return;
   }
 
-  if (type === "U") {
+  if (type === "U" || type === "K") {
+    const absenceType = getAbsenceTypeFromDialogContext(type);
+    const meta = getAbsenceTypeMeta(absenceType);
+    const choice = confirm(meta.confirmDeleteMessage);
 
-  const choice = confirm(
-    "OK = gesamten Urlaub löschen\nAbbrechen = Urlaub ab diesem Tag kürzen"
-  );
+    if (choice) {
+      removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, absenceType);
+    } else {
+      trimAbsenceEntryFromIso(emp.id, isoDate, absenceType);
+    }
 
-  if (choice) {
-    removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
-  } else {
-    trimAbsenceEntryFromIso(emp.id, isoDate, "vacation");
+    closeShiftDialog();
+    return;
   }
-
-  closeShiftDialog();
-  return;
-}
-
- if (type === "K") {
-
-  const choice = confirm(
-    "OK = gesamte Krankmeldung löschen\nAbbrechen = Krankmeldung ab diesem Tag kürzen"
-  );
-
-  if (choice) {
-    removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
-  } else {
-    trimAbsenceEntryFromIso(emp.id, isoDate, "sick");
-  }
-
-  closeShiftDialog();
-  return;
-}
 });
 shiftDialogSave.addEventListener("click", () => {
   if (!shiftDialogContext) return;
@@ -186,32 +209,19 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  if (type === "U") {
+  if (type === "U" || type === "K") {
+    const absenceType = getAbsenceTypeFromDialogContext(type);
+    const meta = getAbsenceTypeMeta(absenceType);
     const fromIso = shiftDialogAbsenceFrom.value;
     const toIso = shiftDialogAbsenceTo.value;
 
     if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-      alert("Ungültiger Urlaubszeitraum.");
+      alert(meta.invalidRangeMessage);
       return;
     }
 
     clearDayRange(emp.id, fromIso, toIso, { commit: false });
-    addOrReplaceAbsenceForEmployee(emp.id, "vacation", fromIso, toIso);
-    closeShiftDialog();
-    return;
-  }
-
-  if (type === "K") {
-    const fromIso = shiftDialogAbsenceFrom.value;
-    const toIso = shiftDialogAbsenceTo.value;
-
-    if (!fromIso || !toIso || !fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) {
-      alert("Ungültiger Krankzeitraum.");
-      return;
-    }
-
-    clearDayRange(emp.id, fromIso, toIso, { commit: false });
-    addOrReplaceAbsenceForEmployee(emp.id, "sick", fromIso, toIso);
+    addOrReplaceAbsenceForEmployee(emp.id, absenceType, fromIso, toIso);
     closeShiftDialog();
     return;
   }
@@ -350,9 +360,7 @@ function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
   removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
   setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
 
-  if (type === "vacation") {
-    syncVacationScheduleFromAbsences(employeeId);
-  }
+  syncVacationScheduleFromAbsences(employeeId);
 
   commitPlanChange();
 }
@@ -432,9 +440,7 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   if (!entry) return false;
 
   state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
-  if (type === "vacation") {
-    syncVacationScheduleFromAbsences(employeeId);
-  }
+  syncVacationScheduleFromAbsences(employeeId);
   commitPlanChange();
   return true;
 }
@@ -445,6 +451,7 @@ function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
   // Wenn der Eintrag genau an diesem Tag beginnt → komplett löschen
   if (entry.from === isoDate) {
     state.absences = state.absences.filter((a) => a.id !== entry.id);
+    syncVacationScheduleFromAbsences(employeeId);
     commitPlanChange();
     return true;
   }
@@ -453,9 +460,7 @@ function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
   const prevDate = shiftIsoDateByDays(isoDate, -1);
   entry.to = prevDate;
 
-  if (type === "vacation") {
-    syncVacationScheduleFromAbsences(employeeId);
-  }
+  syncVacationScheduleFromAbsences(employeeId);
 
   commitPlanChange();
   return true;
@@ -491,6 +496,7 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "U") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
     if (absence) {
+      shiftDialogAbsenceType.value = "vacation";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;
     }
@@ -499,11 +505,16 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "K") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
     if (absence) {
+      shiftDialogAbsenceType.value = "sick";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;
     }
   }
 }
+
+shiftDialogAbsenceType?.addEventListener("change", () => {
+  updateAbsenceDialogTitle();
+});
 
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
