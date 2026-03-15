@@ -2070,7 +2070,8 @@ body.dark .mepTable th {
   left: var(--mep-main-left);
   top: var(--mep-main-top);
   width: var(--mep-body-width);
-  height: var(--mep-body-height);
+  height: auto;
+  display: block;
   opacity: var(--mep-template-opacity);
   pointer-events: none;
   z-index: 0;
