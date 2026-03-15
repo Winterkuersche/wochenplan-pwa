@@ -1727,15 +1727,15 @@ body.dark .mepTable th {
   --mep-frame-top: 0mm;
 
   /* bestehende Kalibrierwerte */
-  --mep-main-left: 15mm;
-  --mep-main-top: 8.9mm;
-  --mep-main-right: 176mm;
+  --mep-main-left: 23.5mm;
+  --mep-main-top: 31mm;
+  --mep-main-right: 232.5mm;
 
-  --mep-sum-left: 177.3mm;
-  --mep-sum-top: 19.9mm;
-  --mep-sum-right: 209.5mm;
+  --mep-sum-left: 243mm;
+  --mep-sum-top: 31mm;
+  --mep-sum-right: 276mm;
 
-  --mep-row-h: 4.05mm;
+  --mep-row-h: 3.85mm;
   --mep-header-h: 12.2mm;
   --mep-employee-count: 9;
   --mep-employee-block-h: calc(var(--mep-row-h) * 4);
@@ -1765,13 +1765,13 @@ body.dark .mepTable th {
   --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-offset-y));
 
   /* Referenzbild-Kalibrierung (eigenständige Geometrie) */
-  --mep-ref-left: 13mm;
-  --mep-ref-top: 6mm;
-  --mep-ref-width: 198mm;
+  --mep-ref-left: 0mm;
+  --mep-ref-top: 0mm;
+  --mep-ref-width: 297mm;
 
   /* Hilfswerte für Overlay/Template */
   --mep-body-width: 227.8mm;
-  --mep-body-height: 156.6mm;
+  --mep-body-height: 156mm;
 }
 
 /* echte A4-Seite */
@@ -1929,7 +1929,7 @@ body.dark .mepTable th {
   position: absolute;
   left: var(--mep-sum-left);
   top: var(--mep-sum-top);
-  width: var(--mep-sum-w);
+  width: calc(var(--mep-sum-right) - var(--mep-sum-left));
   display: flex;
   flex-direction: column;
   margin: 0;
