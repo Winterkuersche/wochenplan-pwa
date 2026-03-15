@@ -2168,3 +2168,132 @@ body.dark .mepTable th {
   font-size: 3.15mm;
   transform: translateY(0.25mm);
 }
+/* =========================
+   FINAL MEP OVERRIDES
+   ========================= */
+
+:root {
+  --mep-content-offset-x: 3mm;
+  --mep-content-offset-y: 0mm;
+
+  --mep-main-offset-x: 1.6mm;
+  --mep-main-offset-y: 0mm;
+
+  --mep-sum-offset-x: 6.5mm;
+  --mep-sum-offset-y: 0mm;
+}
+
+.mepContentFrame {
+  position: relative;
+  transform: translate(var(--mep-content-offset-x), var(--mep-content-offset-y));
+  transform-origin: top left;
+}
+
+.mepBody {
+  display: grid !important;
+  grid-template-columns: 201.8mm 40mm !important;
+  column-gap: 4.8mm !important;
+  align-items: start !important;
+}
+
+.mepMainTableWrap {
+  grid-column: 1 !important;
+  margin-left: var(--mep-main-offset-x) !important;
+  margin-top: calc(9.6mm + var(--mep-main-offset-y)) !important;
+}
+
+.mepTableOuter {
+  width: 201.8mm !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border: 0.28mm solid #6f6f6f !important;
+  background: #fff !important;
+}
+
+.mepTable {
+  width: 201.8mm !important;
+  min-width: 201.8mm !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+  background: #fff !important;
+}
+
+.mepTable th,
+.mepTable td {
+  border: 0.22mm solid #6f6f6f !important;
+  height: 4.22mm !important;
+  padding: 0.08mm 0.25mm !important;
+  font-size: 2.05mm !important;
+  line-height: 1.02 !important;
+  vertical-align: middle !important;
+  background: #fff !important;
+}
+
+.mepTable thead th {
+  text-align: center !important;
+  font-weight: 700 !important;
+}
+
+.mepSubHead {
+  height: 3.45mm !important;
+  font-size: 1.9mm !important;
+  line-height: 1 !important;
+}
+
+.mepDayDate {
+  font-size: 2.25mm !important;
+}
+
+.mepSumWrap {
+  grid-column: 2 !important;
+  margin-top: calc(9.9mm + var(--mep-sum-offset-y)) !important;
+  margin-left: var(--mep-sum-offset-x) !important;
+  width: 40mm !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.mepSumHeader {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  width: 40mm !important;
+  height: 11.4mm !important;
+  margin-bottom: 1mm !important;
+}
+
+.mepSumHeaderCell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0.28mm solid #6f6f6f !important;
+  background: #fff !important;
+  font-size: 2.15mm !important;
+  line-height: 1.05 !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+.mepSumRow {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  width: 40mm !important;
+  height: 15.8mm !important;
+  margin-bottom: 0 !important;
+}
+
+.mepSumCell {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 0.28mm solid #6f6f6f !important;
+  background: #fff !important;
+  font-size: 3.1mm !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  overflow: hidden !important;
+}
+
+.mepSumCell .mepHand {
+  font-size: 3.15mm !important;
+  transform: translateY(0.25mm) !important;
+}
