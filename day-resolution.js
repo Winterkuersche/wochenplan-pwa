@@ -4,7 +4,7 @@ function getScheduleEntryForEmployeeOnDate(schedule, employeeId, isoDate) {
 }
 
 function isExternalHelpEntry(entry) {
-  return !!entry && entry.type === "external-help";
+  return getEntryStatus(entry) === ENTRY_STATUS.EXTERNAL;
 }
 
 function getExternalHelpDisplayLabel(entry) {
@@ -28,6 +28,7 @@ function getExternalHelpMinutes(entry) {
 
 function createResolvedDayEntry({
   type = "off",
+  status = ENTRY_STATUS.EMPTY,
   label = "",
   minutesForMonth = 0,
   minutesForBranch = 0,
@@ -38,6 +39,7 @@ function createResolvedDayEntry({
 } = {}) {
   return {
     type,
+    status,
     label,
     minutesForMonth: Math.max(0, minutesForMonth || 0),
     minutesForBranch: Math.max(0, minutesForBranch || 0),
@@ -67,6 +69,7 @@ function getResolvedDayEntry({
     if (sunday) {
     return createResolvedDayEntry({
       type: "off",
+      status: ENTRY_STATUS.OFF,
       label: "",
       minutesForMonth: 0,
       minutesForBranch: 0,
@@ -77,6 +80,7 @@ function getResolvedDayEntry({
   if (holiday) {
     return createResolvedDayEntry({
       type: "holiday",
+      status: ENTRY_STATUS.OFF,
       label: "H",
       minutesForMonth: sunday ? 0 : getAbsenceMinutesForEmployee(employee),
       minutesForBranch: 0,
@@ -90,7 +94,8 @@ function getResolvedDayEntry({
   if (absence?.type === "sick") {
     return createResolvedDayEntry({
       type: "sick",
-      label: "K",
+      status: ENTRY_STATUS.SICK,
+      label: getStatusShortLabel(ENTRY_STATUS.SICK),
       minutesForMonth: sunday ? 0 : getAbsenceMinutesForEmployee(employee),
       minutesForBranch: 0,
       isSunday: sunday,
@@ -101,7 +106,8 @@ function getResolvedDayEntry({
   if (absence?.type === "vacation") {
     return createResolvedDayEntry({
       type: "vacation",
-      label: "U",
+      status: ENTRY_STATUS.VACATION,
+      label: getStatusShortLabel(ENTRY_STATUS.VACATION),
       minutesForMonth: 0,
       minutesForBranch: 0,
       isSunday: sunday,
@@ -112,7 +118,8 @@ function getResolvedDayEntry({
   if (isExternalHelpEntry(plannedEntry)) {
     return createResolvedDayEntry({
       type: "external-help",
-      label: getExternalHelpDisplayLabel(plannedEntry),
+      status: ENTRY_STATUS.EXTERNAL,
+      label: getExternalHelpDisplayLabel(plannedEntry) || getStatusShortLabel(ENTRY_STATUS.EXTERNAL),
       minutesForMonth: sunday ? 0 : getExternalHelpMinutes(plannedEntry),
       minutesForBranch: 0,
       isSunday: sunday,
@@ -123,7 +130,8 @@ function getResolvedDayEntry({
   if (plannedEntry?.type === "vacation") {
     return createResolvedDayEntry({
       type: "vacation",
-      label: "U",
+      status: ENTRY_STATUS.VACATION,
+      label: getStatusShortLabel(ENTRY_STATUS.VACATION),
       minutesForMonth: 0,
       minutesForBranch: 0,
       isSunday: sunday,
@@ -134,6 +142,7 @@ function getResolvedDayEntry({
   if (isShiftEntry(plannedEntry)) {
     return createResolvedDayEntry({
       type: "shift",
+      status: ENTRY_STATUS.WORK,
       label: getShiftDisplayLabel(plannedEntry),
       minutesForMonth: sunday ? 0 : (plannedEntry.minutes || 0),
       minutesForBranch: sunday ? 0 : (plannedEntry.minutes || 0),
@@ -144,6 +153,7 @@ function getResolvedDayEntry({
 
   return createResolvedDayEntry({
     type: "off",
+    status: ENTRY_STATUS.EMPTY,
     label: "",
     minutesForMonth: 0,
     minutesForBranch: 0,
