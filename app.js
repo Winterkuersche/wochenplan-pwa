@@ -891,6 +891,19 @@ function formatMinuteBalance(differenceMinutes) {
   return `-${minutesToHM(Math.abs(differenceMinutes))}`;
 }
 
+
+function getEmployeeTotalMinusMinutes(employee, weeks = getCurrentMonthWeeks()) {
+  if (!employee || !Array.isArray(weeks)) return 0;
+
+  return weeks.reduce((sum, week) => {
+    if (!Array.isArray(week) || week.length === 0) return sum;
+
+    const weekDays = week.slice(0, 6);
+    const minusForWeek = getEmployeeMinusMinutesForWeek(employee, weekDays);
+    return sum + minusForWeek;
+  }, 0);
+}
+
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
     return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;
