@@ -1186,10 +1186,10 @@ select {
    PRINT
    ============================= */
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 6mm;
-  }
+ @page {
+  size: A4 landscape;
+  margin: 0;
+}
 
   html,
   body {
@@ -1945,12 +1945,18 @@ body.dark .mepTable th {
   z-index: 1;
 }
 
-@media print {
-  @page {
-    size: A4 landscape;
-    margin: 4mm;
-  }
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
 
+@media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
   html,
   body {
     width: 297mm;
@@ -2012,20 +2018,19 @@ body.dark .mepTable th {
   }
 
   .mepSheet,
-  .formPage {
-    width: 289mm !important;
-    min-height: 196mm !important;
-    margin: 0 !important;
-    padding: 2.2mm 2.2mm 3.2mm !important;
-    box-sizing: border-box !important;
-    background: #fff !important;
-    color: #111 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    max-width: none !important;
-    overflow: visible !important;
-  }
+.formPage {
+  width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto 10mm;
+  padding: 0;
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 0 0 1px #ddd;
+  position: relative;
+}
 
  .mepContentFrame,
 .mepHeader,
