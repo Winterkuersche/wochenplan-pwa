@@ -2297,3 +2297,41 @@ body.dark .mepTable th {
   font-size: 3.15mm !important;
   transform: translateY(0.25mm) !important;
 }
+/* =========================
+   DEBUG LAYOUT
+   ========================= */
+
+:root {
+  --mep-debug: 0;
+}
+
+/* Haupttabelle */
+:root[data-debug="1"] .mepTable td,
+:root[data-debug="1"] .mepTable th {
+  background: rgba(0, 120, 255, 0.08) !important;
+}
+
+/* Summenblock */
+:root[data-debug="1"] .mepSumCell {
+  background: rgba(255, 80, 0, 0.15) !important;
+}
+
+/* Summenheader */
+:root[data-debug="1"] .mepSumHeaderCell {
+  background: rgba(255, 180, 0, 0.2) !important;
+}
+
+/* Rahmen des Formulars */
+:root[data-debug="1"] .mepContentFrame {
+  outline: 2px dashed red;
+}
+
+/* Hauptmatrix */
+:root[data-debug="1"] .mepMainTableWrap {
+  outline: 2px dashed blue;
+}
+
+/* Summenblock */
+:root[data-debug="1"] .mepSumWrap {
+  outline: 2px dashed orange;
+}
