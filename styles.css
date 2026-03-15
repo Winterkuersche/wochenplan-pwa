@@ -1183,7 +1183,7 @@ select {
 }
 
 /* =============================
-   PRINT
+   Print layout
    ============================= */
 @media print {
  @page {
@@ -1430,6 +1430,104 @@ select {
   }
 }
 
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 297mm !important;
+    height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .topbar,
+  .teamsetup,
+  #dayView,
+  #weekView,
+  #monthView,
+  .viewSwitch,
+  .toolbar,
+  .mepPager,
+  button,
+  .mepScreenStage,
+  .dialogOverlay {
+    display: none !important;
+  }
+
+  #formView {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .mepPrintAll {
+    display: block !important;
+  }
+
+  .mepPrintPage {
+    width: 297mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .mepPrintPage:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  .mepSheet,
+  .formPage {
+    width: 297mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+    color: #111 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    overflow: visible !important;
+    position: relative !important;
+  }
+
+  .mepScreenMeta {
+    display: none !important;
+  }
+
+  .mepTable th,
+  .mepTable td,
+  .mepSumCell,
+  .mepSumHeader,
+  .mepSumHeaderCell {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
 /* =============================
    DARK MODE
    ============================= */
@@ -1615,7 +1713,7 @@ body.dark .mepTable th {
 
 
 /* =============================
-   MEP REBUILD / FINAL OVERRIDES
+   Base form layout
    ============================= */
 .mepSheet,
 .formPage {
@@ -1945,215 +2043,9 @@ body.dark .mepTable th {
   z-index: 1;
 }
 
-@page {
-  size: A4 landscape;
-  margin: 0;
-}
 
-@media print {
-  html,
-  body {
-    width: 297mm !important;
-    height: 210mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .topbar,
-  .teamsetup,
-  #dayView,
-  #weekView,
-  #monthView,
-  .viewSwitch,
-  .toolbar,
-  .mepPager,
-  button,
-  .mepScreenStage,
-  .dialogOverlay {
-    display: none !important;
-  }
-
-  #formView {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    background: #fff !important;
-    box-shadow: none !important;
-  }
-
-  .mepPrintAll {
-    display: block !important;
-  }
-
-  .mepPrintPage {
-    width: 297mm !important;
-    min-height: 210mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-    border: none !important;
-    box-shadow: none !important;
-    page-break-after: always !important;
-    break-after: page !important;
-  }
-
-  .mepPrintPage:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-
-  .mepSheet,
-  .formPage {
-    width: 297mm !important;
-    min-height: 210mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    background: #fff !important;
-    color: #111 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    max-width: none !important;
-    overflow: visible !important;
-    position: relative !important;
-  }
-
-  .mepScreenMeta {
-    display: none !important;
-  }
-
-  .mepTable th,
-  .mepTable td,
-  .mepSumCell,
-  .mepSumHeader,
-  .mepSumHeaderCell {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-}
 /* =========================
-   Hauptmatrix + Summenblock
-   ========================= */
-
-.mepBody {
-  display: grid;
-  grid-template-columns: 194.8mm 32.5mm;
-  column-gap: 2.6mm;
-  align-items: start;
-}
-
-.mepMainTableWrap {
-  grid-column: 1;
-  margin-left: 1.6mm;
-  margin-top: 9.6mm;
-}
-
-
-
-.mepSumRow + .mepSumRow {
-  margin-top: 0;
-}
-/* Außenrahmen der Matrix */
-.mepTableOuter {
-  width: 194.8mm;
-  margin: 0;
-  overflow: hidden;
-  border: 0.28mm solid #6f6f6f;
-  background: #fff;
-}
-
-/* Tabelle selbst */
-.mepTable {
-  width: 194.8mm;
-  min-width: 194.8mm;
-  border-collapse: collapse;
-  table-layout: fixed;
-  background: #fff;
-}
-
-/* Zellen */
-.mepTable th,
-.mepTable td {
-  border: 0.22mm solid #6f6f6f;
-  height: 4.22mm;
-  padding: 0.08mm 0.25mm;
-  font-size: 2.05mm;
-  line-height: 1.02;
-  vertical-align: middle;
-}
-
-.mepTable thead th {
-  text-align: center;
-  font-weight: 700;
-}
-
-.mepSubHead {
-  height: 3.45mm !important;
-  font-size: 1.9mm !important;
-}
-
-.mepDayDate {
-  font-size: 2.25mm;
-}
-
-/* Summenblock rechts */
-.mepSumHeader {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 31mm;
-  height: 8.1mm !important;
-  margin-bottom: 1.95mm;
-}
-
-.mepSumHeaderCell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0.28mm solid #6f6f6f;
-  background: #fff;
-  font-size: 2.15mm;
-  line-height: 1.05;
-  font-weight: 700;
-  text-align: center;
-}
-
-.mepSumRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 31mm;
-  height: 14.6mm;
-  margin-bottom: 2.02mm;
-}
-
-.mepSumCell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0.28mm solid #6f6f6f;
-  background: #fff;
-  font-size: 3.1mm;
-  line-height: 1;
-  text-align: center;
-  overflow: hidden;
-}
-
-.mepSumCell .mepHand {
-  font-size: 3.15mm;
-  transform: translateY(0.25mm);
-}
-/* =========================
-   FINAL MEP OVERRIDES
+   Final MEP overrides
    ========================= */
 
 :root {
@@ -2167,7 +2059,7 @@ body.dark .mepTable th {
   --mep-sum-page-top: 18.5mm;
   --mep-sum-offset-y: 0mm;
 
-  --mep-row-h: 6.4mm;
+  --mep-row-h: 4.22mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
   --mep-sum-total-w: 35.5mm;
@@ -2209,7 +2101,7 @@ body.dark .mepTable th {
 .mepTable th,
 .mepTable td {
   border: 0.22mm solid #6f6f6f !important;
-  height: 4.22mm !important;
+  height: var(--mep-row-h) !important;
   padding: 0.08mm 0.25mm !important;
   font-size: 2.05mm !important;
   line-height: 1.02 !important;
@@ -2275,6 +2167,10 @@ body.dark .mepTable th {
   margin-bottom: 0 !important;
 }
 
+.mepSumHeader + .mepSumRow {
+  margin-top: var(--mep-row-h) !important;
+}
+
 .mepSumCell {
   display: flex !important;
   align-items: center !important;
@@ -2292,7 +2188,7 @@ body.dark .mepTable th {
   transform: translateY(0.18mm) !important;
 }
 /* =========================
-   DEBUG LAYOUT
+   Debug layout
    ========================= */
 
 :root {
