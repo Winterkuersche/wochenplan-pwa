@@ -917,16 +917,44 @@ function formatMinuteBalance(differenceMinutes) {
 }
 
 
-function getEmployeeTotalMinusMinutes(employee, weeks = getCurrentMonthWeeks()) {
+function getEmployeeContractTargetMinutesForDays(employee, days = []) {
+  if (!employee || !Array.isArray(days)) return 0;
+
+  const dailyTargetMinutes = getAbsenceMinutesForEmployee(employee);
+
+  return days.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+    if (isSundayIsoDate(day.iso)) return sum;
+    return sum + dailyTargetMinutes;
+  }, 0);
+}
+
+function getEmployeeContractTargetMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
   if (!employee || !Array.isArray(weeks)) return 0;
 
   return weeks.reduce((sum, week) => {
     if (!Array.isArray(week) || week.length === 0) return sum;
-
-    const weekDays = week.slice(0, 6);
-    const minusForWeek = getEmployeeMinusMinutesForWeek(employee, weekDays);
-    return sum + minusForWeek;
+    return sum + getEmployeeContractTargetMinutesForDays(employee, week);
   }, 0);
+}
+
+function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
+  if (!employee || !Array.isArray(weeks)) return 0;
+
+  return weeks.reduce((sum, week) => {
+    if (!Array.isArray(week) || week.length === 0) return sum;
+    return sum + getEmployeeAccountMinutesForWeek(employee, week);
+  }, 0);
+}
+
+function getEmployeeTotalMinusMinutes(employee, weeks = getCurrentMonthWeeks()) {
+  if (!employee || !Array.isArray(weeks)) return 0;
+
+  const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, weeks);
+  const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, weeks);
+  const difference = accountMinutes - contractTargetMinutes;
+
+  return difference < 0 ? Math.abs(difference) : 0;
 }
 
 function totalMinutesForDayIso(iso) {
