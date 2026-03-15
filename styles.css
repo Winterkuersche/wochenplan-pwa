@@ -2081,7 +2081,6 @@ body.dark .mepTable th {
   grid-column: 1 !important;
   margin-left: var(--mep-main-offset-x) !important;
   margin-top: calc(9.6mm + var(--mep-main-offset-y)) !important;
-  transform: translateY(calc(var(--mep-row-h) * 0.5));
 }
 
 .mepTableOuter {
@@ -2169,7 +2168,7 @@ body.dark .mepTable th {
 }
 
 .mepSumHeader + .mepSumRow {
-  margin-top: calc(var(--mep-row-h) * 0.5) !important;
+  margin-top: calc(var(--mep-row-h) * 1.5) !important;
 }
 
 .mepSumCell {
