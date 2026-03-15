@@ -2059,6 +2059,22 @@ body.dark .mepTable th {
   --mep-sum-page-top: 19.2mm;
   --mep-sum-offset-y: 0mm;
 
+  --mep-main-left: 3.6mm;
+  --mep-main-top: 9.6mm;
+  --mep-main-right: 196.1mm;
+  --mep-main-bottom: 0mm;
+
+  --mep-sum-left: 190.5mm;
+  --mep-sum-top: 19.2mm;
+  --mep-sum-right: 226mm;
+  --mep-sum-bottom: 0mm;
+
+  --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
+  --mep-main-h: calc(var(--mep-main-bottom) - var(--mep-main-top));
+
+  --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
+  --mep-sum-h: calc(var(--mep-sum-bottom) - var(--mep-sum-top));
+
   --mep-row-h: 4.00mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
@@ -2081,20 +2097,20 @@ body.dark .mepTable th {
   grid-column: 1 !important;
   display: inline-block !important;
   width: fit-content !important;
-  margin-left: var(--mep-main-offset-x) !important;
-  margin-top: calc(9.6mm + var(--mep-main-offset-y)) !important;
+  margin-left: var(--mep-main-left) !important;
+  margin-top: var(--mep-main-top) !important;
 }
 
 .mepTableOuter {
-  width: 192.5mm !important;
+  width: var(--mep-main-w) !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
 }
 .mepTable {
-  width: 192.5mm !important;
-  min-width: 192.5mm !important;
+  width: var(--mep-main-w) !important;
+  min-width: var(--mep-main-w) !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
@@ -2128,9 +2144,9 @@ body.dark .mepTable th {
 
 .mepSumWrap {
   position: absolute !important;
-  right: var(--mep-sum-page-right) !important;
-  top: var(--mep-sum-page-top) !important;
-  width: var(--mep-sum-total-w) !important;
+  left: var(--mep-sum-left) !important;
+  top: var(--mep-sum-top) !important;
+  width: var(--mep-sum-w) !important;
   display: flex !important;
   flex-direction: column !important;
   margin: 0 !important;
@@ -2189,6 +2205,11 @@ body.dark .mepTable th {
   font-size: 2.9mm !important;
   transform: translateY(0.18mm) !important;
 }
+/* Temporary calibration guide:
+   - Blue box (main table) is calibrated via --mep-main-left/top/right/bottom.
+   - Orange box (sum block) is calibrated via --mep-sum-left/top/right/bottom.
+*/
+
 /* =========================
    Debug layout
    ========================= */
