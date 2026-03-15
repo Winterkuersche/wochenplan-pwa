@@ -1731,9 +1731,14 @@ body.dark .mepTable th {
   --mep-main-top: 31mm;
   --mep-main-right: 232.5mm;
 
-  --mep-sum-left: 243mm;
+  --mep-sum-left: 235.1mm;
   --mep-sum-top: 31mm;
   --mep-sum-right: 276mm;
+
+  --mep-header-top: 2.2mm;
+  --mep-header-title-offset-y: 0mm;
+  --mep-header-meta-offset-y: 0mm;
+  --mep-header-right-box-w: 42mm;
 
   --mep-row-h: 3.85mm;
   --mep-header-h: 12.2mm;
@@ -1761,7 +1766,7 @@ body.dark .mepTable th {
     + (var(--mep-sum-gap-h) * (var(--mep-sum-row-count) - 1))
   );
 
-  --mep-footer-offset-y: 1.15mm;
+  --mep-footer-offset-y: 7.25mm;
   --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-offset-y));
 
   /* Referenzbild-Kalibrierung (eigenständige Geometrie) */
@@ -1805,17 +1810,18 @@ body.dark .mepTable th {
 .mepHeader {
   position: absolute;
   left: var(--mep-main-left);
-  top: 2.2mm;
+  top: var(--mep-header-top);
   width: calc(var(--mep-sum-right) - var(--mep-main-left));
   margin: 0;
 }
 
 .mepHeaderTop {
   display: grid;
-  grid-template-columns: 1fr 42mm;
+  grid-template-columns: 1fr var(--mep-header-right-box-w);
   align-items: end;
   gap: 2.4mm;
   margin-bottom: 1.05mm;
+  transform: translateY(var(--mep-header-title-offset-y));
 }
 
 .mepTitleBox,
@@ -1837,6 +1843,7 @@ body.dark .mepTable th {
   align-items: end;
   gap: 2.4mm;
   margin-bottom: 0;
+  transform: translateY(var(--mep-header-meta-offset-y));
 }
 
 .mepMetaField {
