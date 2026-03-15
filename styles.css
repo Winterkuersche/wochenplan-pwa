@@ -2059,7 +2059,7 @@ body.dark .mepTable th {
   --mep-sum-page-top: 18.5mm;
   --mep-sum-offset-y: 0mm;
 
-  --mep-row-h: 6.4mm;
+  --mep-row-h: 4.22mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
   --mep-sum-total-w: 35.5mm;
@@ -2101,7 +2101,7 @@ body.dark .mepTable th {
 .mepTable th,
 .mepTable td {
   border: 0.22mm solid #6f6f6f !important;
-  height: 4.22mm !important;
+  height: var(--mep-row-h) !important;
   padding: 0.08mm 0.25mm !important;
   font-size: 2.05mm !important;
   line-height: 1.02 !important;
@@ -2165,6 +2165,10 @@ body.dark .mepTable th {
 
 .mepSumRow:last-child {
   margin-bottom: 0 !important;
+}
+
+.mepSumWrap .mepSumRow:first-of-type {
+  margin-top: var(--mep-row-h) !important;
 }
 
 .mepSumCell {
