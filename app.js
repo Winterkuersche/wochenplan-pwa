@@ -875,10 +875,35 @@ function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays
   }, 0);
 }
 
+function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  return weekDays.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
+    const status = getResolvedStatus(resolved);
+
+    if (status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL || status === ENTRY_STATUS.SICK) {
+      return sum + Math.max(0, resolved.minutesForMonth || 0);
+    }
+
+    if (status === ENTRY_STATUS.VACATION) {
+      return sum + getAbsenceMinutesForEmployee(employee);
+    }
+
+    if (resolved?.type === "holiday") {
+      return sum + Math.max(0, resolved.minutesForMonth || getAbsenceMinutesForEmployee(employee));
+    }
+
+    return sum;
+  }, 0);
+}
+
 function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays()) {
-  const plannedMinutes = getEmployeePlannedMinutesForWeek(employee, weekDays);
+  const accountMinutes = getEmployeeAccountMinutesForWeek(employee, weekDays);
   const targetMinutes = getEmployeeTargetMinutes(employee);
-  return plannedMinutes - targetMinutes;
+  return accountMinutes - targetMinutes;
 }
 
 function getEmployeeMinusMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
