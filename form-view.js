@@ -551,7 +551,7 @@ function setCurrentFormSheetIndex(nextIndex, sheetModels) {
   );
 }
 
-function buildWeekSheet(sheetModel) {
+function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
   const { weekDays, employees, weekIndex, pageIndex } = sheetModel;
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
@@ -573,7 +573,7 @@ function buildWeekSheet(sheetModel) {
 
   return `
     <section class="mepPrintPage">
-      <div class="printSheet mepSheet mepUseTemplate">
+      <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
         <div class="mepContentFrame">
           ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
           ${buildMepHeader(filledSheetModel)}
@@ -683,7 +683,7 @@ function renderFormView() {
     (sheet) => sheet.weekIndex === currentSheet.weekIndex
   );
 
-  const screenHtml = buildWeekSheet(currentSheet);
+  const screenHtml = buildWeekSheet(currentSheet, { useTemplate: true });
   const printHtml = currentWeekSheets.map((sheet) => buildWeekSheet(sheet)).join("");
 
   container.innerHTML = `
