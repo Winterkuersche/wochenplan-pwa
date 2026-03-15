@@ -2246,9 +2246,9 @@ body.dark .mepTable th {
 
 .mepSumWrap {
   grid-column: 2 !important;
-  margin-top: calc(9.9mm + var(--mep-sum-offset-y)) !important;
+  margin-top: calc(10.6mm + var(--mep-sum-offset-y)) !important;
   margin-left: var(--mep-sum-offset-x) !important;
- width: 43mm; 
+  width: 39.5mm !important;
   display: flex !important;
   flex-direction: column !important;
 }
@@ -2256,9 +2256,9 @@ body.dark .mepTable th {
 .mepSumHeader {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  width: 43mm;
-  height: 11.4mm !important;
-  margin-bottom: 1mm !important;
+  width: 39.5mm !important;
+  height: 8.6mm !important;
+  margin-bottom: 0.6mm !important;
 }
 
 .mepSumHeaderCell {
@@ -2267,18 +2267,33 @@ body.dark .mepTable th {
   justify-content: center !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
-  font-size: 2.15mm !important;
-  line-height: 1.05 !important;
+  font-size: 2.05mm !important;
+  line-height: 1.02 !important;
   font-weight: 700 !important;
   text-align: center !important;
+}
+
+.mepSumPair {
+  width: 39.5mm !important;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 0 !important;
 }
 
 .mepSumRow {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
- width: 43mm;
-  height: 14.6mm;
-  margin-bottom: 0 !important;
+  width: 39.5mm !important;
+  height: 8.15mm !important;
+  margin: 0 !important;
+}
+
+.mepSumRowTop .mepSumCell {
+  border-bottom: 0.14mm solid #6f6f6f !important;
+}
+
+.mepSumRowBottom .mepSumCell {
+  border-top: 0.14mm solid #6f6f6f !important;
 }
 
 .mepSumCell {
@@ -2287,15 +2302,15 @@ body.dark .mepTable th {
   justify-content: center !important;
   border: 0.28mm solid #6f6f6f !important;
   background: #fff !important;
-  font-size: 3.1mm !important;
+  font-size: 2.95mm !important;
   line-height: 1 !important;
   text-align: center !important;
   overflow: hidden !important;
 }
 
 .mepSumCell .mepHand {
-  font-size: 3.15mm !important;
-  transform: translateY(0.25mm) !important;
+  font-size: 3mm !important;
+  transform: translateY(0.18mm) !important;
 }
 /* =========================
    DEBUG LAYOUT
