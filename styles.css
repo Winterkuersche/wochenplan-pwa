@@ -2167,7 +2167,7 @@ body.dark .mepTable th {
   --mep-sum-page-top: 18.5mm;
   --mep-sum-offset-y: 0mm;
 
-  --mep-row-h: 4.10mm;
+  --mep-row-h: 6.4mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
   --mep-sum-total-w: 35.5mm;
