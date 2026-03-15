@@ -1398,29 +1398,31 @@ select {
   }
 
   .mepFooterGrid {
-    gap: 4.8mm !important;
-    font-size: 1.95mm !important;
+    gap: var(--mep-footer-col-gap) !important;
+    font-size: var(--mep-footer-font-size) !important;
+    line-height: var(--mep-footer-line-height) !important;
   }
 
   .mepFooterLeft,
-  .mepFooterCenter {
-    line-height: 1.05 !important;
+  .mepFooterCenter,
+  .mepFooterRight {
+    line-height: var(--mep-footer-line-height) !important;
   }
 
-  .mepFooterCenter {
-    column-gap: 4mm !important;
-    row-gap: 0.2mm !important;
+  .mepFooterCenter,
+  .mepFooterRight {
+    row-gap: 0.16mm !important;
   }
 
   .mepFooterHint {
-    margin-top: 0.7mm !important;
-    font-size: 1.9mm !important;
-    line-height: 1.04 !important;
+    margin-top: 0.55mm !important;
+    font-size: var(--mep-footer-font-size) !important;
+    line-height: var(--mep-footer-line-height) !important;
   }
 
   .mepFooterStand {
-    margin-top: 0.45mm !important;
-    font-size: 1.82mm !important;
+    margin-top: 0.24mm !important;
+    font-size: 1.62mm !important;
     line-height: 1 !important;
   }
 
@@ -1727,18 +1729,28 @@ body.dark .mepTable th {
   --mep-frame-top: 0mm;
 
   /* bestehende Kalibrierwerte */
-  --mep-main-left: 23.5mm;
-  --mep-main-top: 31mm;
+  --mep-main-left: 22.4mm;
+  --mep-main-top: 30.0mm;
   --mep-main-right: 232.5mm;
 
-  --mep-sum-left: 235.1mm;
-  --mep-sum-top: 31mm;
+  --mep-sum-left: 233.7mm;
+  --mep-sum-top: 30.0mm;
   --mep-sum-right: 276mm;
 
   --mep-header-top: 2.2mm;
-  --mep-header-title-offset-y: 0mm;
-  --mep-header-meta-offset-y: 0mm;
-  --mep-header-right-box-w: 42mm;
+  --mep-header-title-offset-y: 3.6mm;
+  --mep-header-meta-offset-y: 6.5mm;
+  --mep-header-right-box-w: 34.1mm;
+
+  --mep-header-title-font-size: 3.05mm;
+  --mep-header-meta-font-size: 2.1mm;
+  --mep-header-line-height: 1.02;
+  --mep-header-label-font-size: 1.85mm;
+
+  --mep-footer-font-size: 1.72mm;
+  --mep-footer-line-height: 1.03;
+  --mep-footer-heading-size: 1.78mm;
+  --mep-footer-col-gap: 3.2mm;
 
   --mep-row-h: 3.85mm;
   --mep-header-h: 12.2mm;
@@ -1749,7 +1761,7 @@ body.dark .mepTable th {
 
   --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
   --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
-  --mep-gap-main-sum: calc(var(--mep-sum-left) - var(--mep-main-right));
+  --mep-gap-main-sum: 1.2mm;
 
   --mep-sum-col-w: calc(var(--mep-sum-w) / 2);
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
@@ -1766,7 +1778,7 @@ body.dark .mepTable th {
     + (var(--mep-sum-gap-h) * (var(--mep-sum-row-count) - 1))
   );
 
-  --mep-footer-offset-y: 7.25mm;
+  --mep-footer-offset-y: 4.55mm;
   --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-offset-y));
 
   /* Referenzbild-Kalibrierung (eigenständige Geometrie) */
@@ -1776,7 +1788,7 @@ body.dark .mepTable th {
 
   /* Hilfswerte für Overlay/Template */
   --mep-body-width: 227.8mm;
-  --mep-body-height: 156mm;
+  --mep-body-height: 137.2mm;
 }
 
 /* echte A4-Seite */
@@ -1819,29 +1831,30 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: 1fr var(--mep-header-right-box-w);
   align-items: end;
-  gap: 2.4mm;
-  margin-bottom: 1.05mm;
+  gap: 1.3mm;
+  margin-bottom: 0.55mm;
   transform: translateY(var(--mep-header-title-offset-y));
 }
 
 .mepTitleBox,
 .mepBranchBox {
-  padding: 0.42mm 0.85mm;
-  border: 0.3mm solid #6f6f6f;
-  font-size: 3.45mm;
+  padding: 0.35mm 0.8mm 0.3mm;
+  border: 0.24mm solid #606060;
+  font-size: var(--mep-header-title-font-size);
   font-weight: 700;
-  line-height: 1.02;
+  line-height: var(--mep-header-line-height);
 }
 
 .mepBranchBox {
   white-space: nowrap;
+  text-align: left;
 }
 
 .mepHeaderMeta {
   display: grid;
-  grid-template-columns: 1.18fr 0.98fr 0.72fr auto;
+  grid-template-columns: 1.23fr 0.92fr 0.64fr auto;
   align-items: end;
-  gap: 2.4mm;
+  gap: 1.55mm;
   margin-bottom: 0;
   transform: translateY(var(--mep-header-meta-offset-y));
 }
@@ -1850,21 +1863,29 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: end;
-  column-gap: 1.2mm;
-  font-size: 2.45mm;
+  column-gap: 0.72mm;
+  font-size: var(--mep-header-meta-font-size);
+  line-height: var(--mep-header-line-height);
+}
+
+.mepMetaLabel {
+  font-size: var(--mep-header-label-font-size);
+  line-height: var(--mep-header-line-height);
+  white-space: nowrap;
 }
 
 .mepMetaLine {
   display: inline-block;
-  min-height: 3.95mm;
-  padding: 0 0.45mm 0.05mm;
-  border-bottom: 0.22mm solid #6f6f6f;
+  min-height: 2.72mm;
+  padding: 0 0.25mm 0.03mm;
+  border-bottom: 0.2mm solid #636363;
 }
 
 .mepMetaStorage {
   white-space: nowrap;
   text-align: right;
-  font-size: 2.45mm;
+  font-size: var(--mep-header-label-font-size);
+  line-height: var(--mep-header-line-height);
 }
 
 /* Hauptbereich ist nur ein logischer Container */
@@ -2003,38 +2024,41 @@ body.dark .mepTable th {
 
 .mepFooterGrid {
   display: grid;
-  grid-template-columns: 1.05fr 1.95fr;
-  gap: 5.1mm;
-  font-size: 1.95mm;
+  grid-template-columns: 1.05fr 1.72fr 0.8fr;
+  gap: var(--mep-footer-col-gap);
+  font-size: var(--mep-footer-font-size);
+  line-height: var(--mep-footer-line-height);
+}
+
+.mepFooterHeading {
+  font-size: var(--mep-footer-heading-size);
+  font-weight: 700;
+  margin-bottom: 0.12mm;
 }
 
 .mepFooterLeft,
-.mepFooterCenter {
-  line-height: 1.08;
+.mepFooterCenter,
+.mepFooterRight {
+  line-height: var(--mep-footer-line-height);
 }
 
-.mepFooterCenter {
+.mepFooterCenter,
+.mepFooterRight {
   display: grid;
-  grid-template-columns: auto auto auto;
-  align-items: start;
-  column-gap: 4mm;
-  row-gap: 0.22mm;
-}
-
-.mepFooterCenter strong {
-  grid-column: 1 / -1;
+  grid-auto-rows: min-content;
+  row-gap: 0.16mm;
 }
 
 .mepFooterHint {
-  margin-top: 0.72mm;
-  font-size: 1.92mm;
-  line-height: 1.04;
+  margin-top: 0.55mm;
+  font-size: var(--mep-footer-font-size);
+  line-height: var(--mep-footer-line-height);
 }
 
 .mepFooterStand {
-  margin-top: 0.45mm;
+  margin-top: 0.24mm;
   text-align: right;
-  font-size: 1.82mm;
+  font-size: 1.62mm;
   line-height: 1;
 }
 

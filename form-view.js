@@ -193,23 +193,23 @@ const MEP_MEASURE_FIELDS = [
 
 const MEP_CALIBRATION_STORAGE_KEY = "mep-calibration";
 const MEP_CALIBRATION_DEFAULTS = {
-  "--mep-main-left": 23.5,
-  "--mep-main-top": 31,
+  "--mep-main-left": 22.4,
+  "--mep-main-top": 30,
   "--mep-main-right": 232.5,
-  "--mep-sum-left": 235.1,
+  "--mep-sum-left": 233.7,
   "--mep-sum-right": 276,
-  "--mep-sum-top": 31,
+  "--mep-sum-top": 30,
   "--mep-header-top": 2.2,
-  "--mep-header-title-offset-y": 0,
-  "--mep-header-meta-offset-y": 0,
-  "--mep-header-right-box-w": 42,
+  "--mep-header-title-offset-y": 3.6,
+  "--mep-header-meta-offset-y": 6.5,
+  "--mep-header-right-box-w": 34.1,
   "--mep-ref-left": 0,
   "--mep-ref-top": 0,
   "--mep-ref-width": 297,
   "--mep-row-h": 3.85,
-  "--mep-footer-offset-y": 7.25,
-  "--mep-body-height": 156,
-  "--mep-gap-main-sum": 2.6
+  "--mep-footer-offset-y": 4.55,
+  "--mep-body-height": 137.2,
+  "--mep-gap-main-sum": 1.2
 };
 
 let mepCalibrationBootstrapped = false;
@@ -661,17 +661,20 @@ function buildMepFooter() {
     <div class="mepFooter">
       <div class="mepFooterGrid">
         <div class="mepFooterLeft">
-          <div><strong>Pausenzeiten:</strong></div>
+          <div class="mepFooterHeading">Pausenzeiten:</div>
           <div>bis 6 Stunden: keine Pause</div>
           <div>mehr als 6 Stunden: 60 Minuten</div>
         </div>
 
         <div class="mepFooterCenter">
-          <div><strong>Abwesenheiten:</strong></div>
-          <div>Feiertag</div>
-          <div>Freizeit</div>
+          <div class="mepFooterHeading">Abwesenheiten:</div>
           <div>Krankheit (AU-Bescheinigung)</div>
           <div>Schule (Führungsnachwuchskraft)</div>
+        </div>
+
+        <div class="mepFooterRight">
+          <div>Feiertag</div>
+          <div>Freizeit</div>
           <div>Urlaub</div>
         </div>
       </div>
