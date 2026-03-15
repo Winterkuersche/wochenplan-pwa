@@ -382,22 +382,14 @@ function buildMepSumBlock(sheetModel) {
         );
 
     html += `
-      <div class="mepSumPair">
-        <div class="mepSumRow mepSumRowTop">
-          <div class="mepSumCell mepSumWeekCell">${weekText}</div>
-          <div class="mepSumCell mepSumMonthCell">${monthText}</div>
-        </div>
-        <div class="mepSumRow mepSumRowBottom">
-          <div class="mepSumCell mepSumWeekCell"></div>
-          <div class="mepSumCell mepSumMonthCell"></div>
-        </div>
+      <div class="mepSumRow">
+        <div class="mepSumCell mepSumWeekCell">${weekText}</div>
+        <div class="mepSumCell mepSumMonthCell">${monthText}</div>
       </div>
     `;
   });
 
-  html += `
-    </div>
-  `;
+  html += `</div>`;
 
   return html;
 }
