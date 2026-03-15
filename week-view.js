@@ -149,7 +149,7 @@ shiftDialogSave.addEventListener("click", () => {
     }
 
     clearDay(emp.id, isoDate, { commit: false });
-    setScheduleEntry(emp.id, isoDate, entry);
+    setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -159,7 +159,7 @@ shiftDialogSave.addEventListener("click", () => {
     const entry = buildFullShiftEntry(checkout);
 
     clearDay(emp.id, isoDate, { commit: false });
-    setScheduleEntry(emp.id, isoDate, entry);
+    setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -181,7 +181,7 @@ shiftDialogSave.addEventListener("click", () => {
     }
 
     clearDay(emp.id, isoDate, { commit: false });
-    setScheduleEntry(emp.id, isoDate, entry);
+    setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -352,20 +352,20 @@ function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
 }
 
 function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
-  const entry = getScheduleEntry(employeeId, isoDate);
+  const entry = getPlanEntry(employeeId, isoDate);
   if (!entry) return;
 
   if (entry.type === "external-help") {
-    clearScheduleEntry(employeeId, isoDate);
+    clearPlanEntry(employeeId, isoDate);
   }
 }
 
 function removeScheduledShiftForEmployeeOnDate(employeeId, isoDate) {
-  const entry = getScheduleEntry(employeeId, isoDate);
+  const entry = getPlanEntry(employeeId, isoDate);
   if (!entry) return;
 
   if (entry.type === "shift") {
-    clearScheduleEntry(employeeId, isoDate);
+    clearPlanEntry(employeeId, isoDate);
   }
 }
 
@@ -619,7 +619,7 @@ function createWeekSelect(emp, isoDate) {
     return;
   }
 
-  setScheduleEntry(emp.id, isoDate, entry);
+  setPlanEntry(emp.id, isoDate, entry);
   return;
 }
 
@@ -678,7 +678,7 @@ function getWeekDayHeaderMeta(index, visibleDays) {
 
     if (prevClosers.length > 0) {
       const hasEarlyHandover = prevClosers.some((emp) => {
-        const entry = getScheduleEntry(emp.id, day.iso);
+        const entry = getPlanEntry(emp.id, day.iso);
         return isEarlyStartEntry(entry);
       });
 
@@ -698,8 +698,8 @@ function getWeekDayHeaderMeta(index, visibleDays) {
 
 function getWeekCellFlags(emp, isoDate) {
   const prevIso = shiftIsoDateByDays(isoDate, -1);
-  const prevEntry = getScheduleEntry(emp.id, prevIso);
-  const currentEntry = getScheduleEntry(emp.id, isoDate);
+  const prevEntry = getPlanEntry(emp.id, prevIso);
+  const currentEntry = getPlanEntry(emp.id, isoDate);
 
   return {
     isLateToEarlyBridge: isClosingResolvedEntry(prevEntry) && isEarlyStartEntry(currentEntry)

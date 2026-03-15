@@ -23,12 +23,17 @@ function buildEarlyShiftEntry(code) {
 
   return {
     type: "shift",
+    status: "shift",
     mode: "early",
+    shiftType: "early",
     code: shift.code,
+    shiftKey: shift.code,
     label: shift.label,
     start: shift.start,
     end: shift.end,
+    pause: shift.breakMinutes,
     breakMinutes: shift.breakMinutes,
+    note: "",
     minutes: workedMinutes
   };
 }
@@ -51,12 +56,17 @@ function buildLateShiftEntry(startHHMM, withCheckout) {
 
   return {
     type: "shift",
+    status: "shift",
     mode: "late",
+    shiftType: "late",
     code,
+    shiftKey: code,
     label: code,
     start: startHHMM,
     end: endHHMM,
+    pause: breakMinutes,
     breakMinutes,
+    note: "",
     withCheckout: !!withCheckout,
     minutes: workedMinutes
   };
@@ -75,12 +85,17 @@ function buildFullShiftEntry(withCheckout) {
 
   return {
     type: "shift",
+    status: "shift",
     mode: "full",
+    shiftType: "full",
     code: "G",
+    shiftKey: "G",
     label: "G",
     start: startHHMM,
     end: endHHMM,
+    pause: breakMinutes,
     breakMinutes,
+    note: "",
     withCheckout: !!withCheckout,
     minutes: workedMinutes
   };
@@ -103,12 +118,17 @@ function buildFlexibleShiftEntry(startHHMM, endHHMM) {
 
   return {
     type: "shift",
+    status: "shift",
     mode: "flex",
+    shiftType: "flex",
     code: "FLEX",
+    shiftKey: "FLEX",
     label: `${startHHMM}-${endHHMM}`,
     start: startHHMM,
     end: endHHMM,
+    pause: breakMinutes,
     breakMinutes,
+    note: "",
     minutes: workedMinutes
   };
 }

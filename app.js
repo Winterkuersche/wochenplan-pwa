@@ -60,6 +60,76 @@ function ensureScheduleDay(isoDate) {
   return state.schedule[isoDate];
 }
 
+function normalizePlanEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+
+  const rawType = entry.type || entry.status || "off";
+  const isExternalHelp = rawType === "external-help" || Boolean(entry.externalHelp);
+  const type = isExternalHelp ? "external-help" : rawType;
+  const status = entry.status || type;
+
+  const start = entry.start || "";
+  const end = entry.end || "";
+  const pause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
+
+  let minutes = 0;
+
+  if (typeof entry.minutes === "number") {
+    minutes = Math.max(0, entry.minutes);
+  } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
+    minutes = hhmmToMinutes(entry.minutes);
+  } else if (start && end) {
+    minutes = Math.max(0, diffMinutesBetweenHHMM(start, end) - pause);
+  }
+
+  const shiftKey = entry.shiftKey || entry.code || "";
+  const shiftType = entry.shiftType || entry.mode || "";
+
+  return {
+    ...entry,
+    type,
+    status,
+    shiftKey,
+    shiftType,
+    code: entry.code || shiftKey,
+    mode: entry.mode || shiftType,
+    start,
+    end,
+    pause,
+    breakMinutes: pause,
+    note: entry.note || "",
+    branch: entry.branch || "",
+    externalHelp: isExternalHelp,
+    minutes,
+    label: entry.label || (isExternalHelp ? "AH" : shiftKey || "")
+  };
+}
+
+function normalizeSchedule(schedule) {
+  if (!schedule || typeof schedule !== "object") return {};
+
+  const normalized = {};
+
+  Object.entries(schedule).forEach(([isoDate, dayEntries]) => {
+    if (!dayEntries || typeof dayEntries !== "object") return;
+
+    const nextDay = {};
+
+    Object.entries(dayEntries).forEach(([employeeId, entry]) => {
+      const normalizedEntry = normalizePlanEntry(entry);
+      if (normalizedEntry) {
+        nextDay[employeeId] = normalizedEntry;
+      }
+    });
+
+    if (Object.keys(nextDay).length > 0) {
+      normalized[isoDate] = nextDay;
+    }
+  });
+
+  return normalized;
+}
+
 function cleanupScheduleDay(isoDate) {
   const day = state.schedule?.[isoDate];
   if (!day) return;
@@ -70,8 +140,13 @@ function cleanupScheduleDay(isoDate) {
 }
 
 function getScheduleEntry(employeeId, isoDate) {
+  return getPlanEntry(employeeId, isoDate);
+}
+
+function getPlanEntry(employeeId, isoDate) {
   if (!employeeId || !isoDate) return null;
-  return state.schedule?.[isoDate]?.[employeeId] || null;
+  const entry = state.schedule?.[isoDate]?.[employeeId] || null;
+  return normalizePlanEntry(entry);
 }
 
 function getScheduleEntrySafe(employeeId, isoDate) {
@@ -93,7 +168,7 @@ function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
 
   const { commit = true } = options;
-  const currentEntry = getScheduleEntry(employeeId, isoDate);
+  const currentEntry = getPlanEntry(employeeId, isoDate);
   const nextEntry = updater(currentEntry ? { ...currentEntry } : null);
 
   if (nextEntry == null) {
@@ -109,8 +184,23 @@ function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
     return null;
   }
 
+  const normalizedEntry = normalizePlanEntry(nextEntry);
+
+  if (!normalizedEntry) {
+    if (state.schedule?.[isoDate]?.[employeeId]) {
+      delete state.schedule[isoDate][employeeId];
+      cleanupScheduleDay(isoDate);
+    }
+
+    if (commit) {
+      commitPlanChange();
+    }
+
+    return null;
+  }
+
   const day = ensureScheduleDay(isoDate);
-  day[employeeId] = { ...nextEntry };
+  day[employeeId] = normalizedEntry;
 
   if (commit) {
     commitPlanChange();
@@ -120,13 +210,21 @@ function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
 }
 
 function setScheduleEntry(employeeId, isoDate, entry) {
+  return setPlanEntry(employeeId, isoDate, entry);
+}
+
+function setPlanEntry(employeeId, isoDate, entry) {
   if (!employeeId || !isoDate || !entry) return;
   return updateEmployeeDay(employeeId, isoDate, () => ({ ...entry }));
 }
 
 function clearScheduleEntry(employeeId, isoDate) {
+  return clearPlanEntry(employeeId, isoDate);
+}
+
+function clearPlanEntry(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;
-  return updateEmployeeDay(employeeId, isoDate, () => null);
+  return updateEmployeeDay(employeeId, isoDate, () => null, options);
 }
 
 function setShift(employeeId, isoDate, entry) {
@@ -135,10 +233,12 @@ function setShift(employeeId, isoDate, entry) {
 }
 
 function setExternalHelp(employeeId, isoDate, branch, minutes) {
-  setScheduleEntry(employeeId, isoDate, {
+  setPlanEntry(employeeId, isoDate, {
     type: "external-help",
+    status: "external-help",
     label: "AH",
     branch,
+    externalHelp: true,
     minutes
   });
 }
@@ -175,10 +275,7 @@ function clearDay(employeeId, isoDate, options = {}) {
 
  
 
-  if (state.schedule?.[isoDate]?.[employeeId]) {
-    delete state.schedule[isoDate][employeeId];
-    cleanupScheduleDay(isoDate);
-  }
+  clearPlanEntry(employeeId, isoDate, { commit: false });
 
   removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
 
@@ -398,7 +495,7 @@ function buildInitialState() {
 });
 
   const schedule = plan.schedule && typeof plan.schedule === "object"
-    ? { ...plan.schedule }
+    ? normalizeSchedule(plan.schedule)
     : {};
 
   const absences = Array.isArray(plan.absences)
