@@ -178,6 +178,10 @@ const MEP_MEASURE_FIELDS = [
   { cssVar: "--mep-sum-left", label: "sum-left" },
   { cssVar: "--mep-sum-right", label: "sum-right" },
   { cssVar: "--mep-sum-top", label: "sum-top" },
+  { cssVar: "--mep-header-top", label: "header-top" },
+  { cssVar: "--mep-header-title-offset-y", label: "header-title-offset-y" },
+  { cssVar: "--mep-header-meta-offset-y", label: "header-meta-offset-y" },
+  { cssVar: "--mep-header-right-box-w", label: "header-right-box-w" },
   { cssVar: "--mep-ref-left", label: "ref-left" },
   { cssVar: "--mep-ref-top", label: "ref-top" },
   { cssVar: "--mep-ref-width", label: "ref-width" },
@@ -192,16 +196,20 @@ const MEP_CALIBRATION_DEFAULTS = {
   "--mep-main-left": 23.5,
   "--mep-main-top": 31,
   "--mep-main-right": 232.5,
-  "--mep-sum-left": 243,
+  "--mep-sum-left": 235.1,
   "--mep-sum-right": 276,
   "--mep-sum-top": 31,
+  "--mep-header-top": 2.2,
+  "--mep-header-title-offset-y": 0,
+  "--mep-header-meta-offset-y": 0,
+  "--mep-header-right-box-w": 42,
   "--mep-ref-left": 0,
   "--mep-ref-top": 0,
   "--mep-ref-width": 297,
   "--mep-row-h": 3.85,
-  "--mep-footer-offset-y": 1.15,
+  "--mep-footer-offset-y": 7.25,
   "--mep-body-height": 156,
-  "--mep-gap-main-sum": 1.3
+  "--mep-gap-main-sum": 2.6
 };
 
 let mepCalibrationBootstrapped = false;
@@ -228,6 +236,10 @@ function getMepCalibrationRange(cssVar) {
     "--mep-sum-right": [0, pageWidth],
     "--mep-main-top": [0, pageHeight],
     "--mep-sum-top": [0, pageHeight],
+    "--mep-header-top": [0, pageHeight],
+    "--mep-header-title-offset-y": [-20, 20],
+    "--mep-header-meta-offset-y": [-20, 20],
+    "--mep-header-right-box-w": [1, pageWidth],
     "--mep-ref-left": [0, pageWidth],
     "--mep-ref-top": [0, pageHeight],
     "--mep-ref-width": [1, pageWidth],
@@ -253,14 +265,6 @@ function syncMepGapMainSumVar() {
 
 function applyMepMeasureVar(cssVar, value) {
   if (!isFiniteMepCalibrationValue(cssVar, Number(value))) {
-    return;
-  }
-
-  if (cssVar === "--mep-gap-main-sum") {
-    const mainRight = getMepCssVarValue("--mep-main-right");
-    const nextSumLeft = mainRight + Number(value);
-    document.documentElement.style.setProperty("--mep-sum-left", formatMepMm(nextSumLeft));
-    syncMepGapMainSumVar();
     return;
   }
 
@@ -324,6 +328,7 @@ function initMepCalibration() {
     }
   });
 
+  syncMepGapMainSumVar();
   saveMepCalibration();
   mepCalibrationBootstrapped = true;
 }
@@ -339,6 +344,7 @@ function resetMepCalibration() {
     applyMepMeasureVar(cssVar, Number(value));
   });
 
+  syncMepGapMainSumVar();
   saveMepCalibration();
   refreshMepMeasureUI();
   updateMepMeasureDynamicGuides();
