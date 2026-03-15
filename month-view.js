@@ -32,13 +32,14 @@ function getMonthTitleFromDays(days) {
 
 function getMonthCellClass(resolved, day) {
   const classes = ["monthCell"];
+  const status = getResolvedStatus(resolved);
 
   if (day.weekdayIndex === 6) classes.push("monthCellSunday");
   if (resolved.type === "holiday") classes.push("monthCellHoliday");
-  if (resolved.type === "vacation") classes.push("monthCellVacation");
-  if (resolved.type === "sick") classes.push("monthCellSick");
-  if (resolved.type === "external-help") classes.push("monthCellExternalHelp");
-  if (resolved.type === "shift") classes.push("monthCellShift");
+  if (status === ENTRY_STATUS.VACATION) classes.push("monthCellVacation");
+  if (status === ENTRY_STATUS.SICK) classes.push("monthCellSick");
+  if (status === ENTRY_STATUS.EXTERNAL) classes.push("monthCellExternalHelp");
+  if (status === ENTRY_STATUS.WORK) classes.push("monthCellShift");
 
   return classes.join(" ");
 }
@@ -81,8 +82,9 @@ function buildMonthEmployeeRow(emp, days) {
     monthMinutes += resolved.minutesForMonth || 0;
 
     let cellText = resolved.label || "";
+    const status = getResolvedStatus(resolved);
 
-if (resolved.type === "shift") {
+if (status === ENTRY_STATUS.WORK) {
   const entry = resolved.sourceEntry || resolved;
 
   if (entry.start && entry.end) {
@@ -90,12 +92,8 @@ if (resolved.type === "shift") {
   } else if (entry.code) {
     cellText = entry.code;
   }
-} else if (resolved.type === "vacation") {
-  cellText = "U";
-} else if (resolved.type === "sick") {
-  cellText = "K";
-} else if (resolved.type === "external-help") {
-  cellText = "AH";
+} else if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.EXTERNAL) {
+  cellText = getStatusShortLabel(status);
 }
    html += `
   <td

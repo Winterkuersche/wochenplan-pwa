@@ -61,13 +61,20 @@ function ensureScheduleDay(isoDate) {
 }
 
 function normalizePlanEntry(entry) {
+  // status is unified via status-utils.js
   if (!entry || typeof entry !== "object") return null;
 
-  const rawType = entry.type || entry.status || "off";
-  const isExternalHelp = rawType === "external-help" || Boolean(entry.externalHelp);
-  const isVacation = rawType === "vacation";
-  const type = isExternalHelp ? "external-help" : rawType;
-  const status = entry.status || type;
+  const entryStatus = getEntryStatus(entry);
+  const isExternalHelp = entryStatus === ENTRY_STATUS.EXTERNAL || Boolean(entry.externalHelp);
+  const isVacation = entryStatus === ENTRY_STATUS.VACATION;
+  const type = isExternalHelp
+    ? "external-help"
+    : isVacation
+      ? "vacation"
+      : entryStatus === ENTRY_STATUS.WORK
+        ? "shift"
+        : "off";
+  const status = entryStatus;
 
   const start = entry.start || "";
   const end = entry.end || "";
@@ -109,7 +116,7 @@ function normalizePlanEntry(entry) {
 }
 
 function isVacationScheduleEntry(entry) {
-  return Boolean(entry) && entry.type === "vacation";
+  return isVacationEntry(entry);
 }
 
 function setVacationEntry(employeeId, isoDate, options = {}) {
@@ -120,7 +127,7 @@ function setVacationEntry(employeeId, isoDate, options = {}) {
     isoDate,
     () => ({
       type: "vacation",
-      status: "vacation",
+      status: ENTRY_STATUS.VACATION,
       label: "U",
       minutes: 0,
       note: options.note || ""
@@ -243,7 +250,8 @@ function hasEmployeeWorkEntry(employeeId, isoDate) {
   const entry = getEmployeeDayEntry(employeeId, isoDate);
   if (!entry) return false;
 
-  return entry.type === "shift" || entry.type === "external-help";
+  const status = getEntryStatus(entry);
+  return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
 }
 
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
@@ -317,7 +325,7 @@ function setShift(employeeId, isoDate, entry) {
 function setExternalHelp(employeeId, isoDate, branch, minutes) {
   setPlanEntry(employeeId, isoDate, {
     type: "external-help",
-    status: "external-help",
+    status: ENTRY_STATUS.EXTERNAL,
     label: "AH",
     branch,
     externalHelp: true,
@@ -816,8 +824,10 @@ function getBlockingTypeForEmployeeOnIso(emp, isoDate) {
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
   if (!resolved) return null;
-  if (resolved.type === "vacation") return "vacation";
-  if (resolved.type === "sick") return "sick";
+  const status = getResolvedStatus(resolved);
+
+  if (status === ENTRY_STATUS.VACATION) return ENTRY_STATUS.VACATION;
+  if (status === ENTRY_STATUS.SICK) return ENTRY_STATUS.SICK;
   if (resolved.type === "holiday") return "holiday";
 
   return null;

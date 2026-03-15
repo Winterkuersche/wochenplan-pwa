@@ -93,6 +93,7 @@ function getBreakTextForResolvedShift(entry) {
 
 function getResolvedFormDayData(emp, isoDate) {
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+  const status = getResolvedStatus(resolved);
 
   if (!resolved) return { start: "", pause: "", end: "", sum: "" };
 
@@ -100,20 +101,26 @@ function getResolvedFormDayData(emp, isoDate) {
     return { start: "Feiertag", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
   }
 
-  if (resolved.type === "sick") {
-    return { start: "K", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
+  if (status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.VACATION) {
+    return {
+      start: getStatusShortLabel(status),
+      pause: "",
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
   }
 
-  if (resolved.type === "vacation") {
-    return { start: "U", pause: "", end: "", sum: minutesToHM(resolved.minutesForMonth) };
-  }
-
-  if (resolved.type === "external-help") {
+  if (status === ENTRY_STATUS.EXTERNAL) {
     const branch = resolved.sourceEntry?.branch || "";
-    return { start: "AH", pause: branch, end: "", sum: minutesToHM(resolved.minutesForMonth) };
+    return {
+      start: getStatusShortLabel(status),
+      pause: branch,
+      end: "",
+      sum: minutesToHM(resolved.minutesForMonth)
+    };
   }
 
-  if (resolved.type === "shift" && resolved.sourceEntry) {
+  if (status === ENTRY_STATUS.WORK && resolved.sourceEntry) {
     const entry = resolved.sourceEntry;
     return {
       start: entry.start || "",

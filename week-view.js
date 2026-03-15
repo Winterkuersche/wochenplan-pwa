@@ -51,6 +51,14 @@ function getAbsenceTypeFromDialogContext(type) {
   return type === "K" ? "sick" : "vacation";
 }
 
+function getDialogTypeFromResolvedEntry(resolved) {
+  const status = getResolvedStatus(resolved);
+  if (status === ENTRY_STATUS.VACATION) return "U";
+  if (status === ENTRY_STATUS.SICK) return "K";
+  if (status === ENTRY_STATUS.EXTERNAL) return "AH";
+  return null;
+}
+
 function resetShiftDialogInputs(isoDate) {
   shiftDialogLateStart.value = "13:00";
   shiftDialogLateCheckout.value = "yes";
@@ -395,9 +403,9 @@ function getWeekSelectValueForDay(emp, isoDate) {
   const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
 
   if (resolved.type === "holiday") return "H";
-  if (resolved.type === "sick") return "K";
-  if (resolved.type === "vacation") return "U";
-  if (resolved.type === "external-help") return "AH";
+
+  const dialogType = getDialogTypeFromResolvedEntry(resolved);
+  if (dialogType) return dialogType;
 
   if (resolved.type === "shift" && resolved.sourceEntry) {
     const entry = resolved.sourceEntry;
@@ -412,8 +420,11 @@ function getWeekSelectValueForDay(emp, isoDate) {
 }
 
 function buildWeekSelectClass(value) {
-  if (value === "U") return "weekSelect vacation";
-  return `weekSelect ${getShiftClassByKey(value === "K" || value === "AH" || value === "H" ? "-" : value)}`;
+  if (value === "U" || value === "K" || value === "AH") {
+    return `weekSelect ${value === "U" ? "vacation" : "free"}`;
+  }
+
+  return `weekSelect ${getShiftClassByKey(value === "H" ? "-" : value)}`;
 }
 
 function isDialogBackedValue(value) {
