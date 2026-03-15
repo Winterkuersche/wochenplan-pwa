@@ -177,8 +177,28 @@ const MEP_MEASURE_FIELDS = [
   { cssVar: "--mep-main-right", label: "main-right" },
   { cssVar: "--mep-sum-left", label: "sum-left" },
   { cssVar: "--mep-sum-right", label: "sum-right" },
-  { cssVar: "--mep-sum-top", label: "sum-top" }
+  { cssVar: "--mep-sum-top", label: "sum-top" },
+  { cssVar: "--mep-row-h", label: "row-h" },
+  { cssVar: "--mep-footer-offset-y", label: "footer-offset-y" },
+  { cssVar: "--mep-body-height", label: "body-height" },
+  { cssVar: "--mep-gap-main-sum", label: "gap-main-sum" }
 ];
+
+const MEP_CALIBRATION_STORAGE_KEY = "mep-calibration";
+const MEP_CALIBRATION_DEFAULTS = {
+  "--mep-main-left": 15.2,
+  "--mep-main-top": 8.2,
+  "--mep-main-right": 176.1,
+  "--mep-sum-left": 177,
+  "--mep-sum-right": 210,
+  "--mep-sum-top": 19.5,
+  "--mep-row-h": 4.05,
+  "--mep-footer-offset-y": 1.15,
+  "--mep-body-height": 155,
+  "--mep-gap-main-sum": 0.9
+};
+
+let mepCalibrationBootstrapped = false;
 
 let mepMeasureModeEnabled = false;
 
@@ -193,12 +213,118 @@ function formatMepMm(value) {
 }
 
 function applyMepMeasureVar(cssVar, value) {
+  if (cssVar === "--mep-sum-left") {
+    const mainRight = getMepCssVarValue("--mep-main-right");
+    const gap = Number(value) - mainRight;
+    document.documentElement.style.setProperty("--mep-gap-main-sum", formatMepMm(gap));
+    return;
+  }
+
   document.documentElement.style.setProperty(cssVar, formatMepMm(value));
+}
+
+function getMepMeasureDisplayValue(cssVar) {
+  if (cssVar === "--mep-sum-left") {
+    return getMepCssVarValue("--mep-main-right") + getMepCssVarValue("--mep-gap-main-sum");
+  }
+
+  return getMepCssVarValue(cssVar);
+}
+
+function collectMepCalibrationSnapshot() {
+  return MEP_MEASURE_FIELDS.reduce((acc, { cssVar }) => {
+    acc[cssVar] = getMepMeasureDisplayValue(cssVar);
+    return acc;
+  }, {});
+}
+
+function saveMepCalibration(values = collectMepCalibrationSnapshot()) {
+  try {
+    localStorage.setItem(MEP_CALIBRATION_STORAGE_KEY, JSON.stringify(values));
+  } catch (_error) {
+    // ignore localStorage write errors
+  }
+}
+
+function loadStoredMepCalibration() {
+  try {
+    const raw = localStorage.getItem(MEP_CALIBRATION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function initMepCalibration() {
+  if (mepCalibrationBootstrapped) return;
+
+  const cssSnapshot = collectMepCalibrationSnapshot();
+  const stored = loadStoredMepCalibration();
+
+  MEP_MEASURE_FIELDS.forEach(({ cssVar }) => {
+    const storedValue = stored ? Number(stored[cssVar]) : NaN;
+    const cssValue = Number(cssSnapshot[cssVar]);
+    const fallback = Number(MEP_CALIBRATION_DEFAULTS[cssVar]);
+    const nextValue = Number.isFinite(storedValue)
+      ? storedValue
+      : (Number.isFinite(cssValue) && cssValue !== 0 ? cssValue : fallback);
+
+    if (Number.isFinite(nextValue)) {
+      applyMepMeasureVar(cssVar, nextValue);
+    }
+  });
+
+  saveMepCalibration();
+  mepCalibrationBootstrapped = true;
+}
+
+function resetMepCalibration() {
+  try {
+    localStorage.removeItem(MEP_CALIBRATION_STORAGE_KEY);
+  } catch (_error) {
+    // ignore localStorage write errors
+  }
+
+  Object.entries(MEP_CALIBRATION_DEFAULTS).forEach(([cssVar, value]) => {
+    applyMepMeasureVar(cssVar, Number(value));
+  });
+
+  saveMepCalibration();
+  refreshMepMeasureUI();
+  updateMepMeasureDynamicGuides();
+}
+
+function updateMepMeasureDynamicGuides() {
+  const frame = document.querySelector(".mepMeasureMode .mepContentFrame");
+  if (!frame) return;
+
+  const frameRect = frame.getBoundingClientRect();
+  const guideMap = [
+    { line: "main-bottom", selector: ".mepMainTableWrap .mepTableOuter", mode: "bottom" },
+    { line: "sum-bottom", selector: ".mepSumWrap", mode: "sum-bottom" },
+    { line: "footer-top", selector: ".mepFooter", mode: "top" },
+    { line: "stand-bottom", selector: ".mepFooterStand", mode: "bottom" }
+  ];
+
+  guideMap.forEach(({ line, selector, mode }) => {
+    const target = frame.querySelector(selector);
+    const guide = frame.querySelector(`.mepMeasureGuideLine[data-guide="${line}"]`);
+    if (!target || !guide) return;
+
+    const rect = target.getBoundingClientRect();
+    let anchor = rect.bottom;
+    if (mode === "top") anchor = rect.top;
+    if (mode === "sum-bottom") anchor = frameRect.top + getMepCssVarValue("--mep-sum-bottom");
+    const top = anchor - frameRect.top;
+    guide.style.top = `${Math.max(0, top)}px`;
+  });
 }
 
 function buildMepMeasurementOverlay() {
   const labels = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     return `<span class="mepMeasureLabel" data-mep-var="${cssVar}">${label}: ${formatMepMm(value)}</span>`;
   }).join("");
 
@@ -206,13 +332,17 @@ function buildMepMeasurementOverlay() {
     <div class="mepMeasureOverlay no-print" aria-hidden="true">
       <div class="mepMeasureGrid"></div>
       <div class="mepMeasureGuides">${labels}</div>
+      <div class="mepMeasureGuideLine mepMeasureGuideLine--main" data-guide="main-bottom"></div>
+      <div class="mepMeasureGuideLine mepMeasureGuideLine--sum" data-guide="sum-bottom"></div>
+      <div class="mepMeasureGuideLine mepMeasureGuideLine--footer" data-guide="footer-top"></div>
+      <div class="mepMeasureGuideLine mepMeasureGuideLine--stand" data-guide="stand-bottom"></div>
     </div>
   `;
 }
 
 function renderMepMeasureControls() {
   const rows = MEP_MEASURE_FIELDS.map(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     return `
       <label class="mepMeasureControlRow">
         <span>${label}</span>
@@ -230,13 +360,14 @@ function renderMepMeasureControls() {
     <div id="mepMeasurePanel" class="mepMeasurePanel no-print" ${mepMeasureModeEnabled ? "" : "hidden"}>
       <strong>MEP Messwerte</strong>
       ${rows}
+      <button type="button" id="mepMeasureResetBtn">MEP Messwerte zurücksetzen</button>
     </div>
   `;
 }
 
 function refreshMepMeasureUI() {
   MEP_MEASURE_FIELDS.forEach(({ cssVar, label }) => {
-    const value = getMepCssVarValue(cssVar);
+    const value = getMepMeasureDisplayValue(cssVar);
     const formatted = formatMepMm(value);
 
     document.querySelectorAll(`.mepMeasureLabel[data-mep-var="${cssVar}"]`).forEach((el) => {
@@ -630,7 +761,9 @@ function bindFormPager(sheetModels) {
 
       const nextValue = getMepCssVarValue(cssVar) + step;
       applyMepMeasureVar(cssVar, nextValue);
+      saveMepCalibration();
       refreshMepMeasureUI();
+      updateMepMeasureDynamicGuides();
     });
 
     measurePanel.addEventListener("input", (event) => {
@@ -642,7 +775,16 @@ function bindFormPager(sheetModels) {
       if (!cssVar || !Number.isFinite(value)) return;
 
       applyMepMeasureVar(cssVar, value);
+      saveMepCalibration();
       refreshMepMeasureUI();
+      updateMepMeasureDynamicGuides();
+    });
+  }
+
+  const resetBtn = document.getElementById("mepMeasureResetBtn");
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      resetMepCalibration();
     });
   }
 }
@@ -667,6 +809,8 @@ function renderFormPager(sheetModels, currentIndex) {
   `;
 }
 function renderFormView() {
+  initMepCalibration();
+
   const container = document.getElementById("formView");
   if (!container) return;
 
@@ -700,4 +844,5 @@ function renderFormView() {
   `;
 
   bindFormPager(sheetModels);
+  updateMepMeasureDynamicGuides();
 }
