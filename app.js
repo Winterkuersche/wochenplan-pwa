@@ -852,6 +852,45 @@ function deltaMinutes(emp) {
   return totalMinutesForEmployee(emp) - hmToMinutes(emp.target || "0:00");
 }
 
+function isCreditableResolvedWorkEntry(resolvedEntry) {
+  const status = getResolvedStatus(resolvedEntry);
+  return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
+}
+
+function getEmployeeTargetMinutes(employee) {
+  if (!employee) return 0;
+  return hmToMinutes(employee.target || "0:00");
+}
+
+function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  return weekDays.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
+    if (!isCreditableResolvedWorkEntry(resolved)) return sum;
+
+    return sum + Math.max(0, resolved.minutesForMonth || 0);
+  }, 0);
+}
+
+function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays()) {
+  const plannedMinutes = getEmployeePlannedMinutesForWeek(employee, weekDays);
+  const targetMinutes = getEmployeeTargetMinutes(employee);
+  return plannedMinutes - targetMinutes;
+}
+
+function getEmployeeMinusMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  const difference = getEmployeeWeekDifferenceMinutes(employee, weekDays);
+  return difference < 0 ? Math.abs(difference) : 0;
+}
+
+function formatMinuteBalance(differenceMinutes) {
+  if (differenceMinutes >= 0) return "0:00";
+  return `-${minutesToHM(Math.abs(differenceMinutes))}`;
+}
+
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
     return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;

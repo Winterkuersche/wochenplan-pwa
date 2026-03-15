@@ -794,7 +794,7 @@ function renderWeekHeader() {
 
   headerHtml += `
       <th class="weekSummaryCol">Ist</th>
-      <th class="weekSummaryCol">Δ</th>
+      <th class="weekSummaryCol">Minus</th>
       <th class="weekSummaryCol">Soll</th>
     </tr>
   `;
@@ -840,20 +840,20 @@ function renderWeekTable() {
 
     const tdActual = document.createElement("td");
     tdActual.className = "weekHoursCell weekSummaryCol";
-    tdActual.textContent = minutesToHM(totalMinutesForEmployee(emp));
+    const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
+    tdActual.textContent = minutesToHM(plannedMinutes);
     tr.appendChild(tdActual);
 
-    const delta = deltaMinutes(emp);
+    const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays);
+    const minusMinutes = getEmployeeMinusMinutesForWeek(emp, visibleDays);
     const tdDelta = document.createElement("td");
-    tdDelta.className = `weekDeltaCell weekSummaryCol ${
-      delta < 0 ? "deltaNeg" : delta > 0 ? "deltaPos" : "deltaZero"
-    }`;
-    tdDelta.textContent = formatSignedMinutes(delta);
+    tdDelta.className = `weekDeltaCell weekSummaryCol ${minusMinutes > 0 ? "deltaNeg" : "deltaZero"}`;
+    tdDelta.textContent = formatMinuteBalance(differenceMinutes);
     tr.appendChild(tdDelta);
 
     const tdTarget = document.createElement("td");
     tdTarget.className = "weekTargetCell weekSummaryCol";
-    tdTarget.textContent = emp.target || "0:00";
+    tdTarget.textContent = minutesToHM(getEmployeeTargetMinutes(emp));
     tr.appendChild(tdTarget);
 
     weekTableBodyEl.appendChild(tr);
