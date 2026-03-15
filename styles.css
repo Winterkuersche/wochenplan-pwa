@@ -2192,7 +2192,7 @@ body.dark .mepTable th {
 }
 
 .mepTableOuter {
-  width: 201.8mm !important;
+  width: 197.8mm !important;
   margin: 0 !important;
   overflow: hidden !important;
   border: 0.28mm solid #6f6f6f !important;
@@ -2200,8 +2200,8 @@ body.dark .mepTable th {
 }
 
 .mepTable {
-  width: 201.8mm !important;
-  min-width: 201.8mm !important;
+  width: 197.8mm !important;
+  min-width: 197.8mm !important;
   border-collapse: collapse !important;
   table-layout: fixed !important;
   background: #fff !important;
