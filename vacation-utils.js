@@ -62,6 +62,11 @@ function getVacationEntriesForEmployee(employeeId) {
 function getUsedVacationDaysForEmployee(emp, year = null) {
   if (!emp?.id) return 0;
 
+  if (typeof getUsedVacationDaysFromScheduleForEmployee === "function") {
+    const resolvedYear = year || new Date().getFullYear();
+    return getUsedVacationDaysFromScheduleForEmployee(emp.id, resolvedYear);
+  }
+
   return getVacationEntriesForEmployee(emp.id).reduce((sum, entry) => {
     return sum + countVacationDaysInRangeForYear(entry.from, entry.to, year);
   }, 0);
@@ -85,7 +90,7 @@ function getAgeOnDate(birthDate, isoDate) {
 
 function getVacationDaysByAgeForYear(emp, year) {
   if (!emp?.birthDate) {
-    return Number(emp?.vacationDays ?? 30);
+    return Number(emp?.totalVacationDays ?? emp?.vacationDays ?? 30);
   }
 
   const ageOnYearStart = getAgeOnDate(emp.birthDate, `${year}-01-01`);
@@ -119,7 +124,7 @@ function applyVacationDaysForYear(year) {
 }
 
 function getVacationSummaryForEmployee(emp, year = new Date().getFullYear()) {
-  const total = calculateVacationDays(emp, year);
+  const total = Number(emp?.totalVacationDays ?? calculateVacationDays(emp, year));
   const used = getUsedVacationDaysForEmployee(emp, year);
 
   return {

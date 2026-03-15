@@ -421,6 +421,11 @@ select {
   border-color: #c8a6ee;
 }
 
+.weekSelect.vacation {
+  background: #fff5cc;
+  border-color: #e9cf72;
+}
+
 .weekHoursCell,
 .weekTargetCell,
 .weekDeltaCell {

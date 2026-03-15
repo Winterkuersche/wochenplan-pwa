@@ -102,7 +102,7 @@ function getResolvedDayEntry({
     return createResolvedDayEntry({
       type: "vacation",
       label: "U",
-      minutesForMonth: sunday ? 0 : getAbsenceMinutesForEmployee(employee),
+      minutesForMonth: 0,
       minutesForBranch: 0,
       isSunday: sunday,
       sourceEntry: absence
@@ -114,6 +114,17 @@ function getResolvedDayEntry({
       type: "external-help",
       label: getExternalHelpDisplayLabel(plannedEntry),
       minutesForMonth: sunday ? 0 : getExternalHelpMinutes(plannedEntry),
+      minutesForBranch: 0,
+      isSunday: sunday,
+      sourceEntry: plannedEntry
+    });
+  }
+
+  if (plannedEntry?.type === "vacation") {
+    return createResolvedDayEntry({
+      type: "vacation",
+      label: "U",
+      minutesForMonth: 0,
       minutesForBranch: 0,
       isSunday: sunday,
       sourceEntry: plannedEntry
