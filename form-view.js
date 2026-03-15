@@ -178,6 +178,9 @@ const MEP_MEASURE_FIELDS = [
   { cssVar: "--mep-sum-left", label: "sum-left" },
   { cssVar: "--mep-sum-right", label: "sum-right" },
   { cssVar: "--mep-sum-top", label: "sum-top" },
+  { cssVar: "--mep-ref-left", label: "ref-left" },
+  { cssVar: "--mep-ref-top", label: "ref-top" },
+  { cssVar: "--mep-ref-width", label: "ref-width" },
   { cssVar: "--mep-row-h", label: "row-h" },
   { cssVar: "--mep-footer-offset-y", label: "footer-offset-y" },
   { cssVar: "--mep-body-height", label: "body-height" },
@@ -192,6 +195,9 @@ const MEP_CALIBRATION_DEFAULTS = {
   "--mep-sum-left": 177.3,
   "--mep-sum-right": 209.5,
   "--mep-sum-top": 19.9,
+  "--mep-ref-left": 13,
+  "--mep-ref-top": 6,
+  "--mep-ref-width": 198,
   "--mep-row-h": 4.05,
   "--mep-footer-offset-y": 1.15,
   "--mep-body-height": 156.6,
@@ -706,7 +712,7 @@ function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
   return `
     <section class="mepPrintPage">
       <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
-        ${useTemplate ? '<img class="mepTemplateReference" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
+        ${useTemplate ? '<img class="mepReferenceImage" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
         <div class="mepContentFrame">
           ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
           ${buildMepHeader(filledSheetModel)}
