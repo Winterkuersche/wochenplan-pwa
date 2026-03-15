@@ -1976,8 +1976,8 @@ body.dark .mepTable th {
 }
 
 .mepFooter {
-  width: 227.8mm;
-  margin-top: 1.15mm;
+  width: var(--mep-body-width);
+  margin-top: var(--mep-footer-offset-y);
 }
 
 .mepFooterGrid {
@@ -2055,27 +2055,23 @@ body.dark .mepTable th {
   --mep-body-width: 227.8mm;
   --mep-body-height: 155mm;
 
-  --mep-main-left: 3.6mm;
-  --mep-main-top: 9.6mm;
-  --mep-main-right: 195.2mm;
-  --mep-main-bottom: 0mm;
+  --mep-main-left: 15.2mm;
+  --mep-main-top: 8.2mm;
+  --mep-main-right: 176.1mm;
 
-  --mep-sum-left: 207.6mm;
-  --mep-sum-top: 19.3mm;
-  --mep-sum-right: 226mm;
-  --mep-sum-bottom: 0mm;
-
-  --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
-  --mep-main-h: calc(var(--mep-main-bottom) - var(--mep-main-top));
-
-  --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
-  --mep-sum-h: calc(var(--mep-sum-bottom) - var(--mep-sum-top));
+  --mep-sum-left: 177mm;
+  --mep-sum-top: 19.5mm;
+  --mep-sum-right: 210mm;
 
   --mep-row-h: 4.05mm;
-  --mep-sum-box-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
+  --mep-footer-offset-y: 1.15mm;
+
+  --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
+  --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
   --mep-sum-col-w: calc(var(--mep-sum-w) / 2);
   --mep-sum-total-w: calc(var(--mep-sum-col-w) * 2);
+  --mep-sum-box-h: calc(var(--mep-row-h) * 2);
+  --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
 }
 .mepContentFrame {
   position: relative;
@@ -2271,6 +2267,30 @@ body.dark .mepTable th {
   pointer-events: none;
 }
 
+.mepMeasureGuideLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.35mm;
+  pointer-events: none;
+}
+
+.mepMeasureGuideLine--main {
+  background: rgba(0, 80, 255, 0.92);
+}
+
+.mepMeasureGuideLine--sum {
+  background: rgba(255, 140, 0, 0.92);
+}
+
+.mepMeasureGuideLine--footer {
+  background: rgba(145, 0, 170, 0.92);
+}
+
+.mepMeasureGuideLine--stand {
+  background: rgba(220, 40, 40, 0.92);
+}
+
 .mepMeasureGrid {
   position: absolute;
   inset: 0;
@@ -2349,4 +2369,12 @@ body.dark .mepTable th {
 .mepMeasureLabel[data-mep-var="--mep-sum-top"] {
   left: calc(var(--mep-sum-left) + 1.4mm);
   top: var(--mep-sum-top);
+}
+
+@media print {
+  .mepMeasureOverlay,
+  .mepMeasurePanel,
+  .mepMeasureGuideLine {
+    display: none !important;
+  }
 }
