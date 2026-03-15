@@ -186,16 +186,16 @@ const MEP_MEASURE_FIELDS = [
 
 const MEP_CALIBRATION_STORAGE_KEY = "mep-calibration";
 const MEP_CALIBRATION_DEFAULTS = {
-  "--mep-main-left": 15.2,
-  "--mep-main-top": 8.2,
-  "--mep-main-right": 176.1,
-  "--mep-sum-left": 177,
-  "--mep-sum-right": 210,
-  "--mep-sum-top": 19.5,
+  "--mep-main-left": 15.0,
+  "--mep-main-top": 8.9,
+  "--mep-main-right": 176.0,
+  "--mep-sum-left": 177.3,
+  "--mep-sum-right": 209.5,
+  "--mep-sum-top": 19.9,
   "--mep-row-h": 4.05,
   "--mep-footer-offset-y": 1.15,
-  "--mep-body-height": 155,
-  "--mep-gap-main-sum": 0.9
+  "--mep-body-height": 156.6,
+  "--mep-gap-main-sum": 1.3
 };
 
 let mepCalibrationBootstrapped = false;

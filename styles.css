@@ -752,10 +752,11 @@ select {
 
 .mepSheet,
 .formPage {
-  width: 289mm;
-  min-height: 196mm;
+  width: 297mm;
+  height: 210mm;
+  min-height: 210mm;
   margin: 0 auto 10mm;
-  padding: 2.2mm 2.2mm 3.2mm;
+  padding: 0;
   box-sizing: border-box;
   background: #fff;
   color: #111;
@@ -1261,10 +1262,11 @@ select {
 
   .mepSheet,
   .formPage {
-    width: 289mm !important;
-    min-height: 196mm !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    min-height: 210mm !important;
     margin: 0 auto !important;
-    padding: 2.4mm 3.2mm 3.8mm !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
     background: #fff !important;
     color: #111 !important;
@@ -1713,31 +1715,94 @@ body.dark .mepTable th {
 }
 
 
-/* =============================
-   Base form layout
-   ============================= */
+/* =========================
+   MEP A4 geometry
+   ========================= */
+:root {
+  --mep-page-w: 297mm;
+  --mep-page-h: 210mm;
+
+  /* feste A4-Seite */
+  --mep-frame-left: 0mm;
+  --mep-frame-top: 0mm;
+
+  /* bestehende Kalibrierwerte */
+  --mep-main-left: 15mm;
+  --mep-main-top: 8.9mm;
+  --mep-main-right: 176mm;
+
+  --mep-sum-left: 177.3mm;
+  --mep-sum-top: 19.9mm;
+  --mep-sum-right: 209.5mm;
+
+  --mep-row-h: 4.05mm;
+  --mep-header-h: 12.2mm;
+  --mep-employee-count: 9;
+  --mep-employee-block-h: calc(var(--mep-row-h) * 4);
+  --mep-main-grid-h: calc(var(--mep-header-h) + (var(--mep-employee-block-h) * var(--mep-employee-count)));
+  --mep-main-bottom: calc(var(--mep-main-top) + var(--mep-main-grid-h));
+
+  --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
+  --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
+  --mep-gap-main-sum: calc(var(--mep-sum-left) - var(--mep-main-right));
+
+  --mep-sum-col-w: calc(var(--mep-sum-w) / 2);
+  --mep-sum-box-h: calc(var(--mep-row-h) * 2);
+  --mep-sum-header-h: 8.9mm;
+  --mep-sum-header-gap: calc(var(--mep-row-h) * 1.5);
+  --mep-sum-row-count: 9;
+  --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
+
+  --mep-sum-bottom: calc(
+    var(--mep-sum-top)
+    + var(--mep-sum-header-h)
+    + var(--mep-sum-header-gap)
+    + (var(--mep-sum-box-h) * var(--mep-sum-row-count))
+    + (var(--mep-sum-gap-h) * (var(--mep-sum-row-count) - 1))
+  );
+
+  --mep-footer-offset-y: 1.15mm;
+  --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-offset-y));
+
+  /* Hilfswerte für Overlay/Template */
+  --mep-body-width: 227.8mm;
+  --mep-body-height: 156.6mm;
+}
+
+/* echte A4-Seite */
 .mepSheet,
 .formPage {
-  width: 289mm;
-  min-height: 196mm;
+  position: relative;
+  width: var(--mep-page-w);
+  height: var(--mep-page-h);
+  min-height: var(--mep-page-h);
   margin: 0 auto 10mm;
-  padding: 2.2mm 2.2mm 3.2mm;
+  padding: 0;
   box-sizing: border-box;
   background: #fff;
   color: #111;
   border: none;
   border-radius: 0;
   box-shadow: 0 0 0 1px #ddd;
+  overflow: hidden;
 }
 
+/* fixer A4-Innenraum */
 .mepContentFrame {
-  width: 227.8mm;
-  position: relative;
+  position: absolute;
+  inset: 0;
+  width: var(--mep-page-w);
+  height: var(--mep-page-h);
+  transform: none;
 }
 
+/* Kopfbereich bleibt oben im Formular */
 .mepHeader {
-  width: 227.8mm;
-  margin-bottom: 1.2mm;
+  position: absolute;
+  left: var(--mep-main-left);
+  top: 2.2mm;
+  width: calc(var(--mep-sum-right) - var(--mep-main-left));
+  margin: 0;
 }
 
 .mepHeaderTop {
@@ -1751,7 +1816,7 @@ body.dark .mepTable th {
 .mepTitleBox,
 .mepBranchBox {
   padding: 0.42mm 0.85mm;
-  border: 0.30mm solid #6f6f6f;
+  border: 0.3mm solid #6f6f6f;
   font-size: 3.45mm;
   font-weight: 700;
   line-height: 1.02;
@@ -1762,12 +1827,11 @@ body.dark .mepTable th {
 }
 
 .mepHeaderMeta {
-  width: 227.8mm;
   display: grid;
   grid-template-columns: 1.18fr 0.98fr 0.72fr auto;
   align-items: end;
   gap: 2.4mm;
-  margin-bottom: 1.35mm;
+  margin-bottom: 0;
 }
 
 .mepMetaField {
@@ -1791,15 +1855,23 @@ body.dark .mepTable th {
   font-size: 2.45mm;
 }
 
-.mepBodyLayout {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.8mm;
-  width: 227.8mm;
+/* Hauptbereich ist nur ein logischer Container */
+.mepBody {
+  position: absolute;
+  inset: 0;
+}
+
+/* Haupttabelle exakt aus Geometrie */
+.mepMainTableWrap {
+  position: absolute;
+  left: var(--mep-main-left);
+  top: var(--mep-main-top);
+  width: var(--mep-main-w);
+  margin: 0;
 }
 
 .mepTableOuter {
-  width: 201.4mm;
+  width: 100%;
   margin: 0;
   overflow: hidden;
   border: 0.28mm solid #6f6f6f;
@@ -1807,8 +1879,9 @@ body.dark .mepTable th {
 }
 
 .mepTable {
-  width: 194.8mm;
-  min-width: 194.8mm;
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   background: #fff;
@@ -1816,89 +1889,55 @@ body.dark .mepTable th {
 
 .mepTable th,
 .mepTable td {
-  height: 4.22mm;
-  padding: 0.18mm 0.28mm;
-  border: 0.24mm solid #6f6f6f;
+  height: var(--mep-row-h);
+  padding: 0.08mm 0.25mm;
+  border: 0.22mm solid #6f6f6f;
   background: #fff;
-  font-size: 2.06mm;
+  font-size: 2.05mm;
   line-height: 1.02;
   vertical-align: middle;
 }
 
 .mepTable thead th {
-  background: #efefef;
   text-align: center;
-  vertical-align: middle;
-  white-space: normal;
-  overflow-wrap: break-word;
   font-weight: 700;
 }
 
-.mepNameCol { width: 30mm; }
-.mepFuncCol { width: 11mm; }
-.mepPlanCol { width: 12mm; }
-.mepTypeCol { width: 14mm; text-align: center; }
-.mepDayCol { width: 20.2mm; }
-
-.mepNameCell,
-.mepFuncText,
-.mepPlanText,
-.mepDayValueCell,
-.mepTypeCell {
-  padding-top: 0.45mm;
-  padding-bottom: 0.1mm;
-}
-
-.mepNameCell {
-  text-align: left;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-
-.mepFuncText,
-.mepPlanText,
-.mepDayValueCell {
-  text-align: center;
-  white-space: nowrap;
-}
-
-.mepTypeCell,
-.mepSubHead {
-  white-space: nowrap;
-}
+.mepNameCol { width: 31mm; }
+.mepFuncCol { width: 10.5mm; }
+.mepPlanCol { width: 11.5mm; }
+.mepTypeCol { width: 15mm; text-align: center; }
+.mepDayCol { width: 16.2mm; }
 
 .mepSubHead {
-  height: 3.65mm;
-  font-size: 1.92mm;
-  font-weight: 600;
-}
-
-.mepDayDate {
-  font-size: 2.55mm;
+  height: 3.45mm;
+  font-size: 1.9mm;
   line-height: 1;
 }
 
-.mepSumBlock {
-  width: 24.6mm;
-  flex: 0 0 24.6mm;
+.mepDayDate {
+  font-size: 2.25mm;
 }
+
+/* Summenblock exakt aus Geometrie */
 .mepSumWrap {
-  grid-column: 2;
-   margin-top: var(--mep-sum-offset-y, 9.45mm);
-  margin-left: var(--mep-sum-offset-x, 2.2mm);
-  width: 32.5mm;
+  position: absolute;
+  left: var(--mep-sum-left);
+  top: var(--mep-sum-top);
+  width: var(--mep-sum-w);
   display: flex;
   flex-direction: column;
+  margin: 0;
+  z-index: 5;
 }
 
 .mepSumHeader {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 31mm;
-  height: 11.2mm;
-  margin-bottom: 1.95mm;
+  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w);
+  width: var(--mep-sum-w);
+  height: var(--mep-sum-header-h);
+  margin-bottom: 0;
 }
-
 
 .mepSumHeaderCell {
   display: flex;
@@ -1906,22 +1945,27 @@ body.dark .mepTable th {
   justify-content: center;
   border: 0.28mm solid #6f6f6f;
   background: #fff;
-  font-size: 2.15mm;
-  line-height: 1.05;
+  font-size: 2mm;
+  line-height: 1;
+  padding: 0.05mm 0 0.35mm 0;
   font-weight: 700;
   text-align: center;
 }
 
-.mepSumHeaderCell:first-child {
-  border-left: none;
-}
-
 .mepSumRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 31mm;
-  height: 14.6mm;
-  margin-bottom: 2.02mm;
+  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w);
+  width: var(--mep-sum-w);
+  height: var(--mep-sum-box-h);
+  margin: 0 0 var(--mep-sum-gap-h) 0;
+}
+
+.mepSumRow:last-child {
+  margin-bottom: 0;
+}
+
+.mepSumHeader + .mepSumRow {
+  margin-top: var(--mep-sum-header-gap);
 }
 
 .mepSumCell {
@@ -1930,65 +1974,19 @@ body.dark .mepTable th {
   justify-content: center;
   border: 0.28mm solid #6f6f6f;
   background: #fff;
-  font-size: 3.1mm;
+  font-size: 2.75mm;
   line-height: 1;
   text-align: center;
   overflow: hidden;
 }
-.mepSumCell + .mepSumCell {
-  border-left-width: 0.24mm;
-}
-.mepSumCell .mepHand {
-  font-size: 3.15mm;
-  transform: translateY(0.25mm);
-}
-.mepHand,
-.mepHandwrite,
-.handwrite,
-.formHandwrite {
-  display: inline-block;
-  vertical-align: middle;
-  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-  font-size: 3.35mm;
-  line-height: 1.04;
-  color: #1f2a35;
-  font-weight: 400;
-  letter-spacing: 0.01mm;
-}
 
-.mepNameCell .mepHand { font-size: 3.65mm; }
-.mepFuncText .mepHand,
-.mepPlanText .mepHand,
-.mepSumCell .mepHand { font-size: 3.1mm; }
-
-.mepDayValueCell .mepHand,
-.mepFuncText .mepHand,
-.mepPlanText .mepHand,
-.mepHandField .mepHand,
-.mepMetaLine .mepHand,
-.mepNameCell .mepHand,
-.mepSumCell .mepHand {
-  transform: translateY(0.42mm);
-}
-
-.mepSubHead .mepHand {
-  transform: translateY(0.1mm);
-}
-
+/* Footer logisch aus main-bottom abgeleitet */
 .mepFooter {
-  width: var(--mep-body-width);
-  margin-top: var(--mep-footer-offset-y);
-}
-
-.mepScreenStage .mepContentFrame {
-  min-height: calc(var(--mep-footer-top) + 26mm);
-}
-
-.mepScreenStage .mepFooter {
   position: absolute;
+  left: var(--mep-main-left);
   top: var(--mep-footer-top);
-  left: 0;
-  margin-top: 0;
+  width: calc(var(--mep-sum-right) - var(--mep-main-left));
+  margin: 0;
 }
 
 .mepFooterGrid {
@@ -2028,11 +2026,44 @@ body.dark .mepTable th {
   line-height: 1;
 }
 
+.mepHand,
+.mepHandwrite,
+.handwrite,
+.formHandwrite {
+  display: inline-block;
+  vertical-align: middle;
+  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-size: 3.35mm;
+  line-height: 1.04;
+  color: #1f2a35;
+  font-weight: 400;
+  letter-spacing: 0.01mm;
+}
+
+.mepNameCell .mepHand { font-size: 3.65mm; }
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepSumCell .mepHand { font-size: 3.1mm; }
+
+.mepDayValueCell .mepHand,
+.mepFuncText .mepHand,
+.mepPlanText .mepHand,
+.mepHandField .mepHand,
+.mepMetaLine .mepHand,
+.mepNameCell .mepHand,
+.mepSumCell .mepHand {
+  transform: translateY(0.42mm);
+}
+
+.mepSubHead .mepHand {
+  transform: translateY(0.1mm);
+}
+
 /* Optionaler Kalibriermodus mit Referenzbild */
 .mepSheet.mepUseTemplate {
   position: relative;
-  --mep-template-x: var(--mep-content-offset-x);
-  --mep-template-y: var(--mep-content-offset-y);
+  --mep-template-x: var(--mep-frame-left);
+  --mep-template-y: var(--mep-frame-top);
   --mep-template-width: var(--mep-body-width);
   --mep-template-height: var(--mep-body-height);
   --mep-template-opacity: 0.22;
@@ -2055,186 +2086,6 @@ body.dark .mepTable th {
   z-index: 1;
 }
 
-
-/* =========================
-   Final MEP overrides
-   ========================= */
-:root {
-  --mep-content-offset-x: 3mm;
-  --mep-content-offset-y: 0mm;
-
-  --mep-body-width: 227.8mm;
-  --mep-body-height: 155mm;
-
-  --mep-main-left: 15.2mm;
-  --mep-main-top: 8.2mm;
-  --mep-main-right: 176.1mm;
-
-  --mep-gap-main-sum: 0.9mm;
-  --mep-sum-left: calc(var(--mep-main-right) + var(--mep-gap-main-sum));
-  --mep-sum-top: 19.5mm;
-  --mep-sum-right: 210mm;
-
-  --mep-row-h: 4.05mm;
-  --mep-header-h: 12.2mm;
-  --mep-employee-block-h: calc(var(--mep-row-h) * 4);
-  --mep-employee-count: 9;
-  --mep-main-grid-h: calc(var(--mep-header-h) + (var(--mep-employee-block-h) * var(--mep-employee-count)));
-  --mep-main-bottom: calc(var(--mep-main-top) + var(--mep-main-grid-h));
-
-  --mep-sum-header-h: 8.9mm;
-  --mep-sum-header-gap: calc(var(--mep-row-h) * 1.5);
-  --mep-sum-row-count: 9;
-
-  --mep-main-w: calc(var(--mep-main-right) - var(--mep-main-left));
-  --mep-sum-w: calc(var(--mep-sum-right) - var(--mep-sum-left));
-  --mep-sum-col-w: calc(var(--mep-sum-w) / 2);
-  --mep-sum-total-w: calc(var(--mep-sum-col-w) * 2);
-  --mep-sum-box-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-bottom: calc(
-    var(--mep-sum-top)
-    + var(--mep-sum-header-h)
-    + var(--mep-sum-header-gap)
-    + (var(--mep-sum-box-h) * var(--mep-sum-row-count))
-    + (var(--mep-sum-gap-h) * (var(--mep-sum-row-count) - 1))
-  );
-
-  --mep-footer-gap: 0mm;
-  --mep-footer-offset-y: 1.15mm;
-  --mep-footer-top: calc(var(--mep-main-bottom) + var(--mep-footer-gap) + var(--mep-footer-offset-y));
-}
-.mepContentFrame {
-  position: relative;
-  transform: translate(var(--mep-content-offset-x), var(--mep-content-offset-y));
-  transform-origin: top left;
-}
-
-.mepBody {
-  display: block !important;
-  width: var(--mep-body-width) !important;
-  min-height: var(--mep-body-height) !important;
-}
-
-.mepMainTableWrap {
-  grid-column: 1 !important;
-  display: inline-block !important;
-  width: var(--mep-main-w) !important;
-  margin-left: var(--mep-main-left) !important;
-  margin-top: var(--mep-main-top) !important;
-}
-
-.mepTableOuter {
-  width: var(--mep-main-w) !important;
-  margin: 0 !important;
-  overflow: hidden !important;
-  border: 0.28mm solid #6f6f6f !important;
-  background: #fff !important;
-}
-.mepTable {
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
-  border-collapse: collapse !important;
-  table-layout: fixed !important;
-  background: #fff !important;
-}
-
-.mepDayCol { width: 19.8mm !important; }
-.mepWeekCol { width: 11.8mm !important; }
-.mepMonthCol { width: 11.8mm !important; }
-
-.mepTable th,
-.mepTable td {
-  border: 0.22mm solid #6f6f6f !important;
-  height: var(--mep-row-h) !important;
-  padding: 0.08mm 0.25mm !important;
-  font-size: 2.05mm !important;
-  line-height: 1.02 !important;
-  vertical-align: middle !important;
-  background: #fff !important;
-}
-
-.mepTable thead th {
-  text-align: center !important;
-  font-weight: 700 !important;
-}
-
-.mepSubHead {
-  height: 3.45mm !important;
-  font-size: 1.9mm !important;
-  line-height: 1 !important;
-}
-
-.mepDayDate {
-  font-size: 2.25mm !important;
-}
-
-.mepSumWrap {
-  position: absolute !important;
-  left: var(--mep-sum-left) !important;
-  top: var(--mep-sum-top) !important;
-  width: var(--mep-sum-w) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  margin: 0 !important;
-  z-index: 5 !important;
-}
-
-.mepSumHeader {
-  display: grid !important;
-  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w) !important;
-  width: var(--mep-sum-total-w) !important;
-  height: var(--mep-sum-header-h) !important;
-  margin-bottom: 0 !important;
-}
-
-.mepSumHeaderCell {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border: 0.28mm solid #6f6f6f !important;
-  background: #fff !important;
-  font-size: 2.0mm !important;
-  line-height: 1 !important;
-  padding: 0.05mm 0 0.35mm 0 !important;
-  font-weight: 700 !important;
-  text-align: center !important;
-  vertical-align: middle !important;
-}
-
-.mepSumRow {
-  display: grid !important;
-  grid-template-columns: var(--mep-sum-col-w) var(--mep-sum-col-w) !important;
-  width: var(--mep-sum-total-w) !important;
-  height: var(--mep-sum-box-h) !important;
-  margin: 0 0 var(--mep-sum-gap-h) 0 !important;
-}
-
-.mepSumRow:last-child {
-  margin-bottom: 0 !important;
-}
-
-.mepSumHeader + .mepSumRow {
-  margin-top: var(--mep-sum-header-gap) !important;
-}
-
-.mepSumCell {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border: 0.28mm solid #6f6f6f !important;
-  background: #fff !important;
-  font-size: 2.75mm !important;
-  line-height: 1 !important;
-  text-align: center !important;
-  overflow: hidden !important;
-}
-
-.mepSumCell .mepHand {
-  font-size: 2.9mm !important;
-  transform: translateY(0.18mm) !important;
-}
 /* Temporary calibration guide:
    - Blue box (main table) is calibrated via --mep-main-left/top/right/bottom.
    - Orange box (sum block) is calibrated via --mep-sum-left/top/right/bottom.
