@@ -173,6 +173,7 @@ function renderHandText(text, seedText = "") {
 
 const MEP_MEASURE_FIELDS = [
   { cssVar: "--mep-main-left", label: "main-left" },
+  { cssVar: "--mep-main-top", label: "main-top" },
   { cssVar: "--mep-main-right", label: "main-right" },
   { cssVar: "--mep-sum-left", label: "sum-left" },
   { cssVar: "--mep-sum-right", label: "sum-right" },

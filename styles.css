@@ -2341,6 +2341,11 @@ body.dark .mepTable th {
   top: 10.4mm;
 }
 
+.mepMeasureLabel[data-mep-var="--mep-main-top"] {
+  left: calc(var(--mep-main-left) + 1.4mm);
+  top: var(--mep-main-top);
+}
+
 .mepMeasureLabel[data-mep-var="--mep-sum-top"] {
   left: calc(var(--mep-sum-left) + 1.4mm);
   top: var(--mep-sum-top);
