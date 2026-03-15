@@ -754,14 +754,15 @@ select {
 .formPage {
   width: 289mm;
   min-height: 196mm;
-  margin: 0 auto 8mm;
-  padding: 2.4mm 3.2mm 3.8mm;
+  margin: 0 auto 10mm;
+  padding: 2.2mm 2.2mm 3.2mm;
   box-sizing: border-box;
   background: #fff;
   color: #111;
   border: none;
   border-radius: 0;
   box-shadow: 0 0 0 1px #ddd;
+  position: relative;
 }
 
 .mepScreenMeta {
@@ -2179,13 +2180,17 @@ body.dark .mepTable th {
   --mep-main-offset-x: 3.6mm;
   --mep-main-offset-y: 0mm;
 
-  --mep-sum-offset-x: 13.2mm;
-  --mep-sum-offset-y: 0.8mm;
+  /* jetzt seitenbezogen statt nur nach links/rechts zu schieben */
+  --mep-sum-page-right: 8.5mm;
+  --mep-sum-page-top: 37.8mm;
+  --mep-sum-offset-y: 0mm;
 
   --mep-row-h: 4.10mm;
   --mep-sum-box-h: calc(var(--mep-row-h) * 2);
   --mep-sum-gap-h: calc(var(--mep-row-h) * 2);
-  --mep-sum-total-w: 41mm;
+
+  /* aus der Blattproportion des Originals abgeleitet */
+  --mep-sum-total-w: 43.2mm;
 }
 
 .mepContentFrame {
@@ -2195,12 +2200,11 @@ body.dark .mepTable th {
 }
 
 .mepBody {
-  display: grid !important;
-  grid-template-columns: 201.8mm 39.5mm !important;
-  column-gap: 4.6mm !important;
-  align-items: start !important;
+  display: block !important;
+  position: relative !important;
+  width: 227.8mm !important;
+  min-height: 160mm !important;
 }
-
 .mepMainTableWrap {
   grid-column: 1 !important;
   margin-left: var(--mep-main-offset-x) !important;
@@ -2250,12 +2254,14 @@ body.dark .mepTable th {
 }
 
 .mepSumWrap {
-  grid-column: 2 !important;
-  margin-top: calc(10.6mm + var(--mep-sum-offset-y)) !important;
-  margin-left: var(--mep-sum-offset-x) !important;
+  position: absolute !important;
+  top: calc(var(--mep-sum-page-top) + var(--mep-sum-offset-y)) !important;
+  right: var(--mep-sum-page-right) !important;
   width: var(--mep-sum-total-w) !important;
+  margin: 0 !important;
   display: flex !important;
   flex-direction: column !important;
+  z-index: 2 !important;
 }
 
 .mepSumHeader {
