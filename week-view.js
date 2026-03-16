@@ -521,6 +521,15 @@ function isDialogBackedValue(value) {
   return ["L", "G", "FLEX", "AH", "U", "K"].includes(value);
 }
 
+function isReusableShiftValue(value) {
+  return ["F3", "F4", "F5", "F6", "L", "G"].includes(value);
+}
+
+function rememberLastSelectedShift(value) {
+  if (!isReusableShiftValue(value)) return;
+  lastSelectedShift = value;
+}
+
 function getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   return (state.absences || []).find((entry) => {
     if (!entry || entry.employeeId !== employeeId) return false;
@@ -666,6 +675,9 @@ function createWeekSelect(emp, isoDate) {
   const wrap = document.createElement("div");
   wrap.className = "weekCellControl";
 
+  const isEmptyCell = currentValue === "-";
+  const canQuickApplyLastShift = isEmptyCell && lastSelectedShift !== null;
+
   const cellFlags = getWeekCellFlags(emp, isoDate);
   if (cellFlags.isLateToEarlyBridge) {
     wrap.classList.add("weekCellHandoverOk");
@@ -739,6 +751,8 @@ function createWeekSelect(emp, isoDate) {
       }
     }
 
+    rememberLastSelectedShift(selectedValue);
+
     if (selectedValue === "U") {
       openShiftDialog("U", { emp, isoDate, type: "U" });
       sel.value = previousValue;
@@ -794,6 +808,31 @@ commitPlanChange();
   });
 
   wrap.appendChild(sel);
+
+  if (canQuickApplyLastShift) {
+    const quickShiftBtn = document.createElement("button");
+    quickShiftBtn.type = "button";
+    quickShiftBtn.textContent = `Letzte Schicht: ${lastSelectedShift}`;
+    quickShiftBtn.title = `Schicht ${lastSelectedShift} direkt übernehmen`;
+    quickShiftBtn.className = "miniEditBtn";
+    quickShiftBtn.style.flex = "0 0 auto";
+    quickShiftBtn.style.padding = "4px 8px";
+    quickShiftBtn.style.borderRadius = "8px";
+    quickShiftBtn.style.border = "1px solid #ccc";
+    quickShiftBtn.style.background = "#fff";
+    quickShiftBtn.style.cursor = "pointer";
+
+    quickShiftBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (lastSelectedShift === null) return;
+
+      clearDay(emp.id, isoDate, { commit: false });
+      setShift(emp.id, isoDate, lastSelectedShift);
+    });
+
+    wrap.appendChild(quickShiftBtn);
+  }
 
   if (isDialogBackedValue(currentValue)) {
     const editBtn = document.createElement("button");
