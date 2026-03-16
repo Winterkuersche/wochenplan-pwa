@@ -947,14 +947,93 @@ function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeek
   }, 0);
 }
 
-function getEmployeeTotalMinusMinutes(employee, weeks = getCurrentMonthWeeks()) {
-  if (!employee || !Array.isArray(weeks)) return 0;
+function normalizeYearMonthValue(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}$/.test(trimmed)) return "";
+  return trimmed;
+}
 
-  const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, weeks);
-  const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, weeks);
-  const difference = accountMinutes - contractTargetMinutes;
+function getYearMonthFromIsoDate(isoDate) {
+  if (typeof isoDate !== "string" || isoDate.length < 7) return "";
+  return normalizeYearMonthValue(isoDate.slice(0, 7));
+}
 
-  return difference < 0 ? Math.abs(difference) : 0;
+function shiftYearMonthByMonths(yearMonth, offsetMonths = 0) {
+  const normalized = normalizeYearMonthValue(yearMonth);
+  if (!normalized) return "";
+
+  const [year, month] = normalized.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
+  if (Number.isNaN(date.getTime())) return "";
+
+  date.setMonth(date.getMonth() + Number(offsetMonths || 0));
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getWeeksForYearMonth(yearMonth) {
+  const normalized = normalizeYearMonthValue(yearMonth);
+  if (!normalized) return [];
+
+  const [year, month] = normalized.split("-").map(Number);
+  if (!year || !month) return [];
+
+  return buildMonthPlanFallback(year, month - 1).weeks || [];
+}
+
+function getRelevantYearMonthsUntilActiveMonth() {
+  const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
+  if (!activeYearMonth) return [];
+
+  const candidates = [activeYearMonth];
+
+  Object.keys(state.schedule || {}).forEach((isoDate) => {
+    const yearMonth = getYearMonthFromIsoDate(isoDate);
+    if (yearMonth && yearMonth <= activeYearMonth) candidates.push(yearMonth);
+  });
+
+  (state.absences || []).forEach((entry) => {
+    const fromMonth = getYearMonthFromIsoDate(entry?.from || "");
+    const toMonth = getYearMonthFromIsoDate(entry?.to || "");
+
+    if (fromMonth && fromMonth <= activeYearMonth) candidates.push(fromMonth);
+    if (toMonth && toMonth <= activeYearMonth) candidates.push(toMonth);
+  });
+
+  const unique = [...new Set(candidates)].sort();
+  if (!unique.length) return [activeYearMonth];
+
+  const first = unique[0];
+  const months = [];
+  let cursor = first;
+
+  while (cursor && cursor <= activeYearMonth) {
+    months.push(cursor);
+    cursor = shiftYearMonthByMonths(cursor, 1);
+  }
+
+  return months;
+}
+
+function getEmployeeRunningBalanceMinutesUntilActiveMonth(employee) {
+  if (!employee) return 0;
+
+  return getRelevantYearMonthsUntilActiveMonth().reduce((sum, yearMonth) => {
+    const weeks = getWeeksForYearMonth(yearMonth);
+    if (!weeks.length) return sum;
+
+    const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, weeks);
+    const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, weeks);
+
+    return sum + (accountMinutes - contractTargetMinutes);
+  }, 0);
+}
+
+function getEmployeeTotalMinusMinutes(employee) {
+  if (!employee) return 0;
+
+  const runningBalanceMinutes = getEmployeeRunningBalanceMinutesUntilActiveMonth(employee);
+  return runningBalanceMinutes < 0 ? Math.abs(runningBalanceMinutes) : 0;
 }
 
 function totalMinutesForDayIso(iso) {
