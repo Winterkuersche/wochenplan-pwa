@@ -47,6 +47,7 @@ const UI_KEY = "wochenplan_ui_v10";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDayIndex = 0;
+let lastSelectedShift = null;
 let uiState = loadUiState();
 let state = buildInitialState();
 state.schedule = state.schedule || {};
@@ -324,7 +325,19 @@ function clearPlanEntry(employeeId, isoDate, options = {}) {
   return updateEmployeeDay(employeeId, isoDate, () => null, options);
 }
 
-function setShift(employeeId, isoDate, entry) {
+function setShift(employeeId, isoDate, entryOrShiftKey) {
+  let entry = entryOrShiftKey;
+
+  if (typeof entryOrShiftKey === "string") {
+    if (entryOrShiftKey === "L") {
+      entry = buildLateShiftEntry("13:00", true);
+    } else if (entryOrShiftKey === "G") {
+      entry = buildFullShiftEntry(true);
+    } else {
+      entry = buildEarlyShiftEntry(entryOrShiftKey);
+    }
+  }
+
   if (!entry || entry.type !== "shift") return;
   setScheduleEntry(employeeId, isoDate, entry);
 }
