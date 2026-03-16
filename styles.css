@@ -2382,3 +2382,153 @@ body.dark .mepTable th {
     display: none !important;
   }
 }
+
+/* =============================
+   MEP-TABELLENANSICHT (NEU)
+   ============================= */
+#mepTemplateView {
+  background: #fff;
+}
+
+.mepTplSheet {
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 8mm;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+}
+
+.mepTplHeaderTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.mepTplHeaderTitle strong {
+  font-size: 1.1rem;
+}
+
+.mepTplBranchLine {
+  white-space: nowrap;
+}
+
+.mepTplMeta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.92rem;
+}
+
+.mepTplMeta strong {
+  margin-right: 6px;
+}
+
+.mepTplWrap {
+  overflow-x: auto;
+}
+
+.mepTplTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.8rem;
+}
+
+.mepTplTable th,
+.mepTplTable td {
+  border: 1px solid #111;
+  padding: 3px 4px;
+  text-align: center;
+  vertical-align: middle;
+  min-height: 24px;
+}
+
+.mepTplTable thead th {
+  background: #f0f0f0;
+  font-weight: 700;
+}
+
+.mepTplTable th:nth-child(1),
+.mepTplTable td:nth-child(1) {
+  width: 13%;
+  text-align: left;
+}
+
+.mepTplTable th:nth-child(2),
+.mepTplTable td:nth-child(2) {
+  width: 8%;
+}
+
+.mepTplTable th:nth-child(3),
+.mepTplTable td:nth-child(3) {
+  width: 9%;
+}
+
+.mepTplTable th:nth-child(4),
+.mepTplTable td:nth-child(4) {
+  width: 9%;
+  text-align: left;
+}
+
+.mepTplTable th:nth-last-child(2),
+.mepTplTable td:nth-last-child(2),
+.mepTplTable th:nth-last-child(1),
+.mepTplTable td:nth-last-child(1) {
+  width: 9%;
+}
+
+.mepTplTable tbody tr:nth-child(4n) td {
+  border-bottom-width: 2px;
+}
+
+.mepTplEmployee {
+  font-weight: 600;
+  text-align: left !important;
+}
+
+.mepTplMetric {
+  background: #fafafa;
+}
+
+.mepTplSummary {
+  font-weight: 700;
+}
+
+.mepTplFooter {
+  margin-top: 12px;
+  border-top: 1px solid #111;
+  padding-top: 8px;
+  font-size: 0.82rem;
+}
+
+.mepTplFooter p {
+  margin: 3px 0;
+}
+
+@media (max-width: 1100px) {
+  .mepTplMeta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  #mepTemplateView {
+    border: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .mepTplSheet {
+    border: 1px solid #000;
+    padding: 8mm;
+    max-width: none;
+    width: 100%;
+    min-height: 277mm;
+  }
+}
