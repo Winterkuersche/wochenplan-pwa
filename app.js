@@ -17,7 +17,7 @@ const DAYS = [
 
 const ROLE_OPTIONS = [
   { key: "", label: "-", target: "", contractModel: "" },
-  { key: "TL", label: "TL", target: "30:00", contractModel: "TZ30" },
+  { key: "TL", label: "TL", target: "30:00", contractModel: "VZ30" },
   { key: "TZ30", label: "TZ30", target: "30:00", contractModel: "TZ30" },
   { key: "TZ20", label: "TZ20", target: "20:00", contractModel: "TZ20" },
   { key: "TZ15", label: "TZ15", target: "15:00", contractModel: "TZ15" },
@@ -542,7 +542,7 @@ function saveUiState() {
 /* ========= DEFAULT DATA ========= */
 function createDefaultEmployees() {
   return [
-    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", contractModel: "TZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", contractModel: "VZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
     { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", contractModel: "TZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
