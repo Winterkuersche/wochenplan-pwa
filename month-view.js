@@ -57,7 +57,9 @@ function buildMonthHeaderRow(days) {
   });
 
   html += `
-      <th>Monat</th>
+      <th>Monat Ist</th>
+      <th>Δ Monat</th>
+      <th>Gesamtminus</th>
     </tr>
   `;
 
@@ -88,7 +90,11 @@ if (status === ENTRY_STATUS.WORK) {
   const entry = resolved.sourceEntry || resolved;
 
   if (entry.start && entry.end) {
-    cellText = `${entry.start}-${entry.end}`;
+    if (entry.mode === "flex") {
+      cellText = `${formatHMToQuarterLabel(entry.start)}-${formatHMToQuarterLabel(entry.end)}`;
+    } else {
+      cellText = `${entry.start}-${entry.end}`;
+    }
   } else if (entry.code) {
     cellText = entry.code;
   }
@@ -107,8 +113,13 @@ if (status === ENTRY_STATUS.WORK) {
 `;
   });
 
+  const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
+  const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
+
   html += `
       <td class="weekHoursCell">${minutesToHM(monthMinutes)}</td>
+      <td class="weekDeltaCell ${monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
+      <td class="weekDeltaCell ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
     </tr>
   `;
 
