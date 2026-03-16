@@ -16,12 +16,12 @@ const DAYS = [
 ];
 
 const ROLE_OPTIONS = [
-  { key: "", label: "-", target: "" },
-  { key: "TL", label: "TL", target: "30:00" },
-  { key: "TZ30", label: "TZ30", target: "30:00" },
-  { key: "TZ20", label: "TZ20", target: "20:00" },
-  { key: "TZ15", label: "TZ15", target: "15:00" },
-  { key: "GFB", label: "GfB", target: "9:30" }
+  { key: "", label: "-", target: "", contractModel: "" },
+  { key: "TL", label: "TL", target: "30:00", contractModel: "VZ30" },
+  { key: "TZ30", label: "TZ30", target: "30:00", contractModel: "TZ30" },
+  { key: "TZ20", label: "TZ20", target: "20:00", contractModel: "TZ20" },
+  { key: "TZ15", label: "TZ15", target: "15:00", contractModel: "TZ15" },
+  { key: "GFB", label: "GfB", target: "9:30", contractModel: "" }
 ];
 
 const SHIFTS = [
@@ -496,6 +496,11 @@ function roleToTarget(roleKey) {
   return found?.target || "";
 }
 
+function roleToContractModel(roleKey) {
+  const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
+  return found?.contractModel || "";
+}
+
 /* ========= STORAGE ========= */
 function loadJson(key, fallback) {
   const raw = localStorage.getItem(key);
@@ -537,31 +542,31 @@ function saveUiState() {
 /* ========= DEFAULT DATA ========= */
 function createDefaultEmployees() {
   return [
-    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", contractModel: "VZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", contractModel: "TZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", contractModel: "TZ15", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_6", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_6", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_7", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_7", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_8", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_8", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_9", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_9", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_10", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_10", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_11", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_11", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_12", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_12", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_13", name: "", roleKey: "", target: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_13", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
   serviceBonus: false, shifts: {} }
   ];
 }
@@ -573,6 +578,8 @@ function defaultMasterState() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
+      contractModel: emp.contractModel || roleToContractModel(emp.roleKey || ""),
+      contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
       totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       usedVacationDays: Number(emp.usedVacationDays ?? 0),
       remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
@@ -605,6 +612,8 @@ function buildInitialState() {
     name: emp.name || "",
     roleKey: emp.roleKey || "",
     target: emp.target || roleToTarget(emp.roleKey || ""),
+    contractModel: emp.contractModel || roleToContractModel(emp.roleKey || ""),
+    contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
     totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
     usedVacationDays: Number(emp.usedVacationDays ?? 0),
     remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
@@ -642,6 +651,8 @@ function saveMasterData() {
       name: emp.name,
       roleKey: emp.roleKey,
       target: emp.target,
+      contractModel: emp.contractModel || "",
+      contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
       totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       usedVacationDays: Number(emp.usedVacationDays ?? 0),
       remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
@@ -876,9 +887,40 @@ function isCreditableResolvedWorkEntry(resolvedEntry) {
   return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
 }
 
+function isCreditableResolvedAccountEntry(resolvedEntry) {
+  const status = getResolvedStatus(resolvedEntry);
+
+  if (status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL || status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.VACATION) {
+    return true;
+  }
+
+  return resolvedEntry?.type === "holiday";
+}
+
 function getEmployeeTargetMinutes(employee) {
   if (!employee) return 0;
   return hmToMinutes(employee.target || "0:00");
+}
+
+function getEmployeeContractTargetMinutesPerMonth(employee) {
+  if (!employee) return 0;
+
+  const individualTargetMinutes = Number(employee.contractTargetMinutesPerMonth);
+  if (Number.isFinite(individualTargetMinutes) && individualTargetMinutes > 0) {
+    return Math.round(individualTargetMinutes);
+  }
+
+  const contractModelTargetMinutes = getContractModelTargetMinutesPerMonth(employee.contractModel || employee.roleKey || "");
+  if (Number.isFinite(contractModelTargetMinutes) && contractModelTargetMinutes > 0) {
+    return Math.round(contractModelTargetMinutes);
+  }
+
+  const weeklyTargetMinutes = getEmployeeTargetMinutes(employee);
+  if (weeklyTargetMinutes > 0) {
+    return Math.round((weeklyTargetMinutes * 52) / 12);
+  }
+
+  return 0;
 }
 
 function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
@@ -903,8 +945,8 @@ function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays
     const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
     const status = getResolvedStatus(resolved);
 
-    if (status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL || status === ENTRY_STATUS.SICK) {
-      return sum + Math.max(0, resolved.minutesForMonth || 0);
+    if (!isCreditableResolvedAccountEntry(resolved)) {
+      return sum;
     }
 
     if (status === ENTRY_STATUS.VACATION) {
@@ -915,7 +957,7 @@ function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays
       return sum + Math.max(0, resolved.minutesForMonth || getAbsenceMinutesForEmployee(employee));
     }
 
-    return sum;
+    return sum + Math.max(0, resolved.minutesForMonth || 0);
   }, 0);
 }
 
@@ -951,10 +993,7 @@ function getEmployeeContractTargetMinutesForDays(employee, days = []) {
 function getEmployeeContractTargetMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
   if (!employee || !Array.isArray(weeks)) return 0;
 
-  return weeks.reduce((sum, week) => {
-    if (!Array.isArray(week) || week.length === 0) return sum;
-    return sum + getEmployeeContractTargetMinutesForDays(employee, week);
-  }, 0);
+  return getEmployeeContractTargetMinutesPerMonth(employee);
 }
 
 function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
@@ -964,6 +1003,15 @@ function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeek
     if (!Array.isArray(week) || week.length === 0) return sum;
     return sum + getEmployeeAccountMinutesForWeek(employee, week);
   }, 0);
+}
+
+function getEmployeeAccountMinutesForMonth(employee, yearMonth = state.activeMonth) {
+  if (!employee) return 0;
+
+  const monthWeeks = getWeeksForYearMonth(yearMonth);
+  if (!monthWeeks.length) return 0;
+
+  return getEmployeeAccountMinutesForWeeks(employee, monthWeeks);
 }
 
 function normalizeYearMonthValue(value) {
@@ -1041,8 +1089,8 @@ function getEmployeeRunningBalanceMinutesUntilActiveMonth(employee) {
     const weeks = getWeeksForYearMonth(yearMonth);
     if (!weeks.length) return sum;
 
-    const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, weeks);
-    const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, weeks);
+    const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+    const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
 
     return sum + (accountMinutes - contractTargetMinutes);
   }, 0);
@@ -1061,8 +1109,8 @@ function getEmployeeMonthDifferenceMinutes(employee, yearMonth = state.activeMon
   const monthWeeks = getWeeksForYearMonth(yearMonth);
   if (!monthWeeks.length) return 0;
 
-  const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, monthWeeks);
-  const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, monthWeeks);
+  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
 
   return accountMinutes - contractTargetMinutes;
 }
@@ -1218,6 +1266,7 @@ function renderTeamSetup() {
     roleSel.addEventListener("change", () => {
       emp.roleKey = roleSel.value;
       emp.target = roleToTarget(emp.roleKey);
+      emp.contractModel = roleToContractModel(emp.roleKey);
       saveMasterData();
       renderAllViews();
     });
