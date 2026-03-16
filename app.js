@@ -852,6 +852,190 @@ function deltaMinutes(emp) {
   return totalMinutesForEmployee(emp) - hmToMinutes(emp.target || "0:00");
 }
 
+function isCreditableResolvedWorkEntry(resolvedEntry) {
+  const status = getResolvedStatus(resolvedEntry);
+  return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
+}
+
+function getEmployeeTargetMinutes(employee) {
+  if (!employee) return 0;
+  return hmToMinutes(employee.target || "0:00");
+}
+
+function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  return weekDays.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
+    if (!isCreditableResolvedWorkEntry(resolved)) return sum;
+
+    return sum + Math.max(0, resolved.minutesForMonth || 0);
+  }, 0);
+}
+
+function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  return weekDays.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
+    const status = getResolvedStatus(resolved);
+
+    if (status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL || status === ENTRY_STATUS.SICK) {
+      return sum + Math.max(0, resolved.minutesForMonth || 0);
+    }
+
+    if (status === ENTRY_STATUS.VACATION) {
+      return sum + getAbsenceMinutesForEmployee(employee);
+    }
+
+    if (resolved?.type === "holiday") {
+      return sum + Math.max(0, resolved.minutesForMonth || getAbsenceMinutesForEmployee(employee));
+    }
+
+    return sum;
+  }, 0);
+}
+
+function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays()) {
+  const accountMinutes = getEmployeeAccountMinutesForWeek(employee, weekDays);
+  const targetMinutes = getEmployeeTargetMinutes(employee);
+  return accountMinutes - targetMinutes;
+}
+
+function getEmployeeMinusMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+  const difference = getEmployeeWeekDifferenceMinutes(employee, weekDays);
+  return difference < 0 ? Math.abs(difference) : 0;
+}
+
+function formatMinuteBalance(differenceMinutes) {
+  if (differenceMinutes >= 0) return "0:00";
+  return `-${minutesToHM(Math.abs(differenceMinutes))}`;
+}
+
+
+function getEmployeeContractTargetMinutesForDays(employee, days = []) {
+  if (!employee || !Array.isArray(days)) return 0;
+
+  const dailyTargetMinutes = getAbsenceMinutesForEmployee(employee);
+
+  return days.reduce((sum, day) => {
+    if (!day || day.isOutsideMonth) return sum;
+    if (isSundayIsoDate(day.iso)) return sum;
+    return sum + dailyTargetMinutes;
+  }, 0);
+}
+
+function getEmployeeContractTargetMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
+  if (!employee || !Array.isArray(weeks)) return 0;
+
+  return weeks.reduce((sum, week) => {
+    if (!Array.isArray(week) || week.length === 0) return sum;
+    return sum + getEmployeeContractTargetMinutesForDays(employee, week);
+  }, 0);
+}
+
+function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
+  if (!employee || !Array.isArray(weeks)) return 0;
+
+  return weeks.reduce((sum, week) => {
+    if (!Array.isArray(week) || week.length === 0) return sum;
+    return sum + getEmployeeAccountMinutesForWeek(employee, week);
+  }, 0);
+}
+
+function normalizeYearMonthValue(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!/^\d{4}-\d{2}$/.test(trimmed)) return "";
+  return trimmed;
+}
+
+function getYearMonthFromIsoDate(isoDate) {
+  if (typeof isoDate !== "string" || isoDate.length < 7) return "";
+  return normalizeYearMonthValue(isoDate.slice(0, 7));
+}
+
+function shiftYearMonthByMonths(yearMonth, offsetMonths = 0) {
+  const normalized = normalizeYearMonthValue(yearMonth);
+  if (!normalized) return "";
+
+  const [year, month] = normalized.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
+  if (Number.isNaN(date.getTime())) return "";
+
+  date.setMonth(date.getMonth() + Number(offsetMonths || 0));
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getWeeksForYearMonth(yearMonth) {
+  const normalized = normalizeYearMonthValue(yearMonth);
+  if (!normalized) return [];
+
+  const [year, month] = normalized.split("-").map(Number);
+  if (!year || !month) return [];
+
+  return buildMonthPlanFallback(year, month - 1).weeks || [];
+}
+
+function getRelevantYearMonthsUntilActiveMonth() {
+  const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
+  if (!activeYearMonth) return [];
+
+  const candidates = [activeYearMonth];
+
+  Object.keys(state.schedule || {}).forEach((isoDate) => {
+    const yearMonth = getYearMonthFromIsoDate(isoDate);
+    if (yearMonth && yearMonth <= activeYearMonth) candidates.push(yearMonth);
+  });
+
+  (state.absences || []).forEach((entry) => {
+    const fromMonth = getYearMonthFromIsoDate(entry?.from || "");
+    const toMonth = getYearMonthFromIsoDate(entry?.to || "");
+
+    if (fromMonth && fromMonth <= activeYearMonth) candidates.push(fromMonth);
+    if (toMonth && toMonth <= activeYearMonth) candidates.push(toMonth);
+  });
+
+  const unique = [...new Set(candidates)].sort();
+  if (!unique.length) return [activeYearMonth];
+
+  const first = unique[0];
+  const months = [];
+  let cursor = first;
+
+  while (cursor && cursor <= activeYearMonth) {
+    months.push(cursor);
+    cursor = shiftYearMonthByMonths(cursor, 1);
+  }
+
+  return months;
+}
+
+function getEmployeeRunningBalanceMinutesUntilActiveMonth(employee) {
+  if (!employee) return 0;
+
+  return getRelevantYearMonthsUntilActiveMonth().reduce((sum, yearMonth) => {
+    const weeks = getWeeksForYearMonth(yearMonth);
+    if (!weeks.length) return sum;
+
+    const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, weeks);
+    const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, weeks);
+
+    return sum + (accountMinutes - contractTargetMinutes);
+  }, 0);
+}
+
+function getEmployeeTotalMinusMinutes(employee) {
+  if (!employee) return 0;
+
+  const runningBalanceMinutes = getEmployeeRunningBalanceMinutesUntilActiveMonth(employee);
+  return runningBalanceMinutes < 0 ? Math.abs(runningBalanceMinutes) : 0;
+}
+
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
     return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;
