@@ -24,6 +24,9 @@ const shiftDialogDelete = document.getElementById("shiftDialogDelete");
 
 const shiftDialogExternalHelpFields = document.getElementById("shiftDialogExternalHelpFields");
 const shiftDialogExternalHelpBranch = document.getElementById("shiftDialogExternalHelpBranch");
+const shiftDialogExternalHelpStart = document.getElementById("shiftDialogExternalHelpStart");
+const shiftDialogExternalHelpEnd = document.getElementById("shiftDialogExternalHelpEnd");
+const shiftDialogExternalHelpPause = document.getElementById("shiftDialogExternalHelpPause");
 const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExternalHelpDuration");
 
 let shiftDialogContext = null;
@@ -67,7 +70,11 @@ function resetShiftDialogInputs(isoDate) {
   shiftDialogFlexEnd.value = "";
 
   shiftDialogExternalHelpBranch.value = "";
+  shiftDialogExternalHelpStart.value = "09:00";
+  shiftDialogExternalHelpEnd.value = "14:00";
+  shiftDialogExternalHelpPause.value = "00:00";
   shiftDialogExternalHelpDuration.value = "05:00";
+  refreshExternalHelpDurationField();
 
   shiftDialogAbsenceType.value = "vacation";
   shiftDialogAbsenceFrom.value = isoDate || "";
@@ -236,18 +243,21 @@ shiftDialogSave.addEventListener("click", () => {
 
   if (type === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
-    const hhmm = shiftDialogExternalHelpDuration.value;
-
-    if (!hhmm || !isValidHHMM(hhmm) || hhmmToMinutes(hhmm) <= 0) {
-      alert("Ungültige Dauer für Aushilfe.");
-      return;
-    }
+    const start = shiftDialogExternalHelpStart.value;
+    const end = shiftDialogExternalHelpEnd.value;
+    const pauseHHMM = shiftDialogExternalHelpPause.value || "00:00";
 
     clearDay(emp.id, isoDate, { commit: false });
 
-    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, branch, hhmm);
+    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
+      branch,
+      start,
+      end,
+      pauseHHMM
+    });
+
     if (!ok) {
-      alert("Aushilfe konnte nicht gespeichert werden.");
+      alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende/Pause prüfen (nur 15-Minuten-Schritte).");
       return;
     }
 
@@ -391,11 +401,35 @@ function removeScheduledShiftForEmployeeOnDate(employeeId, isoDate) {
   }
 }
 
-function setExternalHelpForEmployeeOnDate(employeeId, isoDate, branch, hhmm) {
-  const minutes = hhmmToMinutes(hhmm);
-  if (minutes <= 0) return false;
+function setExternalHelpForEmployeeOnDate(employeeId, isoDate, options = {}) {
+  const branch = (options.branch || "").trim();
+  const start = normalizeTimeToQuarterHour(options.start || "");
+  const end = normalizeTimeToQuarterHour(options.end || "");
+  const pauseMinutes = normalizeMinutesToQuarterHour(parseTimeToMinutes(options.pauseHHMM || "00:00"));
 
-  setExternalHelp(employeeId, isoDate, branch || "", minutes);
+  if (!start || !end) return false;
+  if (!isQuarterHourTime(start) || !isQuarterHourTime(end)) return false;
+
+  const spanMinutes = diffMinutesBetweenHHMM(start, end);
+  if (spanMinutes <= 0) return false;
+  if (pauseMinutes >= spanMinutes) return false;
+
+  const workedMinutes = Math.max(0, spanMinutes - pauseMinutes);
+  if (workedMinutes <= 0) return false;
+
+  setPlanEntry(employeeId, isoDate, {
+    type: "external-help",
+    status: ENTRY_STATUS.EXTERNAL,
+    label: "AH",
+    branch,
+    externalHelp: true,
+    start,
+    end,
+    pause: pauseMinutes,
+    breakMinutes: pauseMinutes,
+    minutes: workedMinutes
+  });
+
   return true;
 }
 
@@ -440,10 +474,7 @@ function getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
 }
 
 function minutesToHHMMInput(minutes) {
-  const total = Math.max(0, Number(minutes) || 0);
-  const hours = Math.floor(total / 60);
-  const mins = total % 60;
-  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+  return formatQuarterHourTime(Math.max(0, Number(minutes) || 0));
 }
 
 function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
@@ -493,15 +524,23 @@ function fillShiftDialogFromExisting(type, context) {
   }
 
   if (type === "FLEX" && resolved.type === "shift" && resolved.sourceEntry?.mode === "flex") {
-    const entry = resolved.sourceEntry;
+    const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
     shiftDialogFlexStart.value = entry.start || "";
     shiftDialogFlexEnd.value = entry.end || "";
   }
 
   if (type === "AH" && resolved.type === "external-help" && resolved.sourceEntry) {
-    const entry = resolved.sourceEntry;
+    const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
+    const start = entry.start || "09:00";
+    const end = entry.end || addMinutesToHHMM(start, entry.minutes || 0);
+    const pauseMinutes = normalizeMinutesToQuarterHour(entry.pause ?? entry.breakMinutes ?? 0);
+
     shiftDialogExternalHelpBranch.value = entry.branch || "";
+    shiftDialogExternalHelpStart.value = start;
+    shiftDialogExternalHelpEnd.value = end;
+    shiftDialogExternalHelpPause.value = minutesToHHMMInput(pauseMinutes);
     shiftDialogExternalHelpDuration.value = minutesToHHMMInput(entry.minutes);
+    refreshExternalHelpDurationField();
   }
 
   if (type === "U") {
@@ -526,6 +565,34 @@ function fillShiftDialogFromExisting(type, context) {
 shiftDialogAbsenceType?.addEventListener("change", () => {
   updateAbsenceDialogTitle();
 });
+
+function refreshExternalHelpDurationField() {
+  if (!shiftDialogExternalHelpDuration) return;
+
+  const start = normalizeTimeToQuarterHour(shiftDialogExternalHelpStart?.value || "");
+  const end = normalizeTimeToQuarterHour(shiftDialogExternalHelpEnd?.value || "");
+  const pauseMinutes = normalizeMinutesToQuarterHour(
+    parseTimeToMinutes(shiftDialogExternalHelpPause?.value || "00:00")
+  );
+
+  if (!start || !end) {
+    shiftDialogExternalHelpDuration.value = "";
+    return;
+  }
+
+  const spanMinutes = diffMinutesBetweenHHMM(start, end);
+  if (spanMinutes <= 0 || pauseMinutes >= spanMinutes) {
+    shiftDialogExternalHelpDuration.value = "";
+    return;
+  }
+
+  shiftDialogExternalHelpDuration.value = minutesToHHMMInput(spanMinutes - pauseMinutes);
+}
+
+shiftDialogExternalHelpStart?.addEventListener("change", refreshExternalHelpDurationField);
+shiftDialogExternalHelpEnd?.addEventListener("change", refreshExternalHelpDurationField);
+shiftDialogExternalHelpPause?.addEventListener("change", refreshExternalHelpDurationField);
+
 
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);

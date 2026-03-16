@@ -16,6 +16,12 @@ function hhmmToMinutes(value) {
   return hours * 60 + minutes;
 }
 
+const QUARTER_HOUR_STEP_MINUTES = 15;
+
+function parseTimeToMinutes(value) {
+  return hhmmToMinutes(value);
+}
+
 function minutesToHHMM(totalMinutes) {
   const safeMinutes = Number(totalMinutes);
   if (Number.isNaN(safeMinutes)) return "00:00";
@@ -55,6 +61,38 @@ function isValidHHMM(value) {
   if (minutes < 0 || minutes > 59) return false;
 
   return true;
+}
+
+function isQuarterHourTime(value) {
+  if (!isValidHHMM(value)) return false;
+  return parseTimeToMinutes(value) % QUARTER_HOUR_STEP_MINUTES === 0;
+}
+
+function normalizeTimeToQuarterHour(value) {
+  if (!isValidHHMM(value)) return "";
+
+  const totalMinutes = parseTimeToMinutes(value);
+  const roundedMinutes = Math.round(totalMinutes / QUARTER_HOUR_STEP_MINUTES) * QUARTER_HOUR_STEP_MINUTES;
+
+  return minutesToHHMM(roundedMinutes);
+}
+
+function formatQuarterHourTime(value) {
+  if (typeof value === "number") {
+    const safeMinutes = Math.max(0, value);
+    const roundedMinutes = Math.round(safeMinutes / QUARTER_HOUR_STEP_MINUTES) * QUARTER_HOUR_STEP_MINUTES;
+    return minutesToHHMM(roundedMinutes);
+  }
+
+  return normalizeTimeToQuarterHour(value);
+}
+
+function normalizeMinutesToQuarterHour(value) {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return 0;
+
+  const safeMinutes = Math.max(0, numeric);
+  return Math.round(safeMinutes / QUARTER_HOUR_STEP_MINUTES) * QUARTER_HOUR_STEP_MINUTES;
 }
 
 function clampMinutes(value, minValue, maxValue) {
