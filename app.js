@@ -465,6 +465,25 @@ function formatSignedMinutes(min) {
   return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
 }
 
+function formatHMToQuarterLabel(hmValue) {
+  if (typeof hmValue !== "string" || !/^\d{1,2}:\d{2}$/.test(hmValue.trim())) return hmValue || "";
+
+  const [hoursText, minutesText] = hmValue.trim().split(":");
+  const hours = String(Number(hoursText));
+  const minutes = Number(minutesText);
+
+  if (![0, 15, 30, 45].includes(minutes)) return `${hours}:${minutesText}`;
+
+  const quarterLabelByMinute = {
+    0: "00",
+    15: "¼",
+    30: "½",
+    45: "¾"
+  };
+
+  return `${hours}:${quarterLabelByMinute[minutes]}`;
+}
+
 function formatMonthYear(dateStr) {
   if (!dateStr) return "____________";
   const d = new Date(dateStr);
@@ -1036,6 +1055,18 @@ function getEmployeeTotalMinusMinutes(employee) {
   return runningBalanceMinutes < 0 ? Math.abs(runningBalanceMinutes) : 0;
 }
 
+function getEmployeeMonthDifferenceMinutes(employee, yearMonth = state.activeMonth) {
+  if (!employee) return 0;
+
+  const monthWeeks = getWeeksForYearMonth(yearMonth);
+  if (!monthWeeks.length) return 0;
+
+  const accountMinutes = getEmployeeAccountMinutesForWeeks(employee, monthWeeks);
+  const contractTargetMinutes = getEmployeeContractTargetMinutesForWeeks(employee, monthWeeks);
+
+  return accountMinutes - contractTargetMinutes;
+}
+
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
     return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;
@@ -1462,6 +1493,11 @@ window.addEventListener("load", () => {
   }
 
   updateDarkModeButton();
+
+  if (typeof bindMonthNavigation === "function") {
+    bindMonthNavigation();
+  }
+
   syncVacationScheduleFromAbsences();
   refreshEmployeeVacationCounters();
   syncMonthPlanToState();

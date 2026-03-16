@@ -795,6 +795,7 @@ function renderWeekHeader() {
   headerHtml += `
       <th class="weekSummaryCol">Ist</th>
       <th class="weekSummaryCol">Δ Woche</th>
+      <th class="weekSummaryCol">Δ Monat</th>
       <th class="weekSummaryCol">Gesamtminus</th>
       <th class="weekSummaryCol">Soll</th>
     </tr>
@@ -852,6 +853,14 @@ function renderWeekTable() {
     }`;
     tdDelta.textContent = formatSignedMinutes(differenceMinutes);
     tr.appendChild(tdDelta);
+
+    const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
+    const tdMonthDelta = document.createElement("td");
+    tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${
+      monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"
+    }`;
+    tdMonthDelta.textContent = formatSignedMinutes(monthDifferenceMinutes);
+    tr.appendChild(tdMonthDelta);
 
     const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
     const tdTotalMinus = document.createElement("td");
