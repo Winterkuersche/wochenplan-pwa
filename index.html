@@ -417,12 +417,20 @@ Ganztag 70 Minuten.
     <div id="shiftDialogFlexFields" class="dialogFields hidden">
       <label>
         Beginn
-        <input id="shiftDialogFlexStart" type="time" step="900">
+        <div class="timeQuarterPicker">
+          <select id="shiftDialogFlexStartHour" aria-label="Flex Beginn Stunde"></select>
+          <span>:</span>
+          <select id="shiftDialogFlexStartMinute" aria-label="Flex Beginn Minute"></select>
+        </div>
       </label>
 
       <label>
         Ende
-        <input id="shiftDialogFlexEnd" type="time" step="900">
+        <div class="timeQuarterPicker">
+          <select id="shiftDialogFlexEndHour" aria-label="Flex Ende Stunde"></select>
+          <span>:</span>
+          <select id="shiftDialogFlexEndMinute" aria-label="Flex Ende Minute"></select>
+        </div>
       </label>
     </div>
         <div id="shiftDialogAbsenceFields" class="dialogFields hidden">
@@ -453,17 +461,29 @@ Ganztag 70 Minuten.
 
       <label>
         Beginn
-        <input id="shiftDialogExternalHelpStart" type="time" step="900">
+        <div class="timeQuarterPicker">
+          <select id="shiftDialogExternalHelpStartHour" aria-label="Aushilfe Beginn Stunde"></select>
+          <span>:</span>
+          <select id="shiftDialogExternalHelpStartMinute" aria-label="Aushilfe Beginn Minute"></select>
+        </div>
       </label>
 
       <label>
         Ende
-        <input id="shiftDialogExternalHelpEnd" type="time" step="900">
+        <div class="timeQuarterPicker">
+          <select id="shiftDialogExternalHelpEndHour" aria-label="Aushilfe Ende Stunde"></select>
+          <span>:</span>
+          <select id="shiftDialogExternalHelpEndMinute" aria-label="Aushilfe Ende Minute"></select>
+        </div>
       </label>
 
       <label>
         Pause
-        <input id="shiftDialogExternalHelpPause" type="time" step="900">
+        <div class="timeQuarterPicker">
+          <select id="shiftDialogExternalHelpPauseHour" aria-label="Aushilfe Pause Stunde"></select>
+          <span>:</span>
+          <select id="shiftDialogExternalHelpPauseMinute" aria-label="Aushilfe Pause Minute"></select>
+        </div>
       </label>
 
       <label>

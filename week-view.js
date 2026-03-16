@@ -10,8 +10,10 @@ const shiftDialogLateCheckout = document.getElementById("shiftDialogLateCheckout
 
 const shiftDialogFullCheckout = document.getElementById("shiftDialogFullCheckout");
 
-const shiftDialogFlexStart = document.getElementById("shiftDialogFlexStart");
-const shiftDialogFlexEnd = document.getElementById("shiftDialogFlexEnd");
+const shiftDialogFlexStartHour = document.getElementById("shiftDialogFlexStartHour");
+const shiftDialogFlexStartMinute = document.getElementById("shiftDialogFlexStartMinute");
+const shiftDialogFlexEndHour = document.getElementById("shiftDialogFlexEndHour");
+const shiftDialogFlexEndMinute = document.getElementById("shiftDialogFlexEndMinute");
 
 const shiftDialogAbsenceFields = document.getElementById("shiftDialogAbsenceFields");
 const shiftDialogAbsenceType = document.getElementById("shiftDialogAbsenceType");
@@ -24,12 +26,66 @@ const shiftDialogDelete = document.getElementById("shiftDialogDelete");
 
 const shiftDialogExternalHelpFields = document.getElementById("shiftDialogExternalHelpFields");
 const shiftDialogExternalHelpBranch = document.getElementById("shiftDialogExternalHelpBranch");
-const shiftDialogExternalHelpStart = document.getElementById("shiftDialogExternalHelpStart");
-const shiftDialogExternalHelpEnd = document.getElementById("shiftDialogExternalHelpEnd");
-const shiftDialogExternalHelpPause = document.getElementById("shiftDialogExternalHelpPause");
+const shiftDialogExternalHelpStartHour = document.getElementById("shiftDialogExternalHelpStartHour");
+const shiftDialogExternalHelpStartMinute = document.getElementById("shiftDialogExternalHelpStartMinute");
+const shiftDialogExternalHelpEndHour = document.getElementById("shiftDialogExternalHelpEndHour");
+const shiftDialogExternalHelpEndMinute = document.getElementById("shiftDialogExternalHelpEndMinute");
+const shiftDialogExternalHelpPauseHour = document.getElementById("shiftDialogExternalHelpPauseHour");
+const shiftDialogExternalHelpPauseMinute = document.getElementById("shiftDialogExternalHelpPauseMinute");
 const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExternalHelpDuration");
 
 let shiftDialogContext = null;
+
+const QUARTER_MINUTE_OPTIONS = ["00", "15", "30", "45"];
+
+function initHourSelect(selectEl) {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+
+  for (let hour = 0; hour <= 23; hour += 1) {
+    const option = document.createElement("option");
+    option.value = String(hour).padStart(2, "0");
+    option.textContent = String(hour).padStart(2, "0");
+    selectEl.appendChild(option);
+  }
+}
+
+function initQuarterMinuteSelect(selectEl) {
+  if (!selectEl) return;
+  selectEl.innerHTML = "";
+
+  QUARTER_MINUTE_OPTIONS.forEach((minute) => {
+    const option = document.createElement("option");
+    option.value = minute;
+    option.textContent = minute;
+    selectEl.appendChild(option);
+  });
+}
+
+function initQuarterTimePicker(hourEl, minuteEl) {
+  initHourSelect(hourEl);
+  initQuarterMinuteSelect(minuteEl);
+}
+
+function setQuarterPickerValue(hourEl, minuteEl, hhmm) {
+  const normalized = normalizeTimeToQuarterHour(hhmm || "") || "00:00";
+  const [hour, minute] = normalized.split(":");
+  if (hourEl) hourEl.value = hour;
+  if (minuteEl) minuteEl.value = minute;
+}
+
+function getQuarterPickerValue(hourEl, minuteEl) {
+  if (!hourEl || !minuteEl) return "";
+  const hour = hourEl.value || "00";
+  const minute = minuteEl.value || "00";
+  return `${hour}:${minute}`;
+}
+
+initQuarterTimePicker(shiftDialogFlexStartHour, shiftDialogFlexStartMinute);
+initQuarterTimePicker(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
+initQuarterTimePicker(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
+initQuarterTimePicker(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
+initQuarterTimePicker(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute);
 
 function getAbsenceTypeMeta(type) {
   if (type === "sick") {
@@ -66,13 +122,13 @@ function resetShiftDialogInputs(isoDate) {
   shiftDialogLateStart.value = "13:00";
   shiftDialogLateCheckout.value = "yes";
   shiftDialogFullCheckout.value = "yes";
-  shiftDialogFlexStart.value = "";
-  shiftDialogFlexEnd.value = "";
+  setQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute, "00:00");
+  setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, "00:00");
 
   shiftDialogExternalHelpBranch.value = "";
-  shiftDialogExternalHelpStart.value = "09:00";
-  shiftDialogExternalHelpEnd.value = "14:00";
-  shiftDialogExternalHelpPause.value = "00:00";
+  setQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute, "09:00");
+  setQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute, "14:00");
+  setQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute, "00:00");
   shiftDialogExternalHelpDuration.value = "05:00";
   refreshExternalHelpDurationField();
 
@@ -203,8 +259,8 @@ shiftDialogSave.addEventListener("click", () => {
   }
 
   if (type === "FLEX") {
-    const start = shiftDialogFlexStart.value;
-    const end = shiftDialogFlexEnd.value;
+    const start = getQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute);
+    const end = getQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
 
     if (!start || !end) {
       alert("Start und Ende wählen.");
@@ -243,9 +299,9 @@ shiftDialogSave.addEventListener("click", () => {
 
   if (type === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
-    const start = shiftDialogExternalHelpStart.value;
-    const end = shiftDialogExternalHelpEnd.value;
-    const pauseHHMM = shiftDialogExternalHelpPause.value || "00:00";
+    const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
+    const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
+    const pauseHHMM = getQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute) || "00:00";
 
     clearDay(emp.id, isoDate, { commit: false });
 
@@ -525,8 +581,8 @@ function fillShiftDialogFromExisting(type, context) {
 
   if (type === "FLEX" && resolved.type === "shift" && resolved.sourceEntry?.mode === "flex") {
     const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
-    shiftDialogFlexStart.value = entry.start || "";
-    shiftDialogFlexEnd.value = entry.end || "";
+    setQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute, entry.start || "00:00");
+    setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, entry.end || "00:00");
   }
 
   if (type === "AH" && resolved.type === "external-help" && resolved.sourceEntry) {
@@ -536,9 +592,9 @@ function fillShiftDialogFromExisting(type, context) {
     const pauseMinutes = normalizeMinutesToQuarterHour(entry.pause ?? entry.breakMinutes ?? 0);
 
     shiftDialogExternalHelpBranch.value = entry.branch || "";
-    shiftDialogExternalHelpStart.value = start;
-    shiftDialogExternalHelpEnd.value = end;
-    shiftDialogExternalHelpPause.value = minutesToHHMMInput(pauseMinutes);
+    setQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute, start);
+    setQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute, end);
+    setQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute, minutesToHHMMInput(pauseMinutes));
     shiftDialogExternalHelpDuration.value = minutesToHHMMInput(entry.minutes);
     refreshExternalHelpDurationField();
   }
@@ -569,10 +625,16 @@ shiftDialogAbsenceType?.addEventListener("change", () => {
 function refreshExternalHelpDurationField() {
   if (!shiftDialogExternalHelpDuration) return;
 
-  const start = normalizeTimeToQuarterHour(shiftDialogExternalHelpStart?.value || "");
-  const end = normalizeTimeToQuarterHour(shiftDialogExternalHelpEnd?.value || "");
+  const start = normalizeTimeToQuarterHour(
+    getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute)
+  );
+  const end = normalizeTimeToQuarterHour(
+    getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute)
+  );
   const pauseMinutes = normalizeMinutesToQuarterHour(
-    parseTimeToMinutes(shiftDialogExternalHelpPause?.value || "00:00")
+    parseTimeToMinutes(
+      getQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute) || "00:00"
+    )
   );
 
   if (!start || !end) {
@@ -589,9 +651,11 @@ function refreshExternalHelpDurationField() {
   shiftDialogExternalHelpDuration.value = minutesToHHMMInput(spanMinutes - pauseMinutes);
 }
 
-shiftDialogExternalHelpStart?.addEventListener("change", refreshExternalHelpDurationField);
-shiftDialogExternalHelpEnd?.addEventListener("change", refreshExternalHelpDurationField);
-shiftDialogExternalHelpPause?.addEventListener("change", refreshExternalHelpDurationField);
+[shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute,
+  shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute,
+  shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute].forEach((el) => {
+  el?.addEventListener("change", refreshExternalHelpDurationField);
+});
 
 
 function createWeekSelect(emp, isoDate) {
