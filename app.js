@@ -76,20 +76,27 @@ function normalizePlanEntry(entry) {
         : "off";
   const status = entryStatus;
 
-  const start = entry.start || "";
-  const end = entry.end || "";
-  const pause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
+  const start = isValidHHMM(entry.start || "")
+    ? normalizeTimeToQuarterHour(entry.start)
+    : "";
+  const end = isValidHHMM(entry.end || "")
+    ? normalizeTimeToQuarterHour(entry.end)
+    : "";
+
+  const rawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
+  const pause = normalizeMinutesToQuarterHour(rawPause);
 
   let minutes = 0;
 
   if (isVacation) {
     minutes = 0;
   } else if (typeof entry.minutes === "number") {
-    minutes = Math.max(0, entry.minutes);
+    minutes = normalizeMinutesToQuarterHour(entry.minutes);
   } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
-    minutes = hhmmToMinutes(entry.minutes);
+    minutes = normalizeMinutesToQuarterHour(parseTimeToMinutes(entry.minutes));
   } else if (start && end) {
     minutes = Math.max(0, diffMinutesBetweenHHMM(start, end) - pause);
+    minutes = normalizeMinutesToQuarterHour(minutes);
   }
 
   const shiftKey = entry.shiftKey || entry.code || "";
@@ -323,13 +330,19 @@ function setShift(employeeId, isoDate, entry) {
 }
 
 function setExternalHelp(employeeId, isoDate, branch, minutes) {
+  const normalizedMinutes = normalizeMinutesToQuarterHour(minutes);
+
   setPlanEntry(employeeId, isoDate, {
     type: "external-help",
     status: ENTRY_STATUS.EXTERNAL,
     label: "AH",
     branch,
     externalHelp: true,
-    minutes
+    minutes: normalizedMinutes,
+    pause: 0,
+    breakMinutes: 0,
+    start: "",
+    end: ""
   });
 }
 

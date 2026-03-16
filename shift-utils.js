@@ -102,15 +102,22 @@ function buildFullShiftEntry(withCheckout) {
 }
 
 function buildFlexibleShiftEntry(startHHMM, endHHMM) {
-  if (!isValidHHMM(startHHMM) || !isValidHHMM(endHHMM)) {
+  const normalizedStart = normalizeTimeToQuarterHour(startHHMM);
+  const normalizedEnd = normalizeTimeToQuarterHour(endHHMM);
+
+  if (!normalizedStart || !normalizedEnd) {
     return null;
   }
 
-  const totalSpanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
+  if (!isQuarterHourTime(normalizedStart) || !isQuarterHourTime(normalizedEnd)) {
+    return null;
+  }
+
+  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
   if (totalSpanMinutes <= 0) return null;
 
-  const breakMinutes = getBreakMinutesForFlexibleShift(startHHMM, endHHMM);
-  const workedMinutes = getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes);
+  const breakMinutes = getBreakMinutesForFlexibleShift(normalizedStart, normalizedEnd);
+  const workedMinutes = getWorkedMinutesFromRange(normalizedStart, normalizedEnd, breakMinutes);
 
   if (workedMinutes < SHIFT_CONFIG.minWorkMinutes) {
     return null;
@@ -123,9 +130,9 @@ function buildFlexibleShiftEntry(startHHMM, endHHMM) {
     shiftType: "flex",
     code: "FLEX",
     shiftKey: "FLEX",
-    label: `${startHHMM}-${endHHMM}`,
-    start: startHHMM,
-    end: endHHMM,
+    label: `${normalizedStart}-${normalizedEnd}`,
+    start: normalizedStart,
+    end: normalizedEnd,
     pause: breakMinutes,
     breakMinutes,
     note: "",
