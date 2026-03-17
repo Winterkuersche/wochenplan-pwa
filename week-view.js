@@ -301,19 +301,16 @@ shiftDialogSave.addEventListener("click", () => {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
     const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
-    const pauseHHMM = getQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute) || "00:00";
-
     clearDay(emp.id, isoDate, { commit: false });
 
     const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
       branch,
       start,
-      end,
-      pauseHHMM
+      end
     });
 
     if (!ok) {
-      alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende/Pause prüfen (15-Minuten-Schritte plus definierte Ausnahmezeiten wie 19:10).");
+      alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende prüfen (15-Minuten-Schritte plus definierte Ausnahmezeiten wie 19:10).");
       return;
     }
 
@@ -461,20 +458,15 @@ function setExternalHelpForEmployeeOnDate(employeeId, isoDate, options = {}) {
   const branch = (options.branch || "").trim();
   const start = normalizePlanTime(options.start || "");
   const end = normalizePlanTime(options.end || "");
-  const configuredPauseMinutes = normalizePlanBreakMinutes(parseTimeToMinutes(options.pauseHHMM || "00:00"));
-
   if (!start || !end) return false;
   if (!isAllowedPlanTime(start) || !isAllowedPlanTime(end)) return false;
 
   const spanMinutes = diffMinutesBetweenHHMM(start, end);
   if (spanMinutes <= 0) return false;
-  const pauseMinutes = getEffectiveBreakMinutes(start, end, configuredPauseMinutes, {
-    includeBillingBonus: end === "19:10"
-  });
-
+  const pauseMinutes = getExternalHelpBreakDeductionMinutes(start, end);
   if (pauseMinutes >= spanMinutes) return false;
 
-  const workedMinutes = Math.max(0, spanMinutes - pauseMinutes);
+  const workedMinutes = getExternalHelpWorkedMinutes(start, end);
   if (workedMinutes <= 0) return false;
 
   setPlanEntry(employeeId, isoDate, {
@@ -611,12 +603,9 @@ function fillShiftDialogFromExisting(type, context) {
     const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
     const start = entry.start || "09:00";
     const end = entry.end || addMinutesToHHMM(start, entry.minutes || 0);
-    const pauseMinutes = normalizeMinutesToQuarterHour(entry.pause ?? entry.breakMinutes ?? 0);
-
     shiftDialogExternalHelpBranch.value = entry.branch || "";
     setQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute, start);
     setQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute, end);
-    setQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute, minutesToHHMMInput(pauseMinutes));
     shiftDialogExternalHelpDuration.value = minutesToHHMMInput(entry.minutes);
     refreshExternalHelpDurationField();
   }
@@ -653,11 +642,7 @@ function refreshExternalHelpDurationField() {
   const end = normalizePlanTime(
     getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute)
   );
-  const pauseMinutes = normalizePlanBreakMinutes(
-    parseTimeToMinutes(
-      getQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute) || "00:00"
-    )
-  );
+  const pauseMinutes = getExternalHelpBreakDeductionMinutes(start, end);
 
   if (!start || !end) {
     shiftDialogExternalHelpDuration.value = "";
@@ -674,8 +659,7 @@ function refreshExternalHelpDurationField() {
 }
 
 [shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute,
-  shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute,
-  shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute].forEach((el) => {
+  shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute].forEach((el) => {
   el?.addEventListener("change", refreshExternalHelpDurationField);
 });
 
@@ -758,7 +742,7 @@ function createWeekSelect(emp, isoDate) {
 
   sel.addEventListener("change", () => {
     const selectedValue = sel.value;
-    const previousValue = currentValue;
+    const previousValue = getWeekSelectValueForDay(emp, isoDate);
 
         if (blockingType === "vacation" || blockingType === "sick") {
       if (selectedValue !== "U" && selectedValue !== "K" && selectedValue !== "-") {
@@ -793,8 +777,9 @@ commitPlanChange();
   });
 
   sel.addEventListener("dblclick", () => {
-    if (openShiftDialogForSelectValue(currentValue, { emp, isoDate })) {
-      sel.value = currentValue;
+    const currentEntryValue = getWeekSelectValueForDay(emp, isoDate);
+    if (openShiftDialogForSelectValue(currentEntryValue, { emp, isoDate })) {
+      sel.value = currentEntryValue;
     }
   });
 

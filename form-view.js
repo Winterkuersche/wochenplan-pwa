@@ -80,10 +80,9 @@ function getResolvedFormDayData(emp, isoDate) {
   }
 
   if (status === ENTRY_STATUS.EXTERNAL) {
-    const branch = resolved.sourceEntry?.branch || "";
     return {
       start: getStatusShortLabel(status),
-      pause: branch,
+      pause: "",
       end: "",
       sum: minutesToHM(resolved.minutesForMonth)
     };
