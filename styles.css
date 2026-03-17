@@ -835,10 +835,17 @@ select {
 
 .mepHeaderMeta {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 0.82fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 2.8mm;
   margin-bottom: 1.5mm;
+}
+
+.mepMetaDateRow {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.82fr;
+  align-items: end;
+  gap: 2.8mm;
 }
 
 .mepMetaField {
@@ -1340,6 +1347,7 @@ select {
     border: 0.26mm solid #666 !important;
   }
 
+  .mepMetaDateRow,
   .mepMetaField,
   .mepMetaStorage {
     font-size: 2.45mm !important;
@@ -1923,11 +1931,18 @@ body.dark .mepTable th {
 
 .mepHeaderMeta {
   display: grid;
-  grid-template-columns: 1.23fr 0.92fr 0.64fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 1.55mm;
   margin-bottom: 0;
   transform: translateY(var(--mep-header-meta-offset-y));
+}
+
+.mepMetaDateRow {
+  display: grid;
+  grid-template-columns: 1.23fr 0.92fr 0.64fr;
+  align-items: end;
+  gap: 1.55mm;
 }
 
 .mepMetaField {
@@ -2486,10 +2501,18 @@ body.dark .mepTable th {
 
 .mepTplMeta {
   display: grid;
-  grid-template-columns: 1fr 1fr 0.7fr 1.2fr;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
   gap: 8px;
   margin-bottom: 3.4mm;
   font-size: 0.8rem;
+}
+
+.mepTplMetaDateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr;
+  align-items: end;
+  gap: 8px;
 }
 
 .mepTplMetaField {
@@ -2721,6 +2744,10 @@ body.dark .mepTable th {
 
   .mepTplMeta,
   .mepTplFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .mepTplMetaDateRow {
     grid-template-columns: 1fr;
   }
 }

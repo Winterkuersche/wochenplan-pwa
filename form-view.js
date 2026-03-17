@@ -57,38 +57,7 @@ function getMonthTotalForEmployeeUntilWeek(emp, currentWeekDays) {
 
 function getBreakTextForResolvedShift(entry) {
   if (!entry || entry.type !== "shift") return "";
-
-  const start = entry.start || "";
-  const end = entry.end || "";
-  const breakMinutes = Number(entry.breakMinutes || 0);
-
-  if (!start || !end || breakMinutes <= 0) return "";
-  if (entry.mode === "early") return "";
-
-  if (entry.mode === "late") {
-    const startMinutes = hhmmToMinutes(start);
-    return startMinutes <= hhmmToMinutes("14:00") ? "16:00-16:10" : "17:00-17:10";
-  }
-
-  if (entry.mode === "full") {
-    if (breakMinutes === 70) return "14:00-15:10";
-    if (breakMinutes === 60) return "14:00-15:00";
-  }
-
-  if (entry.mode === "flex") {
-    const startMinutes = hhmmToMinutes(start);
-    const endMinutes = hhmmToMinutes(end);
-    const span = endMinutes - startMinutes;
-    if (span <= 0) return "";
-
-    const mid = startMinutes + Math.floor(span / 2);
-    const breakStart = mid - Math.floor(breakMinutes / 2);
-    const breakEnd = breakStart + breakMinutes;
-
-    return `${minutesToHHMM(breakStart)}-${minutesToHHMM(breakEnd)}`;
-  }
-
-  return "";
+  return getPauseRangeForMep(entry);
 }
 
 function getResolvedFormDayData(emp, isoDate) {
@@ -506,25 +475,27 @@ function buildMepHeader(sheetModel) {
       </div>
 
       <div class="mepHeaderMeta">
-        <div class="mepMetaField mepMetaMonth">
-          <span class="mepMetaLabel">Monat/ Jahr</span>
-          <span class="mepMetaLine">
-            ${renderHandText(monthYearText, `month-year-${weekDays[0].iso}-${pageIndex}`)}
-          </span>
-        </div>
+        <div class="mepMetaDateRow">
+          <div class="mepMetaField mepMetaMonth">
+            <span class="mepMetaLabel">Monat/ Jahr</span>
+            <span class="mepMetaLine">
+              ${renderHandText(monthYearText, `month-year-${weekDays[0].iso}-${pageIndex}`)}
+            </span>
+          </div>
 
-        <div class="mepMetaField mepMetaFrom">
-          <span class="mepMetaLabel">Woche vom:</span>
-          <span class="mepMetaLine">
-            ${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}-${pageIndex}`)}
-          </span>
-        </div>
+          <div class="mepMetaField mepMetaFrom">
+            <span class="mepMetaLabel">Woche vom:</span>
+            <span class="mepMetaLine">
+              ${renderHandText(formatShortDateForm(weekStart), `week-from-${weekDays[0].iso}-${pageIndex}`)}
+            </span>
+          </div>
 
-        <div class="mepMetaField mepMetaTo">
-          <span class="mepMetaLabel">bis:</span>
-          <span class="mepMetaLine">
-            ${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}-${pageIndex}`)}
-          </span>
+          <div class="mepMetaField mepMetaTo">
+            <span class="mepMetaLabel">bis:</span>
+            <span class="mepMetaLine">
+              ${renderHandText(formatShortDateForm(weekEnd), `week-to-${weekDays[6].iso}-${pageIndex}`)}
+            </span>
+          </div>
         </div>
 
         <div class="mepMetaStorage">Aufbewahrung in der Filiale: 2 Jahre</div>
