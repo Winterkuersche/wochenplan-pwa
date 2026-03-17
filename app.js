@@ -434,11 +434,13 @@ const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const monthViewEl = document.getElementById("monthView");
 const formViewEl = document.getElementById("formView");
+const mepTemplateViewEl = document.getElementById("mepTemplateView");
 
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewMonthEl = document.getElementById("btnViewMonth");
 const btnViewFormEl = document.getElementById("btnViewForm");
+const btnViewMepEl = document.getElementById("btnViewMep");
 const btnPrevWeekEl = document.getElementById("btnPrevWeek");
 const btnCurrentWeekEl = document.getElementById("btnCurrentWeek");
 const btnNextWeekEl = document.getElementById("btnNextWeek");
@@ -1253,11 +1255,13 @@ function renderView() {
   weekViewEl.classList.toggle("hidden", view !== "week");
   monthViewEl.classList.toggle("hidden", view !== "month");
   formViewEl.classList.toggle("hidden", view !== "form");
+  mepTemplateViewEl.classList.toggle("hidden", view !== "mep");
 
   btnViewDayEl.classList.toggle("active", view === "day");
   btnViewWeekEl.classList.toggle("active", view === "week");
   btnViewMonthEl.classList.toggle("active", view === "month");
   btnViewFormEl.classList.toggle("active", view === "form");
+  btnViewMepEl.classList.toggle("active", view === "mep");
 
   renderTopbarVisibility();
 }
@@ -1391,6 +1395,7 @@ function renderAllViews() {
   if (typeof renderWeekView === "function") renderWeekView();
   if (typeof renderMonthView === "function") renderMonthView();
   if (typeof renderFormView === "function") renderFormView();
+  if (typeof renderMepTemplateView === "function") renderMepTemplateView();
 }
 
 function renderAll() {
@@ -1482,6 +1487,15 @@ if (btnViewWeekEl) {
 if (btnViewFormEl) {
   btnViewFormEl.addEventListener("click", () => {
     uiState.currentView = "form";
+    saveUiState();
+    renderView();
+    renderAllViews();
+  });
+}
+
+if (btnViewMepEl) {
+  btnViewMepEl.addEventListener("click", () => {
+    uiState.currentView = "mep";
     saveUiState();
     renderView();
     renderAllViews();
