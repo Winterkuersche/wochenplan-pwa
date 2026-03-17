@@ -8,6 +8,8 @@
   --text: #222;
   --subtext: #666;
   --accent: #0a58ff;
+  --app-vh: 1vh;
+  --app-dvh: calc(var(--app-vh) * 100);
 }
 
 body.dark {
@@ -786,7 +788,8 @@ select {
 .mepScreenStage {
   display: block;
   max-width: 100%;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -1261,13 +1264,13 @@ select {
   #mepTemplateView {
     padding: 10px;
     overflow: auto;
-    max-height: calc(100dvh - 130px);
+    max-height: calc(var(--app-dvh) - 130px);
     -webkit-overflow-scrolling: touch;
   }
 
   #formView .mepScreenStage {
     overflow: auto;
-    max-height: calc(100dvh - 200px);
+    max-height: calc(var(--app-dvh) - 200px);
   }
 
   #formView .mepTableOuter,
@@ -1289,6 +1292,36 @@ select {
 
   #mepTemplateView .mepTplSheet {
     min-width: fit-content;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 920px) {
+    #formView {
+      max-height: calc(var(--app-dvh) - 110px);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      min-height: 0;
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    }
+
+    #formView .mepScreenStage {
+      overflow-x: auto;
+      overflow-y: visible;
+      max-height: none;
+      min-height: 0;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    #formView .mepScreenStack {
+      width: max-content;
+      min-width: 100%;
+    }
+
+    #formView .mepPrintPage {
+      margin-bottom: 12mm;
+    }
   }
 }
 

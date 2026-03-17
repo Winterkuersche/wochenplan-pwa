@@ -59,6 +59,15 @@ let saveStatusTimerId = null;
 let saveStatusMessage = "";
 let saveStatusHasError = false;
 
+function updateAppViewportHeightVar() {
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  if (!Number.isFinite(viewportHeight) || viewportHeight <= 0) return;
+
+  const onePercent = viewportHeight * 0.01;
+  document.documentElement.style.setProperty("--app-vh", `${onePercent}px`);
+  document.documentElement.style.setProperty("--app-dvh", `${viewportHeight}px`);
+}
+
 const loadedAppState = loadAppState();
 let uiState = loadedAppState.ui;
 let state = loadedAppState.state;
@@ -1894,6 +1903,8 @@ btnDarkMode?.addEventListener("click", () => {
 
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
+  updateAppViewportHeightVar();
+
   if (!state.weekFrom) {
     const today = new Date();
     state.weekFrom = toIsoDate(today);
@@ -1934,6 +1945,12 @@ window.addEventListener("load", () => {
   syncWeekRangeFromActiveWeek();
   renderAll();
 });
+
+window.addEventListener("resize", updateAppViewportHeightVar, { passive: true });
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", updateAppViewportHeightVar, { passive: true });
+}
 window.addEventListener("beforeunload", () => {
   flushPendingAutoSave();
 });
