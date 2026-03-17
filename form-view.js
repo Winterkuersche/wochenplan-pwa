@@ -703,17 +703,17 @@ function getFormSheetModels() {
   return models;
 }
 
-function getCurrentFormSheetIndex(sheetModels) {
-  const maxIndex = Math.max(0, sheetModels.length - 1);
-  const saved = Number(state.formSheetIndex || 0);
+function getCurrentFormWeekIndex(totalWeeks) {
+  const maxIndex = Math.max(0, totalWeeks - 1);
+  const saved = Number(state.formWeekIndex ?? state.formSheetIndex ?? 0);
   if (!Number.isFinite(saved)) return 0;
   return Math.min(Math.max(0, saved), maxIndex);
 }
 
-function setCurrentFormSheetIndex(nextIndex, sheetModels) {
-  state.formSheetIndex = Math.min(
+function setCurrentFormWeekIndex(nextIndex, totalWeeks) {
+  state.formWeekIndex = Math.min(
     Math.max(0, nextIndex),
-    Math.max(0, sheetModels.length - 1)
+    Math.max(0, totalWeeks - 1)
   );
 }
 
@@ -756,22 +756,24 @@ function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
     </section>
   `;
 }
-function bindFormPager(sheetModels) {
-  const prevBtn = document.getElementById("mepPrevPage");
-  const nextBtn = document.getElementById("mepNextPage");
+function bindFormPager() {
+  const prevBtn = document.getElementById("mepPrevWeek");
+  const nextBtn = document.getElementById("mepNextWeek");
   const measureModeToggle = document.getElementById("mepMeasureModeToggle");
+  const totalWeeks = state.monthPlan?.weeks?.length || 0;
+  const currentWeekIndex = getCurrentFormWeekIndex(totalWeeks);
 
   if (prevBtn && nextBtn) {
-    prevBtn.disabled = getCurrentFormSheetIndex(sheetModels) <= 0;
-    nextBtn.disabled = getCurrentFormSheetIndex(sheetModels) >= sheetModels.length - 1;
+    prevBtn.disabled = currentWeekIndex <= 0;
+    nextBtn.disabled = currentWeekIndex >= totalWeeks - 1;
 
     prevBtn.addEventListener("click", () => {
-      setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) - 1, sheetModels);
+      setCurrentFormWeekIndex(getCurrentFormWeekIndex(totalWeeks) - 1, totalWeeks);
       renderFormView();
     });
 
     nextBtn.addEventListener("click", () => {
-      setCurrentFormSheetIndex(getCurrentFormSheetIndex(sheetModels) + 1, sheetModels);
+      setCurrentFormWeekIndex(getCurrentFormWeekIndex(totalWeeks) + 1, totalWeeks);
       renderFormView();
     });
   }
@@ -823,22 +825,22 @@ function bindFormPager(sheetModels) {
     });
   }
 }
-function renderFormPager(sheetModels, currentIndex) {
-  const current = sheetModels[currentIndex];
-  if (!current) return "";
+function renderFormPager(currentWeekIndex, totalWeeks, weekPageCount) {
+  if (totalWeeks <= 0) return "";
 
   return `
     <div class="mepPager no-print">
-      <button type="button" id="mepPrevPage">◀</button>
+      <button type="button" id="mepPrevWeek">◀</button>
       <div class="mepPagerInfo">
         <strong>Originalformular</strong>
-        <span>Woche ${current.weekIndex + 1} · Seite ${current.pageIndex + 1} / ${current.pageCount}</span>
+        <span>Woche ${currentWeekIndex + 1} / ${totalWeeks}</span>
+        <span>${weekPageCount} Blatt${weekPageCount === 1 ? "" : "ätter"} sichtbar</span>
       </div>
       <label class="mepMeasureToggle">
         <input type="checkbox" id="mepMeasureModeToggle" ${mepMeasureModeEnabled ? "checked" : ""}>
         MEP Messmodus
       </label>
-      <button type="button" id="mepNextPage">▶</button>
+      <button type="button" id="mepNextWeek">▶</button>
     </div>
     ${renderMepMeasureControls()}
   `;
@@ -856,21 +858,25 @@ function renderFormView() {
     return;
   }
 
-  const currentIndex = getCurrentFormSheetIndex(sheetModels);
-  const currentSheet = sheetModels[currentIndex];
+  const totalWeeks = state.monthPlan?.weeks?.length || 0;
+  const currentWeekIndex = getCurrentFormWeekIndex(totalWeeks);
 
   const currentWeekSheets = sheetModels.filter(
-    (sheet) => sheet.weekIndex === currentSheet.weekIndex
+    (sheet) => sheet.weekIndex === currentWeekIndex
   );
 
-  const screenHtml = buildWeekSheet(currentSheet, { useTemplate: true });
+  const screenHtml = currentWeekSheets
+    .map((sheet, index) => buildWeekSheet(sheet, { useTemplate: index === 0 }))
+    .join("");
   const printHtml = currentWeekSheets.map((sheet) => buildWeekSheet(sheet)).join("");
 
   container.innerHTML = `
-    ${renderFormPager(sheetModels, currentIndex)}
+    ${renderFormPager(currentWeekIndex, totalWeeks, currentWeekSheets.length)}
 
     <div class="mepScreenStage ${mepMeasureModeEnabled ? "mepMeasureMode" : ""}">
-      ${screenHtml}
+      <div class="mepScreenStack">
+        ${screenHtml}
+      </div>
     </div>
 
     <div class="mepPrintAll">
@@ -878,6 +884,6 @@ function renderFormView() {
     </div>
   `;
 
-  bindFormPager(sheetModels);
+  bindFormPager();
   updateMepMeasureDynamicGuides();
 }

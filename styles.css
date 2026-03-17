@@ -785,6 +785,18 @@ select {
 
 .mepScreenStage {
   display: block;
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mepScreenStack {
+  width: max-content;
+  min-width: 100%;
+}
+
+.mepScreenStack .mepPrintPage:last-child {
+  margin-bottom: 0;
 }
 
 .mepPrintAll {
@@ -1248,8 +1260,14 @@ select {
   #formView,
   #mepTemplateView {
     padding: 10px;
-    overflow-x: auto;
+    overflow: auto;
+    max-height: calc(100dvh - 130px);
     -webkit-overflow-scrolling: touch;
+  }
+
+  #formView .mepScreenStage {
+    overflow: auto;
+    max-height: calc(100dvh - 200px);
   }
 
   #formView .mepTableOuter,
@@ -1278,8 +1296,12 @@ select {
 @media (max-width: 1024px) and (orientation: landscape) {
   #formView,
   #mepTemplateView {
-    overflow-x: auto;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #formView .mepScreenStage {
+    overflow: auto;
   }
 
   #formView .printSheet,
