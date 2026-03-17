@@ -180,6 +180,17 @@ select {
   color: var(--subtext);
 }
 
+.saveStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 2px;
+}
+
+.saveStatus.isError {
+  color: #b42318;
+}
+
 /* =============================
    SECTION WRAPPER
    ============================= */

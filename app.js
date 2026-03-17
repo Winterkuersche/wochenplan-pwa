@@ -45,14 +45,24 @@ const MASTER_KEY = "wochenplan_master_v10";
 const PLAN_KEY = "wochenplan_plan_v10";
 const UI_KEY = "wochenplan_ui_v10";
 const BACKUP_INTERNAL_KEY = "wochenplan_import_backup_v1";
+const LAST_BACKUP_BEFORE_IMPORT_KEY = "wochenplan_last_backup_before_import_v1";
 const BACKUP_META_KEY = "wochenplan_backup_meta_v1";
 const BACKUP_MEP_CALIBRATION_KEY = "mep-calibration";
+const LAST_SAVED_AT_KEY = "wochenplan_last_saved_at_v1";
+const AUTOSAVE_DELAY_MS = 600;
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDayIndex = 0;
 let lastSelectedShift = null;
-let uiState = loadUiState();
-let state = buildInitialState();
+let autoSaveTimerId = null;
+let saveStatusTimerId = null;
+let saveStatusMessage = "";
+let saveStatusHasError = false;
+
+const loadedAppState = loadAppState();
+let uiState = loadedAppState.ui;
+let state = loadedAppState.state;
+let lastSavedAt = loadedAppState.lastSavedAt;
 state.schedule = state.schedule || {};
 state.absences = state.absences || [];
 
@@ -412,8 +422,7 @@ function clearDay(employeeId, isoDate, options = {}) {
 }
 function commitPlanChange() {
   refreshEmployeeVacationCounters();
-  saveMasterData();
-  savePlanData();
+  saveAppStateDebounced();
   renderAllViews();
 }
 
@@ -458,6 +467,7 @@ const btnExportBackupEl = document.getElementById("btnExportBackup");
 const btnImportBackupEl = document.getElementById("btnImportBackup");
 const backupFileInputEl = document.getElementById("backupFileInput");
 const backupInfoEl = document.getElementById("backupInfo");
+const saveStatusEl = document.getElementById("saveStatus");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -542,10 +552,9 @@ function roleToContractModel(roleKey) {
 
 /* ========= STORAGE ========= */
 function loadJson(key, fallback) {
-  const raw = localStorage.getItem(key);
-  if (!raw) return fallback;
-
   try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
     return JSON.parse(raw);
   } catch {
     return fallback;
@@ -553,7 +562,12 @@ function loadJson(key, fallback) {
 }
 
 function saveJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function defaultUiState() {
@@ -564,18 +578,128 @@ function defaultUiState() {
 }
 
 function loadUiState() {
-  const raw = localStorage.getItem(UI_KEY);
-  if (!raw) return defaultUiState();
-
-  try {
-    return { ...defaultUiState(), ...JSON.parse(raw) };
-  } catch {
-    return defaultUiState();
-  }
+  const rawUi = loadJson(UI_KEY, defaultUiState());
+  return { ...defaultUiState(), ...(rawUi || {}) };
 }
 
 function saveUiState() {
-  saveJson(UI_KEY, uiState);
+  return saveJson(UI_KEY, uiState);
+}
+
+function getLastSavedAt() {
+  const value = loadJson(LAST_SAVED_AT_KEY, "");
+  return typeof value === "string" ? value : "";
+}
+
+function updateSaveStatus(message, options = {}) {
+  const { isError = false, hideAfterMs = 0 } = options;
+
+  saveStatusMessage = message || "";
+  saveStatusHasError = Boolean(isError);
+
+  if (!saveStatusEl) return;
+
+  saveStatusEl.textContent = saveStatusMessage;
+  saveStatusEl.classList.toggle("isError", saveStatusHasError);
+
+  if (saveStatusTimerId) {
+    clearTimeout(saveStatusTimerId);
+    saveStatusTimerId = null;
+  }
+
+  if (hideAfterMs > 0) {
+    saveStatusTimerId = setTimeout(() => {
+      saveStatusMessage = "";
+      saveStatusHasError = false;
+      saveStatusTimerId = null;
+      refreshSaveStatusLabel();
+    }, hideAfterMs);
+  }
+}
+
+function refreshSaveStatusLabel() {
+  if (saveStatusMessage) {
+    updateSaveStatus(saveStatusMessage, { isError: saveStatusHasError });
+    return;
+  }
+
+  const savedAt = getLastSavedAt();
+  if (savedAt) {
+    updateSaveStatus(`Zuletzt gespeichert: ${formatDateTimeForDisplay(savedAt)}`);
+  } else {
+    updateSaveStatus("Noch nicht gespeichert");
+  }
+}
+
+function saveMasterData() {
+  return saveJson(MASTER_KEY, {
+    employees: state.employees.map((emp) => ({
+      id: emp.id,
+      name: emp.name,
+      roleKey: emp.roleKey,
+      target: emp.target,
+      contractModel: emp.contractModel || "",
+      contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
+      totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
+      usedVacationDays: Number(emp.usedVacationDays ?? 0),
+      remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
+      vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
+      birthDate: emp.birthDate || "",
+      serviceBonus: Boolean(emp.serviceBonus)
+    }))
+  });
+}
+
+function savePlanData() {
+  return saveJson(PLAN_KEY, {
+    weekFrom: state.weekFrom,
+    weekTo: state.weekTo,
+    schedule: state.schedule || {},
+    absences: state.absences || []
+  });
+}
+
+function saveAppState() {
+  const savedAt = new Date().toISOString();
+  const masterSaved = saveMasterData();
+  const planSaved = savePlanData();
+  const uiSaved = saveUiState();
+  const savedAtPersisted = saveJson(LAST_SAVED_AT_KEY, savedAt);
+
+  if (masterSaved && planSaved && uiSaved && savedAtPersisted) {
+    lastSavedAt = savedAt;
+    updateSaveStatus("Gespeichert", { hideAfterMs: 2500 });
+    return true;
+  }
+
+  updateSaveStatus("Speichern fehlgeschlagen", { isError: true, hideAfterMs: 4000 });
+  return false;
+}
+
+function saveAppStateDebounced() {
+  if (autoSaveTimerId) {
+    clearTimeout(autoSaveTimerId);
+  }
+
+  autoSaveTimerId = setTimeout(() => {
+    autoSaveTimerId = null;
+    saveAppState();
+  }, AUTOSAVE_DELAY_MS);
+}
+
+function flushPendingAutoSave() {
+  if (!autoSaveTimerId) return;
+  clearTimeout(autoSaveTimerId);
+  autoSaveTimerId = null;
+  saveAppState();
+}
+
+function loadAppState() {
+  return {
+    ui: loadUiState(),
+    state: buildInitialState(),
+    lastSavedAt: getLastSavedAt()
+  };
 }
 
 /* ========= DEFAULT DATA ========= */
@@ -683,33 +807,6 @@ function buildInitialState() {
 }
 
 
-function saveMasterData() {
-  saveJson(MASTER_KEY, {
-    employees: state.employees.map((emp) => ({
-      id: emp.id,
-      name: emp.name,
-      roleKey: emp.roleKey,
-      target: emp.target,
-      contractModel: emp.contractModel || "",
-      contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
-      totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
-      usedVacationDays: Number(emp.usedVacationDays ?? 0),
-      remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
-      vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
-      birthDate: emp.birthDate || "",
-      serviceBonus: Boolean(emp.serviceBonus)
-    }))
-  });
-}
-
-function savePlanData() {
-  saveJson(PLAN_KEY, {
-    weekFrom: state.weekFrom,
-    weekTo: state.weekTo,
-    schedule: state.schedule || {},
-    absences: state.absences || []
-  });
-}
 /* ========= MONTH ENGINE FALLBACK ========= */
 function buildMonthPlanFallback(year, monthIndex) {
   const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -1267,9 +1364,7 @@ function triggerBackupDownload(snapshot) {
 
 function exportBackup() {
   try {
-    saveMasterData();
-    savePlanData();
-    saveUiState();
+    saveAppState();
 
     const snapshot = collectFullBackupSnapshot();
     triggerBackupDownload(snapshot);
@@ -1293,7 +1388,7 @@ function importBackupFromObject(backupData) {
 
   const storage = backupData.storage;
 
-  saveJson(BACKUP_INTERNAL_KEY, {
+  const preImportSnapshot = {
     savedAt: new Date().toISOString(),
     source: "pre-import",
     storage: {
@@ -1303,22 +1398,33 @@ function importBackupFromObject(backupData) {
       ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
       [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
     }
-  });
+  };
 
-  saveJson(MASTER_KEY, storage[MASTER_KEY]);
-  saveJson(PLAN_KEY, storage[PLAN_KEY]);
-  saveJson(UI_KEY, storage[UI_KEY]);
+  saveJson(BACKUP_INTERNAL_KEY, preImportSnapshot);
+  saveJson(LAST_BACKUP_BEFORE_IMPORT_KEY, preImportSnapshot);
 
-  if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
-    localStorage.setItem("wochenplan_dark", storage["wochenplan_dark"]);
-  } else {
-    localStorage.removeItem("wochenplan_dark");
+  const masterSaved = saveJson(MASTER_KEY, storage[MASTER_KEY]);
+  const planSaved = saveJson(PLAN_KEY, storage[PLAN_KEY]);
+  const uiSaved = saveJson(UI_KEY, storage[UI_KEY]);
+
+  try {
+    if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
+      localStorage.setItem("wochenplan_dark", storage["wochenplan_dark"]);
+    } else {
+      localStorage.removeItem("wochenplan_dark");
+    }
+
+    if (storage[BACKUP_MEP_CALIBRATION_KEY] && typeof storage[BACKUP_MEP_CALIBRATION_KEY] === "object") {
+      saveJson(BACKUP_MEP_CALIBRATION_KEY, storage[BACKUP_MEP_CALIBRATION_KEY]);
+    } else {
+      localStorage.removeItem(BACKUP_MEP_CALIBRATION_KEY);
+    }
+  } catch {
+    // continue: core backup data is already restored as far as possible
   }
 
-  if (storage[BACKUP_MEP_CALIBRATION_KEY] && typeof storage[BACKUP_MEP_CALIBRATION_KEY] === "object") {
-    saveJson(BACKUP_MEP_CALIBRATION_KEY, storage[BACKUP_MEP_CALIBRATION_KEY]);
-  } else {
-    localStorage.removeItem(BACKUP_MEP_CALIBRATION_KEY);
+  if (!masterSaved || !planSaved || !uiSaved) {
+    throw new Error("Die Sicherungsdaten konnten nicht vollständig gespeichert werden.");
   }
 
   saveJson(BACKUP_META_KEY, {
@@ -1478,7 +1584,7 @@ function renderTeamSetup() {
     nameInput.value = emp.name;
     nameInput.addEventListener("change", () => {
       emp.name = nameInput.value;
-      saveMasterData();
+      saveAppStateDebounced();
       renderAllViews();
     });
 
@@ -1494,7 +1600,7 @@ function renderTeamSetup() {
       emp.roleKey = roleSel.value;
       emp.target = roleToTarget(emp.roleKey);
       emp.contractModel = roleToContractModel(emp.roleKey);
-      saveMasterData();
+      saveAppStateDebounced();
       renderAllViews();
     });
 
@@ -1504,7 +1610,7 @@ function renderTeamSetup() {
     targetInput.value = emp.target || "";
     targetInput.addEventListener("change", () => {
       emp.target = targetInput.value;
-      saveMasterData();
+      saveAppStateDebounced();
       renderAllViews();
     });
 
@@ -1524,7 +1630,7 @@ vacationInput.addEventListener("change", () => {
   emp.remainingVacationDays = clamped - Number(emp.usedVacationDays ?? 0);
   vacationInput.value = clamped;
 
-  saveMasterData();
+  saveAppStateDebounced();
   renderAllViews();
 });
 
@@ -1546,7 +1652,7 @@ vacationInput.addEventListener("change", () => {
     birthDateInput.value = emp.birthDate || "";
     birthDateInput.addEventListener("change", () => {
       emp.birthDate = birthDateInput.value;
-      saveMasterData();
+      saveAppStateDebounced();
       renderAllViews();
     });
     const serviceBonusInput = document.createElement("input");
@@ -1556,7 +1662,7 @@ serviceBonusInput.title = "10 Jahre Betriebszugehörigkeit";
 
 serviceBonusInput.addEventListener("change", () => {
   emp.serviceBonus = serviceBonusInput.checked;
-  saveMasterData();
+  saveAppStateDebounced();
   renderAllViews();
 });
 
@@ -1633,7 +1739,7 @@ if (weekFromEl) {
     state.weekFrom = weekFromEl.value;
     syncMonthPlanToState();
     syncWeekRangeFromActiveWeek();
-    savePlanData();
+    saveAppStateDebounced();
     renderAllViews();
   });
 }
@@ -1641,7 +1747,7 @@ if (weekFromEl) {
 if (weekToEl) {
   weekToEl.addEventListener("change", () => {
     state.weekTo = weekToEl.value;
-    savePlanData();
+    saveAppStateDebounced();
     renderAllViews();
   });
 }
@@ -1649,7 +1755,7 @@ if (weekToEl) {
 if (btnToggleTeamEl) {
   btnToggleTeamEl.addEventListener("click", () => {
     uiState.teamCollapsed = !uiState.teamCollapsed;
-    saveUiState();
+    saveAppStateDebounced();
     renderTeamSectionVisibility();
   });
 }
@@ -1657,7 +1763,7 @@ if (btnToggleTeamEl) {
 if (btnViewDayEl) {
   btnViewDayEl.addEventListener("click", () => {
     uiState.currentView = "day";
-    saveUiState();
+    saveAppStateDebounced();
     renderView();
     renderAllViews();
   });
@@ -1666,7 +1772,7 @@ if (btnViewDayEl) {
 if (btnViewMonthEl) {
   btnViewMonthEl.addEventListener("click", () => {
     uiState.currentView = "month";
-    saveUiState();
+    saveAppStateDebounced();
     renderView();
     renderAllViews();
   });
@@ -1675,7 +1781,7 @@ if (btnViewMonthEl) {
 if (btnViewWeekEl) {
   btnViewWeekEl.addEventListener("click", () => {
     uiState.currentView = "week";
-    saveUiState();
+    saveAppStateDebounced();
     renderView();
     renderAllViews();
   });
@@ -1684,7 +1790,7 @@ if (btnViewWeekEl) {
 if (btnViewFormEl) {
   btnViewFormEl.addEventListener("click", () => {
     uiState.currentView = "form";
-    saveUiState();
+    saveAppStateDebounced();
     renderView();
     renderAllViews();
   });
@@ -1693,15 +1799,15 @@ if (btnViewFormEl) {
 if (btnViewMepEl) {
   btnViewMepEl.addEventListener("click", () => {
     uiState.currentView = "mep";
-    saveUiState();
+    saveAppStateDebounced();
     renderView();
     renderAllViews();
   });
 }
 
 document.getElementById("btnSaveMaster")?.addEventListener("click", () => {
-  saveMasterData();
-  alert("Stammdaten gespeichert.");
+  const ok = saveAppState();
+  alert(ok ? "Stammdaten gespeichert." : "Speichern fehlgeschlagen.");
 });
 document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   const weekDays = getActiveWeekDays();
@@ -1740,6 +1846,9 @@ btnExportBackupEl?.addEventListener("click", () => {
 btnImportBackupEl?.addEventListener("click", () => {
   if (!backupFileInputEl) return;
 
+  flushPendingAutoSave();
+  saveAppState();
+
   if (!confirm("Der aktuelle Stand wird überschrieben. Import jetzt durchführen?")) {
     return;
   }
@@ -1768,10 +1877,14 @@ function updateDarkModeButton() {
 btnDarkMode?.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 
-  localStorage.setItem(
-    "wochenplan_dark",
-    document.body.classList.contains("dark")
-  );
+  try {
+    localStorage.setItem(
+      "wochenplan_dark",
+      document.body.classList.contains("dark")
+    );
+  } catch {
+    updateSaveStatus("Theme konnte nicht gespeichert werden", { isError: true, hideAfterMs: 3000 });
+  }
 
   updateDarkModeButton();
 });
@@ -1787,7 +1900,12 @@ window.addEventListener("load", () => {
     state.activeMonth = (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
   }
 
-  const savedTheme = localStorage.getItem("wochenplan_dark");
+  let savedTheme = null;
+  try {
+    savedTheme = localStorage.getItem("wochenplan_dark");
+  } catch {
+    savedTheme = null;
+  }
 
   if (savedTheme === "true") {
     document.body.classList.add("dark");
@@ -1801,6 +1919,7 @@ window.addEventListener("load", () => {
 
   updateDarkModeButton();
   updateBackupInfoLabel();
+  refreshSaveStatusLabel();
 
   if (typeof bindMonthNavigation === "function") {
     bindMonthNavigation();
@@ -1812,6 +1931,16 @@ window.addEventListener("load", () => {
   syncWeekRangeFromActiveWeek();
   renderAll();
 });
+window.addEventListener("beforeunload", () => {
+  flushPendingAutoSave();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushPendingAutoSave();
+  }
+});
+
 // DEBUG toggle with key "D"
 document.addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() === "d") {

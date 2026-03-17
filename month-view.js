@@ -188,6 +188,7 @@ function changeMonth(offset) {
   state.activeMonth = `${nextDate.getFullYear()}-${pad2(nextDate.getMonth() + 1)}`;
 
   syncMonthPlanToState();
+  saveAppStateDebounced();
   renderAllViews();
 }
 
