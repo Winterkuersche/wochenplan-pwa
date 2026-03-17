@@ -641,7 +641,7 @@ function buildMepFooter() {
         <div class="mepFooterLeft">
           <div class="mepFooterHeading">Pausenzeiten:</div>
           <div>bis 6 Stunden: keine Pause</div>
-          <div>mehr als 6 Stunden: 60 Minuten</div>
+          <div>mehr als 6 Stunden: 60 Minuten (+10 Min. bei Abrechnung)</div>
         </div>
 
         <div class="mepFooterCenter">

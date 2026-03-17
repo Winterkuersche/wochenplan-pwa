@@ -461,13 +461,17 @@ function setExternalHelpForEmployeeOnDate(employeeId, isoDate, options = {}) {
   const branch = (options.branch || "").trim();
   const start = normalizePlanTime(options.start || "");
   const end = normalizePlanTime(options.end || "");
-  const pauseMinutes = normalizePlanBreakMinutes(parseTimeToMinutes(options.pauseHHMM || "00:00"));
+  const configuredPauseMinutes = normalizePlanBreakMinutes(parseTimeToMinutes(options.pauseHHMM || "00:00"));
 
   if (!start || !end) return false;
   if (!isAllowedPlanTime(start) || !isAllowedPlanTime(end)) return false;
 
   const spanMinutes = diffMinutesBetweenHHMM(start, end);
   if (spanMinutes <= 0) return false;
+  const pauseMinutes = getEffectiveBreakMinutes(start, end, configuredPauseMinutes, {
+    includeBillingBonus: end === "19:10"
+  });
+
   if (pauseMinutes >= spanMinutes) return false;
 
   const workedMinutes = Math.max(0, spanMinutes - pauseMinutes);
@@ -676,6 +680,15 @@ function refreshExternalHelpDurationField() {
 });
 
 
+function openShiftDialogForSelectValue(value, context) {
+  if (value === "U" || value === "K" || value === "AH" || value === "L" || value === "G" || value === "FLEX") {
+    openShiftDialog(value, { ...context, type: value });
+    return true;
+  }
+
+  return false;
+}
+
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
   const blockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
@@ -756,38 +769,7 @@ function createWeekSelect(emp, isoDate) {
 
     rememberLastSelectedShift(selectedValue);
 
-    if (selectedValue === "U") {
-      openShiftDialog("U", { emp, isoDate, type: "U" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "K") {
-      openShiftDialog("K", { emp, isoDate, type: "K" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "AH") {
-      openShiftDialog("AH", { emp, isoDate, type: "AH" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "L") {
-      openShiftDialog("L", { emp, isoDate, type: "L" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "G") {
-      openShiftDialog("G", { emp, isoDate, type: "G" });
-      sel.value = previousValue;
-      return;
-    }
-
-    if (selectedValue === "FLEX") {
-      openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
+    if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
       sel.value = previousValue;
       return;
     }
@@ -808,6 +790,12 @@ function createWeekSelect(emp, isoDate) {
 }
 
 commitPlanChange();
+  });
+
+  sel.addEventListener("dblclick", () => {
+    if (openShiftDialogForSelectValue(currentValue, { emp, isoDate })) {
+      sel.value = currentValue;
+    }
   });
 
   wrap.appendChild(sel);

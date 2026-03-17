@@ -88,7 +88,11 @@ function normalizePlanEntry(entry) {
     : "";
 
   const rawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
-  const pause = normalizePlanBreakMinutes(rawPause);
+  const pause = start && end
+    ? getEffectiveBreakMinutes(start, end, rawPause, {
+      includeBillingBonus: end === "19:10"
+    })
+    : normalizePlanBreakMinutes(rawPause);
 
   let minutes = 0;
 

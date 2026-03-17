@@ -47,9 +47,12 @@ function buildLateShiftEntry(startHHMM, withCheckout) {
     ? SHIFT_CONFIG.lateShift.endWithCheckout
     : SHIFT_CONFIG.lateShift.endWithoutCheckout;
 
-  const breakMinutes = withCheckout
+  const configuredBreakMinutes = withCheckout
     ? SHIFT_CONFIG.lateShift.extraBreakMinutesWithCheckout
     : 0;
+  const breakMinutes = getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes, {
+    includeBillingBonus: withCheckout
+  });
 
   const workedMinutes = getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes);
   const code = getLateShiftCodeFromStart(startHHMM);
