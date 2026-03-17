@@ -2457,8 +2457,8 @@ body.dark .mepTable th {
 .mepTplMetaField {
   display: grid;
   grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: 1.6mm;
+  align-items: end;
+  column-gap: 2.6mm;
 }
 
 .mepTplMetaLabel {
@@ -2466,11 +2466,12 @@ body.dark .mepTable th {
 }
 
 .mepTplWriteLine {
-  height: 4.8mm;
-  border-bottom: 1.3px solid #000;
+  height: 4.5mm;
+  border-bottom: 0.9px solid #000;
   display: flex;
   align-items: flex-end;
-  padding-bottom: 0.35mm;
+  padding-bottom: 0.2mm;
+  min-width: 31mm;
 }
 
 .mepTplMetaArchive {
@@ -2488,6 +2489,7 @@ body.dark .mepTable th {
   table-layout: fixed;
   border: 1.8px solid #000;
   border-bottom: 0;
+  border-right: 0;
   font-size: 0.67rem;
 }
 
@@ -2517,7 +2519,7 @@ body.dark .mepTable th {
 }
 
 .mepTplTable thead .mepTplSummaryHeader + .mepTplSummaryHeader {
-  border-left-width: 1px !important;
+  border-left-width: 0 !important;
 }
 
 .mepTplTable th:nth-child(1),
@@ -2548,9 +2550,18 @@ body.dark .mepTable th {
   border-left-width: 1.8px;
 }
 
+
+.mepTplTable th:nth-last-child(3),
+.mepTplTable td:nth-last-child(3) {
+  position: relative;
+  z-index: 2;
+  border-right: 1.8px solid #000 !important;
+}
+
 .mepTplTable th:nth-last-child(1),
 .mepTplTable td:nth-last-child(1) {
   width: 8.9%;
+  border-right-width: 0;
 }
 
 .mepTplTable tbody tr:nth-child(4n + 1) td {
@@ -2561,8 +2572,8 @@ body.dark .mepTable th {
   border-bottom-width: 1.8px;
 }
 
-.mepTplTable tbody tr:last-child td {
-  border-bottom: 0;
+.mepTplTable tbody tr:last-child td:not(.mepTplSummary) {
+  border-bottom: 1.8px solid #000;
 }
 
 .mepTplEmployee {
@@ -2586,10 +2597,10 @@ body.dark .mepTable th {
 .mepTplSummaryBox {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
+  left: 0.45mm;
+  right: 0.45mm;
   transform: translateY(-50%);
-  height: 50%;
+  height: 46%;
   min-height: 7.8mm;
   display: flex;
   align-items: center;
@@ -2601,7 +2612,6 @@ body.dark .mepTable th {
 
 .mepTplSummaryWeek .mepTplSummaryBox {
   margin-right: 0;
-  border-right-width: 0;
 }
 
 .mepTplSummaryMonth .mepTplSummaryBox {
