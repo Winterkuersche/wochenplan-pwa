@@ -2599,6 +2599,7 @@ body.dark .mepTable th {
 
 .mepTplSummary {
   position: relative;
+  display: block;
   padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
