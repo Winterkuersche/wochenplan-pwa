@@ -2384,133 +2384,138 @@ body.dark .mepTable th {
 }
 
 /* =============================
-   MEP-TABELLENANSICHT (NEU)
+   MEP-TABELLENANSICHT (FEINSCHLIFF)
    ============================= */
 #mepTemplateView {
+  padding: 10px;
   background: #fff;
+}
+
+#mepTemplateView .sectionhead {
+  margin-bottom: 10px;
 }
 
 .mepTplSheet {
-  width: 100%;
   max-width: 210mm;
-  margin: 0 auto;
-  padding: 8mm;
-  border: 1px solid #111;
-  background: #fff;
-  color: #111;
+  min-height: 297mm;
+  padding: 6mm 7mm 5mm;
+  border: 1.5px solid #000;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .mepTplHeaderTitle {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
+  font-size: 0.95rem;
 }
 
 .mepTplHeaderTitle strong {
-  font-size: 1.1rem;
-}
-
-.mepTplBranchLine {
-  white-space: nowrap;
+  font-size: 1.05rem;
+  letter-spacing: 0.2px;
 }
 
 .mepTplMeta {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
-  font-size: 0.92rem;
-}
-
-.mepTplMeta strong {
-  margin-right: 6px;
-}
-
-.mepTplWrap {
-  overflow-x: auto;
+  grid-template-columns: 1.1fr 1fr 0.8fr 1.3fr;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
 }
 
 .mepTplTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 0.8rem;
+  border: 1.5px solid #000;
+  font-size: 0.74rem;
 }
 
 .mepTplTable th,
 .mepTplTable td {
-  border: 1px solid #111;
-  padding: 3px 4px;
-  text-align: center;
-  vertical-align: middle;
-  min-height: 24px;
+  border: 1px solid #000;
+  min-height: unset;
+  height: 5.3mm;
+  padding: 1.2mm 1.1mm;
+  line-height: 1.05;
 }
 
 .mepTplTable thead th {
-  background: #f0f0f0;
-  font-weight: 700;
+  background: #ececec;
+}
+
+.mepTplTable tbody td {
+  font-weight: 500;
 }
 
 .mepTplTable th:nth-child(1),
 .mepTplTable td:nth-child(1) {
-  width: 13%;
-  text-align: left;
+  width: 11.5%;
 }
 
 .mepTplTable th:nth-child(2),
 .mepTplTable td:nth-child(2) {
-  width: 8%;
+  width: 7.5%;
 }
 
 .mepTplTable th:nth-child(3),
 .mepTplTable td:nth-child(3) {
-  width: 9%;
+  width: 8.2%;
 }
 
 .mepTplTable th:nth-child(4),
 .mepTplTable td:nth-child(4) {
   width: 9%;
-  text-align: left;
 }
 
 .mepTplTable th:nth-last-child(2),
 .mepTplTable td:nth-last-child(2),
 .mepTplTable th:nth-last-child(1),
 .mepTplTable td:nth-last-child(1) {
-  width: 9%;
+  width: 8.8%;
 }
 
 .mepTplTable tbody tr:nth-child(4n) td {
-  border-bottom-width: 2px;
+  border-bottom-width: 1.6px;
+}
+
+.mepTplTable tbody tr:nth-child(4n + 1) td {
+  border-top-width: 1.6px;
 }
 
 .mepTplEmployee {
-  font-weight: 600;
-  text-align: left !important;
+  font-weight: 600 !important;
 }
 
 .mepTplMetric {
-  background: #fafafa;
+  background: #f6f6f6;
+  font-weight: 600 !important;
 }
 
 .mepTplSummary {
-  font-weight: 700;
+  background: #fafafa;
+  font-weight: 700 !important;
 }
 
 .mepTplFooter {
-  margin-top: 12px;
-  border-top: 1px solid #111;
-  padding-top: 8px;
-  font-size: 0.82rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top-width: 1.4px;
+  font-size: 0.8rem;
 }
 
 .mepTplFooter p {
-  margin: 3px 0;
+  margin: 0;
+}
+
+.mepTplStand {
+  margin-top: 3px !important;
+  text-align: right;
 }
 
 @media (max-width: 1100px) {
+  .mepTplSheet {
+    min-height: 0;
+  }
+
   .mepTplMeta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2518,17 +2523,16 @@ body.dark .mepTable th {
 
 @media print {
   #mepTemplateView {
-    border: none;
-    margin: 0;
     padding: 0;
-    background: #fff;
   }
 
   .mepTplSheet {
-    border: 1px solid #000;
-    padding: 8mm;
-    max-width: none;
-    width: 100%;
-    min-height: 277mm;
+    min-height: 297mm;
+    border-width: 1.5px;
+    padding: 6mm 7mm 5mm;
+  }
+
+  .mepTplTable {
+    font-size: 9.5pt;
   }
 }

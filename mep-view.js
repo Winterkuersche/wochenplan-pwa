@@ -1,3 +1,5 @@
+const MEP_TEMPLATE_EMPLOYEE_SLOTS = 10;
+
 function mepPad2(value) {
   return String(value).padStart(2, "0");
 }
@@ -16,6 +18,13 @@ function formatMepMonthYear(isoDate) {
   return `${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
+function formatMepFullDate(isoDate) {
+  if (!isoDate) return "____________";
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return "____________";
+  return `${mepPad2(date.getDate())}.${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+}
+
 function getMepRoleLabel(employee) {
   if (!employee) return "";
   return employee.roleKey || employee.contractModel || "";
@@ -24,6 +33,17 @@ function getMepRoleLabel(employee) {
 function getMepTargetLabel(employee) {
   if (!employee) return "";
   return employee.target || "";
+}
+
+function getMepPauseLabel(entry) {
+  if (!entry) return "";
+
+  const pauseMinutes = Number(entry.pause ?? entry.breakMinutes ?? 0);
+  if (pauseMinutes > 0) {
+    return `${pauseMinutes} Min`;
+  }
+
+  return "";
 }
 
 function buildMepEmployeeRows(employee, weekDays) {
@@ -42,10 +62,14 @@ function buildMepEmployeeRows(employee, weekDays) {
         .map((isoDate) => {
           const entry = employee ? getEmployeeDayEntry(employee.id, isoDate) : null;
 
-          if (!entry || rowType.key === "pause") return "<td></td>";
+          if (!entry) return "<td></td>";
 
           if (rowType.key === "start") {
             return `<td>${entry.start || ""}</td>`;
+          }
+
+          if (rowType.key === "pause") {
+            return `<td>${getMepPauseLabel(entry)}</td>`;
           }
 
           if (rowType.key === "end") {
@@ -98,8 +122,13 @@ function renderMepTemplateView() {
   const weekTo = state.weekTo || "";
 
   document.getElementById("mepTplMonthYear").textContent = formatMepMonthYear(weekFrom);
-  document.getElementById("mepTplWeekFrom").textContent = weekFrom || "____________";
-  document.getElementById("mepTplWeekTo").textContent = weekTo || "____________";
+  document.getElementById("mepTplWeekFrom").textContent = formatMepFullDate(weekFrom);
+  document.getElementById("mepTplWeekTo").textContent = formatMepFullDate(weekTo);
+
+  for (let dateIndex = 0; dateIndex < 7; dateIndex += 1) {
+    const dateEl = document.getElementById(`mepTplDate${dateIndex}`);
+    if (dateEl) dateEl.textContent = "";
+  }
 
   weekDays.forEach((day, index) => {
     const dateEl = document.getElementById(`mepTplDate${index}`);
@@ -108,10 +137,9 @@ function renderMepTemplateView() {
     }
   });
 
-  const slots = Math.max(8, state.employees.length);
   let rowsHtml = "";
 
-  for (let index = 0; index < slots; index += 1) {
+  for (let index = 0; index < MEP_TEMPLATE_EMPLOYEE_SLOTS; index += 1) {
     rowsHtml += buildMepEmployeeRows(state.employees[index], weekDays);
   }
 
