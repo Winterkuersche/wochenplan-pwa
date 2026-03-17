@@ -2471,7 +2471,8 @@ body.dark .mepTable th {
   display: flex;
   align-items: center;
   margin-top: 0.7mm;
-  padding: 0 0.25mm 0 0.9mm;
+  margin-left: 0.8mm;
+  padding: 0 0.25mm 0 1.8mm;
   min-width: 31mm;
 }
 
@@ -2556,6 +2557,15 @@ body.dark .mepTable th {
 .mepTplTable td:nth-last-child(3) {
   position: relative;
   z-index: 2;
+}
+
+.mepTplTable thead tr:first-child th:nth-child(11),
+.mepTplTable thead tr:nth-child(2) th:nth-child(7),
+.mepTplTable thead tr:nth-child(3) th:nth-child(7),
+.mepTplTable tbody tr:nth-child(4n + 1) td:nth-child(11),
+.mepTplTable tbody tr:nth-child(4n + 2) td:nth-child(8),
+.mepTplTable tbody tr:nth-child(4n + 3) td:nth-child(8),
+.mepTplTable tbody tr:nth-child(4n) td:nth-child(8) {
   border-right: 1.8px solid #000 !important;
 }
 
@@ -2590,6 +2600,8 @@ body.dark .mepTable th {
 .mepTplSummary {
   position: relative;
   padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
   border: none !important;
   background: #fff;
   vertical-align: top !important;
@@ -2605,17 +2617,17 @@ body.dark .mepTable th {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 !important;
+  gap: 0 !important;
+  padding: 0 !important;
   border: 1.6px solid #000;
   background: #fff;
   font-weight: 700;
 }
 
-.mepTplSummaryWeek .mepTplSummaryBox {
-  margin-right: 0;
-}
-
+.mepTplSummaryWeek .mepTplSummaryBox,
 .mepTplSummaryMonth .mepTplSummaryBox {
-  margin-left: 0;
+  margin: 0 !important;
 }
 
 .mepTplTable tbody tr:nth-child(4n + 1) .mepTplSummary,
