@@ -119,7 +119,7 @@ function applyVacationDaysForYear(year) {
     emp.vacationDays = calculateVacationDays(emp, year);
   });
 
-  saveMasterData();
+  saveAppStateDebounced();
   renderAllViews();
 }
 

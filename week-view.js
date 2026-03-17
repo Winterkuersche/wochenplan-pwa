@@ -321,7 +321,7 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  savePlanData();
+  saveAppStateDebounced();
   renderAllViews();
   closeShiftDialog();
 });
