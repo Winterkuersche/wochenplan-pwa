@@ -88,11 +88,13 @@ function normalizePlanEntry(entry) {
     : "";
 
   const rawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
-  const pause = start && end
-    ? getEffectiveBreakMinutes(start, end, rawPause, {
-      includeBillingBonus: end === "19:10"
-    })
-    : normalizePlanBreakMinutes(rawPause);
+  const pause = isExternalHelp
+    ? 0
+    : start && end
+      ? getEffectiveBreakMinutes(start, end, rawPause, {
+        includeBillingBonus: end === "19:10"
+      })
+      : normalizePlanBreakMinutes(rawPause);
 
   let minutes = 0;
 
@@ -103,8 +105,9 @@ function normalizePlanEntry(entry) {
   } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
     minutes = normalizeMinutesToQuarterHour(parseTimeToMinutes(entry.minutes));
   } else if (start && end) {
-    minutes = Math.max(0, diffMinutesBetweenHHMM(start, end) - pause);
-    minutes = normalizeMinutesToQuarterHour(minutes);
+    minutes = isExternalHelp
+      ? normalizeMinutesToQuarterHour(getExternalHelpWorkedMinutes(start, end))
+      : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
   }
 
   const shiftKey = entry.shiftKey || entry.code || "";

@@ -157,8 +157,20 @@ function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
   return Math.max(0, totalSpanMinutes - Number(breakMinutes || 0));
 }
 
+function getExternalHelpBreakDeductionMinutes(startHHMM, endHHMM) {
+  const totalSpanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
+  return totalSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES ? 60 : 0;
+}
+
+function getExternalHelpWorkedMinutes(startHHMM, endHHMM) {
+  const totalSpanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
+  const deductionMinutes = getExternalHelpBreakDeductionMinutes(startHHMM, endHHMM);
+  return Math.max(0, totalSpanMinutes - deductionMinutes);
+}
+
 function getPauseRangeForMep(entry) {
   if (!entry || !entry.start || !entry.end) return "";
+  if (getEntryStatus(entry) === ENTRY_STATUS.EXTERNAL) return "";
 
   const startMinutes = hhmmToMinutes(entry.start);
   const endMinutes = hhmmToMinutes(entry.end);

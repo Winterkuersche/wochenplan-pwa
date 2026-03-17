@@ -1263,6 +1263,27 @@ select {
   }
 }
 
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  #formView,
+  #mepTemplateView {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #formView .printSheet,
+  #mepTemplateView .mepTplSheet {
+    width: max-content;
+    min-width: 297mm;
+  }
+
+  #formView .mepTableOuter,
+  #mepTemplateView .mepTplWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* =============================
    Print layout
    ============================= */
