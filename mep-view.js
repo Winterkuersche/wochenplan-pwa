@@ -37,13 +37,7 @@ function getMepTargetLabel(employee) {
 
 function getMepPauseLabel(entry) {
   if (!entry) return "";
-
-  const pauseMinutes = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  if (pauseMinutes > 0) {
-    return `${pauseMinutes} Min`;
-  }
-
-  return "";
+  return getPauseRangeForMep(entry);
 }
 
 function buildMepEmployeeRows(employee, weekDays) {

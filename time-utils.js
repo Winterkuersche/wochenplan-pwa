@@ -118,3 +118,30 @@ function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
   const totalSpanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
   return Math.max(0, totalSpanMinutes - Number(breakMinutes || 0));
 }
+
+function getPauseRangeForMep(entry) {
+  if (!entry || !entry.start || !entry.end) return "";
+
+  const startMinutes = hhmmToMinutes(entry.start);
+  const endMinutes = hhmmToMinutes(entry.end);
+  const spanMinutes = endMinutes - startMinutes;
+
+  if (spanMinutes <= 6 * 60) return "";
+
+  const mepLateShiftCutoff = hhmmToMinutes("19:10");
+  const endsByLateCutoff = endMinutes <= mepLateShiftCutoff;
+  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
+  const pauseMinutes = endsByLateCutoff
+    ? 10
+    : (configuredBreak > 0 ? configuredBreak : 10);
+
+  const preferredStart = endsByLateCutoff
+    ? hhmmToMinutes("16:00")
+    : startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
+
+  const latestStart = endMinutes - pauseMinutes;
+  const pauseStart = clampMinutes(preferredStart, startMinutes, latestStart);
+  const pauseEnd = pauseStart + pauseMinutes;
+
+  return `${minutesToHHMM(pauseStart)}-${minutesToHHMM(pauseEnd)}`;
+}
