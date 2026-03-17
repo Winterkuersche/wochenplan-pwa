@@ -330,7 +330,7 @@ select {
 #weekTable td,
 .weekTable th,
 .weekTable td {
-  padding: 6px 8px;
+  padding: 4px 6px;
   border: 1px solid #d0d0d0;
   vertical-align: middle;
 }
@@ -375,7 +375,7 @@ select {
 
 .nameRoleName {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.15;
 }
 
@@ -386,14 +386,21 @@ select {
   opacity: 0.7;
 }
 
+.nameRoleLast {
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 1.1;
+  color: #777;
+}
+
 .weekSelect {
   width: 100%;
   min-width: 78px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border: 2px solid #d0d0d0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -429,10 +436,10 @@ select {
 .weekHoursCell,
 .weekTargetCell,
 .weekDeltaCell {
-  padding: 6px 8px;
+  padding: 4px 6px;
   text-align: center;
   white-space: nowrap;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 800;
 }
 
@@ -441,11 +448,11 @@ select {
 }
 
 .deltaNeg {
-  color: #b46300;
+  color: #b42318;
 }
 
 .deltaZero {
-  color: #555;
+  color: #444;
 }
 
 .weekDayHours {
@@ -472,6 +479,19 @@ select {
   display: block;
   margin-top: 1px;
   font-size: 0.72rem;
+}
+
+.weekCellControl {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.weekCellHint {
+  font-size: 0.64rem;
+  color: #8a8a8a;
+  line-height: 1;
 }
 
 .weekDayMeta--ok {
@@ -522,6 +542,11 @@ select {
 #weekTable th.weekSummaryCol,
 #weekTable td.weekSummaryCol {
   background: #f7f7f7;
+}
+
+#weekTable th.weekSummaryStart,
+#weekTable td.weekSummaryStart {
+  border-left: 2px solid #000;
 }
 
 /* =============================
@@ -1641,6 +1666,10 @@ body.dark .miniSub {
   color: #b8b8b8;
 }
 
+body.dark .nameRoleLast {
+  color: #9fa4ad;
+}
+
 body.dark .shiftCell,
 body.dark .monthCell,
 body.dark .weekCell {
@@ -1714,6 +1743,15 @@ body.dark #weekTable td.todayCol {
 body.dark #weekTable th.weekSummaryCol,
 body.dark #weekTable td.weekSummaryCol {
   background: #2b2e34;
+}
+
+body.dark #weekTable th.weekSummaryStart,
+body.dark #weekTable td.weekSummaryStart {
+  border-left: 2px solid #9aa0aa;
+}
+
+body.dark .weekCellHint {
+  color: #9fa4ad;
 }
 
 /* Originalformular immer hell lassen */
