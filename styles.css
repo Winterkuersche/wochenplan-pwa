@@ -2258,8 +2258,8 @@ body.dark .mepTable th {
 
 .mepMeasureGuideLine {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 0.45mm;
+  right: 0.45mm;
   height: 0.35mm;
   pointer-events: none;
 }
@@ -2458,7 +2458,7 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: end;
-  column-gap: 2.6mm;
+  column-gap: 3.4mm;
 }
 
 .mepTplMetaLabel {
@@ -2466,11 +2466,12 @@ body.dark .mepTable th {
 }
 
 .mepTplWriteLine {
-  height: 4.5mm;
-  border-bottom: 0.9px solid #000;
+  height: 5.1mm;
+  border-bottom: 0.8px solid #000;
   display: flex;
-  align-items: flex-end;
-  padding-bottom: 0.2mm;
+  align-items: center;
+  margin-top: 0.7mm;
+  padding: 0 0.25mm 0 0.9mm;
   min-width: 31mm;
 }
 
@@ -2591,17 +2592,16 @@ body.dark .mepTable th {
   padding: 0 !important;
   border: none !important;
   background: #fff;
-  vertical-align: middle !important;
+  vertical-align: top !important;
 }
 
 .mepTplSummaryBox {
   position: absolute;
-  top: 50%;
+  top: calc(3.95mm - 0.4px);
   left: 0.45mm;
   right: 0.45mm;
-  transform: translateY(-50%);
-  height: 46%;
-  min-height: 7.8mm;
+  height: calc(2 * 3.95mm);
+  min-height: calc(2 * 3.95mm);
   display: flex;
   align-items: center;
   justify-content: center;
