@@ -2487,12 +2487,13 @@ body.dark .mepTable th {
   border-collapse: collapse;
   table-layout: fixed;
   border: 1.8px solid #000;
+  border-bottom: 0;
   font-size: 0.67rem;
 }
 
 .mepTplTable th,
 .mepTplTable td {
-  border: 1px solid #000;
+  border: 0.8px solid #000;
   padding: 0.45mm 0.5mm;
   text-align: center;
   vertical-align: middle;
@@ -2503,6 +2504,10 @@ body.dark .mepTable th {
 .mepTplTable thead th {
   background: #ececec;
   font-weight: 700;
+}
+
+.mepTplTable thead tr:last-child th {
+  border-bottom-width: 1.4px;
 }
 
 .mepTplSummaryHeader {
@@ -2556,6 +2561,10 @@ body.dark .mepTable th {
   border-bottom-width: 1.8px;
 }
 
+.mepTplTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .mepTplEmployee {
   text-align: left !important;
   font-weight: 600;
@@ -2567,6 +2576,7 @@ body.dark .mepTable th {
 }
 
 .mepTplSummary {
+  position: relative;
   padding: 0 !important;
   border: none !important;
   background: #fff;
@@ -2574,9 +2584,13 @@ body.dark .mepTable th {
 }
 
 .mepTplSummaryBox {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
   height: 50%;
   min-height: 7.8mm;
-  margin: 25% 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2603,7 +2617,7 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
   gap: 4px 14px;
-  margin-top: 3.2mm;
+  margin-top: 4.4mm;
   padding-top: 2.4mm;
   font-size: 0.77rem;
 }
