@@ -2382,3 +2382,297 @@ body.dark .mepTable th {
     display: none !important;
   }
 }
+
+/* =============================
+   MEP-TABELLENANSICHT (FEINSCHLIFF)
+   ============================= */
+#mepTemplateView {
+  padding: 8px;
+  background: #fff;
+}
+
+#mepTemplateView .sectionhead {
+  margin-bottom: 8px;
+}
+
+.mepTplSheet {
+  width: 100%;
+  max-width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto;
+  padding: 4.2mm 4.5mm 3.8mm;
+  border: 1.8px solid #000;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  box-shadow: none;
+}
+
+.mepTplHeaderTopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 3.2mm;
+}
+
+.mepTplTitleBar {
+  flex: 1;
+  min-height: 8.5mm;
+  padding: 1.2mm 2.2mm;
+  border: 1.6px solid #000;
+  display: flex;
+  align-items: center;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.15px;
+}
+
+.mepTplBranchBox {
+  display: flex;
+  align-items: center;
+  gap: 1.5mm;
+  white-space: nowrap;
+}
+
+.mepTplBranchLabel {
+  font-weight: 700;
+}
+
+.mepTplBranchField {
+  display: inline-block;
+  width: 22mm;
+  height: 8.5mm;
+  border: 1.6px solid #000;
+}
+
+.mepTplMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr 1.2fr;
+  gap: 8px;
+  margin-bottom: 3.4mm;
+  font-size: 0.8rem;
+}
+
+.mepTplMetaField {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 1.6mm;
+}
+
+.mepTplMetaLabel {
+  white-space: nowrap;
+}
+
+.mepTplWriteLine {
+  height: 4.8mm;
+  border-bottom: 1.3px solid #000;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.35mm;
+}
+
+.mepTplMetaArchive {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mepTplWrap {
+  overflow: hidden;
+}
+
+.mepTplTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1.8px solid #000;
+  border-bottom: 0;
+  font-size: 0.67rem;
+}
+
+.mepTplTable th,
+.mepTplTable td {
+  border: 0.8px solid #000;
+  padding: 0.45mm 0.5mm;
+  text-align: center;
+  vertical-align: middle;
+  height: 3.95mm;
+  line-height: 1;
+}
+
+.mepTplTable thead th {
+  background: #ececec;
+  font-weight: 700;
+}
+
+.mepTplTable thead tr:last-child th {
+  border-bottom-width: 1.4px;
+}
+
+.mepTplSummaryHeader {
+  border: 1.6px solid #000 !important;
+  padding-left: 1.2mm !important;
+  padding-right: 1.2mm !important;
+}
+
+.mepTplTable thead .mepTplSummaryHeader + .mepTplSummaryHeader {
+  border-left-width: 1px !important;
+}
+
+.mepTplTable th:nth-child(1),
+.mepTplTable td:nth-child(1) {
+  width: 10.6%;
+  text-align: left;
+}
+
+.mepTplTable th:nth-child(2),
+.mepTplTable td:nth-child(2) {
+  width: 7.2%;
+}
+
+.mepTplTable th:nth-child(3),
+.mepTplTable td:nth-child(3) {
+  width: 7.6%;
+}
+
+.mepTplTable th:nth-child(4),
+.mepTplTable td:nth-child(4) {
+  width: 7.2%;
+  text-align: left;
+}
+
+.mepTplTable th:nth-last-child(2),
+.mepTplTable td:nth-last-child(2) {
+  width: 8.9%;
+  border-left-width: 1.8px;
+}
+
+.mepTplTable th:nth-last-child(1),
+.mepTplTable td:nth-last-child(1) {
+  width: 8.9%;
+}
+
+.mepTplTable tbody tr:nth-child(4n + 1) td {
+  border-top-width: 1.8px;
+}
+
+.mepTplTable tbody tr:nth-child(4n) td {
+  border-bottom-width: 1.8px;
+}
+
+.mepTplTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.mepTplEmployee {
+  text-align: left !important;
+  font-weight: 600;
+}
+
+.mepTplMetric {
+  background: #f7f7f7;
+  font-weight: 700;
+}
+
+.mepTplSummary {
+  position: relative;
+  padding: 0 !important;
+  border: none !important;
+  background: #fff;
+  vertical-align: middle !important;
+}
+
+.mepTplSummaryBox {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  height: 50%;
+  min-height: 7.8mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.6px solid #000;
+  background: #fff;
+  font-weight: 700;
+}
+
+.mepTplSummaryWeek .mepTplSummaryBox {
+  margin-right: 0;
+  border-right-width: 0;
+}
+
+.mepTplSummaryMonth .mepTplSummaryBox {
+  margin-left: 0;
+}
+
+.mepTplTable tbody tr:nth-child(4n + 1) .mepTplSummary,
+.mepTplTable tbody tr:nth-child(4n) .mepTplSummary {
+  border: none !important;
+}
+
+.mepTplFooter {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 4px 14px;
+  margin-top: 4.4mm;
+  padding-top: 2.4mm;
+  font-size: 0.77rem;
+}
+
+.mepTplFooter p {
+  margin: 0;
+}
+
+.mepTplFooter .mepTplAnwesenheit {
+  grid-column: 1 / -1;
+}
+
+.mepTplStand {
+  grid-column: 1 / -1;
+  text-align: right;
+  margin-top: 1.5mm !important;
+}
+
+@media (max-width: 1200px) {
+  .mepTplSheet {
+    max-width: 100%;
+    min-height: 0;
+  }
+
+  .mepTplWrap {
+    overflow-x: auto;
+  }
+
+  .mepTplTable {
+    min-width: 980px;
+  }
+
+  .mepTplMeta,
+  .mepTplFooter {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  #mepTemplateView {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: #fff;
+  }
+
+  .mepTplSheet {
+    max-width: 297mm;
+    min-height: 210mm;
+    border-width: 1.8px;
+    padding: 4.2mm 4.5mm 3.8mm;
+    page-break-inside: avoid;
+  }
+
+  .mepTplTable {
+    font-size: 8.6pt;
+  }
+}
