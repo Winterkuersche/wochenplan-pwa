@@ -44,6 +44,9 @@ const SHIFTS = [
 const MASTER_KEY = "wochenplan_master_v10";
 const PLAN_KEY = "wochenplan_plan_v10";
 const UI_KEY = "wochenplan_ui_v10";
+const BACKUP_INTERNAL_KEY = "wochenplan_import_backup_v1";
+const BACKUP_META_KEY = "wochenplan_backup_meta_v1";
+const BACKUP_MEP_CALIBRATION_KEY = "mep-calibration";
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDayIndex = 0;
@@ -447,6 +450,10 @@ const btnNextWeekEl = document.getElementById("btnNextWeek");
 const viewMetaLineEl = document.getElementById("viewMetaLine");
 const topToolbarEl = document.getElementById("topToolbar");
 const btnResetWeekEl = document.getElementById("btnResetWeek");
+const btnExportBackupEl = document.getElementById("btnExportBackup");
+const btnImportBackupEl = document.getElementById("btnImportBackup");
+const backupFileInputEl = document.getElementById("backupFileInput");
+const backupInfoEl = document.getElementById("backupInfo");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -1157,6 +1164,192 @@ function totalMinutesForWeek() {
   }, 0);
 }
 
+function formatIsoDateForFileName(date = new Date()) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function formatDateTimeForDisplay(isoString) {
+  if (!isoString) return "-";
+
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return date.toLocaleString("de-DE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function updateBackupInfoLabel() {
+  if (!backupInfoEl) return;
+
+  const meta = loadJson(BACKUP_META_KEY, {});
+  if (meta?.lastExportAt) {
+    backupInfoEl.textContent = `Letzte Sicherung: ${formatDateTimeForDisplay(meta.lastExportAt)}`;
+  } else {
+    backupInfoEl.textContent = "";
+  }
+}
+
+function collectFullBackupSnapshot() {
+  return {
+    backupVersion: 1,
+    app: {
+      name: APP_META.name,
+      version: APP_META.version
+    },
+    createdAt: new Date().toISOString(),
+    storage: {
+      [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
+      [PLAN_KEY]: loadJson(PLAN_KEY, defaultPlanState()),
+      [UI_KEY]: loadUiState(),
+      ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
+      [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
+    }
+  };
+}
+
+function validateBackupData(backup) {
+  if (!backup || typeof backup !== "object") {
+    return "Die Sicherungsdatei ist ungültig.";
+  }
+
+  if (!backup.storage || typeof backup.storage !== "object") {
+    return "Die Sicherungsdatei enthält keine wiederherstellbaren Daten.";
+  }
+
+  const requiredKeys = [MASTER_KEY, PLAN_KEY, UI_KEY];
+  const missing = requiredKeys.filter((key) => !(key in backup.storage));
+
+  if (missing.length > 0) {
+    return `Die Sicherungsdatei ist unvollständig (fehlend: ${missing.join(", ")}).`;
+  }
+
+  const master = backup.storage[MASTER_KEY];
+  if (!master || typeof master !== "object" || !Array.isArray(master.employees)) {
+    return "Die Stammdaten in der Sicherungsdatei sind ungültig.";
+  }
+
+  const plan = backup.storage[PLAN_KEY];
+  if (!plan || typeof plan !== "object") {
+    return "Die Planungsdaten in der Sicherungsdatei sind ungültig.";
+  }
+
+  const ui = backup.storage[UI_KEY];
+  if (!ui || typeof ui !== "object") {
+    return "Die Einstellungen in der Sicherungsdatei sind ungültig.";
+  }
+
+  return "";
+}
+
+function triggerBackupDownload(snapshot) {
+  const payload = JSON.stringify(snapshot, null, 2);
+  const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `wochenplan-backup-${formatIsoDateForFileName()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+}
+
+function exportBackup() {
+  try {
+    saveMasterData();
+    savePlanData();
+    saveUiState();
+
+    const snapshot = collectFullBackupSnapshot();
+    triggerBackupDownload(snapshot);
+
+    saveJson(BACKUP_META_KEY, {
+      lastExportAt: snapshot.createdAt
+    });
+    updateBackupInfoLabel();
+
+    alert("Sicherung wurde exportiert.");
+  } catch (_error) {
+    alert("Sicherung konnte nicht exportiert werden.");
+  }
+}
+
+function importBackupFromObject(backupData) {
+  const validationError = validateBackupData(backupData);
+  if (validationError) {
+    throw new Error(validationError);
+  }
+
+  const storage = backupData.storage;
+
+  saveJson(BACKUP_INTERNAL_KEY, {
+    savedAt: new Date().toISOString(),
+    source: "pre-import",
+    storage: {
+      [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
+      [PLAN_KEY]: loadJson(PLAN_KEY, defaultPlanState()),
+      [UI_KEY]: loadUiState(),
+      ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
+      [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
+    }
+  });
+
+  saveJson(MASTER_KEY, storage[MASTER_KEY]);
+  saveJson(PLAN_KEY, storage[PLAN_KEY]);
+  saveJson(UI_KEY, storage[UI_KEY]);
+
+  if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
+    localStorage.setItem("wochenplan_dark", storage["wochenplan_dark"]);
+  } else {
+    localStorage.removeItem("wochenplan_dark");
+  }
+
+  if (storage[BACKUP_MEP_CALIBRATION_KEY] && typeof storage[BACKUP_MEP_CALIBRATION_KEY] === "object") {
+    saveJson(BACKUP_MEP_CALIBRATION_KEY, storage[BACKUP_MEP_CALIBRATION_KEY]);
+  } else {
+    localStorage.removeItem(BACKUP_MEP_CALIBRATION_KEY);
+  }
+
+  saveJson(BACKUP_META_KEY, {
+    lastExportAt: backupData.createdAt || new Date().toISOString(),
+    lastImportAt: new Date().toISOString()
+  });
+
+  window.location.reload();
+}
+
+function handleBackupImportFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      const parsed = JSON.parse(text);
+
+      importBackupFromObject(parsed);
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : "Die Sicherungsdatei konnte nicht importiert werden.";
+      alert(`Import fehlgeschlagen: ${message}`);
+    }
+  };
+
+  reader.onerror = () => {
+    alert("Die ausgewählte Datei konnte nicht gelesen werden.");
+  };
+
+  reader.readAsText(file);
+}
+
 /* ========= WARNINGS ========= */
 function isClosingResolvedEntry(entry) {
   if (!entry || entry.type !== "shift") return false;
@@ -1536,6 +1729,27 @@ document.getElementById("btnPrint")?.addEventListener("click", () => {
   window.print();
 });
 
+btnExportBackupEl?.addEventListener("click", () => {
+  exportBackup();
+});
+
+btnImportBackupEl?.addEventListener("click", () => {
+  if (!backupFileInputEl) return;
+
+  if (!confirm("Der aktuelle Stand wird überschrieben. Import jetzt durchführen?")) {
+    return;
+  }
+
+  backupFileInputEl.value = "";
+  backupFileInputEl.click();
+});
+
+backupFileInputEl?.addEventListener("change", () => {
+  const file = backupFileInputEl.files?.[0];
+  if (!file) return;
+
+  handleBackupImportFile(file);
+});
 
 
 /* ========= DARK MODE ========= */
@@ -1582,6 +1796,7 @@ window.addEventListener("load", () => {
   }
 
   updateDarkModeButton();
+  updateBackupInfoLabel();
 
   if (typeof bindMonthNavigation === "function") {
     bindMonthNavigation();
