@@ -2630,6 +2630,15 @@ body.dark .mepTable th {
   margin: 0 !important;
 }
 
+.mepTplSummaryWeek .mepTplSummaryBox {
+  right: 0;
+  border-right: 0;
+}
+
+.mepTplSummaryMonth .mepTplSummaryBox {
+  left: 0;
+}
+
 .mepTplTable tbody tr:nth-child(4n + 1) .mepTplSummary,
 .mepTplTable tbody tr:nth-child(4n) .mepTplSummary {
   border: none !important;
