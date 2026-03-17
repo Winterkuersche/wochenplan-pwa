@@ -517,12 +517,21 @@ function buildWeekSelectClass(value) {
   return `weekSelect ${getShiftClassByKey(value === "H" ? "-" : value)}`;
 }
 
-function isDialogBackedValue(value) {
-  return ["L", "G", "FLEX", "AH", "U", "K"].includes(value);
-}
-
 function isReusableShiftValue(value) {
   return ["F3", "F4", "F5", "F6", "L", "G"].includes(value);
+}
+
+function getEmployeeLastShiftLabel(emp) {
+  const shiftDays = Object.keys(state.schedule || {}).sort().reverse();
+
+  for (const isoDate of shiftDays) {
+    const value = getWeekSelectValueForDay(emp, isoDate);
+    if (["F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(value)) {
+      return value;
+    }
+  }
+
+  return null;
 }
 
 function rememberLastSelectedShift(value) {
@@ -669,27 +678,21 @@ function refreshExternalHelpDurationField() {
 
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
-  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
   const blockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
 
   const wrap = document.createElement("div");
   wrap.className = "weekCellControl";
 
   const isEmptyCell = currentValue === "-";
-  const canQuickApplyLastShift = isEmptyCell && lastSelectedShift !== null;
 
   const cellFlags = getWeekCellFlags(emp, isoDate);
   if (cellFlags.isLateToEarlyBridge) {
     wrap.classList.add("weekCellHandoverOk");
     wrap.title = "Vortag bis 19:10 und heute Frühstart";
   }
-  wrap.style.display = "flex";
-  wrap.style.alignItems = "center";
-  wrap.style.gap = "6px";
 
   const sel = document.createElement("select");
   sel.className = buildWeekSelectClass(currentValue);
-  sel.style.flex = "1";
 
   
 
@@ -809,51 +812,11 @@ commitPlanChange();
 
   wrap.appendChild(sel);
 
-  if (canQuickApplyLastShift) {
-    const quickShiftBtn = document.createElement("button");
-    quickShiftBtn.type = "button";
-    quickShiftBtn.textContent = `Letzte Schicht: ${lastSelectedShift}`;
-    quickShiftBtn.title = `Schicht ${lastSelectedShift} direkt übernehmen`;
-    quickShiftBtn.className = "miniEditBtn";
-    quickShiftBtn.style.flex = "0 0 auto";
-    quickShiftBtn.style.padding = "4px 8px";
-    quickShiftBtn.style.borderRadius = "8px";
-    quickShiftBtn.style.border = "1px solid #ccc";
-    quickShiftBtn.style.background = "#fff";
-    quickShiftBtn.style.cursor = "pointer";
-
-    quickShiftBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (lastSelectedShift === null) return;
-
-      clearDay(emp.id, isoDate, { commit: false });
-      setShift(emp.id, isoDate, lastSelectedShift);
-    });
-
-    wrap.appendChild(quickShiftBtn);
-  }
-
-  if (isDialogBackedValue(currentValue)) {
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.textContent = "✎";
-    editBtn.title = "Eintrag bearbeiten";
-    editBtn.className = "miniEditBtn";
-    editBtn.style.flex = "0 0 auto";
-    editBtn.style.padding = "4px 8px";
-    editBtn.style.borderRadius = "8px";
-    editBtn.style.border = "1px solid #ccc";
-    editBtn.style.background = "#fff";
-    editBtn.style.cursor = "pointer";
-
-    editBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openShiftDialog(currentValue, { emp, isoDate, type: currentValue });
-    });
-
-    wrap.appendChild(editBtn);
+  if (isEmptyCell && lastSelectedShift !== null) {
+    const hint = document.createElement("span");
+    hint.className = "weekCellHint";
+    hint.textContent = lastSelectedShift;
+    wrap.appendChild(hint);
   }
 
   return wrap;
@@ -963,7 +926,7 @@ function renderWeekHeader() {
   });
 
   headerHtml += `
-      <th class="weekSummaryCol">Ist</th>
+      <th class="weekSummaryCol weekSummaryStart">Ist</th>
       <th class="weekSummaryCol">Δ Woche</th>
       <th class="weekSummaryCol">Δ Monat</th>
       <th class="weekSummaryCol">Gesamtminus</th>
@@ -986,12 +949,14 @@ function renderWeekTable() {
 
   state.employees.forEach((emp) => {
     const tr = document.createElement("tr");
+    const lastShift = getEmployeeLastShiftLabel(emp);
 
     const tdNameRole = document.createElement("td");
     tdNameRole.className = "nameRoleCell";
     tdNameRole.innerHTML = `
       <div class="nameRoleName">${emp.name || "—"}</div>
       <div class="nameRoleSub">${emp.roleKey || "-"}</div>
+      ${lastShift ? `<div class="nameRoleLast">letzte: ${lastShift}</div>` : ""}
     `;
     tr.appendChild(tdNameRole);
 
@@ -1011,7 +976,7 @@ function renderWeekTable() {
     });
 
     const tdActual = document.createElement("td");
-    tdActual.className = "weekHoursCell weekSummaryCol";
+    tdActual.className = "weekHoursCell weekSummaryCol weekSummaryStart";
     const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
     tdActual.textContent = minutesToHM(plannedMinutes);
     tr.appendChild(tdActual);
