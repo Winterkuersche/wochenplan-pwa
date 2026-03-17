@@ -1,4 +1,4 @@
-const MEP_TEMPLATE_EMPLOYEE_SLOTS = 10;
+const MEP_TEMPLATE_EMPLOYEE_SLOTS = 9;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");

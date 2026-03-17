@@ -2387,152 +2387,200 @@ body.dark .mepTable th {
    MEP-TABELLENANSICHT (FEINSCHLIFF)
    ============================= */
 #mepTemplateView {
-  padding: 10px;
+  padding: 8px;
   background: #fff;
 }
 
 #mepTemplateView .sectionhead {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .mepTplSheet {
-  max-width: 210mm;
-  min-height: 297mm;
-  padding: 6mm 7mm 5mm;
-  border: 1.5px solid #000;
+  width: 100%;
+  max-width: 297mm;
+  min-height: 210mm;
+  margin: 0 auto;
+  padding: 4.2mm 4.5mm 3.8mm;
+  border: 1.8px solid #000;
   border-radius: 0;
+  background: #fff;
+  color: #111;
   box-shadow: none;
 }
 
 .mepTplHeaderTitle {
-  margin-bottom: 9px;
-  font-size: 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4.2mm;
 }
 
 .mepTplHeaderTitle strong {
-  font-size: 1.05rem;
+  font-size: 1.03rem;
   letter-spacing: 0.2px;
 }
 
+.mepTplBranchLine {
+  white-space: nowrap;
+}
+
 .mepTplMeta {
-  grid-template-columns: 1.1fr 1fr 0.8fr 1.3fr;
-  gap: 12px;
-  margin-bottom: 8px;
-  font-size: 0.88rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.7fr 1.2fr;
+  gap: 8px;
+  margin-bottom: 3.4mm;
+  font-size: 0.8rem;
+}
+
+.mepTplMeta strong {
+  margin-right: 4px;
+}
+
+.mepTplWrap {
+  overflow: hidden;
 }
 
 .mepTplTable {
-  border: 1.5px solid #000;
-  font-size: 0.74rem;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1.8px solid #000;
+  font-size: 0.67rem;
 }
 
 .mepTplTable th,
 .mepTplTable td {
   border: 1px solid #000;
-  min-height: unset;
-  height: 5.3mm;
-  padding: 1.2mm 1.1mm;
-  line-height: 1.05;
+  padding: 0.45mm 0.5mm;
+  text-align: center;
+  vertical-align: middle;
+  height: 3.95mm;
+  line-height: 1;
 }
 
 .mepTplTable thead th {
   background: #ececec;
-}
-
-.mepTplTable tbody td {
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .mepTplTable th:nth-child(1),
 .mepTplTable td:nth-child(1) {
-  width: 11.5%;
+  width: 10.6%;
+  text-align: left;
 }
 
 .mepTplTable th:nth-child(2),
 .mepTplTable td:nth-child(2) {
-  width: 7.5%;
+  width: 7.2%;
 }
 
 .mepTplTable th:nth-child(3),
 .mepTplTable td:nth-child(3) {
-  width: 8.2%;
+  width: 7.6%;
 }
 
 .mepTplTable th:nth-child(4),
 .mepTplTable td:nth-child(4) {
-  width: 9%;
+  width: 7.2%;
+  text-align: left;
 }
 
 .mepTplTable th:nth-last-child(2),
-.mepTplTable td:nth-last-child(2),
-.mepTplTable th:nth-last-child(1),
-.mepTplTable td:nth-last-child(1) {
-  width: 8.8%;
+.mepTplTable td:nth-last-child(2) {
+  width: 8.9%;
+  border-left-width: 1.8px;
 }
 
-.mepTplTable tbody tr:nth-child(4n) td {
-  border-bottom-width: 1.6px;
+.mepTplTable th:nth-last-child(1),
+.mepTplTable td:nth-last-child(1) {
+  width: 8.9%;
 }
 
 .mepTplTable tbody tr:nth-child(4n + 1) td {
-  border-top-width: 1.6px;
+  border-top-width: 1.8px;
+}
+
+.mepTplTable tbody tr:nth-child(4n) td {
+  border-bottom-width: 1.8px;
 }
 
 .mepTplEmployee {
-  font-weight: 600 !important;
+  text-align: left !important;
+  font-weight: 600;
 }
 
 .mepTplMetric {
-  background: #f6f6f6;
-  font-weight: 600 !important;
+  background: #f7f7f7;
+  font-weight: 700;
 }
 
 .mepTplSummary {
   background: #fafafa;
-  font-weight: 700 !important;
+  font-weight: 700;
 }
 
 .mepTplFooter {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 3px;
-  margin-top: 7px;
-  padding-top: 7px;
-  border-top-width: 1.4px;
-  font-size: 0.8rem;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 4px 14px;
+  margin-top: 3.2mm;
+  padding-top: 2.4mm;
+  border-top: 1.4px solid #000;
+  font-size: 0.77rem;
 }
 
 .mepTplFooter p {
   margin: 0;
 }
 
-.mepTplStand {
-  margin-top: 3px !important;
-  text-align: right;
+.mepTplFooter .mepTplAnwesenheit {
+  grid-column: 1 / -1;
 }
 
-@media (max-width: 1100px) {
+.mepTplStand {
+  grid-column: 1 / -1;
+  text-align: right;
+  margin-top: 1.5mm !important;
+}
+
+@media (max-width: 1200px) {
   .mepTplSheet {
+    max-width: 100%;
     min-height: 0;
   }
 
-  .mepTplMeta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .mepTplWrap {
+    overflow-x: auto;
+  }
+
+  .mepTplTable {
+    min-width: 980px;
+  }
+
+  .mepTplMeta,
+  .mepTplFooter {
+    grid-template-columns: 1fr;
   }
 }
 
 @media print {
   #mepTemplateView {
+    margin: 0;
     padding: 0;
+    border: none;
+    background: #fff;
   }
 
   .mepTplSheet {
-    min-height: 297mm;
-    border-width: 1.5px;
-    padding: 6mm 7mm 5mm;
+    max-width: 297mm;
+    min-height: 210mm;
+    border-width: 1.8px;
+    padding: 4.2mm 4.5mm 3.8mm;
+    page-break-inside: avoid;
   }
 
   .mepTplTable {
-    font-size: 9.5pt;
+    font-size: 8.6pt;
   }
 }
