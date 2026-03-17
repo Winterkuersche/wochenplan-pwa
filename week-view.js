@@ -36,7 +36,7 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 
 let shiftDialogContext = null;
 
-const QUARTER_MINUTE_OPTIONS = ["00", "15", "30", "45"];
+const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45"];
 
 function initHourSelect(selectEl) {
   if (!selectEl) return;
@@ -54,7 +54,7 @@ function initQuarterMinuteSelect(selectEl) {
   if (!selectEl) return;
   selectEl.innerHTML = "";
 
-  QUARTER_MINUTE_OPTIONS.forEach((minute) => {
+  PLAN_MINUTE_OPTIONS.forEach((minute) => {
     const option = document.createElement("option");
     option.value = minute;
     option.textContent = minute;
@@ -68,7 +68,7 @@ function initQuarterTimePicker(hourEl, minuteEl) {
 }
 
 function setQuarterPickerValue(hourEl, minuteEl, hhmm) {
-  const normalized = normalizeTimeToQuarterHour(hhmm || "") || "00:00";
+  const normalized = normalizePlanTime(hhmm || "") || "00:00";
   const [hour, minute] = normalized.split(":");
   if (hourEl) hourEl.value = hour;
   if (minuteEl) minuteEl.value = minute;
@@ -313,7 +313,7 @@ shiftDialogSave.addEventListener("click", () => {
     });
 
     if (!ok) {
-      alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende/Pause prüfen (nur 15-Minuten-Schritte).");
+      alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende/Pause prüfen (15-Minuten-Schritte plus definierte Ausnahmezeiten wie 19:10).");
       return;
     }
 
@@ -459,12 +459,12 @@ function removeScheduledShiftForEmployeeOnDate(employeeId, isoDate) {
 
 function setExternalHelpForEmployeeOnDate(employeeId, isoDate, options = {}) {
   const branch = (options.branch || "").trim();
-  const start = normalizeTimeToQuarterHour(options.start || "");
-  const end = normalizeTimeToQuarterHour(options.end || "");
-  const pauseMinutes = normalizeMinutesToQuarterHour(parseTimeToMinutes(options.pauseHHMM || "00:00"));
+  const start = normalizePlanTime(options.start || "");
+  const end = normalizePlanTime(options.end || "");
+  const pauseMinutes = normalizePlanBreakMinutes(parseTimeToMinutes(options.pauseHHMM || "00:00"));
 
   if (!start || !end) return false;
-  if (!isQuarterHourTime(start) || !isQuarterHourTime(end)) return false;
+  if (!isAllowedPlanTime(start) || !isAllowedPlanTime(end)) return false;
 
   const spanMinutes = diffMinutesBetweenHHMM(start, end);
   if (spanMinutes <= 0) return false;
@@ -643,13 +643,13 @@ shiftDialogAbsenceType?.addEventListener("change", () => {
 function refreshExternalHelpDurationField() {
   if (!shiftDialogExternalHelpDuration) return;
 
-  const start = normalizeTimeToQuarterHour(
+  const start = normalizePlanTime(
     getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute)
   );
-  const end = normalizeTimeToQuarterHour(
+  const end = normalizePlanTime(
     getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute)
   );
-  const pauseMinutes = normalizeMinutesToQuarterHour(
+  const pauseMinutes = normalizePlanBreakMinutes(
     parseTimeToMinutes(
       getQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute) || "00:00"
     )

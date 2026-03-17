@@ -102,14 +102,14 @@ function buildFullShiftEntry(withCheckout) {
 }
 
 function buildFlexibleShiftEntry(startHHMM, endHHMM) {
-  const normalizedStart = normalizeTimeToQuarterHour(startHHMM);
-  const normalizedEnd = normalizeTimeToQuarterHour(endHHMM);
+  const normalizedStart = normalizePlanTime(startHHMM);
+  const normalizedEnd = normalizePlanTime(endHHMM);
 
   if (!normalizedStart || !normalizedEnd) {
     return null;
   }
 
-  if (!isQuarterHourTime(normalizedStart) || !isQuarterHourTime(normalizedEnd)) {
+  if (!isAllowedPlanTime(normalizedStart) || !isAllowedPlanTime(normalizedEnd)) {
     return null;
   }
 
