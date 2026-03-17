@@ -81,14 +81,14 @@ function normalizePlanEntry(entry) {
   const status = entryStatus;
 
   const start = isValidHHMM(entry.start || "")
-    ? normalizeTimeToQuarterHour(entry.start)
+    ? normalizePlanTime(entry.start)
     : "";
   const end = isValidHHMM(entry.end || "")
-    ? normalizeTimeToQuarterHour(entry.end)
+    ? normalizePlanTime(entry.end)
     : "";
 
   const rawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
-  const pause = normalizeMinutesToQuarterHour(rawPause);
+  const pause = normalizePlanBreakMinutes(rawPause);
 
   let minutes = 0;
 

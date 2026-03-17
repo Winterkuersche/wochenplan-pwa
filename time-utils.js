@@ -17,6 +17,8 @@ function hhmmToMinutes(value) {
 }
 
 const QUARTER_HOUR_STEP_MINUTES = 15;
+const PLAN_TIME_EXCEPTIONS = new Set(["19:10"]);
+const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10]);
 
 function parseTimeToMinutes(value) {
   return hhmmToMinutes(value);
@@ -68,6 +70,12 @@ function isQuarterHourTime(value) {
   return parseTimeToMinutes(value) % QUARTER_HOUR_STEP_MINUTES === 0;
 }
 
+function isAllowedPlanTime(value) {
+  if (!isValidHHMM(value)) return false;
+  const normalized = minutesToHHMM(parseTimeToMinutes(value));
+  return isQuarterHourTime(normalized) || PLAN_TIME_EXCEPTIONS.has(normalized);
+}
+
 function normalizeTimeToQuarterHour(value) {
   if (!isValidHHMM(value)) return "";
 
@@ -75,6 +83,15 @@ function normalizeTimeToQuarterHour(value) {
   const roundedMinutes = Math.round(totalMinutes / QUARTER_HOUR_STEP_MINUTES) * QUARTER_HOUR_STEP_MINUTES;
 
   return minutesToHHMM(roundedMinutes);
+}
+
+function normalizePlanTime(value) {
+  if (!isValidHHMM(value)) return "";
+
+  const normalized = minutesToHHMM(parseTimeToMinutes(value));
+  if (PLAN_TIME_EXCEPTIONS.has(normalized)) return normalized;
+
+  return normalizeTimeToQuarterHour(normalized);
 }
 
 function formatQuarterHourTime(value) {
@@ -93,6 +110,16 @@ function normalizeMinutesToQuarterHour(value) {
 
   const safeMinutes = Math.max(0, numeric);
   return Math.round(safeMinutes / QUARTER_HOUR_STEP_MINUTES) * QUARTER_HOUR_STEP_MINUTES;
+}
+
+function normalizePlanBreakMinutes(value) {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return 0;
+
+  const safeMinutes = Math.max(0, Math.round(numeric));
+  if (PLAN_BREAK_MINUTE_EXCEPTIONS.has(safeMinutes)) return safeMinutes;
+
+  return normalizeMinutesToQuarterHour(safeMinutes);
 }
 
 function clampMinutes(value, minValue, maxValue) {
@@ -135,12 +162,14 @@ function getPauseRangeForMep(entry) {
     ? 10
     : (configuredBreak > 0 ? configuredBreak : 10);
 
-  const preferredStart = endsByLateCutoff
-    ? hhmmToMinutes("16:00")
-    : startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
+  const preferredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
 
   const latestStart = endMinutes - pauseMinutes;
-  const pauseStart = clampMinutes(preferredStart, startMinutes, latestStart);
+  const latestStartOutsideLastHour = endMinutes - 60 - pauseMinutes;
+  const latestPreferredStart = latestStartOutsideLastHour >= startMinutes
+    ? Math.min(latestStart, latestStartOutsideLastHour)
+    : latestStart;
+  const pauseStart = clampMinutes(preferredStart, startMinutes, latestPreferredStart);
   const pauseEnd = pauseStart + pauseMinutes;
 
   return `${minutesToHHMM(pauseStart)}-${minutesToHHMM(pauseEnd)}`;
