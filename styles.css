@@ -2258,8 +2258,8 @@ body.dark .mepTable th {
 
 .mepMeasureGuideLine {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 0.45mm;
+  right: 0.45mm;
   height: 0.35mm;
   pointer-events: none;
 }
@@ -2458,7 +2458,7 @@ body.dark .mepTable th {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: end;
-  column-gap: 2.6mm;
+  column-gap: 3.4mm;
 }
 
 .mepTplMetaLabel {
@@ -2466,11 +2466,13 @@ body.dark .mepTable th {
 }
 
 .mepTplWriteLine {
-  height: 4.5mm;
-  border-bottom: 0.9px solid #000;
+  height: 5.1mm;
+  border-bottom: 0.8px solid #000;
   display: flex;
-  align-items: flex-end;
-  padding-bottom: 0.2mm;
+  align-items: center;
+  margin-top: 0.7mm;
+  margin-left: 12px;
+  padding: 0 0.25mm 0 12px;
   min-width: 31mm;
 }
 
@@ -2555,7 +2557,12 @@ body.dark .mepTable th {
 .mepTplTable td:nth-last-child(3) {
   position: relative;
   z-index: 2;
-  border-right: 1.8px solid #000 !important;
+}
+
+.mepTplTable tr > *:nth-child(11),
+.mepTplTable tr > *:nth-child(8),
+.mepTplTable tr > *:nth-child(7) {
+  border-right: 1px solid #000 !important;
 }
 
 .mepTplTable th:nth-last-child(1),
@@ -2588,34 +2595,38 @@ body.dark .mepTable th {
 
 .mepTplSummary {
   position: relative;
+  display: block;
   padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  line-height: 0 !important;
   border: none !important;
   background: #fff;
-  vertical-align: middle !important;
+  vertical-align: top !important;
 }
 
 .mepTplSummaryBox {
   position: absolute;
-  top: 50%;
+  top: calc(3.95mm - 0.8px);
   left: 0.45mm;
   right: 0.45mm;
-  transform: translateY(-50%);
-  height: 46%;
-  min-height: 7.8mm;
+  height: calc(2 * 3.95mm + 0.8px);
+  min-height: calc(2 * 3.95mm + 0.8px);
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
   border: 1.6px solid #000;
   background: #fff;
   font-weight: 700;
 }
 
-.mepTplSummaryWeek .mepTplSummaryBox {
-  margin-right: 0;
-}
-
+.mepTplSummaryWeek .mepTplSummaryBox,
 .mepTplSummaryMonth .mepTplSummaryBox {
-  margin-left: 0;
+  margin: 0 !important;
 }
 
 .mepTplTable tbody tr:nth-child(4n + 1) .mepTplSummary,
