@@ -19,6 +19,9 @@ function hhmmToMinutes(value) {
 const QUARTER_HOUR_STEP_MINUTES = 15;
 const PLAN_TIME_EXCEPTIONS = new Set(["19:10"]);
 const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10]);
+const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
+const REQUIRED_BREAK_BASE_MINUTES = 60;
+const REQUIRED_BREAK_BILLING_BONUS_MINUTES = 10;
 
 function parseTimeToMinutes(value) {
   return hhmmToMinutes(value);
@@ -132,13 +135,21 @@ function getDailyTargetMinutesFromWeeklyHHMM(weeklyTargetHHMM) {
 }
 
 function getBreakMinutesForFlexibleShift(startHHMM, endHHMM) {
+  return getRequiredBreakMinutesForSpan(startHHMM, endHHMM);
+}
+
+function getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options = {}) {
   const totalSpanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
+  if (totalSpanMinutes <= REQUIRED_BREAK_THRESHOLD_MINUTES) return 0;
 
-  if (totalSpanMinutes > SHIFT_CONFIG.flexibleShift.extraBreakThresholdMinutes) {
-    return SHIFT_CONFIG.flexibleShift.extraBreakMinutes;
-  }
+  const includeBillingBonus = Boolean(options.includeBillingBonus);
+  return REQUIRED_BREAK_BASE_MINUTES + (includeBillingBonus ? REQUIRED_BREAK_BILLING_BONUS_MINUTES : 0);
+}
 
-  return 0;
+function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
+  const normalizedConfiguredBreak = normalizePlanBreakMinutes(configuredBreakMinutes);
+  const requiredBreakMinutes = getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
+  return Math.max(normalizedConfiguredBreak, requiredBreakMinutes);
 }
 
 function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
@@ -153,14 +164,12 @@ function getPauseRangeForMep(entry) {
   const endMinutes = hhmmToMinutes(entry.end);
   const spanMinutes = endMinutes - startMinutes;
 
-  if (spanMinutes <= 6 * 60) return "";
+  if (spanMinutes <= REQUIRED_BREAK_THRESHOLD_MINUTES) return "";
 
-  const mepLateShiftCutoff = hhmmToMinutes("19:10");
-  const endsByLateCutoff = endMinutes <= mepLateShiftCutoff;
   const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  const pauseMinutes = endsByLateCutoff
-    ? 10
-    : (configuredBreak > 0 ? configuredBreak : 10);
+  const pauseMinutes = getEffectiveBreakMinutes(entry.start, entry.end, configuredBreak, {
+    includeBillingBonus: endMinutes === hhmmToMinutes("19:10")
+  });
 
   const preferredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
 

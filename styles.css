@@ -1232,6 +1232,37 @@ select {
   }
 }
 
+
+@media (max-width: 920px) and (orientation: landscape) {
+  #formView,
+  #mepTemplateView {
+    padding: 10px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #formView .mepTableOuter,
+  #mepTemplateView .mepTplWrap {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #formView .mepTableOuter {
+    width: 100%;
+  }
+
+  #formView .mepTable,
+  #mepTemplateView .mepTplTable {
+    min-width: 980px;
+  }
+
+  #mepTemplateView .mepTplSheet {
+    min-width: fit-content;
+  }
+}
+
 /* =============================
    Print layout
    ============================= */
