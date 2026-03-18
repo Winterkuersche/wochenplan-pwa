@@ -401,83 +401,81 @@ bis 6 Stunden keine Pause,
     <div class="small">Formularansicht nach MEP-Vorlage (DIN A4 Querformat)</div>
   </div>
 
-  <div class="mepTemplateStage">
-    <div class="mepTplSheet">
-      <div class="mepTplHeaderTopRow">
-        <div class="mepTplTitleBar">Mitarbeiter-Einsatz-Planung (MEP)</div>
-        <div class="mepTplBranchBox">
-          <span class="mepTplBranchLabel">Filiale:</span>
-          <span class="mepTplBranchField"></span>
+  <div class="mepTplSheet">
+    <div class="mepTplHeaderTopRow">
+      <div class="mepTplTitleBar">Mitarbeiter-Einsatz-Planung (MEP)</div>
+      <div class="mepTplBranchBox">
+        <span class="mepTplBranchLabel">Filiale:</span>
+        <span class="mepTplBranchField"></span>
+      </div>
+    </div>
+
+    <div class="mepTplMeta">
+      <div class="mepTplMetaDateRow">
+        <div class="mepTplMetaField">
+          <span class="mepTplMetaLabel">Monat / Jahr</span>
+          <span class="mepTplWriteLine"><span id="mepTplMonthYear"></span></span>
+        </div>
+        <div class="mepTplMetaField">
+          <span class="mepTplMetaLabel">Woche vom:</span>
+          <span class="mepTplWriteLine"><span id="mepTplWeekFrom"></span></span>
+        </div>
+        <div class="mepTplMetaField">
+          <span class="mepTplMetaLabel">bis:</span>
+          <span class="mepTplWriteLine"><span id="mepTplWeekTo"></span></span>
         </div>
       </div>
+      <div class="mepTplMetaArchive">Aufbewahrung in der Filiale: 2 Jahre</div>
+    </div>
 
-      <div class="mepTplMeta">
-        <div class="mepTplMetaDateRow">
-          <div class="mepTplMetaField">
-            <span class="mepTplMetaLabel">Monat / Jahr</span>
-            <span class="mepTplWriteLine"><span id="mepTplMonthYear"></span></span>
-          </div>
-          <div class="mepTplMetaField">
-            <span class="mepTplMetaLabel">Woche vom:</span>
-            <span class="mepTplWriteLine"><span id="mepTplWeekFrom"></span></span>
-          </div>
-          <div class="mepTplMetaField">
-            <span class="mepTplMetaLabel">bis:</span>
-            <span class="mepTplWriteLine"><span id="mepTplWeekTo"></span></span>
-          </div>
-        </div>
-        <div class="mepTplMetaArchive">Aufbewahrung in der Filiale: 2 Jahre</div>
-      </div>
+    <div class="tableWrap mepTplWrap">
+      <table class="mepTplTable">
+        <thead>
+          <tr>
+            <th rowspan="3">Name, Vorname</th>
+            <th rowspan="3">Funktion</th>
+            <th rowspan="3">Plan / Woche</th>
+            <th>Wochentag</th>
+            <th>Montag</th>
+            <th>Dienstag</th>
+            <th>Mittwoch</th>
+            <th>Donnerstag</th>
+            <th>Freitag</th>
+            <th>Samstag</th>
+            <th>Sonntag</th>
+            <th rowspan="3" class="mepTplSummaryHeader">Summe / Woche</th>
+            <th rowspan="3" class="mepTplSummaryHeader">Summe / Monat</th>
+          </tr>
+          <tr>
+            <th>Datum</th>
+            <th id="mepTplDate0"></th>
+            <th id="mepTplDate1"></th>
+            <th id="mepTplDate2"></th>
+            <th id="mepTplDate3"></th>
+            <th id="mepTplDate4"></th>
+            <th id="mepTplDate5"></th>
+            <th id="mepTplDate6"></th>
+          </tr>
+          <tr>
+            <th>Warentag</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="mepTemplateBody"></tbody>
+      </table>
+    </div>
 
-      <div class="tableWrap mepTplWrap">
-        <table class="mepTplTable">
-          <thead>
-            <tr>
-              <th rowspan="3">Name, Vorname</th>
-              <th rowspan="3">Funktion</th>
-              <th rowspan="3">Plan / Woche</th>
-              <th>Wochentag</th>
-              <th>Montag</th>
-              <th>Dienstag</th>
-              <th>Mittwoch</th>
-              <th>Donnerstag</th>
-              <th>Freitag</th>
-              <th>Samstag</th>
-              <th>Sonntag</th>
-              <th rowspan="3" class="mepTplSummaryHeader">Summe / Woche</th>
-              <th rowspan="3" class="mepTplSummaryHeader">Summe / Monat</th>
-            </tr>
-            <tr>
-              <th>Datum</th>
-              <th id="mepTplDate0"></th>
-              <th id="mepTplDate1"></th>
-              <th id="mepTplDate2"></th>
-              <th id="mepTplDate3"></th>
-              <th id="mepTplDate4"></th>
-              <th id="mepTplDate5"></th>
-              <th id="mepTplDate6"></th>
-            </tr>
-            <tr>
-              <th>Warentag</th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="mepTemplateBody"></tbody>
-        </table>
-      </div>
-
-      <div class="mepTplFooter">
-        <p><strong>Pausenzeiten:</strong> bis 6 Stunden: keine Pause · mehr als 6 Stunden: 60 Minuten</p>
-        <p><strong>Abwesenheiten:</strong> Feiertag · Freizeit · Krankheit (AU-Bescheinigung) · Schule (Führungsnachwuchskraft) · Urlaub</p>
-        <p class="mepTplAnwesenheit"><strong>Anwesenheiten:</strong> Arbeitszeitbeginn bis Arbeitszeitende inkl. Pausenzeiten und die Tagesstunden eintragen. Am Ende der Woche: wöchentliche und monatliche Summe eintragen.</p>
-        <p class="mepTplStand">Stand: Oktober 2014</p>
-      </div>
+    <div class="mepTplFooter">
+      <p><strong>Pausenzeiten:</strong> bis 6 Stunden: keine Pause · mehr als 6 Stunden: 60 Minuten</p>
+      <p><strong>Abwesenheiten:</strong> Feiertag · Freizeit · Krankheit (AU-Bescheinigung) · Schule (Führungsnachwuchskraft) · Urlaub</p>
+      <p class="mepTplAnwesenheit"><strong>Anwesenheiten:</strong> Arbeitszeitbeginn bis Arbeitszeitende inkl. Pausenzeiten und die Tagesstunden eintragen. Am Ende der Woche: wöchentliche und monatliche Summe eintragen.</p>
+      <p class="mepTplStand">Stand: Oktober 2014</p>
     </div>
   </div>
 </section>
