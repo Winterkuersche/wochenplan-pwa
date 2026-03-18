@@ -1,4 +1,4 @@
-const MEP_TEMPLATE_EMPLOYEE_SLOTS = 9;
+const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 8;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -108,34 +108,46 @@ function buildMepEmployeeRows(employee, weekDays) {
 }
 
 function renderMepTemplateView() {
-  const bodyEl = document.getElementById("mepTemplateBody");
-  if (!bodyEl) return;
+  const pagesEl = document.getElementById("mepTemplatePages");
+  const sheetTemplate = document.getElementById("mepTemplateSheetTemplate");
+  if (!pagesEl || !sheetTemplate) return;
 
   const weekDays = getActiveWeekDays();
   const weekFrom = state.weekFrom || "";
   const weekTo = state.weekTo || "";
+  const totalEmployees = Math.max(state.employees.length, 1);
+  const totalPages = Math.max(1, Math.ceil(totalEmployees / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
 
-  document.getElementById("mepTplMonthYear").textContent = formatMepMonthYear(weekFrom);
-  document.getElementById("mepTplWeekFrom").textContent = formatMepFullDate(weekFrom);
-  document.getElementById("mepTplWeekTo").textContent = formatMepFullDate(weekTo);
+  pagesEl.innerHTML = "";
 
-  for (let dateIndex = 0; dateIndex < 7; dateIndex += 1) {
-    const dateEl = document.getElementById(`mepTplDate${dateIndex}`);
-    if (dateEl) dateEl.textContent = "";
-  }
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+    const sheetFragment = sheetTemplate.content.cloneNode(true);
+    const bodyEl = sheetFragment.querySelector(".mepTemplateBody");
+    if (!bodyEl) continue;
 
-  weekDays.forEach((day, index) => {
-    const dateEl = document.getElementById(`mepTplDate${index}`);
-    if (dateEl) {
-      dateEl.textContent = formatMepHeaderDate(day.iso);
+    const pageEmployees = state.employees.slice(
+      pageIndex * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE,
+      (pageIndex + 1) * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE
+    );
+
+    sheetFragment.querySelector("[data-mep-month-year]").textContent = formatMepMonthYear(weekFrom);
+    sheetFragment.querySelector("[data-mep-week-from]").textContent = formatMepFullDate(weekFrom);
+    sheetFragment.querySelector("[data-mep-week-to]").textContent = formatMepFullDate(weekTo);
+
+    weekDays.forEach((day, index) => {
+      const dateEl = sheetFragment.querySelector(`[data-mep-date-index="${index}"]`);
+      if (dateEl) {
+        dateEl.textContent = formatMepHeaderDate(day.iso);
+      }
+    });
+
+    let rowsHtml = "";
+
+    for (let slotIndex = 0; slotIndex < MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE; slotIndex += 1) {
+      rowsHtml += buildMepEmployeeRows(pageEmployees[slotIndex], weekDays);
     }
-  });
 
-  let rowsHtml = "";
-
-  for (let index = 0; index < MEP_TEMPLATE_EMPLOYEE_SLOTS; index += 1) {
-    rowsHtml += buildMepEmployeeRows(state.employees[index], weekDays);
+    bodyEl.innerHTML = rowsHtml;
+    pagesEl.appendChild(sheetFragment);
   }
-
-  bodyEl.innerHTML = rowsHtml;
 }
