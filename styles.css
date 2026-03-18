@@ -2677,6 +2677,11 @@ body.dark .mepTable th {
   margin-bottom: 8px;
 }
 
+.mepTplPages {
+  display: grid;
+  gap: 14px;
+}
+
 .mepTplSheet {
   width: 100%;
   max-width: 297mm;
@@ -2978,6 +2983,11 @@ body.dark .mepTable th {
     overscroll-behavior: contain;
   }
 
+  .mepTplPages {
+    display: inline-grid;
+    gap: 10px;
+  }
+
   .mepTplSheet {
     display: inline-block;
     width: 297mm;
@@ -3014,12 +3024,21 @@ body.dark .mepTable th {
     background: #fff;
   }
 
+  .mepTplPages {
+    display: block;
+  }
+
   .mepTplSheet {
     max-width: 297mm;
     min-height: 210mm;
     border-width: 1.8px;
     padding: 4.2mm 4.5mm 3.8mm;
     page-break-inside: avoid;
+    page-break-after: always;
+  }
+
+  .mepTplSheet:last-child {
+    page-break-after: auto;
   }
 
   .mepTplTable {
