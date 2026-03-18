@@ -58,6 +58,7 @@ let autoSaveTimerId = null;
 let saveStatusTimerId = null;
 let saveStatusMessage = "";
 let saveStatusHasError = false;
+let responsiveViewRefreshTimerId = null;
 
 function updateAppViewportHeightVar() {
   const viewportHeight = window.visualViewport?.height || window.innerHeight;
@@ -66,6 +67,53 @@ function updateAppViewportHeightVar() {
   const onePercent = viewportHeight * 0.01;
   document.documentElement.style.setProperty("--app-vh", `${onePercent}px`);
   document.documentElement.style.setProperty("--app-dvh", `${viewportHeight}px`);
+}
+
+function updateEmbeddedViewMaxHeightVar(selector, cssVar) {
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  const targetEl = document.querySelector(selector);
+
+  if (!targetEl || !Number.isFinite(viewportHeight) || viewportHeight <= 0) {
+    document.documentElement.style.removeProperty(cssVar);
+    return;
+  }
+
+  const rect = targetEl.getBoundingClientRect();
+  const topOffset = Math.max(rect.top, 0);
+  const availableHeight = Math.max(240, Math.floor(viewportHeight - topOffset - 12));
+
+  document.documentElement.style.setProperty(cssVar, `${availableHeight}px`);
+}
+
+function updateResponsiveViewportMetrics() {
+  updateAppViewportHeightVar();
+  updateEmbeddedViewMaxHeightVar("#formView", "--form-view-max-height");
+  updateEmbeddedViewMaxHeightVar("#mepTemplateView", "--mep-template-view-max-height");
+}
+
+function refreshCurrentResponsiveView() {
+  const currentView = uiState?.currentView || "week";
+
+  if (currentView === "form" && typeof renderFormView === "function") {
+    renderFormView();
+    return;
+  }
+
+  if (currentView === "mep" && typeof renderMepTemplateView === "function") {
+    renderMepTemplateView();
+  }
+}
+
+function scheduleResponsiveViewRefresh() {
+  if (responsiveViewRefreshTimerId) {
+    window.clearTimeout(responsiveViewRefreshTimerId);
+  }
+
+  responsiveViewRefreshTimerId = window.setTimeout(() => {
+    responsiveViewRefreshTimerId = null;
+    updateResponsiveViewportMetrics();
+    refreshCurrentResponsiveView();
+  }, 120);
 }
 
 const loadedAppState = loadAppState();
@@ -1720,6 +1768,7 @@ function renderAll() {
   renderView();
   renderTeamSetup();
   renderAllViews();
+  updateResponsiveViewportMetrics();
 }
 
 /* ========= EVENTS ========= */
@@ -1903,7 +1952,7 @@ btnDarkMode?.addEventListener("click", () => {
 
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
-  updateAppViewportHeightVar();
+  updateResponsiveViewportMetrics();
 
   if (!state.weekFrom) {
     const today = new Date();
@@ -1946,10 +1995,11 @@ window.addEventListener("load", () => {
   renderAll();
 });
 
-window.addEventListener("resize", updateAppViewportHeightVar, { passive: true });
+window.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
+window.addEventListener("orientationchange", scheduleResponsiveViewRefresh, { passive: true });
 
 if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", updateAppViewportHeightVar, { passive: true });
+  window.visualViewport.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
 }
 window.addEventListener("beforeunload", () => {
   flushPendingAutoSave();
