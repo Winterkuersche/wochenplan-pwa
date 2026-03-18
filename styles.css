@@ -2973,22 +2973,22 @@ body.dark .mepTable th {
 
 @media (max-width: 1200px) {
   #mepTemplateView {
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
+    overscroll-behavior: contain;
   }
 
   .mepTplSheet {
-    width: max-content;
+    display: inline-block;
+    width: 297mm;
     max-width: none;
     min-width: 297mm;
     min-height: 0;
+    vertical-align: top;
   }
 
   .mepTplWrap {
     max-width: none;
-    max-height: none;
     overflow: visible;
   }
 
