@@ -2153,19 +2153,32 @@ body.dark .mepTable th {
 }
 
 .mepMetaDateRow {
-  display: grid;
-  grid-template-columns: 1.23fr 0.92fr 0.64fr;
+  display: flex;
   align-items: end;
+  flex-wrap: nowrap;
   gap: 1.55mm;
+  min-width: 0;
 }
 
 .mepMetaField {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: inline-flex;
   align-items: end;
   column-gap: 0.72mm;
   font-size: var(--mep-header-meta-font-size);
   line-height: var(--mep-header-line-height);
+  min-width: 0;
+}
+
+.mepMetaMonth {
+  flex: 1.23 1 0;
+}
+
+.mepMetaFrom {
+  flex: 0.92 1 0;
+}
+
+.mepMetaTo {
+  flex: 0.64 1 0;
 }
 
 .mepMetaLabel {
@@ -2176,9 +2189,11 @@ body.dark .mepTable th {
 
 .mepMetaLine {
   display: inline-block;
+  flex: 1 1 auto;
   min-height: 2.72mm;
   padding: 0 0.25mm 0.03mm;
   border-bottom: 0.2mm solid #636363;
+  min-width: 0;
 }
 
 .mepMetaStorage {
@@ -2723,17 +2738,30 @@ body.dark .mepTable th {
 }
 
 .mepTplMetaDateRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr 0.7fr;
+  display: flex;
   align-items: end;
+  flex-wrap: nowrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .mepTplMetaField {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: inline-flex;
   align-items: end;
   column-gap: 3.4mm;
+  min-width: 0;
+}
+
+.mepTplMetaMonth {
+  flex: 1 1 0;
+}
+
+.mepTplMetaFrom {
+  flex: 1 1 0;
+}
+
+.mepTplMetaTo {
+  flex: 0.7 1 0;
 }
 
 .mepTplMetaLabel {
@@ -2744,11 +2772,12 @@ body.dark .mepTable th {
   height: 5.1mm;
   border-bottom: 0.8px solid #000;
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   margin-top: 0.7mm;
   margin-left: 0.8mm;
   padding: 0 0.25mm 0 1.8mm;
-  min-width: 31mm;
+  min-width: 0;
 }
 
 .mepTplMetaArchive {
