@@ -2972,13 +2972,24 @@ body.dark .mepTable th {
 }
 
 @media (max-width: 1200px) {
+  #mepTemplateView {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
   .mepTplSheet {
-    max-width: 100%;
+    width: max-content;
+    max-width: none;
+    min-width: 297mm;
     min-height: 0;
   }
 
   .mepTplWrap {
-    overflow-x: auto;
+    max-width: none;
+    max-height: none;
+    overflow: visible;
   }
 
   .mepTplTable {
