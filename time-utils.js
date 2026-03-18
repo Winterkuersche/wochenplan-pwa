@@ -18,10 +18,11 @@ function hhmmToMinutes(value) {
 
 const QUARTER_HOUR_STEP_MINUTES = 15;
 const PLAN_TIME_EXCEPTIONS = new Set(["19:10"]);
-const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10]);
+const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10, 70]);
 const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
 const REQUIRED_BREAK_BASE_MINUTES = 60;
 const REQUIRED_BREAK_BILLING_BONUS_MINUTES = 10;
+const LATE_SHIFT_STARTS_WITH_CHECKOUT_BREAK = new Set(["13:00", "14:00", "15:00", "16:00"]);
 
 function parseTimeToMinutes(value) {
   return hhmmToMinutes(value);
@@ -146,8 +147,21 @@ function getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options = {}) {
   return REQUIRED_BREAK_BASE_MINUTES + (includeBillingBonus ? REQUIRED_BREAK_BILLING_BONUS_MINUTES : 0);
 }
 
+function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
+  const normalizedConfiguredBreak = normalizePlanBreakMinutes(configuredBreakMinutes);
+  if (!Boolean(options.includeBillingBonus)) return false;
+  if (endHHMM !== "19:10") return false;
+  if (!PLAN_BREAK_MINUTE_EXCEPTIONS.has(normalizedConfiguredBreak)) return false;
+
+  return LATE_SHIFT_STARTS_WITH_CHECKOUT_BREAK.has(normalizePlanTime(startHHMM));
+}
+
 function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedConfiguredBreak = normalizePlanBreakMinutes(configuredBreakMinutes);
+  if (isLateCheckoutBreakException(startHHMM, endHHMM, normalizedConfiguredBreak, options)) {
+    return normalizedConfiguredBreak;
+  }
+
   const requiredBreakMinutes = getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
   return Math.max(normalizedConfiguredBreak, requiredBreakMinutes);
 }
@@ -168,6 +182,35 @@ function getExternalHelpWorkedMinutes(startHHMM, endHHMM) {
   return Math.max(0, totalSpanMinutes - deductionMinutes);
 }
 
+function roundMinutesToStep(value, stepMinutes) {
+  if (!Number.isFinite(value) || !Number.isFinite(stepMinutes) || stepMinutes <= 0) return value;
+  return Math.round(value / stepMinutes) * stepMinutes;
+}
+
+function getFixedLateCheckoutPauseRange(startHHMM) {
+  const normalizedStart = normalizePlanTime(startHHMM);
+  if (normalizedStart === "13:00" || normalizedStart === "14:00") {
+    return "16:00-16:10";
+  }
+
+  if (normalizedStart === "15:00" || normalizedStart === "16:00") {
+    return "17:00-17:10";
+  }
+
+  return "";
+}
+
+function getFixedFullShiftPauseRange(startHHMM, endHHMM) {
+  const normalizedStart = normalizePlanTime(startHHMM);
+  const normalizedEnd = normalizePlanTime(endHHMM);
+
+  if (normalizedStart !== "09:00") return "";
+  if (normalizedEnd === "19:10") return "14:00-15:10";
+  if (normalizedEnd === "19:00") return "14:00-15:00";
+
+  return "";
+}
+
 function getPauseRangeForMep(entry) {
   if (!entry || !entry.start || !entry.end) return "";
   if (getEntryStatus(entry) === ENTRY_STATUS.EXTERNAL) return "";
@@ -175,22 +218,33 @@ function getPauseRangeForMep(entry) {
   const startMinutes = hhmmToMinutes(entry.start);
   const endMinutes = hhmmToMinutes(entry.end);
   const spanMinutes = endMinutes - startMinutes;
-
-  if (spanMinutes <= REQUIRED_BREAK_THRESHOLD_MINUTES) return "";
+  if (spanMinutes <= 0) return "";
 
   const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
   const pauseMinutes = getEffectiveBreakMinutes(entry.start, entry.end, configuredBreak, {
     includeBillingBonus: endMinutes === hhmmToMinutes("19:10")
   });
+  if (pauseMinutes <= 0) return "";
 
-  const preferredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
+  const fixedFullShiftRange = getFixedFullShiftPauseRange(entry.start, entry.end);
+  if (fixedFullShiftRange) return fixedFullShiftRange;
 
+  const fixedLateCheckoutRange = getFixedLateCheckoutPauseRange(entry.start);
+  if (pauseMinutes === 10 && entry.end === "19:10" && fixedLateCheckoutRange) {
+    return fixedLateCheckoutRange;
+  }
+
+  const earliestStart = startMinutes;
   const latestStart = endMinutes - pauseMinutes;
   const latestStartOutsideLastHour = endMinutes - 60 - pauseMinutes;
-  const latestPreferredStart = latestStartOutsideLastHour >= startMinutes
+  const latestPreferredStart = latestStartOutsideLastHour >= earliestStart
     ? Math.min(latestStart, latestStartOutsideLastHour)
     : latestStart;
-  const pauseStart = clampMinutes(preferredStart, startMinutes, latestPreferredStart);
+
+  const centeredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
+  const stepMinutes = pauseMinutes === 10 ? 5 : 15;
+  const roundedCenteredStart = roundMinutesToStep(centeredStart, stepMinutes);
+  const pauseStart = clampMinutes(roundedCenteredStart, earliestStart, latestPreferredStart);
   const pauseEnd = pauseStart + pauseMinutes;
 
   return `${minutesToHHMM(pauseStart)}-${minutesToHHMM(pauseEnd)}`;

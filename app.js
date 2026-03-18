@@ -60,6 +60,11 @@ let saveStatusMessage = "";
 let saveStatusHasError = false;
 let responsiveViewRefreshTimerId = null;
 
+function isResponsiveEmbeddedViewActive() {
+  const currentView = uiState?.currentView || "week";
+  return currentView === "form" || currentView === "mep";
+}
+
 function updateAppViewportHeightVar() {
   const viewportHeight = window.visualViewport?.height || window.innerHeight;
   if (!Number.isFinite(viewportHeight) || viewportHeight <= 0) return;
@@ -114,6 +119,11 @@ function scheduleResponsiveViewRefresh() {
     updateResponsiveViewportMetrics();
     refreshCurrentResponsiveView();
   }, 120);
+}
+
+function requestActiveResponsiveViewRefresh() {
+  if (!isResponsiveEmbeddedViewActive()) return;
+  scheduleResponsiveViewRefresh();
 }
 
 const loadedAppState = loadAppState();
@@ -1627,6 +1637,7 @@ function renderView() {
   btnViewMepEl.classList.toggle("active", view === "mep");
 
   renderTopbarVisibility();
+  requestActiveResponsiveViewRefresh();
 }
 
 function renderTeamSetup() {
@@ -1759,6 +1770,7 @@ function renderAllViews() {
   if (typeof renderMonthView === "function") renderMonthView();
   if (typeof renderFormView === "function") renderFormView();
   if (typeof renderMepTemplateView === "function") renderMepTemplateView();
+  requestActiveResponsiveViewRefresh();
 }
 
 function renderAll() {
@@ -1997,9 +2009,11 @@ window.addEventListener("load", () => {
 
 window.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
 window.addEventListener("orientationchange", scheduleResponsiveViewRefresh, { passive: true });
+window.addEventListener("pageshow", scheduleResponsiveViewRefresh, { passive: true });
 
 if (window.visualViewport) {
   window.visualViewport.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
+  window.visualViewport.addEventListener("scroll", scheduleResponsiveViewRefresh, { passive: true });
 }
 window.addEventListener("beforeunload", () => {
   flushPendingAutoSave();
