@@ -873,9 +873,11 @@ function renderFormView() {
   container.innerHTML = `
     ${renderFormPager(currentWeekIndex, totalWeeks, currentWeekSheets.length)}
 
-    <div class="mepScreenStage ${mepMeasureModeEnabled ? "mepMeasureMode" : ""}">
-      <div class="mepScreenStack">
-        ${screenHtml}
+    <div class="mepScreenViewport">
+      <div class="mepScreenStage ${mepMeasureModeEnabled ? "mepMeasureMode" : ""}">
+        <div class="mepScreenStack">
+          ${screenHtml}
+        </div>
       </div>
     </div>
 

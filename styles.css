@@ -789,11 +789,18 @@ select {
 
 .mepScreenStage {
   display: block;
+  width: max-content;
+  min-width: 100%;
+}
+
+.mepScreenViewport {
+  display: block;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .mepScreenStack {
@@ -1266,18 +1273,24 @@ select {
   #formView,
   #mepTemplateView {
     padding: 10px;
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: visible;
     max-height: none;
     min-height: 0;
     -webkit-overflow-scrolling: touch;
   }
 
-  #formView .mepScreenStage {
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: none;
+  #formView .mepScreenViewport {
+    width: 100%;
+    max-width: 100%;
+    max-height: var(--form-view-max-height);
     min-height: 0;
+    padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+  }
+
+  #formView .mepScreenStage {
+    width: max-content;
+    min-width: 100%;
   }
 
   #formView .mepScreenStack {
@@ -1320,20 +1333,25 @@ select {
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 920px) {
     #formView {
-      max-height: calc(var(--app-dvh) - 110px);
-      overflow-y: auto;
-      overflow-x: hidden;
+      max-height: none;
+      overflow: visible;
       -webkit-overflow-scrolling: touch;
       min-height: 0;
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     }
 
-    #formView .mepScreenStage {
-      overflow-x: auto;
-      overflow-y: visible;
-      max-height: none;
+    #formView .mepScreenViewport {
+      width: 100%;
+      max-width: 100%;
+      max-height: var(--form-view-max-height);
       min-height: 0;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    }
+
+    #formView .mepScreenStage {
+      width: max-content;
+      min-width: 100%;
     }
 
     #formView .mepScreenStack {
@@ -1348,26 +1366,25 @@ select {
 
   @media (max-width: 920px) and (orientation: landscape) {
     #formView {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      gap: 10px;
-      max-height: var(--form-view-max-height);
-      overflow: hidden;
+      display: block;
+      max-height: none;
+      overflow: visible;
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     }
 
-    #formView .mepScreenStage {
-      flex: 1 1 auto;
+    #formView .mepScreenViewport {
+      display: block;
+      width: 100%;
+      max-width: 100%;
       min-height: 0;
-      max-height: none;
-      overflow: auto;
-      overflow-x: auto;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      max-height: var(--form-view-max-height);
       padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
       padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    }
+
+    #formView .mepScreenStage {
+      width: max-content;
+      min-width: 100%;
     }
 
     #formView .mepScreenStack {
@@ -1405,15 +1422,13 @@ select {
 @media (max-width: 1024px) and (orientation: landscape) {
   #formView,
   #mepTemplateView {
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: visible;
     -webkit-overflow-scrolling: touch;
   }
 
-  #formView .mepScreenStage {
-    overflow-x: auto;
-    overflow-y: visible;
-    max-height: none;
+  #formView .mepScreenViewport {
+    max-width: 100%;
+    max-height: var(--form-view-max-height);
   }
 
   #formView .printSheet,
@@ -1465,6 +1480,7 @@ select {
   .toolbar,
   .mepPager,
   button,
+  .mepScreenViewport,
   .mepScreenStage,
   .dialogOverlay {
     display: none !important;
@@ -1710,6 +1726,7 @@ select {
   .toolbar,
   .mepPager,
   button,
+  .mepScreenViewport,
   .mepScreenStage,
   .dialogOverlay {
     display: none !important;
