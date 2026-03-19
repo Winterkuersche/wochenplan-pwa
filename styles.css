@@ -1524,19 +1524,26 @@ select {
   }
 
   .mepPrintPage {
-    width: 294mm !important;
-    min-height: 202mm !important;
+    width: var(--mep-print-safe-w) !important;
+    min-height: var(--mep-print-safe-h) !important;
     margin: 0 auto !important;
     padding: 0 !important;
     display: block !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     border: none !important;
     box-shadow: none !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .mepPrintSheetFrame {
+    position: relative !important;
+    width: var(--mep-print-safe-w) !important;
+    height: var(--mep-print-safe-h) !important;
+    overflow: hidden !important;
   }
 
   .mepPrintPage:last-child {
@@ -1559,6 +1566,10 @@ select {
     box-shadow: none !important;
     max-width: none !important;
     overflow: visible !important;
+    position: absolute !important;
+    inset: 0 !important;
+    transform: scale(var(--mep-print-safe-scale)) !important;
+    transform-origin: top left !important;
   }
 
   .mepScreenMeta {
@@ -1770,17 +1781,24 @@ select {
   }
 
   .mepPrintPage {
-    width: 297mm !important;
-    min-height: 210mm !important;
+    width: var(--mep-print-safe-w) !important;
+    min-height: var(--mep-print-safe-h) !important;
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
     box-sizing: border-box !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     border: none !important;
     box-shadow: none !important;
     page-break-after: always !important;
     break-after: page !important;
+  }
+
+  .mepPrintSheetFrame {
+    position: relative !important;
+    width: var(--mep-print-safe-w) !important;
+    height: var(--mep-print-safe-h) !important;
+    overflow: hidden !important;
   }
 
   .mepPrintPage:last-child {
@@ -1802,7 +1820,10 @@ select {
     box-shadow: none !important;
     max-width: none !important;
     overflow: visible !important;
-    position: relative !important;
+    position: absolute !important;
+    inset: 0 !important;
+    transform: scale(var(--mep-print-safe-scale)) !important;
+    transform-origin: top left !important;
   }
 
   .mepScreenMeta {
@@ -2022,6 +2043,9 @@ body.dark .mepTable th {
 :root {
   --mep-page-w: 297mm;
   --mep-page-h: 210mm;
+  --mep-print-safe-scale: 0.96;
+  --mep-print-safe-w: calc(var(--mep-page-w) * var(--mep-print-safe-scale));
+  --mep-print-safe-h: calc(var(--mep-page-h) * var(--mep-print-safe-scale));
 
   /* feste A4-Seite */
   --mep-frame-left: 0mm;
@@ -2123,6 +2147,11 @@ body.dark .mepTable th {
   border-radius: 0;
   box-shadow: 0 0 0 1px #ddd;
   overflow: hidden;
+}
+
+.mepPrintSheetFrame {
+  width: var(--mep-page-w);
+  height: var(--mep-page-h);
 }
 
 /* fixer A4-Innenraum */
