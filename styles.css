@@ -1273,10 +1273,21 @@ select {
   #formView,
   #mepTemplateView {
     padding: 10px;
-    overflow: visible;
-    max-height: none;
     min-height: 0;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #formView {
+    overflow: visible;
+    max-height: none;
+  }
+
+  #mepTemplateView {
+    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: var(--mep-template-view-max-height);
+    overscroll-behavior: contain;
   }
 
   #formView .mepScreenViewport {
@@ -1319,9 +1330,12 @@ select {
   }
 
   #mepTemplateView .mepTplSheet {
-    width: max-content;
+    display: inline-block;
+    width: 297mm;
+    max-width: none;
     min-width: 297mm;
     margin-bottom: 12mm;
+    vertical-align: top;
   }
 
   #formView .mepPrintPage:last-child,
@@ -1422,8 +1436,19 @@ select {
 @media (max-width: 1024px) and (orientation: landscape) {
   #formView,
   #mepTemplateView {
-    overflow: visible;
     -webkit-overflow-scrolling: touch;
+  }
+
+  #formView {
+    overflow: visible;
+  }
+
+  #mepTemplateView {
+    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: var(--mep-template-view-max-height);
+    overscroll-behavior: contain;
   }
 
   #formView .mepScreenViewport {
@@ -1433,8 +1458,12 @@ select {
 
   #formView .printSheet,
   #mepTemplateView .mepTplSheet {
-    width: max-content;
     min-width: 297mm;
+  }
+
+  #mepTemplateView .mepTplSheet {
+    width: 297mm;
+    max-width: none;
   }
 
   #formView .mepTableOuter,

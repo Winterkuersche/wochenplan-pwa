@@ -1,4 +1,4 @@
-const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 8;
+const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
