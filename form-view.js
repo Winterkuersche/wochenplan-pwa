@@ -739,18 +739,20 @@ function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
 
   return `
     <section class="mepPrintPage">
-      <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
-        ${useTemplate ? '<img class="mepReferenceImage" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
-        <div class="mepContentFrame">
-          ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
-          ${buildMepHeader(filledSheetModel)}
+      <div class="mepPrintSheetFrame">
+        <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
+          ${useTemplate ? '<img class="mepReferenceImage" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
+          <div class="mepContentFrame">
+            ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
+            ${buildMepHeader(filledSheetModel)}
 
-          <div class="mepBody">
-            ${buildMepMainTable(filledSheetModel)}
-            ${buildMepSumBlock(filledSheetModel)}
+            <div class="mepBody">
+              ${buildMepMainTable(filledSheetModel)}
+              ${buildMepSumBlock(filledSheetModel)}
+            </div>
+
+            ${buildMepFooter()}
           </div>
-
-          ${buildMepFooter()}
         </div>
       </div>
     </section>
