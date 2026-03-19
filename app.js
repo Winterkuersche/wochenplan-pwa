@@ -1628,6 +1628,8 @@ function renderTopbarVisibility() {
 function renderView() {
   const view = uiState.currentView || "week";
 
+  document.body.dataset.currentView = view;
+
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
   monthViewEl.classList.toggle("hidden", view !== "month");

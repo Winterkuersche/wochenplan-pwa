@@ -2833,7 +2833,7 @@ body.dark .mepTable th {
 }
 
 .mepTplWrapInner {
-  width: 100%;
+  width: calc(100% / var(--mep-table-scale));
   transform: scale(var(--mep-table-scale));
   transform-origin: top left;
 }
@@ -3058,11 +3058,29 @@ body.dark .mepTable th {
 }
 
 @media print {
+  .no-print,
+  .hidden {
+    display: none !important;
+  }
+
   #mepTemplateView {
     margin: 0;
     padding: 0;
     border: none;
     background: #fff;
+  }
+
+  body[data-current-view="mep"] #mepTemplateView {
+    display: block !important;
+  }
+
+  body[data-current-view="form"] #formView {
+    display: block !important;
+  }
+
+  body[data-current-view="mep"] #formView,
+  body[data-current-view="form"] #mepTemplateView {
+    display: none !important;
   }
 
   .mepTplPages {
