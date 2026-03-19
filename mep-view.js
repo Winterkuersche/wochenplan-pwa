@@ -139,14 +139,9 @@ function fitMepTemplateSheets() {
 
     const availableWrapHeight = wrapEl.clientHeight;
     const tableHeight = wrapInnerEl.scrollHeight;
-    const availableWrapWidth = wrapEl.clientWidth;
-    const tableWidth = wrapInnerEl.scrollWidth;
-
     const heightScale =
       availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
-    const widthScale =
-      availableWrapWidth > 0 && tableWidth > 0 ? availableWrapWidth / tableWidth : 1;
-    const tableScale = Math.min(1, heightScale, widthScale) || 1;
+    const tableScale = Math.min(1, heightScale) || 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
   });
