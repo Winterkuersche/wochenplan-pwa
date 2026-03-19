@@ -1315,7 +1315,7 @@ select {
   #formView .mepTableOuter,
   #mepTemplateView .mepTplWrap {
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     max-width: 100%;
     -webkit-overflow-scrolling: touch;
   }
@@ -1326,16 +1326,11 @@ select {
 
   #formView .mepTable,
   #mepTemplateView .mepTplTable {
-    min-width: 980px;
+    min-width: 0;
   }
 
   #mepTemplateView .mepTplSheet {
-    display: inline-block;
-    width: 297mm;
-    max-width: none;
-    min-width: 297mm;
     margin-bottom: 12mm;
-    vertical-align: top;
   }
 
   #formView .mepPrintPage:last-child,
@@ -1458,12 +1453,11 @@ select {
 
   #formView .printSheet,
   #mepTemplateView .mepTplSheet {
-    min-width: 297mm;
+    min-width: 0;
   }
 
   #mepTemplateView .mepTplSheet {
-    width: 297mm;
-    max-width: none;
+    max-width: 100%;
   }
 
   #formView .mepTableOuter,
@@ -2709,19 +2703,32 @@ body.dark .mepTable th {
 .mepTplPages {
   display: grid;
   gap: 14px;
+  justify-items: center;
 }
 
 .mepTplSheet {
-  width: 100%;
-  max-width: 297mm;
-  min-height: 210mm;
+  --mep-sheet-scale: 1;
+  --mep-table-scale: 1;
+  width: calc(297mm * var(--mep-sheet-scale));
+  max-width: 100%;
+  height: calc(210mm * var(--mep-sheet-scale));
   margin: 0 auto;
-  padding: 4.2mm 4.5mm 3.8mm;
   border: 1.8px solid #000;
   border-radius: 0;
   background: #fff;
   color: #111;
   box-shadow: none;
+  overflow: hidden;
+}
+
+.mepTplSheetInner {
+  display: flex;
+  flex-direction: column;
+  width: 297mm;
+  height: 210mm;
+  padding: 4.2mm 4.5mm 3.8mm;
+  transform: scale(var(--mep-sheet-scale));
+  transform-origin: top left;
 }
 
 .mepTplHeaderTopRow {
@@ -2820,7 +2827,15 @@ body.dark .mepTable th {
 }
 
 .mepTplWrap {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
+}
+
+.mepTplWrapInner {
+  width: 100%;
+  transform: scale(var(--mep-table-scale));
+  transform-origin: top left;
 }
 
 .mepTplTable {
@@ -3010,29 +3025,26 @@ body.dark .mepTable th {
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
   }
 
   .mepTplPages {
-    display: inline-grid;
+    display: grid;
     gap: 10px;
+    justify-items: center;
   }
 
   .mepTplSheet {
-    display: inline-block;
-    width: 297mm;
-    max-width: none;
-    min-width: 297mm;
-    min-height: 0;
-    vertical-align: top;
+    margin: 0;
   }
 
   .mepTplWrap {
     max-width: none;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .mepTplTable {
-    min-width: 980px;
+    min-width: 0;
   }
 
   .mepTplMeta,
@@ -3041,7 +3053,7 @@ body.dark .mepTable th {
   }
 
   .mepTplMetaDateRow {
-    grid-template-columns: 1fr;
+    flex-wrap: wrap;
   }
 }
 
@@ -3058,16 +3070,27 @@ body.dark .mepTable th {
   }
 
   .mepTplSheet {
+    width: 297mm;
     max-width: 297mm;
-    min-height: 210mm;
+    height: 210mm;
     border-width: 1.8px;
-    padding: 4.2mm 4.5mm 3.8mm;
     page-break-inside: avoid;
     page-break-after: always;
   }
 
+  .mepTplSheetInner {
+    width: 297mm;
+    height: 210mm;
+    padding: 4.2mm 4.5mm 3.8mm;
+    transform: none;
+  }
+
   .mepTplSheet:last-child {
     page-break-after: auto;
+  }
+
+  .mepTplWrapInner {
+    transform: none;
   }
 
   .mepTplTable {

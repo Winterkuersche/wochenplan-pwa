@@ -1,4 +1,5 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
+const MEP_TEMPLATE_BASE_SHEET_SCALE = 0.98;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -107,6 +108,50 @@ function buildMepEmployeeRows(employee, weekDays) {
     .join("");
 }
 
+function fitMepTemplateSheets() {
+  const pagesEl = document.getElementById("mepTemplatePages");
+  if (!pagesEl) return;
+
+  const pageContainerWidth = pagesEl.clientWidth || pagesEl.getBoundingClientRect().width || 0;
+
+  pagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
+    const innerEl = sheetEl.querySelector(".mepTplSheetInner");
+    const wrapEl = sheetEl.querySelector(".mepTplWrap");
+    const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
+
+    if (!innerEl || !wrapEl || !wrapInnerEl) return;
+
+    sheetEl.style.setProperty("--mep-sheet-scale", "1");
+    sheetEl.style.setProperty("--mep-table-scale", "1");
+
+    const fullSheetWidth = innerEl.getBoundingClientRect().width || 0;
+    const maxSheetScaleFromWidth =
+      pageContainerWidth > 0 && fullSheetWidth > 0
+        ? Math.min(1, pageContainerWidth / fullSheetWidth)
+        : 1;
+    const minReadableScale = Math.min(1, window.innerWidth < 920 ? 0.82 : 0.9);
+    const sheetScale = Math.max(
+      Math.min(MEP_TEMPLATE_BASE_SHEET_SCALE, maxSheetScaleFromWidth),
+      Math.min(minReadableScale, maxSheetScaleFromWidth)
+    );
+
+    sheetEl.style.setProperty("--mep-sheet-scale", `${sheetScale}`);
+
+    const availableWrapHeight = wrapEl.clientHeight;
+    const tableHeight = wrapInnerEl.scrollHeight;
+    const availableWrapWidth = wrapEl.clientWidth;
+    const tableWidth = wrapInnerEl.scrollWidth;
+
+    const heightScale =
+      availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
+    const widthScale =
+      availableWrapWidth > 0 && tableWidth > 0 ? availableWrapWidth / tableWidth : 1;
+    const tableScale = Math.min(1, heightScale, widthScale) || 1;
+
+    sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
+  });
+}
+
 function renderMepTemplateView() {
   const pagesEl = document.getElementById("mepTemplatePages");
   const sheetTemplate = document.getElementById("mepTemplateSheetTemplate");
@@ -150,4 +195,8 @@ function renderMepTemplateView() {
     bodyEl.innerHTML = rowsHtml;
     pagesEl.appendChild(sheetFragment);
   }
+
+  requestAnimationFrame(() => {
+    fitMepTemplateSheets();
+  });
 }

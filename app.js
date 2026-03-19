@@ -62,7 +62,7 @@ let responsiveViewRefreshTimerId = null;
 
 function isResponsiveEmbeddedViewActive() {
   const currentView = uiState?.currentView || "week";
-  return currentView === "form";
+  return currentView === "form" || currentView === "mep";
 }
 
 function updateAppViewportHeightVar() {
@@ -101,6 +101,15 @@ function refreshCurrentResponsiveView() {
 
   if (currentView === "form" && typeof renderFormView === "function") {
     renderFormView();
+    return;
+  }
+
+  if (currentView === "mep") {
+    if (typeof fitMepTemplateSheets === "function") {
+      fitMepTemplateSheets();
+    } else if (typeof renderMepTemplateView === "function") {
+      renderMepTemplateView();
+    }
   }
 }
 
