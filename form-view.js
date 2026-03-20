@@ -717,7 +717,56 @@ function setCurrentFormWeekIndex(nextIndex, totalWeeks) {
   );
 }
 
-function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
+function buildMepSheetInner(sheetModel, { useTemplate = false, showMeasureOverlay = false } = {}) {
+  return `
+    ${useTemplate ? '<img class="mepReferenceImage" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
+    <div class="mepContentFrame${showMeasureOverlay ? " mepContentFrame--measure" : ""}">
+      ${showMeasureOverlay ? buildMepMeasurementOverlay() : ""}
+      ${buildMepHeader(sheetModel)}
+
+      <div class="mepBody">
+        ${buildMepMainTable(sheetModel)}
+        ${buildMepSumBlock(sheetModel)}
+      </div>
+
+      ${buildMepFooter()}
+    </div>
+  `;
+}
+
+function buildScreenWeekSheet(sheetModel, { useTemplate = false } = {}) {
+  const { weekDays, employees, weekIndex, pageIndex } = sheetModel;
+  const weekStart = weekDays[0]?.date;
+  const weekEnd = weekDays[6]?.date;
+  if (!weekStart || !weekEnd) return "";
+
+  const pageEmployees = employees.slice();
+
+  while (pageEmployees.length < getFormEmployeesPerPage()) {
+    pageEmployees.push({
+      id: `empty-${weekIndex + 1}-${pageIndex + 1}-${pageEmployees.length + 1}`,
+      _placeholder: true,
+      name: "",
+      roleKey: "",
+      target: ""
+    });
+  }
+
+  const filledSheetModel = { ...sheetModel, employees: pageEmployees };
+
+  return `
+    <section class="mepScreenPage">
+      <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
+        ${buildMepSheetInner(filledSheetModel, {
+          useTemplate,
+          showMeasureOverlay: mepMeasureModeEnabled
+        })}
+      </div>
+    </section>
+  `;
+}
+
+function buildPrintWeekSheet(sheetModel) {
   const { weekDays, employees, weekIndex, pageIndex } = sheetModel;
   const weekStart = weekDays[0]?.date;
   const weekEnd = weekDays[6]?.date;
@@ -739,20 +788,9 @@ function buildWeekSheet(sheetModel, { useTemplate = false } = {}) {
 
   return `
     <section class="mepPrintPage">
-      <div class="mepPrintSheetFrame">
-        <div class="printSheet mepSheet ${useTemplate ? "mepUseTemplate" : ""}">
-          ${useTemplate ? '<img class="mepReferenceImage" src="assets/mep-template-reference.jpg" alt="MEP Referenzformular" aria-hidden="true">' : ""}
-          <div class="mepContentFrame">
-            ${mepMeasureModeEnabled ? buildMepMeasurementOverlay() : ""}
-            ${buildMepHeader(filledSheetModel)}
-
-            <div class="mepBody">
-              ${buildMepMainTable(filledSheetModel)}
-              ${buildMepSumBlock(filledSheetModel)}
-            </div>
-
-            ${buildMepFooter()}
-          </div>
+      <div class="mepPrintSheet">
+        <div class="mepPrintContentFrame">
+          ${buildMepSheetInner(filledSheetModel)}
         </div>
       </div>
     </section>
@@ -868,9 +906,9 @@ function renderFormView() {
   );
 
   const screenHtml = currentWeekSheets
-    .map((sheet, index) => buildWeekSheet(sheet, { useTemplate: index === 0 }))
+    .map((sheet, index) => buildScreenWeekSheet(sheet, { useTemplate: index === 0 }))
     .join("");
-  const printHtml = currentWeekSheets.map((sheet) => buildWeekSheet(sheet)).join("");
+  const printHtml = currentWeekSheets.map((sheet) => buildPrintWeekSheet(sheet)).join("");
 
   container.innerHTML = `
     ${renderFormPager(currentWeekIndex, totalWeeks, currentWeekSheets.length)}
