@@ -1487,6 +1487,25 @@ select {
     overflow: visible !important;
   }
 
+  :root {
+    --mep-main-top: 27.8mm;
+    --mep-sum-top: 27.8mm;
+    --mep-header-top: 1.5mm;
+    --mep-header-title-offset-y: 2.9mm;
+    --mep-header-meta-offset-y: 5.6mm;
+    --mep-row-h: 3.55mm;
+    --mep-header-h: 10.9mm;
+    --mep-sum-box-h: calc(var(--mep-row-h) * 2);
+    --mep-sum-header-h: 7.9mm;
+    --mep-sum-header-gap: calc(var(--mep-row-h) * 1.15);
+    --mep-sum-gap-h: calc(var(--mep-row-h) * 1.7);
+    --mep-footer-offset-y: 3.1mm;
+    --mep-footer-font-size: 1.58mm;
+    --mep-footer-line-height: 1;
+    --mep-footer-heading-size: 1.68mm;
+    --mep-footer-col-gap: 2.6mm;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -2183,6 +2202,42 @@ body.dark .mepTable th {
   font-size: var(--mep-footer-heading-size);
   font-weight: 700;
   margin-bottom: 0.12mm;
+}
+
+@media print {
+  .mepTable th,
+  .mepTable td {
+    padding-top: 0.04mm;
+    padding-bottom: 0.03mm;
+  }
+
+  .mepSubHead {
+    height: 3.1mm;
+    font-size: 1.78mm;
+  }
+
+  .mepSumHeaderCell {
+    padding-top: 0;
+    padding-bottom: 0.14mm;
+  }
+
+  .mepFooterHeading {
+    margin-bottom: 0.08mm;
+  }
+
+  .mepFooterCenter,
+  .mepFooterRight {
+    row-gap: 0.1mm;
+  }
+
+  .mepFooterHint {
+    margin-top: 0.38mm;
+  }
+
+  .mepFooterStand {
+    margin-top: 0.14mm;
+    font-size: 1.5mm;
+  }
 }
 
 .mepFooterLeft,
