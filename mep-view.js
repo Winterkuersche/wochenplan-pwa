@@ -1,5 +1,6 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 0.98;
+const MEP_TEMPLATE_MAX_TABLE_SCALE = 1.14;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -141,7 +142,8 @@ function fitMepTemplateSheets() {
     const tableHeight = wrapInnerEl.scrollHeight;
     const heightScale =
       availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
-    const tableScale = Math.min(1, heightScale) || 1;
+    const tableScale =
+      Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, Math.max(1, heightScale)) || 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
   });
