@@ -3155,3 +3155,39 @@ body.dark .mepTable th {
     font-size: 8.6pt;
   }
 }
+
+@media print {
+  /*
+   * Finaler Override für iPhone-/Safari-Druck:
+   * transformierte Vollformat-Seiten wurden dort als zusätzliche Leerseiten
+   * paginiert. Das äußere Blatt erhält daher die sichere Zielgröße, die
+   * Kalibrierung bleibt im skalierten Innenrahmen erhalten.
+   */
+  .mepPrintSheetFrame {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .mepSheet,
+  .formPage {
+    position: relative !important;
+    width: var(--mep-print-safe-w) !important;
+    height: var(--mep-print-safe-h) !important;
+    min-height: var(--mep-print-safe-h) !important;
+    margin: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    inset: auto !important;
+    transform: none !important;
+    transform-origin: center center !important;
+    overflow: hidden !important;
+  }
+
+  .mepContentFrame {
+    width: var(--mep-page-w) !important;
+    height: var(--mep-page-h) !important;
+    transform: scale(var(--mep-print-safe-scale)) !important;
+    transform-origin: top left !important;
+  }
+}
