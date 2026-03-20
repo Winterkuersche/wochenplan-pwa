@@ -1810,7 +1810,7 @@ body.dark .mepTable th {
 :root {
   --mep-page-w: 297mm;
   --mep-page-h: 210mm;
-  --mep-print-safe-scale: 0.9;
+  --mep-print-safe-scale: 1;
   --mep-print-safe-w: calc(var(--mep-page-w) * var(--mep-print-safe-scale));
   --mep-print-safe-h: calc(var(--mep-page-h) * var(--mep-print-safe-scale));
   --mep-print-offset-x: calc((var(--mep-page-w) - var(--mep-print-safe-w)) / 2);
@@ -2558,7 +2558,7 @@ body.dark .mepTable th {
 .mepTplSheet {
   --mep-sheet-scale: 1;
   --mep-table-scale: 1;
-  width: calc(297mm * var(--mep-sheet-scale));
+  width: min(100%, calc(297mm * var(--mep-sheet-scale)));
   max-width: 100%;
   height: calc(210mm * var(--mep-sheet-scale));
   margin: 0 auto;
@@ -2940,10 +2940,10 @@ body.dark .mepTable th {
 
   .mepTplSheet {
     display: block;
-    width: var(--mep-print-safe-w);
-    max-width: var(--mep-print-safe-w);
-    height: var(--mep-print-safe-h);
-    min-height: var(--mep-print-safe-h);
+    width: var(--mep-page-w);
+    max-width: var(--mep-page-w);
+    height: var(--mep-page-h);
+    min-height: var(--mep-page-h);
     margin: 0 auto;
     border-width: 1.8px;
     page-break-inside: avoid;
@@ -2957,8 +2957,7 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     box-sizing: border-box;
-    transform: scale(var(--mep-print-safe-scale));
-    transform-origin: top left;
+    transform: none;
   }
 
   .mepTplSheet:last-child {
