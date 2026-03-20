@@ -1524,9 +1524,10 @@ select {
   }
 
   .mepPrintPage {
-    width: var(--mep-print-safe-w) !important;
-    min-height: var(--mep-print-safe-h) !important;
-    margin: 0 auto !important;
+    width: var(--mep-page-w) !important;
+    height: var(--mep-page-h) !important;
+    min-height: var(--mep-page-h) !important;
+    margin: 0 !important;
     padding: 0 !important;
     display: block !important;
     box-sizing: border-box !important;
@@ -1541,8 +1542,8 @@ select {
 
   .mepPrintSheetFrame {
     position: relative !important;
-    width: var(--mep-print-safe-w) !important;
-    height: var(--mep-print-safe-h) !important;
+    width: 100% !important;
+    height: 100% !important;
     overflow: hidden !important;
   }
 
@@ -1567,7 +1568,9 @@ select {
     max-width: none !important;
     overflow: visible !important;
     position: absolute !important;
-    inset: 0 !important;
+    top: var(--mep-print-offset-y) !important;
+    left: var(--mep-print-offset-x) !important;
+    inset: auto !important;
     transform: scale(var(--mep-print-safe-scale)) !important;
     transform-origin: top left !important;
   }
@@ -1781,8 +1784,9 @@ select {
   }
 
   .mepPrintPage {
-    width: var(--mep-print-safe-w) !important;
-    min-height: var(--mep-print-safe-h) !important;
+    width: var(--mep-page-w) !important;
+    height: var(--mep-page-h) !important;
+    min-height: var(--mep-page-h) !important;
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
@@ -1792,12 +1796,14 @@ select {
     box-shadow: none !important;
     page-break-after: always !important;
     break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .mepPrintSheetFrame {
     position: relative !important;
-    width: var(--mep-print-safe-w) !important;
-    height: var(--mep-print-safe-h) !important;
+    width: 100% !important;
+    height: 100% !important;
     overflow: hidden !important;
   }
 
@@ -1809,6 +1815,7 @@ select {
   .mepSheet,
   .formPage {
     width: 297mm !important;
+    height: 210mm !important;
     min-height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1821,7 +1828,9 @@ select {
     max-width: none !important;
     overflow: visible !important;
     position: absolute !important;
-    inset: 0 !important;
+    top: var(--mep-print-offset-y) !important;
+    left: var(--mep-print-offset-x) !important;
+    inset: auto !important;
     transform: scale(var(--mep-print-safe-scale)) !important;
     transform-origin: top left !important;
   }
@@ -2043,9 +2052,11 @@ body.dark .mepTable th {
 :root {
   --mep-page-w: 297mm;
   --mep-page-h: 210mm;
-  --mep-print-safe-scale: 0.96;
+  --mep-print-safe-scale: 0.92;
   --mep-print-safe-w: calc(var(--mep-page-w) * var(--mep-print-safe-scale));
   --mep-print-safe-h: calc(var(--mep-page-h) * var(--mep-print-safe-scale));
+  --mep-print-offset-x: calc((var(--mep-page-w) - var(--mep-print-safe-w)) / 2);
+  --mep-print-offset-y: calc((var(--mep-page-h) - var(--mep-print-safe-h)) / 2);
 
   /* feste A4-Seite */
   --mep-frame-left: 0mm;
