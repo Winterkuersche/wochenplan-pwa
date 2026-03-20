@@ -3124,23 +3124,32 @@ body.dark .mepTable th {
   }
 
   .mepTplPages {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .mepTplSheet {
-    width: 297mm;
-    max-width: 297mm;
-    height: 210mm;
+    display: block;
+    width: var(--mep-print-safe-w);
+    max-width: var(--mep-print-safe-w);
+    height: var(--mep-print-safe-h);
+    min-height: var(--mep-print-safe-h);
+    margin: 0 auto;
     border-width: 1.8px;
     page-break-inside: avoid;
     page-break-after: always;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 
   .mepTplSheetInner {
     width: 297mm;
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
-    transform: none;
+    box-sizing: border-box;
+    transform: scale(var(--mep-print-safe-scale));
+    transform-origin: top left;
   }
 
   .mepTplSheet:last-child {
