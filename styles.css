@@ -2869,6 +2869,51 @@ body.dark .mepTable th {
   margin-top: 1.5mm !important;
 }
 
+.mepTplHandwrite,
+.mepTplMeta [data-mep-month-year],
+.mepTplMeta [data-mep-week-from],
+.mepTplMeta [data-mep-week-to],
+.mepTplTable [data-mep-date-index] {
+  display: inline-block;
+  font-family: "Caveat", "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  color: #111;
+  transform-origin: left center;
+}
+
+.mepTplMeta [data-mep-month-year],
+.mepTplMeta [data-mep-week-from],
+.mepTplMeta [data-mep-week-to],
+.mepTplTable [data-mep-date-index] {
+  font-size: 1.22em;
+}
+
+.mepTplHandValue {
+  font-size: 1.18em;
+}
+
+.mepTplHandName {
+  font-size: 1.3em;
+}
+
+.mepTplHandMeta {
+  font-size: 1.18em;
+}
+
+.mepTplHandSummary {
+  font-size: 1.28em;
+}
+
+.mepTplHandVariant0 { transform: translateY(0.08mm) rotate(-1.2deg); }
+.mepTplHandVariant1 { transform: translateY(0.18mm) rotate(0.95deg); }
+.mepTplHandVariant2 { transform: translateY(-0.05mm) rotate(-0.4deg); }
+.mepTplHandVariant3 { transform: translateY(0.12mm) rotate(1.4deg); }
+.mepTplHandVariant4 { transform: translateY(-0.08mm) rotate(-1.75deg); }
+.mepTplHandVariant5 { transform: translateY(0.04mm) rotate(0.35deg); }
+
+
 @media (max-width: 1200px) {
   #mepTemplateView {
     overflow: auto;
