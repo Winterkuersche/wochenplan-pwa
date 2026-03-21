@@ -2878,8 +2878,7 @@ body.dark .mepTable th {
 .mepTplHandwrite,
 .mepTplMeta [data-mep-month-year],
 .mepTplMeta [data-mep-week-from],
-.mepTplMeta [data-mep-week-to],
-.mepTplTable [data-mep-date-index] {
+.mepTplMeta [data-mep-week-to] {
   display: inline-block;
   font-family: var(--handwrite-font-family);
   font-weight: var(--handwrite-weight);
@@ -2892,9 +2891,21 @@ body.dark .mepTable th {
 
 .mepTplMeta [data-mep-month-year],
 .mepTplMeta [data-mep-week-from],
-.mepTplMeta [data-mep-week-to],
-.mepTplTable [data-mep-date-index] {
+.mepTplMeta [data-mep-week-to] {
   font-size: 1.22em;
+}
+
+.mepTplHeaderDate {
+  display: inline-block;
+  min-width: 100%;
+  font-family: var(--handwrite-font-family);
+  font-size: 1.14em;
+  font-weight: var(--handwrite-weight);
+  line-height: 1;
+  letter-spacing: var(--handwrite-letter-spacing);
+  color: var(--handwrite-color);
+  text-align: center;
+  text-rendering: geometricPrecision;
 }
 
 .mepTplHandValue {
