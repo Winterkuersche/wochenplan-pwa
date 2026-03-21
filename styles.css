@@ -2558,7 +2558,6 @@ body.dark .mepTable th {
 .mepTplSheet {
   --mep-sheet-scale: 1;
   --mep-table-scale: 1;
-  box-sizing: border-box;
   width: min(100%, calc(297mm * var(--mep-sheet-scale)));
   max-width: 100%;
   height: calc(210mm * var(--mep-sheet-scale));
@@ -2576,9 +2575,7 @@ body.dark .mepTable th {
   flex-direction: column;
   width: 297mm;
   height: 210mm;
-  padding: 4mm 4.2mm 3.2mm;
-  box-sizing: border-box;
-  overflow: hidden;
+  padding: 4.2mm 4.5mm 3.8mm;
   transform: scale(var(--mep-sheet-scale));
   transform-origin: top left;
 }
@@ -2588,7 +2585,7 @@ body.dark .mepTable th {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 2.8mm;
+  margin-bottom: 3.2mm;
 }
 
 .mepTplTitleBar {
@@ -2626,7 +2623,7 @@ body.dark .mepTable th {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 8px;
-  margin-bottom: 2.8mm;
+  margin-bottom: 3.4mm;
   font-size: 0.8rem;
 }
 
@@ -2703,10 +2700,10 @@ body.dark .mepTable th {
 .mepTplTable th,
 .mepTplTable td {
   border: 0.8px solid #000;
-  padding: 0.35mm 0.45mm;
+  padding: 0.45mm 0.5mm;
   text-align: center;
   vertical-align: middle;
-  height: 3.7mm;
+  height: 3.95mm;
   line-height: 1;
 }
 
@@ -2814,11 +2811,11 @@ body.dark .mepTable th {
 
 .mepTplSummaryBox {
   position: absolute;
-  top: calc(3.7mm - 0.4px);
+  top: calc(3.95mm - 0.4px);
   left: 0.45mm;
   right: 0.45mm;
-  height: calc(2 * 3.7mm);
-  min-height: calc(2 * 3.7mm);
+  height: calc(2 * 3.95mm);
+  min-height: calc(2 * 3.95mm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2852,10 +2849,10 @@ body.dark .mepTable th {
 .mepTplFooter {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
-  gap: 3px 12px;
-  margin-top: 3.2mm;
-  padding-top: 1.8mm;
-  font-size: 0.74rem;
+  gap: 4px 14px;
+  margin-top: 4.4mm;
+  padding-top: 2.4mm;
+  font-size: 0.77rem;
 }
 
 .mepTplFooter p {
@@ -2869,7 +2866,7 @@ body.dark .mepTable th {
 .mepTplStand {
   grid-column: 1 / -1;
   text-align: right;
-  margin-top: 1mm !important;
+  margin-top: 1.5mm !important;
 }
 
 @media (max-width: 1200px) {
@@ -2958,9 +2955,8 @@ body.dark .mepTable th {
   .mepTplSheetInner {
     width: 297mm;
     height: 210mm;
-    padding: 4mm 4.2mm 3.2mm;
+    padding: 4.2mm 4.5mm 3.8mm;
     box-sizing: border-box;
-    overflow: hidden;
     transform: none;
   }
 
@@ -2973,24 +2969,6 @@ body.dark .mepTable th {
   }
 
   .mepTplTable {
-    font-size: 8.2pt;
-  }
-
-  .mepTplTable th,
-  .mepTplTable td {
-    height: 3.55mm;
-    padding: 0.25mm 0.4mm;
-  }
-
-  .mepTplSummaryBox {
-    top: calc(3.55mm - 0.4px);
-    height: calc(2 * 3.55mm);
-    min-height: calc(2 * 3.55mm);
-  }
-
-  .mepTplFooter {
-    margin-top: 2.4mm;
-    padding-top: 1.4mm;
-    font-size: 0.7rem;
+    font-size: 8.6pt;
   }
 }
