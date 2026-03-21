@@ -8,11 +8,11 @@
   --text: #222;
   --subtext: #666;
   --accent: #0a58ff;
-  --handwrite-font-family: "Caveat", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --handwrite-font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
   --handwrite-color: #1f2a35;
-  --handwrite-weight: 600;
-  --handwrite-line-height: 1.02;
-  --handwrite-letter-spacing: 0.01em;
+  --handwrite-weight: 400;
+  --handwrite-line-height: 0.98;
+  --handwrite-letter-spacing: 0.005em;
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
   --form-view-max-height: calc(var(--app-dvh) - 110px);
@@ -2796,8 +2796,10 @@ body.dark .mepTable th {
 }
 
 .mepTplEmployee {
-  text-align: left !important;
+  text-align: center !important;
   font-weight: 600;
+  padding-left: 0.75mm !important;
+  padding-right: 0.75mm !important;
 }
 
 .mepTplMetric {
@@ -2913,7 +2915,25 @@ body.dark .mepTable th {
 }
 
 .mepTplHandName {
-  font-size: 1.3em;
+  font-size: 1.24em;
+}
+
+.mepTplNameStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2mm;
+  width: 100%;
+  min-height: 100%;
+}
+
+.mepTplHandNameLine {
+  display: block;
+  width: 100%;
+  font-size: 1.08em;
+  line-height: 0.92;
+  text-align: center;
 }
 
 .mepTplHandMeta {
@@ -2924,12 +2944,12 @@ body.dark .mepTable th {
   font-size: 1.28em;
 }
 
-.mepTplHandVariant0 { transform: translateY(0.08mm) rotate(-0.9deg); }
-.mepTplHandVariant1 { transform: translateY(0.16mm) rotate(0.7deg); }
-.mepTplHandVariant2 { transform: translateY(-0.04mm) rotate(-0.3deg); }
-.mepTplHandVariant3 { transform: translateY(0.1mm) rotate(1.05deg); }
-.mepTplHandVariant4 { transform: translateY(-0.06mm) rotate(-1.2deg); }
-.mepTplHandVariant5 { transform: translateY(0.04mm) rotate(0.25deg); }
+.mepTplHandVariant0 { transform: translate(0.02mm, 0.08mm) rotate(-1.15deg); }
+.mepTplHandVariant1 { transform: translate(-0.04mm, 0.14mm) rotate(0.8deg); letter-spacing: 0; }
+.mepTplHandVariant2 { transform: translate(0.03mm, -0.02mm) rotate(-0.45deg); }
+.mepTplHandVariant3 { transform: translate(-0.05mm, 0.11mm) rotate(1.2deg); letter-spacing: 0.012em; }
+.mepTplHandVariant4 { transform: translate(0.01mm, -0.05mm) rotate(-1.35deg); }
+.mepTplHandVariant5 { transform: translate(-0.03mm, 0.05mm) rotate(0.35deg); letter-spacing: 0.002em; }
 
 
 @media (max-width: 1200px) {

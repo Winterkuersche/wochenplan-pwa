@@ -58,6 +58,36 @@ function renderMepHandText(value, variant = 0, extraClass = "") {
   return `<span class="${className}">${escapeMepHtml(value)}</span>`;
 }
 
+function getMepNameLines(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return [];
+
+  if (normalized.includes(",")) {
+    const [lastName, ...firstNameParts] = normalized.split(",");
+    const firstName = firstNameParts.join(",").trim();
+    return [lastName.trim(), firstName].filter(Boolean);
+  }
+
+  return [normalized];
+}
+
+function renderMepEmployeeName(value, variant = 0) {
+  const lines = getMepNameLines(value);
+  if (!lines.length) return "";
+
+  if (lines.length === 1) {
+    return renderMepHandText(lines[0], variant, "mepTplHandName");
+  }
+
+  return `
+    <span class="mepTplNameStack">
+      ${lines
+        .map((line, index) => renderMepHandText(line, variant + index, "mepTplHandNameLine"))
+        .join("")}
+    </span>
+  `;
+}
+
 
 function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
   const isoDays = weekDays.map((day) => day.iso);
@@ -101,7 +131,7 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
       const baseColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplEmployee">${renderMepHandText(employee?.name || "", employeeOffset, "mepTplHandName")}</td>
+            <td rowspan="4" class="mepTplEmployee">${renderMepEmployeeName(employee?.name || "", employeeOffset)}</td>
             <td rowspan="4">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
             <td rowspan="4">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
           `
