@@ -8,6 +8,11 @@
   --text: #222;
   --subtext: #666;
   --accent: #0a58ff;
+  --handwrite-font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --handwrite-color: #1f2a35;
+  --handwrite-weight: 400;
+  --handwrite-line-height: 0.98;
+  --handwrite-letter-spacing: 0.005em;
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
   --form-view-max-height: calc(var(--app-dvh) - 110px);
@@ -2272,12 +2277,13 @@ body.dark .mepTable th {
 .formHandwrite {
   display: inline-block;
   vertical-align: middle;
-  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-family: var(--handwrite-font-family);
   font-size: 3.35mm;
-  line-height: 1.04;
-  color: #1f2a35;
-  font-weight: 400;
-  letter-spacing: 0.01mm;
+  line-height: var(--handwrite-line-height);
+  color: var(--handwrite-color);
+  font-weight: var(--handwrite-weight);
+  letter-spacing: var(--handwrite-letter-spacing);
+  text-rendering: geometricPrecision;
 }
 
 .mepNameCell .mepHand {
@@ -2546,7 +2552,7 @@ body.dark .mepTable th {
 }
 
 #mepTemplateView .sectionhead {
-  margin-bottom: 8px;
+  display: none;
 }
 
 .mepTplPages {
@@ -2790,8 +2796,10 @@ body.dark .mepTable th {
 }
 
 .mepTplEmployee {
-  text-align: left !important;
+  text-align: center !important;
   font-weight: 600;
+  padding-left: 0.75mm !important;
+  padding-right: 0.75mm !important;
 }
 
 .mepTplMetric {
@@ -2869,6 +2877,81 @@ body.dark .mepTable th {
   margin-top: 1.5mm !important;
 }
 
+.mepTplHandwrite,
+.mepTplMeta [data-mep-month-year],
+.mepTplMeta [data-mep-week-from],
+.mepTplMeta [data-mep-week-to] {
+  display: inline-block;
+  font-family: var(--handwrite-font-family);
+  font-weight: var(--handwrite-weight);
+  line-height: 0.96;
+  letter-spacing: var(--handwrite-letter-spacing);
+  color: var(--handwrite-color);
+  transform-origin: left center;
+  text-rendering: geometricPrecision;
+}
+
+.mepTplMeta [data-mep-month-year],
+.mepTplMeta [data-mep-week-from],
+.mepTplMeta [data-mep-week-to] {
+  font-size: 1.22em;
+}
+
+.mepTplHeaderDate {
+  display: inline-block;
+  min-width: 100%;
+  font-family: var(--handwrite-font-family);
+  font-size: 1.14em;
+  font-weight: var(--handwrite-weight);
+  line-height: 1;
+  letter-spacing: var(--handwrite-letter-spacing);
+  color: var(--handwrite-color);
+  text-align: center;
+  text-rendering: geometricPrecision;
+}
+
+.mepTplHandValue {
+  font-size: 1.18em;
+}
+
+.mepTplHandName {
+  font-size: 1.24em;
+}
+
+.mepTplNameStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2mm;
+  width: 100%;
+  min-height: 100%;
+}
+
+.mepTplHandNameLine {
+  display: block;
+  width: 100%;
+  font-size: 1.08em;
+  line-height: 0.92;
+  text-align: center;
+}
+
+.mepTplHandMeta {
+  font-size: 1.18em;
+}
+
+.mepTplHandSummary {
+  font-size: 1.28em;
+}
+
+.mepTplHandVariant0 { transform: translate(0.02mm, 0.08mm) rotate(-1.15deg); }
+.mepTplHandVariant1 { transform: translate(-0.04mm, 0.14mm) rotate(0.8deg); letter-spacing: 0; }
+.mepTplHandVariant2 { transform: translate(0.03mm, -0.02mm) rotate(-0.45deg); }
+.mepTplHandVariant3 { transform: translate(-0.05mm, 0.11mm) rotate(1.2deg); letter-spacing: 0.012em; }
+.mepTplHandVariant4 { transform: translate(0.01mm, -0.05mm) rotate(-1.35deg); }
+.mepTplHandVariant5 { transform: translate(-0.03mm, 0.05mm) rotate(0.35deg); letter-spacing: 0.002em; }
+
+
 @media (max-width: 1200px) {
   #mepTemplateView {
     overflow: auto;
@@ -2932,10 +3015,12 @@ body.dark .mepTable th {
     display: none !important;
   }
 
+  #mepTemplateView .sectionhead {
+    display: none !important;
+  }
+
   .mepTplPages {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block;
   }
 
   .mepTplSheet {
@@ -2947,7 +3032,9 @@ body.dark .mepTable th {
     margin: 0 auto;
     border-width: 1.8px;
     page-break-inside: avoid;
+    break-inside: avoid-page;
     page-break-after: always;
+    break-after: page;
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -2957,11 +3044,13 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     box-sizing: border-box;
+    overflow: hidden;
     transform: none;
   }
 
   .mepTplSheet:last-child {
     page-break-after: auto;
+    break-after: auto;
   }
 
   .mepTplWrapInner {
@@ -2969,6 +3058,38 @@ body.dark .mepTable th {
   }
 
   .mepTplTable {
-    font-size: 8.6pt;
+    font-size: 8.2pt;
+  }
+
+  .mepTplTable th,
+  .mepTplTable td {
+    height: 3.55mm;
+    padding: 0.25mm 0.4mm;
+  }
+
+  .mepTplTable thead th,
+  .mepTplMetric {
+    background: #fff;
+  }
+
+  .mepTplSummaryBox {
+    top: calc(3.55mm - 0.4px);
+    height: calc(2 * 3.55mm);
+    min-height: calc(2 * 3.55mm);
+  }
+
+  .mepTplHeaderTopRow {
+    margin-bottom: 2.8mm;
+  }
+
+  .mepTplMeta {
+    margin-bottom: 2.8mm;
+    font-size: 0.8rem;
+  }
+
+  .mepTplFooter {
+    margin-top: 2.4mm;
+    padding-top: 1.4mm;
+    font-size: 0.68rem;
   }
 }

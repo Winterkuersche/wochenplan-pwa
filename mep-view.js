@@ -1,6 +1,6 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
-const MEP_TEMPLATE_MAX_TABLE_SCALE = 1.14;
+const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -42,7 +42,54 @@ function getMepPauseLabel(entry) {
   return getPauseRangeForMep(entry);
 }
 
-function buildMepEmployeeRows(employee, weekDays) {
+function escapeMepHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderMepHandText(value, variant = 0, extraClass = "") {
+  if (value === null || value === undefined || value === "") return "";
+  const variantClass = `mepTplHandVariant${((variant % 6) + 6) % 6}`;
+  const className = ["mepTplHandwrite", variantClass, extraClass].filter(Boolean).join(" ");
+  return `<span class="${className}">${escapeMepHtml(value)}</span>`;
+}
+
+function getMepNameLines(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return [];
+
+  if (normalized.includes(",")) {
+    const [lastName, ...firstNameParts] = normalized.split(",");
+    const firstName = firstNameParts.join(",").trim();
+    return [lastName.trim(), firstName].filter(Boolean);
+  }
+
+  return [normalized];
+}
+
+function renderMepEmployeeName(value, variant = 0) {
+  const lines = getMepNameLines(value);
+  if (!lines.length) return "";
+
+  if (lines.length === 1) {
+    return renderMepHandText(lines[0], variant, "mepTplHandName");
+  }
+
+  return `
+    <span class="mepTplNameStack">
+      ${lines
+        .map((line, index) => renderMepHandText(line, variant + index, "mepTplHandNameLine"))
+        .join("")}
+    </span>
+  `;
+}
+
+
+function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
   const isoDays = weekDays.map((day) => day.iso);
 
   const rowTypes = [
@@ -55,25 +102,26 @@ function buildMepEmployeeRows(employee, weekDays) {
   return rowTypes
     .map((rowType, index) => {
       const dayCells = isoDays
-        .map((isoDate) => {
+        .map((isoDate, dayIndex) => {
           const entry = employee ? getEmployeeDayEntry(employee.id, isoDate) : null;
+          const variant = employeeOffset * 7 + index * 3 + dayIndex;
 
           if (!entry) return "<td></td>";
 
           if (rowType.key === "start") {
-            return `<td>${entry.start || ""}</td>`;
+            return `<td>${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "pause") {
-            return `<td>${getMepPauseLabel(entry)}</td>`;
+            return `<td>${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {
-            return `<td>${entry.end || ""}</td>`;
+            return `<td>${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "sum") {
-            return `<td>${entry.minutes ? minutesToHM(entry.minutes) : ""}</td>`;
+            return `<td>${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
           }
 
           return "<td></td>";
@@ -83,17 +131,17 @@ function buildMepEmployeeRows(employee, weekDays) {
       const baseColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplEmployee">${employee?.name || ""}</td>
-            <td rowspan="4">${getMepRoleLabel(employee)}</td>
-            <td rowspan="4">${getMepTargetLabel(employee)}</td>
+            <td rowspan="4" class="mepTplEmployee">${renderMepEmployeeName(employee?.name || "", employeeOffset)}</td>
+            <td rowspan="4">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
+            <td rowspan="4">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
           `
           : "";
 
       const summaryColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek"><div class="mepTplSummaryBox">${employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, weekDays)) : ""}</div></td>
-            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth"><div class="mepTplSummaryBox">${employee ? minutesToHM(getEmployeeAccountMinutesForMonth(employee, state.activeMonth)) : ""}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, weekDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForMonth(employee, state.activeMonth)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
           `
           : "";
 
@@ -143,7 +191,7 @@ function fitMepTemplateSheets() {
     const heightScale =
       availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
     const tableScale =
-      Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, Math.max(1, heightScale)) || 1;
+      (heightScale > 0 ? Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, heightScale) : 1) || 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
   });
@@ -186,7 +234,7 @@ function renderMepTemplateView() {
     let rowsHtml = "";
 
     for (let slotIndex = 0; slotIndex < MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE; slotIndex += 1) {
-      rowsHtml += buildMepEmployeeRows(pageEmployees[slotIndex], weekDays);
+      rowsHtml += buildMepEmployeeRows(pageEmployees[slotIndex], weekDays, slotIndex);
     }
 
     bodyEl.innerHTML = rowsHtml;
