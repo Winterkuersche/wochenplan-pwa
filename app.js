@@ -186,6 +186,21 @@ function createMepPdfExportRoot() {
   exportRoot.appendChild(clonePagesEl);
   document.body.appendChild(exportRoot);
 
+  clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
+    const wrapEl = sheetEl.querySelector(".mepTplWrap");
+    const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
+    if (!wrapEl || !wrapInnerEl) return;
+
+    const availableWrapHeight = wrapEl.clientHeight || wrapEl.getBoundingClientRect().height || 0;
+    const tableHeight = wrapInnerEl.scrollHeight || wrapInnerEl.getBoundingClientRect().height || 0;
+    const fittedScale =
+      availableWrapHeight > 0 && tableHeight > 0
+        ? Math.min(1, availableWrapHeight / tableHeight)
+        : 1;
+
+    sheetEl.style.setProperty("--mep-table-scale", `${fittedScale || 1}`);
+  });
+
   return exportRoot;
 }
 
