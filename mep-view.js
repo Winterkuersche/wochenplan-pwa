@@ -1,6 +1,6 @@
-const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
+const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 7;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
-const MEP_TEMPLATE_MAX_TABLE_SCALE = 1.14;
+const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
