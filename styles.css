@@ -2984,6 +2984,11 @@ body.dark .mepTable th {
     padding: 0.25mm 0.4mm;
   }
 
+  .mepTplTable thead th,
+  .mepTplMetric {
+    background: #fff;
+  }
+
   .mepTplSummaryBox {
     top: calc(3.55mm - 0.4px);
     height: calc(2 * 3.55mm);
@@ -3002,6 +3007,6 @@ body.dark .mepTable th {
   .mepTplFooter {
     margin-top: 2.4mm;
     padding-top: 1.4mm;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
   }
 }
