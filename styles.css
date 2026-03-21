@@ -2546,7 +2546,7 @@ body.dark .mepTable th {
 }
 
 #mepTemplateView .sectionhead {
-  margin-bottom: 8px;
+  display: none;
 }
 
 .mepTplPages {
