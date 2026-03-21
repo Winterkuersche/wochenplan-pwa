@@ -2932,10 +2932,12 @@ body.dark .mepTable th {
     display: none !important;
   }
 
+  #mepTemplateView .sectionhead {
+    display: none !important;
+  }
+
   .mepTplPages {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block;
   }
 
   .mepTplSheet {
@@ -2947,7 +2949,9 @@ body.dark .mepTable th {
     margin: 0 auto;
     border-width: 1.8px;
     page-break-inside: avoid;
+    break-inside: avoid-page;
     page-break-after: always;
+    break-after: page;
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -2957,11 +2961,13 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     box-sizing: border-box;
+    overflow: hidden;
     transform: none;
   }
 
   .mepTplSheet:last-child {
     page-break-after: auto;
+    break-after: auto;
   }
 
   .mepTplWrapInner {
@@ -2969,6 +2975,33 @@ body.dark .mepTable th {
   }
 
   .mepTplTable {
-    font-size: 8.6pt;
+    font-size: 8.2pt;
+  }
+
+  .mepTplTable th,
+  .mepTplTable td {
+    height: 3.55mm;
+    padding: 0.25mm 0.4mm;
+  }
+
+  .mepTplSummaryBox {
+    top: calc(3.55mm - 0.4px);
+    height: calc(2 * 3.55mm);
+    min-height: calc(2 * 3.55mm);
+  }
+
+  .mepTplHeaderTopRow {
+    margin-bottom: 2.8mm;
+  }
+
+  .mepTplMeta {
+    margin-bottom: 2.8mm;
+    font-size: 0.8rem;
+  }
+
+  .mepTplFooter {
+    margin-top: 2.4mm;
+    padding-top: 1.4mm;
+    font-size: 0.7rem;
   }
 }
