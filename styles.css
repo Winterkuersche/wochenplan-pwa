@@ -8,6 +8,11 @@
   --text: #222;
   --subtext: #666;
   --accent: #0a58ff;
+  --handwrite-font-family: "Caveat", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --handwrite-color: #1f2a35;
+  --handwrite-weight: 600;
+  --handwrite-line-height: 1.02;
+  --handwrite-letter-spacing: 0.01em;
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
   --form-view-max-height: calc(var(--app-dvh) - 110px);
@@ -2272,12 +2277,13 @@ body.dark .mepTable th {
 .formHandwrite {
   display: inline-block;
   vertical-align: middle;
-  font-family: "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  font-family: var(--handwrite-font-family);
   font-size: 3.35mm;
-  line-height: 1.04;
-  color: #1f2a35;
-  font-weight: 400;
-  letter-spacing: 0.01mm;
+  line-height: var(--handwrite-line-height);
+  color: var(--handwrite-color);
+  font-weight: var(--handwrite-weight);
+  letter-spacing: var(--handwrite-letter-spacing);
+  text-rendering: geometricPrecision;
 }
 
 .mepNameCell .mepHand {
@@ -2875,12 +2881,13 @@ body.dark .mepTable th {
 .mepTplMeta [data-mep-week-to],
 .mepTplTable [data-mep-date-index] {
   display: inline-block;
-  font-family: "Caveat", "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
-  font-weight: 600;
-  line-height: 0.92;
-  letter-spacing: 0.01em;
-  color: #111;
+  font-family: var(--handwrite-font-family);
+  font-weight: var(--handwrite-weight);
+  line-height: 0.96;
+  letter-spacing: var(--handwrite-letter-spacing);
+  color: var(--handwrite-color);
   transform-origin: left center;
+  text-rendering: geometricPrecision;
 }
 
 .mepTplMeta [data-mep-month-year],
@@ -2906,12 +2913,12 @@ body.dark .mepTable th {
   font-size: 1.28em;
 }
 
-.mepTplHandVariant0 { transform: translateY(0.08mm) rotate(-1.2deg); }
-.mepTplHandVariant1 { transform: translateY(0.18mm) rotate(0.95deg); }
-.mepTplHandVariant2 { transform: translateY(-0.05mm) rotate(-0.4deg); }
-.mepTplHandVariant3 { transform: translateY(0.12mm) rotate(1.4deg); }
-.mepTplHandVariant4 { transform: translateY(-0.08mm) rotate(-1.75deg); }
-.mepTplHandVariant5 { transform: translateY(0.04mm) rotate(0.35deg); }
+.mepTplHandVariant0 { transform: translateY(0.08mm) rotate(-0.9deg); }
+.mepTplHandVariant1 { transform: translateY(0.16mm) rotate(0.7deg); }
+.mepTplHandVariant2 { transform: translateY(-0.04mm) rotate(-0.3deg); }
+.mepTplHandVariant3 { transform: translateY(0.1mm) rotate(1.05deg); }
+.mepTplHandVariant4 { transform: translateY(-0.06mm) rotate(-1.2deg); }
+.mepTplHandVariant5 { transform: translateY(0.04mm) rotate(0.25deg); }
 
 
 @media (max-width: 1200px) {
