@@ -113,6 +113,195 @@ function refreshCurrentResponsiveView() {
   }
 }
 
+function waitForAnimationFrames(frameCount = 2) {
+  return new Promise((resolve) => {
+    const tick = (remaining) => {
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+
+      window.requestAnimationFrame(() => tick(remaining - 1));
+    };
+
+    tick(frameCount);
+  });
+}
+
+function updatePrintButtonLabel() {
+  if (!btnPrintEl) return;
+  const view = uiState?.currentView || "week";
+  btnPrintEl.textContent = view === "mep" ? "PDF exportieren" : "Drucken / PDF";
+}
+
+function buildMepPdfFilename() {
+  const from = state.weekFrom || state.activeMonth || new Date().toISOString().slice(0, 10);
+  return `mep-${String(from).replace(/[^0-9-]+/g, "-")}.pdf`;
+}
+
+function createMepPdfExportRoot() {
+  const pagesEl = document.getElementById("mepTemplatePages");
+  if (!pagesEl) return null;
+
+  const exportRoot = document.createElement("div");
+  Object.assign(exportRoot.style, {
+    position: "fixed",
+    left: "-200vw",
+    top: "0",
+    width: "297mm",
+    padding: "0",
+    margin: "0",
+    background: "#fff",
+    zIndex: "-1",
+    pointerEvents: "none"
+  });
+
+  const clonePagesEl = pagesEl.cloneNode(true);
+  clonePagesEl.style.display = "block";
+  clonePagesEl.style.gap = "0";
+
+  clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
+    sheetEl.style.setProperty("--mep-sheet-scale", "1");
+    sheetEl.style.setProperty("--mep-table-scale", "1");
+    sheetEl.style.width = "297mm";
+    sheetEl.style.maxWidth = "297mm";
+    sheetEl.style.height = "210mm";
+    sheetEl.style.margin = "0";
+    sheetEl.style.breakAfter = "page";
+    sheetEl.style.pageBreakAfter = "always";
+  });
+
+  clonePagesEl.querySelectorAll(".mepTplSheetInner").forEach((innerEl) => {
+    innerEl.style.width = "297mm";
+    innerEl.style.height = "210mm";
+    innerEl.style.transform = "none";
+  });
+
+  const lastSheetEl = clonePagesEl.querySelector(".mepTplSheet:last-child");
+  if (lastSheetEl) {
+    lastSheetEl.style.breakAfter = "auto";
+    lastSheetEl.style.pageBreakAfter = "auto";
+  }
+
+  exportRoot.appendChild(clonePagesEl);
+  document.body.appendChild(exportRoot);
+
+  return exportRoot;
+}
+
+async function shareOrDownloadPdfBlob(blob, filename) {
+  const file = new File([blob], filename, { type: "application/pdf" });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "MEP PDF",
+      text: "MEP als PDF"
+    });
+    return;
+  }
+
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  window.open(blobUrl, "_blank", "noopener");
+  window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+}
+
+async function exportMepTemplatePdf() {
+  const jsPdfCtor = window.jspdf?.jsPDF;
+  const captureFn = window.html2canvas;
+
+  if (typeof jsPdfCtor !== "function" || typeof captureFn !== "function") {
+    alert("PDF-Export ist noch nicht verfügbar. Bitte Seite neu laden und erneut versuchen.");
+    return;
+  }
+
+  const previousView = uiState?.currentView || "week";
+  const restoreView = previousView !== "mep";
+  const originalButtonLabel = btnPrintEl?.textContent || "Drucken / PDF";
+  let exportRoot = null;
+
+  try {
+    if (btnPrintEl) {
+      btnPrintEl.disabled = true;
+      btnPrintEl.textContent = "PDF wird erstellt …";
+    }
+
+    if (restoreView) {
+      uiState.currentView = "mep";
+      renderView();
+      renderAllViews();
+    } else if (typeof renderMepTemplateView === "function") {
+      renderMepTemplateView();
+    }
+
+    await waitForAnimationFrames(3);
+
+    exportRoot = createMepPdfExportRoot();
+    if (!exportRoot) {
+      throw new Error("MEP-Exportansicht nicht gefunden.");
+    }
+
+    await waitForAnimationFrames(2);
+
+    const sheetEls = [...exportRoot.querySelectorAll(".mepTplSheet")];
+    if (!sheetEls.length) {
+      throw new Error("Keine MEP-Seiten zum Export gefunden.");
+    }
+
+    const pdf = new jsPdfCtor({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+      compress: true
+    });
+
+    for (let index = 0; index < sheetEls.length; index += 1) {
+      const sheetEl = sheetEls[index];
+      const canvas = await captureFn(sheetEl, {
+        backgroundColor: "#ffffff",
+        scale: Math.max(2, window.devicePixelRatio || 1),
+        useCORS: true
+      });
+
+      if (index > 0) {
+        pdf.addPage("a4", "landscape");
+      }
+
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
+    }
+
+    const blob = pdf.output("blob");
+    await shareOrDownloadPdfBlob(blob, buildMepPdfFilename());
+  } catch (error) {
+    console.error("PDF-Export fehlgeschlagen", error);
+    alert("PDF-Export fehlgeschlagen. Bitte erneut versuchen.");
+  } finally {
+    exportRoot?.remove();
+
+    if (restoreView) {
+      uiState.currentView = previousView;
+      renderView();
+      renderAllViews();
+    }
+
+    if (btnPrintEl) {
+      btnPrintEl.disabled = false;
+      updatePrintButtonLabel();
+      if (!restoreView && originalButtonLabel && btnPrintEl.textContent !== originalButtonLabel) {
+        updatePrintButtonLabel();
+      }
+    }
+  }
+}
+
 function scheduleResponsiveViewRefresh() {
   if (responsiveViewRefreshTimerId) {
     window.clearTimeout(responsiveViewRefreshTimerId);
@@ -542,6 +731,7 @@ const btnImportBackupEl = document.getElementById("btnImportBackup");
 const backupFileInputEl = document.getElementById("backupFileInput");
 const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
+const btnPrintEl = document.getElementById("btnPrint");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -1643,6 +1833,7 @@ function renderView() {
   btnViewMepEl.classList.toggle("active", view === "mep");
 
   renderTopbarVisibility();
+  updatePrintButtonLabel();
   requestActiveResponsiveViewRefresh();
 }
 
@@ -1914,7 +2105,12 @@ document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   commitPlanChange();
   renderAll();
 });
-document.getElementById("btnPrint")?.addEventListener("click", () => {
+btnPrintEl?.addEventListener("click", async () => {
+  if ((uiState?.currentView || "week") === "mep") {
+    await exportMepTemplatePdf();
+    return;
+  }
+
   window.print();
 });
 
