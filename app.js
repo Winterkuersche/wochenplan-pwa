@@ -197,9 +197,13 @@ function createMepPdfExportRoot() {
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
     const wrapEl = sheetEl.querySelector(".mepTplWrap");
     const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
-    if (!wrapEl || !wrapInnerEl) return;
+    const footerEl = sheetEl.querySelector(".mepTplFooter");
+    if (!wrapEl || !wrapInnerEl || !footerEl) return;
 
-    const availableWrapHeight = wrapEl.clientHeight || wrapEl.getBoundingClientRect().height || 0;
+    const availableWrapHeight =
+      typeof getMepTemplateTableHeightBudget === "function"
+        ? getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl)
+        : wrapInnerEl.clientHeight || wrapInnerEl.getBoundingClientRect().height || 0;
     const tableHeight = wrapInnerEl.scrollHeight || wrapInnerEl.getBoundingClientRect().height || 0;
     const fittedScale =
       availableWrapHeight > 0 && tableHeight > 0
