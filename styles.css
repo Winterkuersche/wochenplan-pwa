@@ -2439,39 +2439,36 @@ body.dark .mepTable th {
 }
 
 .mepTplMeta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 8px;
   margin-bottom: 3.4mm;
   font-size: 0.8rem;
 }
 
 .mepTplMetaDateRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 0.78fr) auto;
   align-items: end;
-  flex-wrap: nowrap;
-  gap: 8px;
+  column-gap: 8px;
   min-width: 0;
 }
 
 .mepTplMetaField {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: end;
   column-gap: 3.4mm;
   min-width: 0;
 }
 
 .mepTplMetaMonth {
-  flex: 1 1 0;
+  min-width: 0;
 }
 
 .mepTplMetaFrom {
-  flex: 1 1 0;
+  min-width: 0;
 }
 
 .mepTplMetaTo {
-  flex: 0.7 1 0;
+  min-width: 0;
 }
 
 .mepTplMetaLabel {
@@ -2491,6 +2488,8 @@ body.dark .mepTable th {
 }
 
 .mepTplMetaArchive {
+  justify-self: end;
+  align-self: end;
   text-align: right;
   white-space: nowrap;
 }
@@ -2927,13 +2926,8 @@ body.dark .mepTable th {
     min-width: 0;
   }
 
-  .mepTplMeta,
   .mepTplFooter {
     grid-template-columns: 1fr;
-  }
-
-  .mepTplMetaDateRow {
-    flex-wrap: wrap;
   }
 }
 
