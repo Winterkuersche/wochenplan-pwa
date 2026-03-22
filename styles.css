@@ -2514,6 +2514,25 @@ body.dark .mepTable th {
   border-bottom-width: 1.4px;
 }
 
+.mepTplDayCell {
+  position: relative;
+  background: #fff;
+}
+
+.mepTplDayCell--outside {
+  background:
+    linear-gradient(135deg, transparent 48%, rgba(0, 0, 0, 0.2) 49%, rgba(0, 0, 0, 0.2) 51%, transparent 52%),
+    #f1f1f1;
+}
+
+.mepTplHeaderDate--outside {
+  position: relative;
+  opacity: 0.52;
+  color: #606060;
+  background:
+    linear-gradient(135deg, transparent 46%, rgba(0, 0, 0, 0.16) 47.5%, rgba(0, 0, 0, 0.16) 52.5%, transparent 54%);
+}
+
 .mepTplSummaryHeader {
   border: 1.6px solid #000 !important;
   padding-left: 1.2mm !important;
