@@ -2,7 +2,7 @@ const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
 const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
-const MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX = 2;
+const MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX = 6;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -79,15 +79,15 @@ function getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl) {
 
   const wrapHeight = wrapEl.clientHeight || wrapEl.getBoundingClientRect().height || 0;
   const wrapInnerHeight = wrapInnerEl.clientHeight || wrapInnerEl.getBoundingClientRect().height || 0;
-  const footerStyles = window.getComputedStyle(footerEl);
-  const footerMarginTop = parseFloat(footerStyles.marginTop || "0") || 0;
-  const footerReserve = Math.max(
+  const wrapStyles = window.getComputedStyle(wrapEl);
+  const wrapPaddingBottom = parseFloat(wrapStyles.paddingBottom || "0") || 0;
+  const layoutSlack = Math.max(
     0,
-    wrapHeight - wrapInnerHeight,
-    (footerEl.getBoundingClientRect().height || 0) + footerMarginTop
+    wrapPaddingBottom,
+    wrapHeight - wrapInnerHeight
   );
 
-  return Math.max(0, wrapHeight - footerReserve - MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX);
+  return Math.max(0, wrapHeight - layoutSlack - MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX);
 }
 
 function escapeMepHtml(value) {
