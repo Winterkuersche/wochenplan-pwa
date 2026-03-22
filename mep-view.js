@@ -194,6 +194,44 @@ function getMepEmployeeRowClasses(rowTypeKey) {
     .join(" ");
 }
 
+function renderMepOutsideRunMarker(outsideRun) {
+  if (!outsideRun?.length) return "";
+
+  return `<span class="mepTplOutsideRunMarker" aria-hidden="true"></span>`;
+}
+
+function syncMepOutsideRunMarkers(root = document) {
+  const markerRoot = root?.querySelectorAll ? root : document;
+
+  markerRoot.querySelectorAll("[data-mep-outside-run-start='true']").forEach((startCell) => {
+    const markerEl = startCell.querySelector(".mepTplOutsideRunMarker");
+    const startDayIndex = Number(startCell.dataset.mepDayIndex || 0);
+    const runColumns = Number(startCell.dataset.mepOutsideRunColumns || 0);
+
+    if (!markerEl || !runColumns) return;
+
+    let endRow = startCell.parentElement;
+    for (let offset = 0; offset < 3; offset += 1) {
+      endRow = endRow?.nextElementSibling;
+    }
+
+    const endDayIndex = startDayIndex + runColumns - 1;
+    const endCell = endRow?.querySelector(`[data-mep-day-index="${endDayIndex}"]`);
+
+    if (!endCell) return;
+
+    const startRect = startCell.getBoundingClientRect();
+    const endRect = endCell.getBoundingClientRect();
+    const runWidth = Math.max(0, endRect.right - startRect.left);
+    const runHeight = Math.max(0, endRect.bottom - startRect.top);
+    const lineLength = Math.hypot(runWidth, runHeight);
+    const lineAngle = Math.atan2(runHeight, runWidth);
+
+    markerEl.style.width = `${lineLength}px`;
+    markerEl.style.transform = `translateY(-50%) rotate(${lineAngle}rad)`;
+  });
+}
+
 function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
   const safeWeekDays = Array.isArray(weekDays) ? [...weekDays] : [];
 
@@ -226,36 +264,46 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
           }
 
           const outsideRun = isOutsideRunStart ? outsideRunMap.get(dayIndex) : null;
-          const outsideRunStyle = outsideRun
-            ? ` style="--mep-outside-run-columns:${outsideRun.length};"`
-            : "";
+          const outsideRunMarker = renderMepOutsideRunMarker(outsideRun);
           const dayCellClassName = dayCellClassNames.filter(Boolean).join(" ");
+          const dayCellAttributes = [
+            `class="${dayCellClassName}"`,
+            `data-mep-day-index="${dayIndex}"`
+          ];
+
+          if (outsideRun) {
+            dayCellAttributes.push(`data-mep-outside-run-columns="${outsideRun.length}"`);
+          }
+
+          if (isOutsideRunStart) {
+            dayCellAttributes.push('data-mep-outside-run-start="true"');
+          }
 
           if (day?.isOutsideMonth) {
-            return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${outsideRunMarker}</td>`;
           }
 
           const entry = employee && isoDate ? getEmployeeDayEntry(employee.id, isoDate) : null;
 
-          if (!entry) return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
+          if (!entry) return `<td ${dayCellAttributes.join(" ")}></td>`;
 
           if (rowType.key === "start") {
-            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "pause") {
-            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {
-            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "sum") {
-            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
           }
 
-          return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
+          return `<td ${dayCellAttributes.join(" ")}></td>`;
         })
         .join("");
 
@@ -388,6 +436,8 @@ function fitMepTemplateSheets() {
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
   });
+
+  syncMepOutsideRunMarkers(pagesEl);
 }
 
 function renderMepTemplateView(options = {}) {
