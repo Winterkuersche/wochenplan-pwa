@@ -2390,65 +2390,83 @@ body.dark .mepTable th {
   overflow: hidden;
 }
 
+.mepTplSheet--tableOverflow {
+  outline: 2px solid rgba(180, 35, 24, 0.28);
+  outline-offset: -2px;
+}
+
 .mepTplSheetInner {
+  --mep-page-width: 297mm;
+  --mep-page-height: 210mm;
+  --mep-page-border-width: 1.8px;
   --mep-sheet-padding-top: 4mm;
   --mep-sheet-padding-right: 4.5mm;
-  --mep-sheet-padding-bottom: 3.1mm;
+  --mep-sheet-padding-bottom: 3.2mm;
   --mep-sheet-padding-left: 4.5mm;
-  --mep-header-gap-after: 2.35mm;
-  --mep-meta-gap-after: 2.4mm;
-  --mep-table-gap-before-footer: 1.75mm;
-  --mep-table-font-size: 0.645rem;
+  --mep-content-width: calc(var(--mep-page-width) - var(--mep-sheet-padding-left) - var(--mep-sheet-padding-right));
+  --mep-content-height: calc(var(--mep-page-height) - var(--mep-sheet-padding-top) - var(--mep-sheet-padding-bottom));
+  --mep-header-height: 8.6mm;
+  --mep-header-gap-after: 2.3mm;
+  --mep-meta-height: 5.6mm;
+  --mep-meta-gap-after: 2.1mm;
+  --mep-table-zone-height: 165.2mm;
+  --mep-table-gap-before-footer: 1.2mm;
+  --mep-footer-zone-height: 18.4mm;
+  --mep-footer-height: 17.2mm;
+  --mep-footer-offset-top: 0.6mm;
+  --mep-table-font-size: 0.64rem;
   --mep-table-cell-padding-y: 0.42mm;
   --mep-table-cell-padding-x: 0.48mm;
-  --mep-table-row-height: 3.9mm;
+  --mep-table-row-height: 3.88mm;
   --mep-table-head-bg: #ececec;
-  --mep-col-employee-width: 10.85%;
-  --mep-col-role-width: 7%;
-  --mep-col-target-width: 7.6%;
-  --mep-col-metric-width: 7.25%;
-  --mep-col-summary-width: 8.92%;
+  --mep-col-employee-width: 33mm;
+  --mep-col-role-width: 21mm;
+  --mep-col-target-width: 23mm;
+  --mep-col-metric-width: 19mm;
+  --mep-col-day-width: 24mm;
+  --mep-col-summary-width: 12mm;
   --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
-  --mep-footer-zone-height: 18.4mm;
-  --mep-footer-total-height: 15.8mm;
-  --mep-footer-width: 288.2mm;
-  --mep-footer-font-size: 1.74mm;
-  --mep-footer-label-size: 1.88mm;
-  --mep-footer-line-height: 1.08;
-  --mep-footer-label-weight: 700;
-  --mep-footer-label-gap: 1.05mm;
-  --mep-footer-label-inline-gap: 1.45mm;
-  --mep-footer-block-gap: 0.38mm;
-  --mep-footer-pause-left: -1.1mm;
-  --mep-footer-pause-top: 0.55mm;
-  --mep-footer-pause-width: 82.5mm;
-  --mep-footer-pause-continuation-indent: 37.2mm;
-  --mep-footer-absence-left: 106.9mm;
-  --mep-footer-absence-top: 0.55mm;
-  --mep-footer-absence-width: 90.5mm;
-  --mep-footer-absence-grid-left: 39.2mm;
-  --mep-footer-absence-grid-top: 0.2mm;
-  --mep-footer-absence-col-1: 18.5mm;
-  --mep-footer-absence-col-2: 48.2mm;
-  --mep-footer-absence-row-gap: 0.25mm;
-  --mep-footer-absence-col-gap: 3.3mm;
-  --mep-footer-vacation-left: 232.25mm;
-  --mep-footer-vacation-top: 0.55mm;
-  --mep-footer-vacation-width: 16.8mm;
-  --mep-footer-presence-left: -0.35mm;
-  --mep-footer-presence-top: 8.9mm;
-  --mep-footer-presence-width: 252.8mm;
-  --mep-footer-presence-label-width: 28.6mm;
-  --mep-footer-presence-column-gap: 1.2mm;
-  --mep-footer-stand-right: 2.15mm;
-  --mep-footer-stand-bottom: 0.15mm;
-  --mep-footer-stand-width: 24.2mm;
-  --mep-footer-stand-font-size: 1.56mm;
+  --mep-footer-font-size: 1.7mm;
+  --mep-footer-label-size: 1.92mm;
+  --mep-footer-line-height: 1.28;
+  --mep-footer-label-weight: 600;
+  --mep-footer-label-gap: 0.8mm;
+  --mep-footer-label-inline-gap: 1.65mm;
+  --mep-footer-block-gap: 0.85mm;
+  --mep-footer-grid-columns: 84mm 18mm 82mm 22mm 20mm 62mm;
+  --mep-footer-grid-rows: 8.1mm 6.9mm 2.2mm;
+  --mep-footer-pause-column: 1;
+  --mep-footer-pause-row: 1;
+  --mep-footer-absence-column: 3;
+  --mep-footer-absence-row: 1;
+  --mep-footer-vacation-column: 5;
+  --mep-footer-vacation-row: 1;
+  --mep-footer-presence-column-start: 1;
+  --mep-footer-presence-column-end: 6;
+  --mep-footer-presence-row: 2;
+  --mep-footer-presence-label-width: 27.5mm;
+  --mep-footer-presence-column-gap: 1.8mm;
+  --mep-footer-pause-continuation-indent: 31.8mm;
+  --mep-footer-absence-grid-left: 27.8mm;
+  --mep-footer-absence-grid-top: 0.45mm;
+  --mep-footer-absence-col-1: 19mm;
+  --mep-footer-absence-col-2: 50mm;
+  --mep-footer-absence-row-gap: 0.95mm;
+  --mep-footer-absence-col-gap: 3.6mm;
+  --mep-footer-stand-column: 6;
+  --mep-footer-stand-row: 3;
+  --mep-footer-stand-justify: end;
+  --mep-footer-stand-width: 25mm;
+  --mep-footer-stand-font-size: 1.54mm;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) var(--mep-footer-zone-height);
+  grid-template-rows:
+    var(--mep-header-height)
+    var(--mep-meta-height)
+    var(--mep-table-zone-height)
+    var(--mep-footer-zone-height);
   align-content: start;
-  width: 297mm;
-  height: 210mm;
+  width: var(--mep-page-width);
+  height: var(--mep-page-height);
   padding:
     var(--mep-sheet-padding-top)
     var(--mep-sheet-padding-right)
@@ -2459,17 +2477,17 @@ body.dark .mepTable th {
 }
 
 .mepTplHeaderTopRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36.5mm;
+  align-items: stretch;
+  gap: 2.4mm;
+  min-height: var(--mep-header-height);
   margin-bottom: var(--mep-header-gap-after);
 }
 
 .mepTplTitleBar {
-  flex: 1;
-  min-height: 8.5mm;
-  padding: 1.2mm 2.2mm;
+  min-height: var(--mep-header-height);
+  padding: 1.15mm 2.2mm;
   border: 1.6px solid #000;
   display: flex;
   align-items: center;
@@ -2479,9 +2497,10 @@ body.dark .mepTable th {
 }
 
 .mepTplBranchBox {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 1.5mm;
+  gap: 1.4mm;
   white-space: nowrap;
 }
 
@@ -2491,21 +2510,23 @@ body.dark .mepTable th {
 
 .mepTplBranchField {
   display: inline-block;
-  width: 22mm;
-  height: 8.5mm;
+  width: 100%;
+  height: var(--mep-header-height);
   border: 1.6px solid #000;
 }
 
 .mepTplMeta {
+  min-height: var(--mep-meta-height);
   margin-bottom: var(--mep-meta-gap-after);
   font-size: 0.8rem;
 }
 
 .mepTplMetaDateRow {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 0.78fr) auto;
+  grid-template-columns: 88mm 66mm 43mm minmax(0, 1fr);
   align-items: end;
-  column-gap: 8px;
+  column-gap: 2.8mm;
+  min-height: var(--mep-meta-height);
   min-width: 0;
 }
 
@@ -2553,28 +2574,29 @@ body.dark .mepTable th {
 }
 
 .mepTplWrap {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) var(--mep-footer-zone-height);
   min-width: 0;
+  width: var(--mep-content-width);
   height: 100%;
   max-height: 100%;
   min-height: 0;
-  padding-bottom: var(--mep-table-gap-before-footer);
+  row-gap: var(--mep-table-gap-before-footer);
   box-sizing: border-box;
   overflow: hidden;
 }
 
 .mepTplWrapInner {
-  flex: 1 1 auto;
   min-height: 0;
+  height: 100%;
   overflow: hidden;
-  width: calc(100% / var(--mep-table-scale));
+  width: 100%;
   transform: scale(var(--mep-table-scale));
   transform-origin: top left;
 }
 
 .mepTplTable {
-  width: 100%;
+  width: var(--mep-content-width);
   border-collapse: collapse;
   table-layout: fixed;
   border: 1.8px solid #000;
@@ -2653,21 +2675,39 @@ body.dark .mepTable th {
   border-left-width: 0 !important;
 }
 
+.mepTplCol--employee,
 .mepTplColEmployee {
   width: var(--mep-col-employee-width);
-  text-align: left;
 }
 
+.mepTplCol--role,
 .mepTplColRole {
   width: var(--mep-col-role-width);
 }
 
+.mepTplCol--target,
 .mepTplColTarget {
   width: var(--mep-col-target-width);
 }
 
+.mepTplCol--metric,
 .mepTplColMetric {
   width: var(--mep-col-metric-width);
+}
+
+.mepTplCol--day {
+  width: var(--mep-col-day-width);
+}
+
+.mepTplCol--summary {
+  width: var(--mep-col-summary-width);
+}
+
+.mepTplColEmployee {
+  text-align: left;
+}
+
+.mepTplColMetric {
   text-align: left;
 }
 
@@ -2769,49 +2809,48 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  position: relative;
   align-self: end;
-  width: var(--mep-footer-width);
-  min-width: var(--mep-footer-width);
-  max-width: var(--mep-footer-width);
-  height: var(--mep-footer-total-height);
-  min-height: var(--mep-footer-total-height);
-  max-height: var(--mep-footer-total-height);
-  margin-top: 0;
-  padding-top: 0;
+  width: var(--mep-content-width);
+  height: var(--mep-footer-zone-height);
+  min-height: var(--mep-footer-zone-height);
+  padding-top: var(--mep-footer-offset-top);
   font-size: var(--mep-footer-font-size);
   line-height: var(--mep-footer-line-height);
   overflow: hidden;
 }
 
+.mepTplFooterGrid {
+  display: grid;
+  grid-template-columns: var(--mep-footer-grid-columns);
+  grid-template-rows: var(--mep-footer-grid-rows);
+  width: 100%;
+  height: var(--mep-footer-height);
+  min-height: var(--mep-footer-height);
+}
+
 .mepTplFooterBlock {
-  position: absolute;
   min-width: 0;
   margin: 0;
 }
 
 .mepTplFooterBlock--pause {
-  left: var(--mep-footer-pause-left);
-  top: var(--mep-footer-pause-top);
-  width: var(--mep-footer-pause-width);
+  grid-column: var(--mep-footer-pause-column);
+  grid-row: var(--mep-footer-pause-row);
 }
 
 .mepTplFooterBlock--absence {
-  left: var(--mep-footer-absence-left);
-  top: var(--mep-footer-absence-top);
-  width: var(--mep-footer-absence-width);
+  grid-column: var(--mep-footer-absence-column);
+  grid-row: var(--mep-footer-absence-row);
 }
 
 .mepTplFooterBlock--vacation {
-  left: var(--mep-footer-vacation-left);
-  top: var(--mep-footer-vacation-top);
-  width: var(--mep-footer-vacation-width);
+  grid-column: var(--mep-footer-vacation-column);
+  grid-row: var(--mep-footer-vacation-row);
 }
 
 .mepTplFooterBlock--presence {
-  left: var(--mep-footer-presence-left);
-  top: var(--mep-footer-presence-top);
-  width: var(--mep-footer-presence-width);
+  grid-column: var(--mep-footer-presence-column-start) / var(--mep-footer-presence-column-end);
+  grid-row: var(--mep-footer-presence-row);
 }
 
 .mepTplFooterLine {
@@ -2839,13 +2878,14 @@ body.dark .mepTable th {
   margin: 0;
   font-weight: var(--mep-footer-label-weight);
   font-size: var(--mep-footer-label-size);
-  line-height: 1;
+  line-height: 1.05;
   white-space: nowrap;
 }
 
 .mepTplFooterText {
   display: inline-block;
   margin: 0;
+  line-height: var(--mep-footer-line-height);
   white-space: nowrap;
 }
 
@@ -2860,16 +2900,15 @@ body.dark .mepTable th {
 
 .mepTplFooterBlock--presence .mepTplFooterText {
   white-space: normal;
-  line-height: var(--mep-footer-line-height);
 }
 
 .mepTplStand {
-  position: absolute;
-  right: var(--mep-footer-stand-right);
-  bottom: var(--mep-footer-stand-bottom);
+  grid-column: var(--mep-footer-stand-column);
+  grid-row: var(--mep-footer-stand-row);
+  justify-self: var(--mep-footer-stand-justify);
+  align-self: end;
   width: var(--mep-footer-stand-width);
   margin: 0;
-  padding-bottom: 0;
   font-size: var(--mep-footer-stand-font-size);
   line-height: 1;
   text-align: right;
@@ -3118,20 +3157,20 @@ body.dark .mepTable th {
     width: 297mm;
     height: 210mm;
     --mep-sheet-padding-bottom: 3.2mm;
-    --mep-table-gap-before-footer: 1.55mm;
-    --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: 3.55mm;
-    --mep-table-cell-padding-y: 0.25mm;
-    --mep-table-cell-padding-x: 0.4mm;
-    --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.4px);
-    --mep-footer-total-height: 15.1mm;
-    --mep-footer-zone-height: 17.1mm;
-    --mep-footer-font-size: 1.74mm;
-    --mep-footer-label-size: 1.82mm;
-    --mep-footer-block-gap: 0.32mm;
-    --mep-footer-absence-row-gap: 0.2mm;
-    --mep-footer-presence-top: 8.45mm;
-    --mep-footer-stand-bottom: 0.25mm;
+    --mep-table-zone-height: 165.4mm;
+    --mep-table-gap-before-footer: 1.05mm;
+    --mep-table-font-size: 8.15pt;
+    --mep-table-row-height: 3.82mm;
+    --mep-table-cell-padding-y: 0.22mm;
+    --mep-table-cell-padding-x: 0.38mm;
+    --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.42px);
+    --mep-footer-zone-height: 18.2mm;
+    --mep-footer-height: 17mm;
+    --mep-footer-font-size: 1.68mm;
+    --mep-footer-label-size: 1.88mm;
+    --mep-footer-block-gap: 0.72mm;
+    --mep-footer-absence-row-gap: 0.9mm;
+    --mep-footer-offset-top: 0.75mm;
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3181,7 +3220,6 @@ body.dark .mepTable th {
   }
 
   .mepTplFooterLabel {
-    margin-bottom: var(--mep-footer-label-gap);
     font-size: var(--mep-footer-label-size);
   }
 
