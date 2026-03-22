@@ -1,6 +1,7 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
 const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
+const MEP_TEMPLATE_TABLE_HEIGHT_BUFFER_PX = 10;
 const MEP_HAND_VARIANT_COUNT = 8;
 
 function mepPad2(value) {
@@ -429,8 +430,14 @@ function fitMepTemplateSheets() {
 
     const availableWrapHeight = wrapEl.clientHeight;
     const tableHeight = wrapInnerEl.scrollHeight;
+    const safeAvailableWrapHeight = Math.max(
+      0,
+      availableWrapHeight - MEP_TEMPLATE_TABLE_HEIGHT_BUFFER_PX
+    );
     const heightScale =
-      availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
+      safeAvailableWrapHeight > 0 && tableHeight > 0
+        ? safeAvailableWrapHeight / tableHeight
+        : 1;
     const tableScale =
       (heightScale > 0 ? Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, heightScale) : 1) || 1;
 

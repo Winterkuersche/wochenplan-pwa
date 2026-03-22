@@ -2378,6 +2378,7 @@ body.dark .mepTable th {
 .mepTplSheet {
   --mep-sheet-scale: 1;
   --mep-table-scale: 1;
+  --mep-footer-height: 18.6mm;
   width: min(100%, calc(297mm * var(--mep-sheet-scale)));
   max-width: 100%;
   height: calc(210mm * var(--mep-sheet-scale));
@@ -2395,7 +2396,7 @@ body.dark .mepTable th {
   flex-direction: column;
   width: 297mm;
   height: 210mm;
-  padding: 4.2mm 4.5mm 3.8mm;
+  padding: 4mm 4.5mm 4.6mm;
   transform: scale(var(--mep-sheet-scale));
   transform-origin: top left;
 }
@@ -2405,7 +2406,7 @@ body.dark .mepTable th {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 3.2mm;
+  margin-bottom: 2.7mm;
 }
 
 .mepTplTitleBar {
@@ -2439,7 +2440,7 @@ body.dark .mepTable th {
 }
 
 .mepTplMeta {
-  margin-bottom: 3.4mm;
+  margin-bottom: 2.6mm;
   font-size: 0.8rem;
 }
 
@@ -2498,6 +2499,7 @@ body.dark .mepTable th {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+  margin-bottom: 0;
 }
 
 .mepTplWrapInner {
@@ -2706,16 +2708,20 @@ body.dark .mepTable th {
   width: 288mm;
   min-width: 288mm;
   max-width: 288mm;
+  min-height: var(--mep-footer-height);
   grid-template-columns: 82mm 72mm 63mm 50mm 21mm;
-  grid-template-rows: 5.8mm 8.8mm;
+  grid-template-rows: 5.6mm 8.6mm;
   grid-template-areas:
     "pause pause absence vacation stand"
     "presence presence absence vacation stand";
   align-items: start;
   column-gap: 0;
-  row-gap: 0.85mm;
-  margin-top: 1.8mm;
+  row-gap: 0.65mm;
+  margin-top: 1.25mm;
   padding-top: 0;
+  padding-bottom: 1.1mm;
+  align-self: flex-start;
+  flex: 0 0 var(--mep-footer-height);
   font-size: 1.72mm;
   line-height: 1.05;
   white-space: normal;
@@ -3021,7 +3027,7 @@ body.dark .mepTable th {
   .mepTplSheetInner {
     width: 297mm;
     height: 210mm;
-    padding: 4.2mm 4.5mm 3.8mm;
+    padding: 4mm 4.5mm 4.6mm;
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3058,18 +3064,20 @@ body.dark .mepTable th {
   }
 
   .mepTplHeaderTopRow {
-    margin-bottom: 2.8mm;
+    margin-bottom: 2.5mm;
   }
 
   .mepTplMeta {
-    margin-bottom: 2.8mm;
+    margin-bottom: 2.3mm;
     font-size: 0.8rem;
   }
 
   .mepTplFooter {
-    margin-top: 1.6mm;
-    grid-template-rows: 5.6mm 8.4mm;
-    row-gap: 0.75mm;
+    --mep-footer-height: 18.2mm;
+    margin-top: 1mm;
+    grid-template-rows: 5.4mm 8.3mm;
+    row-gap: 0.55mm;
+    padding-bottom: 1.25mm;
     font-size: 1.62mm;
   }
 

@@ -201,9 +201,15 @@ function createMepPdfExportRoot() {
 
     const availableWrapHeight = wrapEl.clientHeight || wrapEl.getBoundingClientRect().height || 0;
     const tableHeight = wrapInnerEl.scrollHeight || wrapInnerEl.getBoundingClientRect().height || 0;
+    const safeAvailableWrapHeight = Math.max(
+      0,
+      availableWrapHeight - (typeof MEP_TEMPLATE_TABLE_HEIGHT_BUFFER_PX === "number"
+        ? MEP_TEMPLATE_TABLE_HEIGHT_BUFFER_PX
+        : 10)
+    );
     const fittedScale =
-      availableWrapHeight > 0 && tableHeight > 0
-        ? Math.min(1, availableWrapHeight / tableHeight)
+      safeAvailableWrapHeight > 0 && tableHeight > 0
+        ? Math.min(1, safeAvailableWrapHeight / tableHeight)
         : 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${fittedScale || 1}`);
