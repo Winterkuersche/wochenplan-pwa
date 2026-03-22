@@ -15,7 +15,6 @@
   --handwrite-letter-spacing: -0.01em;
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
-  --form-view-max-height: calc(var(--app-dvh) - 110px);
   --mep-template-view-max-height: calc(var(--app-dvh) - 110px);
 }
 
@@ -206,8 +205,7 @@ select {
 .teamsetup,
 .daynav,
 .overview,
-#printView,
-#formView {
+#printView {
   margin-bottom: 18px;
   padding: 18px;
   border: 1px solid #d8d8d8;
@@ -1233,8 +1231,7 @@ select {
   .topbar,
   .teamsetup,
   .daynav,
-  .overview,
-  #formView {
+  .overview {
     padding: 14px;
     border-radius: 16px;
   }
@@ -1274,203 +1271,9 @@ select {
 }
 
 
-@media (max-width: 920px) and (orientation: landscape) {
-  #formView,
-  #mepTemplateView {
-    padding: 10px;
-    min-height: 0;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  #formView {
-    overflow: visible;
-    max-height: none;
-  }
-
-  #mepTemplateView {
-    overflow: auto;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: var(--mep-template-view-max-height);
-    overscroll-behavior: contain;
-  }
-
-  #formView .mepScreenViewport {
-    width: 100%;
-    max-width: 100%;
-    max-height: var(--form-view-max-height);
-    min-height: 0;
-    padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-  }
-
-  #formView .mepScreenStage {
-    width: max-content;
-    min-width: 100%;
-  }
-
-  #formView .mepScreenStack {
-    display: flex;
-    flex-direction: column;
-    gap: 12mm;
-    width: max-content;
-    min-width: 297mm;
-  }
-
-  #formView .mepTableOuter,
-  #mepTemplateView .mepTplWrap {
-    overflow-x: auto;
-    overflow-y: hidden;
-    max-width: 100%;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  #formView .mepTableOuter {
-    width: 100%;
-  }
-
-  #formView .mepTable,
-  #mepTemplateView .mepTplTable {
-    min-width: 0;
-  }
-
-  #mepTemplateView .mepTplSheet {
-    margin-bottom: 12mm;
-  }
-
-  #formView .mepScreenPage:last-child,
-  #mepTemplateView .mepTplSheet:last-child {
-    margin-bottom: 0;
-  }
-}
-
-@supports (-webkit-touch-callout: none) {
-  @media (max-width: 920px) {
-    #formView {
-      max-height: none;
-      overflow: visible;
-      -webkit-overflow-scrolling: touch;
-      min-height: 0;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    }
-
-    #formView .mepScreenViewport {
-      width: 100%;
-      max-width: 100%;
-      max-height: var(--form-view-max-height);
-      min-height: 0;
-      padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-    }
-
-    #formView .mepScreenStage {
-      width: max-content;
-      min-width: 100%;
-    }
-
-    #formView .mepScreenStack {
-      width: max-content;
-      min-width: 100%;
-    }
-
-    #formView .mepScreenPage {
-      margin-bottom: 12mm;
-    }
-  }
-
-  @media (max-width: 920px) and (orientation: landscape) {
-    #formView {
-      display: block;
-      max-height: none;
-      overflow: visible;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    }
-
-    #formView .mepScreenViewport {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      min-height: 0;
-      max-height: var(--form-view-max-height);
-      padding-right: calc(env(safe-area-inset-right, 0px) + 6px);
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-    }
-
-    #formView .mepScreenStage {
-      width: max-content;
-      min-width: 100%;
-    }
-
-    #formView .mepScreenStack {
-      display: flex;
-      flex-direction: column;
-      gap: 12mm;
-      width: max-content;
-      min-width: 297mm;
-    }
-
-    #formView .mepScreenPage {
-      width: max-content;
-      min-width: 297mm;
-      margin: 0;
-      padding-right: env(safe-area-inset-right, 0px);
-    }
-
-    #formView .mepScreenPage:last-child {
-      margin-bottom: 0;
-    }
-
-    #mepTemplateView {
-      max-height: var(--mep-template-view-max-height);
-      overflow: auto;
-      overflow-x: auto;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    }
-  }
-}
 
 
-@media (max-width: 1024px) and (orientation: landscape) {
-  #formView,
-  #mepTemplateView {
-    -webkit-overflow-scrolling: touch;
-  }
 
-  #formView {
-    overflow: visible;
-  }
-
-  #mepTemplateView {
-    overflow: auto;
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: var(--mep-template-view-max-height);
-    overscroll-behavior: contain;
-  }
-
-  #formView .mepScreenViewport {
-    max-width: 100%;
-    max-height: var(--form-view-max-height);
-  }
-
-  #formView .mepSheet,
-  #mepTemplateView .mepTplSheet {
-    min-width: 0;
-  }
-
-  #mepTemplateView .mepTplSheet {
-    max-width: 100%;
-  }
-
-  #formView .mepTableOuter,
-  #mepTemplateView .mepTplWrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
 
 /* =============================
    Print layout
@@ -1529,16 +1332,6 @@ select {
   .mepScreenStage,
   .dialogOverlay {
     display: none !important;
-  }
-
-  #formView {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    background: #fff !important;
-    box-shadow: none !important;
   }
 
   .mepPrintAll {
@@ -1791,8 +1584,7 @@ body.dark .weekCellHint {
   color: #9fa4ad;
 }
 
-/* Originalformular immer hell lassen */
-body.dark #formView,
+/* MEP-Druckansicht immer hell lassen */
 body.dark .printSheet,
 body.dark .mepTable,
 body.dark .mepTable th,
@@ -3098,14 +2890,6 @@ body.dark .mepTable th {
     display: block !important;
   }
 
-  body[data-current-view="form"] #formView {
-    display: block !important;
-  }
-
-  body[data-current-view="mep"] #formView,
-  body[data-current-view="form"] #mepTemplateView {
-    display: none !important;
-  }
 
   #mepTemplateView .sectionhead {
     display: none !important;
