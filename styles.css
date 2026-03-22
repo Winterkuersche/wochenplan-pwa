@@ -2565,62 +2565,55 @@ body.dark .mepTable th {
   border-left-width: 0 !important;
 }
 
-.mepTplTable th:nth-child(1),
-.mepTplTable td:nth-child(1) {
+.mepTplColEmployee {
   width: 10.6%;
   text-align: left;
 }
 
-.mepTplTable th:nth-child(2),
-.mepTplTable td:nth-child(2) {
+.mepTplColRole {
   width: 7.2%;
 }
 
-.mepTplTable th:nth-child(3),
-.mepTplTable td:nth-child(3) {
+.mepTplColTarget {
   width: 7.6%;
 }
 
-.mepTplTable th:nth-child(4),
-.mepTplTable td:nth-child(4) {
+.mepTplColMetric {
   width: 7.2%;
   text-align: left;
 }
 
-.mepTplTable th:nth-last-child(2),
-.mepTplTable td:nth-last-child(2) {
+.mepTplSummaryHeaderWeek,
+.mepTplSummaryCellWeek {
   width: 8.9%;
   border-left-width: 1.8px;
 }
 
-
-.mepTplTable th:nth-last-child(3),
-.mepTplTable td:nth-last-child(3) {
+.mepTplDayCell--sun,
+.mepTplDayHeader--sun {
   position: relative;
   z-index: 2;
 }
 
-.mepTplTable thead tr:first-child th:nth-child(11),
-.mepTplTable thead tr:nth-child(2) th:nth-child(7),
-.mepTplTable thead tr:nth-child(3) th:nth-child(7),
-.mepTplTable tbody tr:nth-child(4n + 1) td:nth-child(11),
-.mepTplTable tbody tr:nth-child(4n + 2) td:nth-child(8),
-.mepTplTable tbody tr:nth-child(4n + 3) td:nth-child(8),
-.mepTplTable tbody tr:nth-child(4n) td:nth-child(8) {
-  border-right: 1px solid #000 !important;
-}
-
-.mepTplTable th:nth-last-child(1),
-.mepTplTable td:nth-last-child(1) {
+.mepTplSummaryHeaderMonth,
+.mepTplSummaryCellMonth {
   width: 8.9%;
   border-right-width: 0;
 }
 
-.mepTplTable tbody tr:nth-child(4n + 1) td {
+.mepTplCellSeparator {
+  border-right: 1px solid #000 !important;
+}
+
+.mepTplCellBeforeSummary {
+  border-right: 1px solid #000 !important;
+}
+
+.mepTplEmployeeRow--blockStart td {
   border-top-width: 1.8px;
 }
 
-.mepTplTable tbody tr:nth-child(4n) td {
+.mepTplEmployeeRow--blockEnd td {
   border-bottom-width: 1.8px;
 }
 
@@ -2682,8 +2675,8 @@ body.dark .mepTable th {
   left: 0;
 }
 
-.mepTplTable tbody tr:nth-child(4n + 1) .mepTplSummary,
-.mepTplTable tbody tr:nth-child(4n) .mepTplSummary {
+.mepTplEmployeeRow--blockStart .mepTplSummary,
+.mepTplEmployeeRow--blockEnd .mepTplSummary {
   border: none !important;
 }
 

@@ -124,6 +124,44 @@ function renderMepEmployeeName(value, variant = 0) {
 }
 
 
+function getMepDayColumnClass(dayIndex) {
+  const dayColumnClasses = [
+    "mepTplDayCell--mon",
+    "mepTplDayCell--tue",
+    "mepTplDayCell--wed",
+    "mepTplDayCell--thu",
+    "mepTplDayCell--fri",
+    "mepTplDayCell--sat",
+    "mepTplDayCell--sun"
+  ];
+
+  return dayColumnClasses[dayIndex] || "";
+}
+
+function getMepDayCellClasses(dayIndex, day) {
+  return [
+    "mepTplDayCell",
+    getMepDayColumnClass(dayIndex),
+    dayIndex === 4 ? "mepTplCellSeparator" : "",
+    dayIndex === 5 ? "mepTplCellSeparator" : "",
+    dayIndex === 6 ? "mepTplCellBeforeSummary" : "",
+    day?.isOutsideMonth ? "mepTplDayCell--outside" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getMepEmployeeRowClasses(rowTypeKey) {
+  return [
+    "mepTplEmployeeRow",
+    `mepTplEmployeeRow--${rowTypeKey}`,
+    rowTypeKey === "start" ? "mepTplEmployeeRow--blockStart" : "",
+    rowTypeKey === "sum" ? "mepTplEmployeeRow--blockEnd" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
   const safeWeekDays = Array.isArray(weekDays) ? [...weekDays] : [];
 
@@ -144,56 +182,57 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
         .map((day, dayIndex) => {
           const isoDate = day?.iso || "";
           const variant = employeeOffset * 7 + index * 3 + dayIndex;
+          const dayCellClassName = getMepDayCellClasses(dayIndex, day);
 
           if (day?.isOutsideMonth) {
-            return '<td class="mepTplDayCell mepTplDayCell--outside"></td>';
+            return `<td class="${dayCellClassName}"></td>`;
           }
 
           const entry = employee && isoDate ? getEmployeeDayEntry(employee.id, isoDate) : null;
 
-          if (!entry) return '<td class="mepTplDayCell"></td>';
+          if (!entry) return `<td class="${dayCellClassName}"></td>`;
 
           if (rowType.key === "start") {
-            return `<td class="mepTplDayCell">${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}">${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "pause") {
-            return `<td class="mepTplDayCell">${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}">${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {
-            return `<td class="mepTplDayCell">${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}">${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "sum") {
-            return `<td class="mepTplDayCell">${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}">${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
           }
 
-          return '<td class="mepTplDayCell"></td>';
+          return `<td class="${dayCellClassName}"></td>`;
         })
         .join("");
 
       const baseColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplEmployee">${renderMepEmployeeName(employee?.name || "", employeeOffset)}</td>
-            <td rowspan="4">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
-            <td rowspan="4">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
+            <td rowspan="4" class="mepTplEmployee mepTplColEmployee">${renderMepEmployeeName(employee?.name || "", employeeOffset)}</td>
+            <td rowspan="4" class="mepTplColRole">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
+            <td rowspan="4" class="mepTplColTarget">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
           `
           : "";
 
       const summaryColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, safeWeekDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
-            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForMonth(employee, state.activeMonth)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek mepTplSummaryCell mepTplSummaryCellWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, safeWeekDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth mepTplSummaryCell mepTplSummaryCellMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForMonth(employee, state.activeMonth)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
           `
           : "";
 
       return `
-        <tr>
+        <tr class="${getMepEmployeeRowClasses(rowType.key)}">
           ${baseColumns}
-          <td class="mepTplMetric">${rowType.label}</td>
+          <td class="mepTplMetric mepTplColMetric">${rowType.label}</td>
           ${dayCells}
           ${summaryColumns}
         </tr>
