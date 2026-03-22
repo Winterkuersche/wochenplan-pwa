@@ -2392,12 +2392,13 @@ body.dark .mepTable th {
 
 .mepTplSheetInner {
   --mep-footer-total-height: 14.4mm;
-  --mep-footer-margin-top: 1.2mm;
+  --mep-footer-zone-height: 16.2mm;
   --mep-footer-row-1: 5.9mm;
   --mep-footer-row-2: 6.7mm;
   --mep-footer-row-gap: 0.6mm;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) var(--mep-footer-zone-height);
+  align-content: start;
   width: 297mm;
   height: 210mm;
   padding: 4mm 4.5mm 3.2mm;
@@ -2500,10 +2501,14 @@ body.dark .mepTable th {
 }
 
 .mepTplWrap {
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
+  padding-bottom: 1.4mm;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -2718,7 +2723,7 @@ body.dark .mepTable th {
   --mep-footer-col-presence-gap: 83mm;
   --mep-footer-col-stand: 21mm;
   display: grid;
-  flex: 0 0 var(--mep-footer-total-height);
+  align-self: end;
   width: 288mm;
   min-width: 288mm;
   max-width: 288mm;
@@ -2732,10 +2737,10 @@ body.dark .mepTable th {
   align-items: start;
   column-gap: 0;
   row-gap: var(--mep-footer-row-gap);
-  height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
-  min-height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
-  max-height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
-  margin-top: var(--mep-footer-margin-top);
+  height: var(--mep-footer-total-height);
+  min-height: var(--mep-footer-total-height);
+  max-height: var(--mep-footer-total-height);
+  margin-top: 0;
   padding-top: 0;
   font-size: 1.72mm;
   line-height: 1.05;
@@ -3066,7 +3071,7 @@ body.dark .mepTable th {
     width: 297mm;
     height: 210mm;
     --mep-footer-total-height: 13.8mm;
-    --mep-footer-margin-top: 1mm;
+    --mep-footer-zone-height: 15.4mm;
     --mep-footer-row-1: 5.7mm;
     --mep-footer-row-2: 6.55mm;
     --mep-footer-row-gap: 0.55mm;
