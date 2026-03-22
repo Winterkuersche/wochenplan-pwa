@@ -2539,20 +2539,48 @@ body.dark .mepTable th {
 .mepTplDayCell {
   position: relative;
   background: #fff;
+  overflow: visible;
 }
 
 .mepTplDayCell--outside {
-  background:
-    linear-gradient(135deg, transparent 48%, rgba(0, 0, 0, 0.2) 49%, rgba(0, 0, 0, 0.2) 51%, transparent 52%),
-    #f1f1f1;
+  background: #fff;
 }
 
 .mepTplHeaderDate--outside {
+  opacity: 1;
+  color: inherit;
+  background: transparent;
+}
+
+.mepTplDayHeader--outsideMonth {
+  background: inherit;
+}
+
+.mepTplDayHeader--outsideMonth .mepTplHeaderDate {
+  display: inline-block;
+  min-height: 1em;
+}
+
+.mepTplDayCell--outsideRunStart {
   position: relative;
-  opacity: 0.52;
-  color: #606060;
+  isolation: isolate;
+}
+
+.mepTplDayCell--outsideRunStart::after {
+  content: "";
+  position: absolute;
+  top: -0.8px;
+  left: -0.8px;
+  width: calc(var(--mep-outside-run-columns, 1) * 100% + ((var(--mep-outside-run-columns, 1) - 1) * 0.8px));
+  height: calc(400% + 2.4px);
+  pointer-events: none;
+  z-index: 3;
   background:
-    linear-gradient(135deg, transparent 46%, rgba(0, 0, 0, 0.16) 47.5%, rgba(0, 0, 0, 0.16) 52.5%, transparent 54%);
+    linear-gradient(135deg,
+      transparent calc(50% - 0.7px),
+      rgba(0, 0, 0, 0.45) calc(50% - 0.7px),
+      rgba(0, 0, 0, 0.45) calc(50% + 0.7px),
+      transparent calc(50% + 0.7px));
 }
 
 .mepTplSummaryHeader {
