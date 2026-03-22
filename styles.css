@@ -2702,51 +2702,73 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
+  --mep-footer-col-pause: 87mm;
+  --mep-footer-col-absence: 65mm;
+  --mep-footer-col-vacation: 32mm;
+  --mep-footer-col-presence-gap: 83mm;
+  --mep-footer-col-stand: 21mm;
   display: grid;
   width: 288mm;
   min-width: 288mm;
   max-width: 288mm;
-  grid-template-columns: 82mm 72mm 63mm 50mm 21mm;
-  grid-template-rows: 5.8mm 8.8mm;
-  grid-template-areas:
-    "pause pause absence vacation stand"
-    "presence presence absence vacation stand";
+  grid-template-columns:
+    var(--mep-footer-col-pause)
+    var(--mep-footer-col-absence)
+    var(--mep-footer-col-vacation)
+    var(--mep-footer-col-presence-gap)
+    var(--mep-footer-col-stand);
+  grid-template-rows: 6.2mm 6.9mm;
   align-items: start;
   column-gap: 0;
-  row-gap: 0.85mm;
+  row-gap: 0.8mm;
   margin-top: 1.8mm;
   padding-top: 0;
   font-size: 1.72mm;
   line-height: 1.05;
-  white-space: normal;
 }
 
 .mepTplFooterCell {
   min-width: 0;
   margin: 0;
-  padding-right: 2.6mm;
+  padding-right: 1.8mm;
 }
 
 .mepTplFooterCell--pause {
-  grid-area: pause;
-  padding-right: 3.6mm;
-}
-
-.mepTplFooterCell--presence {
-  grid-area: presence;
-  padding-right: 4.2mm;
+  grid-column: 1;
+  grid-row: 1;
+  width: calc(var(--mep-footer-col-pause) - 1.2mm);
+  min-width: calc(var(--mep-footer-col-pause) - 1.2mm);
+  max-width: calc(var(--mep-footer-col-pause) - 1.2mm);
 }
 
 .mepTplFooterCell--absence {
-  grid-area: absence;
-  grid-row: 1 / span 2;
-  padding-right: 2.4mm;
+  grid-column: 2;
+  grid-row: 1;
+  width: calc(var(--mep-footer-col-absence) - 1mm);
+  min-width: calc(var(--mep-footer-col-absence) - 1mm);
+  max-width: calc(var(--mep-footer-col-absence) - 1mm);
 }
 
 .mepTplFooterCell--vacation {
-  grid-area: vacation;
-  grid-row: 1 / span 2;
-  padding-right: 1.5mm;
+  grid-column: 3;
+  grid-row: 1;
+  width: calc(var(--mep-footer-col-vacation) - 0.8mm);
+  min-width: calc(var(--mep-footer-col-vacation) - 0.8mm);
+  max-width: calc(var(--mep-footer-col-vacation) - 0.8mm);
+  padding-right: 0.8mm;
+}
+
+.mepTplFooterCell--presence {
+  display: grid;
+  grid-template-columns: 23mm 1fr;
+  align-items: start;
+  column-gap: 1.6mm;
+  grid-column: 1 / 5;
+  grid-row: 2;
+  width: calc(var(--mep-footer-col-pause) + var(--mep-footer-col-absence) + var(--mep-footer-col-vacation) + var(--mep-footer-col-presence-gap) - 1.2mm);
+  min-width: calc(var(--mep-footer-col-pause) + var(--mep-footer-col-absence) + var(--mep-footer-col-vacation) + var(--mep-footer-col-presence-gap) - 1.2mm);
+  max-width: calc(var(--mep-footer-col-pause) + var(--mep-footer-col-absence) + var(--mep-footer-col-vacation) + var(--mep-footer-col-presence-gap) - 1.2mm);
+  padding-right: 1.2mm;
 }
 
 .mepTplFooterLabel {
@@ -2764,14 +2786,22 @@ body.dark .mepTable th {
   white-space: nowrap;
 }
 
-.mepTplAnwesenheit .mepTplFooterValue:last-child {
-  white-space: normal;
+.mepTplAnwesenheit .mepTplFooterLabel {
+  margin: 0;
+}
+
+.mepTplAnwesenheit .mepTplFooterValue {
+  white-space: nowrap;
 }
 
 .mepTplStand {
-  grid-area: stand;
+  grid-column: 5;
+  grid-row: 2;
   align-self: end;
   justify-self: end;
+  width: calc(var(--mep-footer-col-stand) - 0.2mm);
+  min-width: calc(var(--mep-footer-col-stand) - 0.2mm);
+  max-width: calc(var(--mep-footer-col-stand) - 0.2mm);
   margin: 0;
   padding-bottom: 0.1mm;
   font-size: 1.45mm;
@@ -3068,8 +3098,8 @@ body.dark .mepTable th {
 
   .mepTplFooter {
     margin-top: 1.6mm;
-    grid-template-rows: 5.6mm 8.4mm;
-    row-gap: 0.75mm;
+    grid-template-rows: 5.9mm 6.5mm;
+    row-gap: 0.7mm;
     font-size: 1.62mm;
   }
 
