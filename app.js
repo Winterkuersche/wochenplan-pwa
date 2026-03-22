@@ -2217,6 +2217,10 @@ window.addEventListener("load", () => {
     bindMonthNavigation();
   }
 
+  if (typeof bindMepMonthNavigation === "function") {
+    bindMepMonthNavigation();
+  }
+
   syncVacationScheduleFromAbsences();
   refreshEmployeeVacationCounters();
   syncMonthPlanToState();
