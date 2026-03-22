@@ -2703,18 +2703,19 @@ body.dark .mepTable th {
 
 .mepTplFooter {
   display: grid;
-  grid-template-columns: minmax(0, 78mm) minmax(0, 1fr) auto;
+  width: 100%;
+  grid-template-columns: minmax(0, 75mm) minmax(0, 1fr) max-content;
   grid-template-areas:
     "pause absence stand"
     "presence presence stand";
   align-items: start;
-  column-gap: 5mm;
-  row-gap: 1.6mm;
-  margin-top: 2.6mm;
-  padding-top: 1.6mm;
+  column-gap: 3.4mm;
+  row-gap: 1.1mm;
+  margin-top: 1.8mm;
+  padding-top: 0;
   font-size: 0.77rem;
   line-height: 1.18;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .mepTplFooterSegment {
@@ -2729,10 +2730,12 @@ body.dark .mepTable th {
 
 .mepTplFooterSegment--pause {
   grid-area: pause;
+  white-space: nowrap;
 }
 
 .mepTplFooterSegment--absence {
   grid-area: absence;
+  white-space: nowrap;
 }
 
 .mepTplFooter .mepTplAnwesenheit {
@@ -2946,7 +2949,7 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    grid-template-columns: minmax(0, 72mm) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 75mm) minmax(0, 1fr) max-content;
   }
 }
 
@@ -3041,10 +3044,10 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    margin-top: 2.4mm;
-    padding-top: 1.4mm;
+    margin-top: 1.6mm;
+    padding-top: 0;
     font-size: 0.68rem;
-    column-gap: 4mm;
-    row-gap: 1.2mm;
+    column-gap: 3.1mm;
+    row-gap: 0.9mm;
   }
 }
