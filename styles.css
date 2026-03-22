@@ -2409,11 +2409,11 @@ body.dark .mepTable th {
   --mep-header-gap-after: 2.3mm;
   --mep-meta-height: 5.6mm;
   --mep-meta-gap-after: 2.1mm;
-  --mep-table-zone-height: 164.3mm;
-  --mep-table-gap-before-footer: 0.95mm;
-  --mep-footer-zone-height: 20.35mm;
-  --mep-footer-height: 19.7mm;
-  --mep-footer-offset-top: 0.2mm;
+  --mep-table-zone-height: 162.1mm;
+  --mep-table-gap-before-footer: 1.2mm;
+  --mep-footer-zone-height: 22.8mm;
+  --mep-footer-height: 21.7mm;
+  --mep-footer-offset-top: 0.35mm;
   --mep-table-font-size: 0.64rem;
   --mep-table-cell-padding-y: 0.42mm;
   --mep-table-cell-padding-x: 0.48mm;
@@ -2426,35 +2426,38 @@ body.dark .mepTable th {
   --mep-col-day-width: 24mm;
   --mep-col-summary-width: 12mm;
   --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
-  --mep-footer-font-size: 1.9mm;
-  --mep-footer-label-size: 2.08mm;
-  --mep-footer-line-height: 1.44;
+  --mep-footer-font-size: 2.02mm;
+  --mep-footer-label-size: 2.18mm;
+  --mep-footer-line-height: 1.52;
   --mep-footer-label-weight: 600;
   --mep-footer-label-gap: 1mm;
-  --mep-footer-label-inline-gap: 2.25mm;
-  --mep-footer-block-gap: 1.35mm;
-  --mep-footer-bottom-gap: 1.15mm;
-  --mep-footer-top-height: 10.2mm;
-  --mep-footer-bottom-height: 8.35mm;
-  --mep-footer-top-pause-width: 79mm;
-  --mep-footer-top-absence-width: 126mm;
-  --mep-footer-top-vacation-width: 23mm;
-  --mep-footer-top-gap-pause-absence: 8.5mm;
-  --mep-footer-top-gap-absence-vacation: 7.2mm;
-  --mep-footer-presence-width: 246mm;
-  --mep-footer-presence-label-width: 31.5mm;
-  --mep-footer-presence-column-gap: 2.9mm;
-  --mep-footer-presence-text-max-width: 210mm;
-  --mep-footer-pause-continuation-indent: 35.4mm;
+  --mep-footer-label-inline-gap: 2.5mm;
+  --mep-footer-block-gap: 1.55mm;
+  --mep-footer-row-gap: 1.35mm;
+  --mep-footer-top-height: 11.9mm;
+  --mep-footer-bottom-height: 8.45mm;
+  --mep-footer-pause-left: 0mm;
+  --mep-footer-pause-width: 83mm;
+  --mep-footer-absence-left: 109mm;
+  --mep-footer-absence-width: 135.5mm;
+  --mep-footer-vacation-left: 261mm;
+  --mep-footer-vacation-width: 18mm;
+  --mep-footer-presence-left: 0mm;
+  --mep-footer-presence-width: 252mm;
+  --mep-footer-presence-label-width: 33mm;
+  --mep-footer-presence-column-gap: 3.1mm;
+  --mep-footer-presence-text-max-width: 216mm;
+  --mep-footer-pause-continuation-indent: 39.2mm;
   --mep-footer-absence-grid-left: 0mm;
-  --mep-footer-absence-grid-top: 0.95mm;
-  --mep-footer-absence-col-1: 31mm;
-  --mep-footer-absence-col-2: 86mm;
-  --mep-footer-absence-row-gap: 1.4mm;
-  --mep-footer-absence-col-gap: 8.2mm;
+  --mep-footer-absence-grid-top: 1.05mm;
+  --mep-footer-absence-col-1: 21.5mm;
+  --mep-footer-absence-col-2: 102mm;
+  --mep-footer-absence-row-gap: 1.55mm;
+  --mep-footer-absence-col-gap: 10.4mm;
   --mep-footer-stand-width: 30.5mm;
-  --mep-footer-stand-font-size: 1.75mm;
-  --mep-footer-stand-offset-bottom: 0.15mm;
+  --mep-footer-stand-font-size: 1.85mm;
+  --mep-footer-stand-right: 0mm;
+  --mep-footer-stand-bottom: 0mm;
   display: grid;
   grid-template-rows:
     var(--mep-header-height)
@@ -2806,41 +2809,35 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
+  position: relative;
   align-self: end;
   width: var(--mep-content-width);
   height: var(--mep-footer-zone-height);
   min-height: var(--mep-footer-zone-height);
-  padding-top: var(--mep-footer-offset-top);
   font-size: var(--mep-footer-font-size);
   line-height: var(--mep-footer-line-height);
   overflow: hidden;
 }
 
 .mepTplFooterGrid {
-  display: grid;
-  grid-template-rows: var(--mep-footer-top-height) var(--mep-footer-bottom-height);
-  row-gap: var(--mep-footer-bottom-gap);
+  position: absolute;
+  top: var(--mep-footer-offset-top);
+  left: 0;
+  right: 0;
   width: 100%;
   height: var(--mep-footer-height);
   min-height: var(--mep-footer-height);
 }
 
 .mepTplFooterTopRow {
-  display: grid;
-  grid-template-columns:
-    var(--mep-footer-top-pause-width)
-    var(--mep-footer-top-gap-pause-absence)
-    var(--mep-footer-top-absence-width)
-    var(--mep-footer-top-gap-absence-vacation)
-    var(--mep-footer-top-vacation-width);
-  align-items: start;
+  position: relative;
+  height: var(--mep-footer-top-height);
 }
 
 .mepTplFooterBottomRow {
-  display: grid;
-  grid-template-columns: var(--mep-footer-presence-width) 1fr;
-  align-items: end;
-  min-height: var(--mep-footer-bottom-height);
+  position: relative;
+  height: var(--mep-footer-bottom-height);
+  margin-top: var(--mep-footer-row-gap);
 }
 
 .mepTplFooterBlock {
@@ -2849,19 +2846,30 @@ body.dark .mepTable th {
 }
 
 .mepTplFooterBlock--pause {
-  grid-column: 1;
+  position: absolute;
+  top: 0;
+  left: var(--mep-footer-pause-left);
+  width: var(--mep-footer-pause-width);
 }
 
 .mepTplFooterBlock--absence {
-  grid-column: 3;
+  position: absolute;
+  top: 0;
+  left: var(--mep-footer-absence-left);
+  width: var(--mep-footer-absence-width);
 }
 
 .mepTplFooterBlock--vacation {
-  grid-column: 5;
+  position: absolute;
+  top: 0;
+  left: var(--mep-footer-vacation-left);
+  width: var(--mep-footer-vacation-width);
 }
 
 .mepTplFooterBlock--presence {
-  grid-column: 1;
+  position: absolute;
+  bottom: 0;
+  left: var(--mep-footer-presence-left);
   width: var(--mep-footer-presence-width);
 }
 
@@ -2917,14 +2925,13 @@ body.dark .mepTable th {
 }
 
 .mepTplStand {
-  grid-column: 2;
-  justify-self: end;
-  align-self: end;
+  position: absolute;
+  right: var(--mep-footer-stand-right);
+  bottom: var(--mep-footer-stand-bottom);
   width: var(--mep-footer-stand-width);
   margin: 0;
   font-size: var(--mep-footer-stand-font-size);
   line-height: 1;
-  transform: translateY(calc(-1 * var(--mep-footer-stand-offset-bottom)));
   text-align: right;
   white-space: nowrap;
 }
@@ -3171,20 +3178,21 @@ body.dark .mepTable th {
     width: 297mm;
     height: 210mm;
     --mep-sheet-padding-bottom: 3.2mm;
-    --mep-table-zone-height: 165.4mm;
-    --mep-table-gap-before-footer: 1.45mm;
+    --mep-table-zone-height: 162.35mm;
+    --mep-table-gap-before-footer: 1.3mm;
     --mep-table-font-size: 8.15pt;
     --mep-table-row-height: 3.82mm;
     --mep-table-cell-padding-y: 0.22mm;
     --mep-table-cell-padding-x: 0.38mm;
     --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.42px);
-    --mep-footer-zone-height: 18.6mm;
-    --mep-footer-height: 17.3mm;
-    --mep-footer-font-size: 1.66mm;
-    --mep-footer-label-size: 1.86mm;
-    --mep-footer-block-gap: 0.96mm;
-    --mep-footer-absence-row-gap: 1.1mm;
-    --mep-footer-offset-top: 0.85mm;
+    --mep-footer-zone-height: 22.15mm;
+    --mep-footer-height: 21.05mm;
+    --mep-footer-font-size: 1.92mm;
+    --mep-footer-label-size: 2.08mm;
+    --mep-footer-block-gap: 1.3mm;
+    --mep-footer-row-gap: 1.2mm;
+    --mep-footer-absence-row-gap: 1.35mm;
+    --mep-footer-offset-top: 0.4mm;
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
