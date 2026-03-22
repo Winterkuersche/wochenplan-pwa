@@ -2,7 +2,7 @@ const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
 const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
-const MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX = 6;
+const MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX = 0;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -447,12 +447,11 @@ function fitMepTemplateSheets() {
 
     const availableWrapHeight = getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl);
     const tableHeight = wrapInnerEl.scrollHeight;
-    const heightScale =
-      availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
-    const tableScale =
-      (heightScale > 0 ? Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, heightScale) : 1) || 1;
+    const fitsReservedTableZone = availableWrapHeight <= 0 || tableHeight <= availableWrapHeight + 1;
+    const tableScale = 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
+    sheetEl.classList.toggle("mepTplSheet--tableOverflow", !fitsReservedTableZone);
   });
 
   syncMepOutsideRunMarkers(pagesEl);
