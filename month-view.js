@@ -180,13 +180,20 @@ function bindMonthCellActions() {
   });
 }
 
-function changeMonth(offset) {
-  const activeMonth = state.activeMonth || toIsoDate(new Date()).slice(0, 7);
+function getShiftedYearMonth(yearMonth, offset) {
+  const activeMonth = yearMonth || state.activeMonth || toIsoDate(new Date()).slice(0, 7);
   const [year, month] = activeMonth.split("-").map(Number);
   const nextDate = new Date(year, month - 1 + offset, 1);
 
-  state.activeMonth = `${nextDate.getFullYear()}-${pad2(nextDate.getMonth() + 1)}`;
+  return `${nextDate.getFullYear()}-${pad2(nextDate.getMonth() + 1)}`;
+}
 
+function shiftActiveMonth(offset) {
+  state.activeMonth = getShiftedYearMonth(state.activeMonth, offset);
+
+  // state.weekFrom bleibt bewusst unverändert: Für die aktuelle MEP-Monatsansicht
+  // ist state.activeMonth die maßgebliche Quelle, und getActiveWeekDays fällt bei
+  // einem Monatssprung ohnehin auf die erste sichtbare Woche des neuen Monats zurück.
   syncMonthPlanToState();
   saveAppStateDebounced();
   renderAllViews();
@@ -194,11 +201,11 @@ function changeMonth(offset) {
 
 function bindMonthNavigation() {
   document.getElementById("monthPrev")?.addEventListener("click", () => {
-    changeMonth(-1);
+    shiftActiveMonth(-1);
   });
 
   document.getElementById("monthNext")?.addEventListener("click", () => {
-    changeMonth(1);
+    shiftActiveMonth(1);
   });
 }
 

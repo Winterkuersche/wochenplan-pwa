@@ -687,6 +687,28 @@ select {
   background: #fff;
 }
 
+.mepMonthHeader {
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mepMonthHeaderText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  flex: 1;
+}
+
+.mepMonthHeaderText .small {
+  color: var(--subtext);
+}
+
+.mepMonthHeader button {
+  flex: 0 0 auto;
+}
+
 .monthHeader button:hover {
   background: #eee;
 }

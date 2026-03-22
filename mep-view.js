@@ -21,6 +21,36 @@ function formatMepMonthYear(isoDate) {
   return `${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
+function formatMepVisibleMonthTitle(yearMonth = state.activeMonth) {
+  const normalizedYearMonth = yearMonth || state.activeMonth || toIsoDate(new Date()).slice(0, 7);
+  const [year, month] = normalizedYearMonth.split("-").map(Number);
+  const date = new Date(year, (month || 1) - 1, 1);
+
+  if (Number.isNaN(date.getTime())) return "Monatsansicht";
+
+  return date.toLocaleDateString("de-DE", {
+    month: "long",
+    year: "numeric"
+  });
+}
+
+function updateMepMonthHeaderTitle(yearMonth = state.activeMonth) {
+  const titleEl = document.getElementById("mepMonthTitle");
+  if (!titleEl) return;
+
+  titleEl.textContent = `Sichtbarer Monat: ${formatMepVisibleMonthTitle(yearMonth)}`;
+}
+
+function bindMepMonthNavigation() {
+  document.getElementById("mepMonthPrev")?.addEventListener("click", () => {
+    shiftActiveMonth(-1);
+  });
+
+  document.getElementById("mepMonthNext")?.addEventListener("click", () => {
+    shiftActiveMonth(1);
+  });
+}
+
 function formatMepFullDate(isoDate) {
   if (!isoDate) return "____________";
   const date = new Date(isoDate);
@@ -279,6 +309,8 @@ function renderMepTemplateView(options = {}) {
   const pagesEl = document.getElementById("mepTemplatePages");
   const sheetTemplate = document.getElementById("mepTemplateSheetTemplate");
   if (!pagesEl || !sheetTemplate) return;
+
+  updateMepMonthHeaderTitle(state.activeMonth);
 
   const sheetModels =
     scope === "week" ? getMepTemplateSheetModelsForWeek() : getMepTemplateSheetModelsForMonth();
