@@ -151,6 +151,38 @@ function getMepDayCellClasses(dayIndex, day) {
     .join(" ");
 }
 
+function getOutsideMonthRuns(weekDays) {
+  const runs = [];
+  const safeWeekDays = Array.isArray(weekDays) ? weekDays : [];
+  let runStartIndex = -1;
+
+  safeWeekDays.forEach((day, index) => {
+    const isOutsideMonth = Boolean(day?.isOutsideMonth);
+
+    if (isOutsideMonth && runStartIndex === -1) {
+      runStartIndex = index;
+      return;
+    }
+
+    if (!isOutsideMonth && runStartIndex !== -1) {
+      runs.push({
+        startIndex: runStartIndex,
+        length: index - runStartIndex
+      });
+      runStartIndex = -1;
+    }
+  });
+
+  if (runStartIndex !== -1) {
+    runs.push({
+      startIndex: runStartIndex,
+      length: safeWeekDays.length - runStartIndex
+    });
+  }
+
+  return runs;
+}
+
 function getMepEmployeeRowClasses(rowTypeKey) {
   return [
     "mepTplEmployeeRow",
@@ -175,6 +207,10 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
     { key: "end", label: "Ende" },
     { key: "sum", label: "Summe / Tag" }
   ];
+  const outsideMonthRuns = getOutsideMonthRuns(safeWeekDays);
+  const outsideRunMap = new Map(
+    outsideMonthRuns.map((run) => [run.startIndex, run])
+  );
 
   return rowTypes
     .map((rowType, index) => {
@@ -182,33 +218,44 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
         .map((day, dayIndex) => {
           const isoDate = day?.iso || "";
           const variant = employeeOffset * 7 + index * 3 + dayIndex;
-          const dayCellClassName = getMepDayCellClasses(dayIndex, day);
+          const dayCellClassNames = [getMepDayCellClasses(dayIndex, day)];
+          const isOutsideRunStart = index === 0 && outsideRunMap.has(dayIndex);
+
+          if (isOutsideRunStart) {
+            dayCellClassNames.push("mepTplDayCell--outsideRunStart");
+          }
+
+          const outsideRun = isOutsideRunStart ? outsideRunMap.get(dayIndex) : null;
+          const outsideRunStyle = outsideRun
+            ? ` style="--mep-outside-run-columns:${outsideRun.length};"`
+            : "";
+          const dayCellClassName = dayCellClassNames.filter(Boolean).join(" ");
 
           if (day?.isOutsideMonth) {
-            return `<td class="${dayCellClassName}"></td>`;
+            return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
           }
 
           const entry = employee && isoDate ? getEmployeeDayEntry(employee.id, isoDate) : null;
 
-          if (!entry) return `<td class="${dayCellClassName}"></td>`;
+          if (!entry) return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
 
           if (rowType.key === "start") {
-            return `<td class="${dayCellClassName}">${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "pause") {
-            return `<td class="${dayCellClassName}">${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {
-            return `<td class="${dayCellClassName}">${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "sum") {
-            return `<td class="${dayCellClassName}">${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
+            return `<td class="${dayCellClassName}"${outsideRunStyle}>${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
           }
 
-          return `<td class="${dayCellClassName}"></td>`;
+          return `<td class="${dayCellClassName}"${outsideRunStyle}></td>`;
         })
         .join("");
 
@@ -378,12 +425,13 @@ function renderMepTemplateView(options = {}) {
 
       const day = weekDays[dayIndex] || null;
       const isoDate = day?.iso || "";
-      dateEl.textContent = formatMepHeaderDate(isoDate);
+      const headerCell = dateEl.closest("th");
+      dateEl.textContent = day?.isOutsideMonth ? "" : formatMepHeaderDate(isoDate);
       dateEl.className = [
         "mepTplHeaderDate",
-        day?.isOutsideMonth ? "mepTplHeaderDate--outside" : "",
         getMepHandVariantClass(sheetIndex * 7 + dayIndex)
       ].filter(Boolean).join(" ");
+      headerCell?.classList.toggle("mepTplDayHeader--outsideMonth", Boolean(day?.isOutsideMonth));
     }
 
     let rowsHtml = "";
