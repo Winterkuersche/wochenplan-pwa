@@ -26,7 +26,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <div>
 <h1>Wochenplan</h1>
-<div class="small">Mo-Sa · Stammdaten + 5 Ansichten</div>
+<div class="small">Mo-Sa · Stammdaten + 4 Ansichten</div>
 </div>
 
 <div class="viewSwitch" id="viewSwitch">
@@ -43,9 +43,6 @@ Wochenplan
 Monat
 </button>
 
-<button id="btnViewForm" class="viewBtn">
-Original
-</button>
 
 <button id="btnViewMep" class="viewBtn">
 MEP-Tabelle
@@ -281,120 +278,7 @@ L1E-L4E ohne Abrechnung
 
 
 
-<section id="formView" class="hidden">
 
-<div class="printSheet">
-
-<h2>Mitarbeiter-Einsatz-Planung (MEP)</h2>
-
-
-<div class="mepMeta">
-
-<div>
-<strong>Filiale:</strong>
-<span id="mepBranch">__________</span>
-</div>
-
-<div>
-<strong>Monat/Jahr</strong>
-<span id="mepMonthYear">__________</span>
-</div>
-
-<div>
-<strong>Woche vom</strong>
-<span id="mepWeekFrom">__________</span>
-</div>
-
-<div>
-<strong>bis</strong>
-<span id="mepWeekTo">__________</span>
-</div>
-
-</div>
-
-
-
-<div class="mepTableOuter">
-
-<table class="mepTable">
-
-<thead>
-
-<tr>
-
-<th class="mepNameCol" rowspan="2">
-Name / Vorname
-</th>
-
-<th class="mepFuncCol" rowspan="2">
-Funktion
-</th>
-
-<th class="mepPlanCol" rowspan="2">
-Plan / Woche
-</th>
-
-
-<th class="mepTypeCol" rowspan="2">
-Wochentag<br>
-Datum<br>
-Warentag
-</th>
-
-
-<th class="mepDayCol">Montag</th>
-<th class="mepDayCol">Dienstag</th>
-<th class="mepDayCol">Mittwoch</th>
-<th class="mepDayCol">Donnerstag</th>
-<th class="mepDayCol">Freitag</th>
-<th class="mepDayCol">Samstag</th>
-<th class="mepDayCol">Sonntag</th>
-
-
-<th class="mepWeekCol" rowspan="2">
-Summe / Woche
-</th>
-
-<th class="mepMonthCol" rowspan="2">
-Summe / Monat
-</th>
-
-</tr>
-
-
-<tr>
-
-<th class="mepSubHead" id="mepDateMo"></th>
-<th class="mepSubHead" id="mepDateDi"></th>
-<th class="mepSubHead" id="mepDateMi"></th>
-<th class="mepSubHead" id="mepDateDo"></th>
-<th class="mepSubHead" id="mepDateFr"></th>
-<th class="mepSubHead" id="mepDateSa"></th>
-<th class="mepSubHead" id="mepDateSo"></th>
-
-</tr>
-
-</thead>
-
-<tbody id="mepTableBody"></tbody>
-
-</table>
-
-</div>
-
-
-
-<div class="mepFooterHint">
-
-Pausenzeiten:  
-bis 6 Stunden keine Pause,  
-über 6 Stunden 60 Minuten (+10 Minuten bei Abrechnung).
-
-</div>
-
-</div>
-
-</section>
 
 <section id="mepTemplateView" class="overview hidden no-print">
   <div class="sectionhead">
@@ -617,7 +501,6 @@ bis 6 Stunden keine Pause,
 <script src="./month-engine.js"></script>
 <script src="./day-view.js"></script>
 <script src="./week-view.js"></script>
-<script src="./form-view.js"></script>
 <script src="./mep-view.js"></script>
 <script src="./month-view.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>

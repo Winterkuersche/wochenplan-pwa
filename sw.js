@@ -11,7 +11,6 @@ const APP_FILES = [
   "./month-engine.js",
   "./day-view.js",
   "./week-view.js",
-  "./form-view.js",
   "./mep-view.js",
   "./manifest.webmanifest"
 ];

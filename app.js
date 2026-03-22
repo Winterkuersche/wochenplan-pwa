@@ -60,9 +60,23 @@ let saveStatusMessage = "";
 let saveStatusHasError = false;
 let responsiveViewRefreshTimerId = null;
 
+function sanitizeCurrentView(view) {
+  if (view === "form") return "mep";
+  if (["day", "week", "month", "mep"].includes(view)) return view;
+  return "week";
+}
+
+function sanitizeUiState(rawUi) {
+  const mergedUi = { ...defaultUiState(), ...(rawUi || {}) };
+  return {
+    ...mergedUi,
+    currentView: sanitizeCurrentView(mergedUi.currentView)
+  };
+}
+
 function isResponsiveEmbeddedViewActive() {
   const currentView = uiState?.currentView || "week";
-  return currentView === "form" || currentView === "mep";
+  return currentView === "mep";
 }
 
 function updateAppViewportHeightVar() {
@@ -92,17 +106,11 @@ function updateEmbeddedViewMaxHeightVar(selector, cssVar) {
 
 function updateResponsiveViewportMetrics() {
   updateAppViewportHeightVar();
-  updateEmbeddedViewMaxHeightVar("#formView", "--form-view-max-height");
   updateEmbeddedViewMaxHeightVar("#mepTemplateView", "--mep-template-view-max-height");
 }
 
 function refreshCurrentResponsiveView() {
   const currentView = uiState?.currentView || "week";
-
-  if (currentView === "form" && typeof renderFormView === "function") {
-    renderFormView();
-    return;
-  }
 
   if (currentView === "mep") {
     if (typeof fitMepTemplateSheets === "function") {
@@ -727,13 +735,11 @@ const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const monthViewEl = document.getElementById("monthView");
-const formViewEl = document.getElementById("formView");
 const mepTemplateViewEl = document.getElementById("mepTemplateView");
 
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewMonthEl = document.getElementById("btnViewMonth");
-const btnViewFormEl = document.getElementById("btnViewForm");
 const btnViewMepEl = document.getElementById("btnViewMep");
 const btnPrevWeekEl = document.getElementById("btnPrevWeek");
 const btnCurrentWeekEl = document.getElementById("btnCurrentWeek");
@@ -858,7 +864,13 @@ function defaultUiState() {
 
 function loadUiState() {
   const rawUi = loadJson(UI_KEY, defaultUiState());
-  return { ...defaultUiState(), ...(rawUi || {}) };
+  const sanitizedUi = sanitizeUiState(rawUi);
+
+  if (JSON.stringify(rawUi || {}) !== JSON.stringify(sanitizedUi)) {
+    saveJson(UI_KEY, sanitizedUi);
+  }
+
+  return sanitizedUi;
 }
 
 function saveUiState() {
@@ -1684,7 +1696,7 @@ function importBackupFromObject(backupData) {
 
   const masterSaved = saveJson(MASTER_KEY, storage[MASTER_KEY]);
   const planSaved = saveJson(PLAN_KEY, storage[PLAN_KEY]);
-  const uiSaved = saveJson(UI_KEY, storage[UI_KEY]);
+  const uiSaved = saveJson(UI_KEY, sanitizeUiState(storage[UI_KEY]));
 
   try {
     if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
@@ -1838,13 +1850,11 @@ function renderView() {
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
   monthViewEl.classList.toggle("hidden", view !== "month");
-  formViewEl.classList.toggle("hidden", view !== "form");
   mepTemplateViewEl.classList.toggle("hidden", view !== "mep");
 
   btnViewDayEl.classList.toggle("active", view === "day");
   btnViewWeekEl.classList.toggle("active", view === "week");
   btnViewMonthEl.classList.toggle("active", view === "month");
-  btnViewFormEl.classList.toggle("active", view === "form");
   btnViewMepEl.classList.toggle("active", view === "mep");
 
   renderTopbarVisibility();
@@ -1980,7 +1990,6 @@ function renderAllViews() {
   if (typeof renderDayView === "function") renderDayView();
   if (typeof renderWeekView === "function") renderWeekView();
   if (typeof renderMonthView === "function") renderMonthView();
-  if (typeof renderFormView === "function") renderFormView();
   if (typeof renderMepTemplateView === "function") renderMepTemplateView();
   requestActiveResponsiveViewRefresh();
 }
@@ -2066,15 +2075,6 @@ if (btnViewMonthEl) {
 if (btnViewWeekEl) {
   btnViewWeekEl.addEventListener("click", () => {
     uiState.currentView = "week";
-    saveAppStateDebounced();
-    renderView();
-    renderAllViews();
-  });
-}
-
-if (btnViewFormEl) {
-  btnViewFormEl.addEventListener("click", () => {
-    uiState.currentView = "form";
     saveAppStateDebounced();
     renderView();
     renderAllViews();
