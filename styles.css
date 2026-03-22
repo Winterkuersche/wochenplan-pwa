@@ -2885,8 +2885,10 @@ body.dark .mepTable th {
   font-family: var(--handwrite-font-family);
   font-weight: var(--handwrite-weight);
   line-height: 0.96;
-  letter-spacing: var(--handwrite-letter-spacing);
-  color: var(--handwrite-color);
+  letter-spacing: calc(var(--handwrite-letter-spacing) + var(--mep-hand-letter-spacing, 0em));
+  color: var(--mep-hand-ink, var(--handwrite-color));
+  transform: translate(var(--mep-hand-shift-x, 0px), var(--mep-hand-shift-y, 0px))
+    rotate(var(--mep-hand-rotate, 0deg));
   transform-origin: left center;
   text-rendering: geometricPrecision;
 }
@@ -2901,21 +2903,24 @@ body.dark .mepTable th {
   display: inline-block;
   min-width: 100%;
   font-family: var(--handwrite-font-family);
-  font-size: 1.14em;
+  font-size: calc(1.14em + var(--mep-hand-size-adjust, 0px));
   font-weight: var(--handwrite-weight);
   line-height: 1;
-  letter-spacing: var(--handwrite-letter-spacing);
-  color: var(--handwrite-color);
+  letter-spacing: calc(var(--handwrite-letter-spacing) + var(--mep-hand-letter-spacing, 0em));
+  color: var(--mep-hand-ink, var(--handwrite-color));
   text-align: center;
   text-rendering: geometricPrecision;
+  transform: translate(var(--mep-hand-shift-x, 0px), var(--mep-hand-shift-y, 0px))
+    rotate(var(--mep-hand-rotate, 0deg));
+  transform-origin: center center;
 }
 
 .mepTplHandValue {
-  font-size: 1.18em;
+  font-size: calc(1.18em + var(--mep-hand-size-adjust, 0px));
 }
 
 .mepTplHandName {
-  font-size: 1.24em;
+  font-size: calc(1.24em + var(--mep-hand-size-adjust, 0px));
 }
 
 .mepTplNameStack {
@@ -2931,25 +2936,90 @@ body.dark .mepTable th {
 .mepTplHandNameLine {
   display: block;
   width: 100%;
-  font-size: 1.08em;
+  font-size: calc(1.08em + var(--mep-hand-size-adjust, 0px));
   line-height: 0.92;
   text-align: center;
 }
 
 .mepTplHandMeta {
-  font-size: 1.18em;
+  font-size: calc(1.18em + var(--mep-hand-size-adjust, 0px));
 }
 
 .mepTplHandSummary {
-  font-size: 1.28em;
+  font-size: calc(1.28em + var(--mep-hand-size-adjust, 0px));
 }
 
-.mepTplHandVariant0 { transform: translate(0.02mm, 0.08mm) rotate(-1.15deg); }
-.mepTplHandVariant1 { transform: translate(-0.04mm, 0.14mm) rotate(0.8deg); letter-spacing: 0; }
-.mepTplHandVariant2 { transform: translate(0.03mm, -0.02mm) rotate(-0.45deg); }
-.mepTplHandVariant3 { transform: translate(-0.05mm, 0.11mm) rotate(1.2deg); letter-spacing: 0.012em; }
-.mepTplHandVariant4 { transform: translate(0.01mm, -0.05mm) rotate(-1.35deg); }
-.mepTplHandVariant5 { transform: translate(-0.03mm, 0.05mm) rotate(0.35deg); letter-spacing: 0.002em; }
+.mepTplHandVariant0 {
+  --mep-hand-shift-x: -0.6px;
+  --mep-hand-shift-y: 0.4px;
+  --mep-hand-rotate: -0.85deg;
+  --mep-hand-ink: #20262d;
+  --mep-hand-size-adjust: 0.15px;
+  --mep-hand-letter-spacing: -0.003em;
+}
+
+.mepTplHandVariant1 {
+  --mep-hand-shift-x: 0.55px;
+  --mep-hand-shift-y: -0.3px;
+  --mep-hand-rotate: 0.65deg;
+  --mep-hand-ink: #1f252c;
+  --mep-hand-size-adjust: -0.1px;
+  --mep-hand-letter-spacing: 0.004em;
+}
+
+.mepTplHandVariant2 {
+  --mep-hand-shift-x: 0.35px;
+  --mep-hand-shift-y: 0.55px;
+  --mep-hand-rotate: -0.35deg;
+  --mep-hand-ink: #232931;
+  --mep-hand-size-adjust: 0px;
+  --mep-hand-letter-spacing: 0.001em;
+}
+
+.mepTplHandVariant3 {
+  --mep-hand-shift-x: -0.45px;
+  --mep-hand-shift-y: 0.15px;
+  --mep-hand-rotate: 0.9deg;
+  --mep-hand-ink: #1e242b;
+  --mep-hand-size-adjust: 0.2px;
+  --mep-hand-letter-spacing: 0.005em;
+}
+
+.mepTplHandVariant4 {
+  --mep-hand-shift-x: 0.15px;
+  --mep-hand-shift-y: -0.45px;
+  --mep-hand-rotate: -0.7deg;
+  --mep-hand-ink: #21272f;
+  --mep-hand-size-adjust: -0.15px;
+  --mep-hand-letter-spacing: -0.002em;
+}
+
+.mepTplHandVariant5 {
+  --mep-hand-shift-x: -0.3px;
+  --mep-hand-shift-y: 0.25px;
+  --mep-hand-rotate: 0.3deg;
+  --mep-hand-ink: #242b33;
+  --mep-hand-size-adjust: 0.1px;
+  --mep-hand-letter-spacing: 0.003em;
+}
+
+.mepTplHandVariant6 {
+  --mep-hand-shift-x: 0.4px;
+  --mep-hand-shift-y: -0.1px;
+  --mep-hand-rotate: -0.5deg;
+  --mep-hand-ink: #20272e;
+  --mep-hand-size-adjust: -0.05px;
+  --mep-hand-letter-spacing: 0em;
+}
+
+.mepTplHandVariant7 {
+  --mep-hand-shift-x: -0.2px;
+  --mep-hand-shift-y: 0.5px;
+  --mep-hand-rotate: 0.75deg;
+  --mep-hand-ink: #1d232a;
+  --mep-hand-size-adjust: 0.12px;
+  --mep-hand-letter-spacing: 0.002em;
+}
 
 
 @media (max-width: 1200px) {

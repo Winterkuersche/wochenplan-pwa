@@ -1,6 +1,7 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
 const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
+const MEP_HAND_VARIANT_COUNT = 8;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -51,9 +52,13 @@ function escapeMepHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function getMepHandVariantClass(variant = 0) {
+  return `mepTplHandVariant${((variant % MEP_HAND_VARIANT_COUNT) + MEP_HAND_VARIANT_COUNT) % MEP_HAND_VARIANT_COUNT}`;
+}
+
 function renderMepHandText(value, variant = 0, extraClass = "") {
   if (value === null || value === undefined || value === "") return "";
-  const variantClass = `mepTplHandVariant${((variant % 6) + 6) % 6}`;
+  const variantClass = getMepHandVariantClass(variant);
   const className = ["mepTplHandwrite", variantClass, extraClass].filter(Boolean).join(" ");
   return `<span class="${className}">${escapeMepHtml(value)}</span>`;
 }
@@ -228,6 +233,7 @@ function renderMepTemplateView() {
       const dateEl = sheetFragment.querySelector(`[data-mep-date-index="${index}"]`);
       if (dateEl) {
         dateEl.textContent = formatMepHeaderDate(day.iso);
+        dateEl.className = ["mepTplHeaderDate", getMepHandVariantClass(pageIndex * 7 + index)].join(" ");
       }
     });
 
