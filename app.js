@@ -108,7 +108,7 @@ function refreshCurrentResponsiveView() {
     if (typeof fitMepTemplateSheets === "function") {
       fitMepTemplateSheets();
     } else if (typeof renderMepTemplateView === "function") {
-      renderMepTemplateView();
+      renderMepTemplateView({ scope: "month" });
     }
   }
 }
@@ -131,12 +131,12 @@ function waitForAnimationFrames(frameCount = 2) {
 function updatePrintButtonLabel() {
   if (!btnPrintEl) return;
   const view = uiState?.currentView || "week";
-  btnPrintEl.textContent = view === "mep" ? "PDF exportieren" : "Drucken / PDF";
+  btnPrintEl.textContent = view === "mep" ? "Monat als PDF exportieren" : "Drucken / PDF";
 }
 
 function buildMepPdfFilename() {
-  const from = state.weekFrom || state.activeMonth || new Date().toISOString().slice(0, 10);
-  return `mep-${String(from).replace(/[^0-9-]+/g, "-")}.pdf`;
+  const monthValue = state.activeMonth || (state.weekFrom || new Date().toISOString().slice(0, 10)).slice(0, 7);
+  return `mep-${String(monthValue).replace(/[^0-9-]+/g, "-")}.pdf`;
 }
 
 function createMepPdfExportRoot() {
@@ -254,7 +254,7 @@ async function exportMepTemplatePdf() {
       renderView();
       renderAllViews();
     } else if (typeof renderMepTemplateView === "function") {
-      renderMepTemplateView();
+      renderMepTemplateView({ scope: "month" });
     }
 
     await waitForAnimationFrames(3);
