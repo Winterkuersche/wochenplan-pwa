@@ -2552,36 +2552,28 @@ body.dark .mepTable th {
 }
 
 .mepTplDayHeader--outsideMonth {
-  background: inherit;
+  background: #fff !important;
 }
 
 .mepTplDayHeader--outsideMonth .mepTplHeaderDate {
   display: inline-block;
-  min-height: 1em;
+  min-height: 0;
 }
 
 .mepTplDayCell--outsideRunStart {
   position: relative;
-  isolation: isolate;
 }
 
-.mepTplDayCell--outsideRunStart::after {
-  content: "";
+.mepTplOutsideRunMarker {
   position: absolute;
   top: -0.8px;
   left: -0.8px;
-  width: calc(
-    (var(--mep-outside-run-columns, 1) * 100%)
-    + ((var(--mep-outside-run-columns, 1) - 1) * 0.8px)
-    + 400%
-    + 2.4px
-  );
+  width: 0;
   height: 1.5px;
   pointer-events: none;
   z-index: 3;
-  background: #000;
+  background: #1a1a1a;
   transform-origin: left center;
-  transform: rotate(45deg);
 }
 
 .mepTplSummaryHeader {

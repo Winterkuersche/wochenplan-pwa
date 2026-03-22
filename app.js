@@ -209,6 +209,10 @@ function createMepPdfExportRoot() {
     sheetEl.style.setProperty("--mep-table-scale", `${fittedScale || 1}`);
   });
 
+  if (typeof syncMepOutsideRunMarkers === "function") {
+    syncMepOutsideRunMarkers(clonePagesEl);
+  }
+
   return exportRoot;
 }
 
