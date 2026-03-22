@@ -8,11 +8,11 @@
   --text: #222;
   --subtext: #666;
   --accent: #0a58ff;
-  --handwrite-font-family: "Patrick Hand", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-  --handwrite-color: #1f2328;
-  --handwrite-weight: 400;
-  --handwrite-line-height: 0.94;
-  --handwrite-letter-spacing: -0.006em;
+  --handwrite-font-family: "Caveat", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
+  --handwrite-color: #20242a;
+  --handwrite-weight: 500;
+  --handwrite-line-height: 0.95;
+  --handwrite-letter-spacing: -0.01em;
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
   --form-view-max-height: calc(var(--app-dvh) - 110px);
@@ -870,7 +870,7 @@ select {
 }
 
 .mepHand {
-  font-family: "Patrick Hand", "Segoe Print", cursive;
+  font-family: var(--handwrite-font-family);
   transform: rotate(-1deg);
 }
 
