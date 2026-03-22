@@ -2391,11 +2391,16 @@ body.dark .mepTable th {
 }
 
 .mepTplSheetInner {
+  --mep-footer-total-height: 14.4mm;
+  --mep-footer-margin-top: 1.2mm;
+  --mep-footer-row-1: 5.9mm;
+  --mep-footer-row-2: 6.7mm;
+  --mep-footer-row-gap: 0.6mm;
   display: flex;
   flex-direction: column;
   width: 297mm;
   height: 210mm;
-  padding: 4.2mm 4.5mm 3.8mm;
+  padding: 4mm 4.5mm 3.2mm;
   transform: scale(var(--mep-sheet-scale));
   transform-origin: top left;
 }
@@ -2405,7 +2410,7 @@ body.dark .mepTable th {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 3.2mm;
+  margin-bottom: 2.8mm;
 }
 
 .mepTplTitleBar {
@@ -2439,7 +2444,7 @@ body.dark .mepTable th {
 }
 
 .mepTplMeta {
-  margin-bottom: 3.4mm;
+  margin-bottom: 2.8mm;
   font-size: 0.8rem;
 }
 
@@ -2496,11 +2501,16 @@ body.dark .mepTable th {
 
 .mepTplWrap {
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
 
 .mepTplWrapInner {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   width: calc(100% / var(--mep-table-scale));
   transform: scale(var(--mep-table-scale));
   transform-origin: top left;
@@ -2708,6 +2718,7 @@ body.dark .mepTable th {
   --mep-footer-col-presence-gap: 83mm;
   --mep-footer-col-stand: 21mm;
   display: grid;
+  flex: 0 0 var(--mep-footer-total-height);
   width: 288mm;
   min-width: 288mm;
   max-width: 288mm;
@@ -2717,11 +2728,14 @@ body.dark .mepTable th {
     var(--mep-footer-col-vacation)
     var(--mep-footer-col-presence-gap)
     var(--mep-footer-col-stand);
-  grid-template-rows: 6.2mm 6.9mm;
+  grid-template-rows: var(--mep-footer-row-1) var(--mep-footer-row-2);
   align-items: start;
   column-gap: 0;
-  row-gap: 0.8mm;
-  margin-top: 1.8mm;
+  row-gap: var(--mep-footer-row-gap);
+  height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
+  min-height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
+  max-height: calc(var(--mep-footer-total-height) - var(--mep-footer-margin-top));
+  margin-top: var(--mep-footer-margin-top);
   padding-top: 0;
   font-size: 1.72mm;
   line-height: 1.05;
@@ -3051,7 +3065,12 @@ body.dark .mepTable th {
   .mepTplSheetInner {
     width: 297mm;
     height: 210mm;
-    padding: 4.2mm 4.5mm 3.8mm;
+    --mep-footer-total-height: 13.8mm;
+    --mep-footer-margin-top: 1mm;
+    --mep-footer-row-1: 5.7mm;
+    --mep-footer-row-2: 6.55mm;
+    --mep-footer-row-gap: 0.55mm;
+    padding: 4mm 4.5mm 3.2mm;
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3088,18 +3107,15 @@ body.dark .mepTable th {
   }
 
   .mepTplHeaderTopRow {
-    margin-bottom: 2.8mm;
+    margin-bottom: 2.5mm;
   }
 
   .mepTplMeta {
-    margin-bottom: 2.8mm;
+    margin-bottom: 2.4mm;
     font-size: 0.8rem;
   }
 
   .mepTplFooter {
-    margin-top: 1.6mm;
-    grid-template-rows: 5.9mm 6.5mm;
-    row-gap: 0.7mm;
     font-size: 1.62mm;
   }
 
