@@ -900,6 +900,7 @@ function renderWeekHeader() {
 
   headerHtml += `
       <th class="weekSummaryCol weekSummaryStart">Ist</th>
+      <th class="weekSummaryCol">Konto</th>
       <th class="weekSummaryCol">Δ Woche</th>
       <th class="weekSummaryCol">Δ Monat</th>
       <th class="weekSummaryCol">Gesamtminus</th>
@@ -953,6 +954,13 @@ function renderWeekTable() {
     const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
     tdActual.textContent = minutesToHM(plannedMinutes);
     tr.appendChild(tdActual);
+
+    const tdAccount = document.createElement("td");
+    tdAccount.className = "weekHoursCell weekSummaryCol";
+    const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDays);
+    tdAccount.textContent = minutesToHM(accountMinutes);
+    tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag)";
+    tr.appendChild(tdAccount);
 
     const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays);
     const tdDelta = document.createElement("td");
