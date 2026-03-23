@@ -2402,16 +2402,16 @@ body.dark .mepTable th {
   --mep-col-metric-width: 7.25%;
   --mep-col-summary-width: 8.92%;
   --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
-  --mep-footer-pause-label-width: 26.9mm;
-  --mep-footer-pause-content-width: 49.7mm;
-  --mep-footer-pause-short-width: 43.9mm;
-  --mep-footer-pause-long-width: 49.1mm;
-  --mep-footer-absence-label-width: 28.7mm;
-  --mep-footer-absence-col1-width: 22.2mm;
-  --mep-footer-absence-col2-width: 62.7mm;
-  --mep-footer-vacation-width: 14.3mm;
+  --mep-footer-pause-label-width: 27.4mm;
+  --mep-footer-pause-content-width: 50.2mm;
+  --mep-footer-pause-short-width: 44.3mm;
+  --mep-footer-pause-long-width: 49.8mm;
+  --mep-footer-absence-label-width: 29.2mm;
+  --mep-footer-absence-col1-width: 22.8mm;
+  --mep-footer-absence-col2-width: 61.8mm;
+  --mep-footer-vacation-width: 14.8mm;
   --mep-footer-vacation-offset: 1.8mm;
-  --mep-footer-presence-span-width: 210.5mm;
+  --mep-footer-presence-span-width: 209.6mm;
   display: flex;
   flex-direction: column;
   width: 297mm;
@@ -2741,12 +2741,12 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  --mep-footer-block-lift: 1.15mm;
+  --mep-footer-block-lift: 1.05mm;
   width: 100%;
   margin-top: 1.5mm;
   padding-top: 0.18mm;
   font-size: 0.72rem;
-  line-height: 1.1;
+  line-height: 1.04;
 }
 
 .mepTplFooterGrid {
@@ -2823,7 +2823,7 @@ body.dark .mepTable th {
 .mepTplFooterText {
   display: inline-block;
   margin: 0;
-  line-height: inherit;
+  line-height: 1.02;
   white-space: nowrap;
   font-size: 0.94em;
   font-weight: 400;
@@ -2853,7 +2853,7 @@ body.dark .mepTable th {
   display: grid;
   grid-auto-rows: min-content;
   row-gap: 0.65mm;
-  line-height: 1.03;
+  line-height: 1.01;
 }
 
 .mepTplFooterLabel--vacation {
@@ -2866,7 +2866,7 @@ body.dark .mepTable th {
   width: var(--mep-footer-presence-span-width);
   max-width: none;
   white-space: nowrap;
-  line-height: 1.02;
+  line-height: 1;
 }
 
 .mepTplStand {
@@ -2879,6 +2879,7 @@ body.dark .mepTable th {
   white-space: nowrap;
   letter-spacing: -0.01em;
   margin: 0;
+  transform: translateY(0.18mm);
 }
 
 .mepTplHandwrite,
