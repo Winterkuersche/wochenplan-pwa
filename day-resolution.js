@@ -108,7 +108,7 @@ function getResolvedDayEntry({
       type: "vacation",
       status: ENTRY_STATUS.VACATION,
       label: getStatusShortLabel(ENTRY_STATUS.VACATION),
-      minutesForMonth: 0,
+      minutesForMonth: sunday ? 0 : getAbsenceMinutesForEmployee(employee),
       minutesForBranch: 0,
       isSunday: sunday,
       sourceEntry: absence
@@ -132,7 +132,7 @@ function getResolvedDayEntry({
       type: "vacation",
       status: ENTRY_STATUS.VACATION,
       label: getStatusShortLabel(ENTRY_STATUS.VACATION),
-      minutesForMonth: 0,
+      minutesForMonth: sunday ? 0 : getAbsenceMinutesForEmployee(employee),
       minutesForBranch: 0,
       isSunday: sunday,
       sourceEntry: plannedEntry
