@@ -224,7 +224,7 @@ function getPauseRangeForMep(entry) {
   const pauseMinutes = getEffectiveBreakMinutes(entry.start, entry.end, configuredBreak, {
     includeBillingBonus: endMinutes === hhmmToMinutes("19:10")
   });
-  if (pauseMinutes <= 0) return "";
+  if (pauseMinutes <= 0) return "-";
 
   const fixedFullShiftRange = getFixedFullShiftPauseRange(entry.start, entry.end);
   if (fixedFullShiftRange) return fixedFullShiftRange;
