@@ -2779,6 +2779,11 @@ body.dark .mepTable th {
   margin: 0 0 0.85mm;
 }
 
+.mepTplFooterLine--pause {
+  grid-template-columns: 27.5mm 1fr;
+  margin-bottom: 0;
+}
+
 .mepTplFooterLine--continuation {
   grid-template-columns: 1fr;
   margin-left: 31.8mm;
@@ -2804,6 +2809,12 @@ body.dark .mepTable th {
   margin: 0;
   line-height: inherit;
   white-space: nowrap;
+}
+
+.mepTplFooterPauseValues {
+  display: grid;
+  grid-auto-rows: min-content;
+  row-gap: 0.85mm;
 }
 
 .mepTplFooterAbsenceGrid {
