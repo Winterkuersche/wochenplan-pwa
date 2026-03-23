@@ -2931,7 +2931,12 @@ body.dark .mepTable th {
 }
 
 .mepTplHandName {
-  font-size: calc(1.2em + var(--mep-hand-size-adjust, 0px));
+  width: 100%;
+  max-width: 100%;
+  font-size: calc(1.28em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.92;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.012em + var(--mep-hand-letter-spacing, 0em));
+  text-align: center;
 }
 
 .mepTplNameStack {
@@ -2939,16 +2944,19 @@ body.dark .mepTable th {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.2mm;
+  gap: 0.1mm;
   width: 100%;
+  max-width: 100%;
   min-height: 100%;
 }
 
 .mepTplHandNameLine {
   display: block;
   width: 100%;
-  font-size: calc(1.04em + var(--mep-hand-size-adjust, 0px));
-  line-height: 0.9;
+  max-width: 100%;
+  font-size: calc(1.12em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.86;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.01em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
 }
 
