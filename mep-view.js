@@ -73,6 +73,67 @@ function getMepPauseLabel(entry) {
   return getPauseRangeForMep(entry);
 }
 
+function getMepResolvedDayContent(employee, isoDate) {
+  if (!employee || !isoDate) {
+    return {
+      start: "",
+      pause: "",
+      end: "",
+      sum: ""
+    };
+  }
+
+  const resolved = getResolvedEntryForEmployeeOnIso(employee, isoDate);
+  const status = getResolvedStatus(resolved);
+  const sourceEntry = normalizePlanEntry(resolved?.sourceEntry) || resolved?.sourceEntry || null;
+  const dailyTarget = minutesToHM(getAbsenceMinutesForEmployee(employee));
+
+  if (resolved?.type === "holiday") {
+    return {
+      start: "H",
+      pause: "",
+      end: "",
+      sum: dailyTarget
+    };
+  }
+
+  if (status === ENTRY_STATUS.VACATION) {
+    return {
+      start: "U",
+      pause: "",
+      end: "",
+      sum: dailyTarget
+    };
+  }
+
+  if (status === ENTRY_STATUS.SICK) {
+    return {
+      start: "K",
+      pause: "",
+      end: "",
+      sum: dailyTarget
+    };
+  }
+
+  if (!sourceEntry) {
+    return {
+      start: "",
+      pause: "",
+      end: "",
+      sum: ""
+    };
+  }
+
+  const pauseLabel = getMepPauseLabel(sourceEntry);
+
+  return {
+    start: sourceEntry.start || "",
+    pause: pauseLabel || (isShiftEntry(sourceEntry) ? "-" : ""),
+    end: sourceEntry.end || "",
+    sum: sourceEntry.minutes ? minutesToHM(sourceEntry.minutes) : ""
+  };
+}
+
 function escapeMepHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -283,24 +344,22 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
             return `<td ${dayCellAttributes.join(" ")}>${outsideRunMarker}</td>`;
           }
 
-          const entry = employee && isoDate ? getEmployeeDayEntry(employee.id, isoDate) : null;
-
-          if (!entry) return `<td ${dayCellAttributes.join(" ")}></td>`;
+          const resolvedDayContent = getMepResolvedDayContent(employee, isoDate);
 
           if (rowType.key === "start") {
-            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.start || "", variant, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(resolvedDayContent.start, variant, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "pause") {
-            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(getMepPauseLabel(entry), variant + 1, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(resolvedDayContent.pause, variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {
-            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.end || "", variant + 2, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(resolvedDayContent.end, variant + 2, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "sum") {
-            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(entry.minutes ? minutesToHM(entry.minutes) : "", variant + 3, "mepTplHandValue")}</td>`;
+            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(resolvedDayContent.sum, variant + 3, "mepTplHandValue")}</td>`;
           }
 
           return `<td ${dayCellAttributes.join(" ")}></td>`;
