@@ -60,7 +60,13 @@ function formatMepFullDate(isoDate) {
 
 function getMepRoleLabel(employee) {
   if (!employee) return "";
-  return employee.roleKey || employee.contractModel || "";
+  const roleLabel = employee.roleKey || employee.contractModel || "";
+
+  if (["TZ15", "TZ20", "TZ30"].includes(roleLabel)) {
+    return "TZ";
+  }
+
+  return roleLabel;
 }
 
 function getMepTargetLabel(employee) {
