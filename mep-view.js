@@ -2,7 +2,6 @@ const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
 const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
-const MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX = 0;
 
 function mepPad2(value) {
   return String(value).padStart(2, "0");
@@ -72,22 +71,6 @@ function getMepTargetLabel(employee) {
 function getMepPauseLabel(entry) {
   if (!entry) return "";
   return getPauseRangeForMep(entry);
-}
-
-function getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl) {
-  if (!wrapEl || !wrapInnerEl || !footerEl) return 0;
-
-  const wrapHeight = wrapEl.clientHeight || wrapEl.getBoundingClientRect().height || 0;
-  const wrapInnerHeight = wrapInnerEl.clientHeight || wrapInnerEl.getBoundingClientRect().height || 0;
-  const wrapStyles = window.getComputedStyle(wrapEl);
-  const wrapPaddingBottom = parseFloat(wrapStyles.paddingBottom || "0") || 0;
-  const layoutSlack = Math.max(
-    0,
-    wrapPaddingBottom,
-    wrapHeight - wrapInnerHeight
-  );
-
-  return Math.max(0, wrapHeight - layoutSlack - MEP_TEMPLATE_TABLE_BOTTOM_BUFFER_PX);
 }
 
 function escapeMepHtml(value) {
@@ -425,9 +408,8 @@ function fitMepTemplateSheets() {
     const innerEl = sheetEl.querySelector(".mepTplSheetInner");
     const wrapEl = sheetEl.querySelector(".mepTplWrap");
     const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
-    const footerEl = sheetEl.querySelector(".mepTplFooter");
 
-    if (!innerEl || !wrapEl || !wrapInnerEl || !footerEl) return;
+    if (!innerEl || !wrapEl || !wrapInnerEl) return;
 
     sheetEl.style.setProperty("--mep-sheet-scale", "1");
     sheetEl.style.setProperty("--mep-table-scale", "1");
@@ -445,13 +427,14 @@ function fitMepTemplateSheets() {
 
     sheetEl.style.setProperty("--mep-sheet-scale", `${sheetScale}`);
 
-    const availableWrapHeight = getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl);
+    const availableWrapHeight = wrapEl.clientHeight;
     const tableHeight = wrapInnerEl.scrollHeight;
-    const fitsReservedTableZone = availableWrapHeight <= 0 || tableHeight <= availableWrapHeight + 1;
-    const tableScale = 1;
+    const heightScale =
+      availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
+    const tableScale =
+      (heightScale > 0 ? Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, heightScale) : 1) || 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
-    sheetEl.classList.toggle("mepTplSheet--tableOverflow", !fitsReservedTableZone);
   });
 
   syncMepOutsideRunMarkers(pagesEl);
