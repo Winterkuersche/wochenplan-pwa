@@ -2392,7 +2392,7 @@ body.dark .mepTable th {
 
 .mepTplSheetInner {
   --mep-table-font-size: 0.67rem;
-  --mep-table-cell-padding-y: 0.45mm;
+  --mep-table-cell-padding-y: 0.55mm;
   --mep-table-cell-padding-x: 0.5mm;
   --mep-table-row-height: 3.95mm;
   --mep-table-head-bg: #ececec;
