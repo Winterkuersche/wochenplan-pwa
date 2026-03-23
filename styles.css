@@ -2402,16 +2402,16 @@ body.dark .mepTable th {
   --mep-col-metric-width: 7.25%;
   --mep-col-summary-width: 8.92%;
   --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
-  --mep-footer-pause-label-width: 27.5mm;
-  --mep-footer-pause-content-width: 50.5mm;
-  --mep-footer-pause-short-width: 45.2mm;
-  --mep-footer-pause-long-width: 49.8mm;
-  --mep-footer-absence-label-width: 29.4mm;
-  --mep-footer-absence-col1-width: 21.6mm;
-  --mep-footer-absence-col2-width: 62mm;
-  --mep-footer-vacation-width: 16.5mm;
-  --mep-footer-vacation-offset: 2.6mm;
-  --mep-footer-presence-span-width: 193.8mm;
+  --mep-footer-pause-label-width: 26.9mm;
+  --mep-footer-pause-content-width: 49.7mm;
+  --mep-footer-pause-short-width: 43.9mm;
+  --mep-footer-pause-long-width: 49.1mm;
+  --mep-footer-absence-label-width: 28.7mm;
+  --mep-footer-absence-col1-width: 22.2mm;
+  --mep-footer-absence-col2-width: 62.7mm;
+  --mep-footer-vacation-width: 14.3mm;
+  --mep-footer-vacation-offset: 1.8mm;
+  --mep-footer-presence-span-width: 210.5mm;
   display: flex;
   flex-direction: column;
   width: 297mm;
@@ -2744,8 +2744,8 @@ body.dark .mepTable th {
   width: 100%;
   margin-top: 2.6mm;
   padding-top: 1.6mm;
-  font-size: 0.77rem;
-  line-height: 1.18;
+  font-size: 0.72rem;
+  line-height: 1.1;
 }
 
 .mepTplFooterGrid {
@@ -2764,7 +2764,7 @@ body.dark .mepTable th {
     "presence presence presence presence presence presence presence stand";
   align-items: start;
   column-gap: 0;
-  row-gap: 1.6mm;
+  row-gap: 1.3mm;
   white-space: nowrap;
 }
 
@@ -2788,12 +2788,14 @@ body.dark .mepTable th {
     var(--mep-footer-absence-col1-width)
     var(--mep-footer-absence-col2-width);
   align-items: start;
+  column-gap: 0.8mm;
 }
 
 .mepTplFooterBlock--vacation {
   grid-area: vacation;
   justify-self: start;
   padding-left: var(--mep-footer-vacation-offset);
+  padding-top: 0.08mm;
 }
 
 .mepTplFooterBlock--presence {
@@ -2802,14 +2804,17 @@ body.dark .mepTable th {
   grid-template-columns: var(--mep-footer-pause-label-width) minmax(0, var(--mep-footer-presence-span-width));
   align-items: start;
   column-gap: 0;
+  width: calc(var(--mep-footer-pause-label-width) + var(--mep-footer-presence-span-width));
 }
 
 .mepTplFooterLabel {
   display: inline-block;
   margin: 0;
-  font-weight: 700;
+  font-size: 0.96em;
+  font-weight: 600;
   line-height: 1.05;
   white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .mepTplFooterText {
@@ -2817,16 +2822,20 @@ body.dark .mepTable th {
   margin: 0;
   line-height: inherit;
   white-space: nowrap;
+  font-size: 0.94em;
+  font-weight: 400;
 }
 
 .mepTplFooterPauseValues {
   display: grid;
   grid-auto-rows: min-content;
-  row-gap: 0.85mm;
+  justify-items: end;
+  row-gap: 0.55mm;
 }
 
 .mepTplFooterPauseValue {
   justify-self: end;
+  text-align: left;
 }
 
 .mepTplFooterPauseValue--short {
@@ -2840,21 +2849,32 @@ body.dark .mepTable th {
 .mepTplFooterAbsenceColumn {
   display: grid;
   grid-auto-rows: min-content;
-  row-gap: 0.95mm;
+  row-gap: 0.65mm;
+  line-height: 1.03;
 }
 
-.mepTplFooterBlock--presence .mepTplFooterText {
-  white-space: normal;
-  max-width: var(--mep-footer-presence-span-width);
+.mepTplFooterLabel--vacation {
+  font-size: 0.92em;
+  font-weight: 500;
+}
+
+.mepTplFooterPresenceText {
+  display: block;
+  width: var(--mep-footer-presence-span-width);
+  max-width: none;
+  white-space: nowrap;
+  line-height: 1.02;
 }
 
 .mepTplStand {
   grid-area: stand;
   align-self: end;
   text-align: right;
-  font-size: 0.68rem;
+  padding-right: 0.3mm;
+  font-size: 0.61rem;
   line-height: 1;
   white-space: nowrap;
+  letter-spacing: -0.01em;
   margin: 0;
 }
 
@@ -3152,11 +3172,11 @@ body.dark .mepTable th {
   .mepTplFooter {
     margin-top: 2.4mm;
     padding-top: 1.4mm;
-    font-size: 0.68rem;
+    font-size: 0.64rem;
   }
 
   .mepTplFooterGrid {
-    column-gap: 4mm;
-    row-gap: 1.2mm;
+    column-gap: 3.2mm;
+    row-gap: 1mm;
   }
 }
