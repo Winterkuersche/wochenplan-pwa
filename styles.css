@@ -2741,10 +2741,10 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  --mep-footer-block-lift: 0.4mm;
+  --mep-footer-block-lift: 0.55mm;
   width: 100%;
-  margin-top: 0.6mm;
-  padding-top: 0.18mm;
+  margin-top: 0.42mm;
+  padding-top: 0.1mm;
   font-size: 0.72rem;
   line-height: 1.04;
 }
@@ -2823,7 +2823,7 @@ body.dark .mepTable th {
 .mepTplFooterText {
   display: inline-block;
   margin: 0;
-  line-height: 1.02;
+  line-height: 0.98;
   white-space: nowrap;
   font-size: 0.94em;
   font-weight: 400;
@@ -2853,7 +2853,7 @@ body.dark .mepTable th {
   display: grid;
   grid-auto-rows: min-content;
   row-gap: 0.65mm;
-  line-height: 1.01;
+  line-height: 0.98;
 }
 
 .mepTplFooterLabel--vacation {
@@ -2866,7 +2866,7 @@ body.dark .mepTable th {
   width: var(--mep-footer-presence-span-width);
   max-width: none;
   white-space: nowrap;
-  line-height: 1;
+  line-height: 0.98;
 }
 
 .mepTplStand {
@@ -3174,9 +3174,9 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    --mep-footer-block-lift: 0.4mm;
-    margin-top: 0.6mm;
-    padding-top: 0.12mm;
+    --mep-footer-block-lift: 0.55mm;
+    margin-top: 0.42mm;
+    padding-top: 0.08mm;
     font-size: 0.64rem;
   }
 
