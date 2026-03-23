@@ -2741,9 +2741,10 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
+  --mep-footer-block-lift: 0.7mm;
   width: 100%;
-  margin-top: 2.6mm;
-  padding-top: 1.6mm;
+  margin-top: 1.5mm;
+  padding-top: 0.8mm;
   font-size: 0.72rem;
   line-height: 1.1;
 }
@@ -2764,8 +2765,10 @@ body.dark .mepTable th {
     "presence presence presence presence presence presence presence stand";
   align-items: start;
   column-gap: 0;
-  row-gap: 1.3mm;
+  row-gap: 1.1mm;
   white-space: nowrap;
+  transform: translateY(calc(-1 * var(--mep-footer-block-lift)));
+  transform-origin: top left;
 }
 
 .mepTplFooterBlock {
@@ -3170,13 +3173,14 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    margin-top: 2.4mm;
-    padding-top: 1.4mm;
+    --mep-footer-block-lift: 0.55mm;
+    margin-top: 1.4mm;
+    padding-top: 0.7mm;
     font-size: 0.64rem;
   }
 
   .mepTplFooterGrid {
     column-gap: 3.2mm;
-    row-gap: 1mm;
+    row-gap: 0.85mm;
   }
 }
