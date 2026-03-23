@@ -2402,6 +2402,16 @@ body.dark .mepTable th {
   --mep-col-metric-width: 7.25%;
   --mep-col-summary-width: 8.92%;
   --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
+  --mep-footer-pause-label-width: 27.5mm;
+  --mep-footer-pause-content-width: 50.5mm;
+  --mep-footer-pause-short-width: 45.2mm;
+  --mep-footer-pause-long-width: 49.8mm;
+  --mep-footer-absence-label-width: 29.4mm;
+  --mep-footer-absence-col1-width: 21.6mm;
+  --mep-footer-absence-col2-width: 62mm;
+  --mep-footer-vacation-width: 16.5mm;
+  --mep-footer-vacation-offset: 2.6mm;
+  --mep-footer-presence-span-width: 193.8mm;
   display: flex;
   flex-direction: column;
   width: 297mm;
@@ -2740,12 +2750,20 @@ body.dark .mepTable th {
 
 .mepTplFooterGrid {
   display: grid;
-  grid-template-columns: minmax(0, 78mm) minmax(0, 1fr) auto auto;
+  grid-template-columns:
+    var(--mep-footer-pause-label-width)
+    var(--mep-footer-pause-content-width)
+    var(--mep-footer-absence-label-width)
+    var(--mep-footer-absence-col1-width)
+    var(--mep-footer-absence-col2-width)
+    var(--mep-footer-vacation-width)
+    minmax(0, 1fr)
+    auto;
   grid-template-areas:
-    "pause absence vacation stand"
-    "presence presence presence stand";
+    "pause pause absence absence absence vacation . stand"
+    "presence presence presence presence presence presence presence stand";
   align-items: start;
-  column-gap: 5mm;
+  column-gap: 0;
   row-gap: 1.6mm;
   white-space: nowrap;
 }
@@ -2757,43 +2775,33 @@ body.dark .mepTable th {
 
 .mepTplFooterBlock--pause {
   grid-area: pause;
+  display: grid;
+  grid-template-columns: var(--mep-footer-pause-label-width) var(--mep-footer-pause-content-width);
+  align-items: start;
 }
 
 .mepTplFooterBlock--absence {
   grid-area: absence;
+  display: grid;
+  grid-template-columns:
+    var(--mep-footer-absence-label-width)
+    var(--mep-footer-absence-col1-width)
+    var(--mep-footer-absence-col2-width);
+  align-items: start;
 }
 
 .mepTplFooterBlock--vacation {
   grid-area: vacation;
+  justify-self: start;
+  padding-left: var(--mep-footer-vacation-offset);
 }
 
 .mepTplFooterBlock--presence {
   grid-area: presence;
-}
-
-.mepTplFooterLine {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: var(--mep-footer-pause-label-width) minmax(0, var(--mep-footer-presence-span-width));
   align-items: start;
-  column-gap: 1.65mm;
-  margin: 0 0 0.85mm;
-}
-
-.mepTplFooterLine--pause {
-  grid-template-columns: 27.5mm 1fr;
-  margin-bottom: 0;
-}
-
-.mepTplFooterLine--continuation {
-  grid-template-columns: 1fr;
-  margin-left: 31.8mm;
-}
-
-.mepTplFooterLine--single {
-  display: grid;
-  grid-template-columns: 27.5mm 1fr;
-  align-items: start;
-  column-gap: 1.8mm;
+  column-gap: 0;
 }
 
 .mepTplFooterLabel {
@@ -2817,18 +2825,27 @@ body.dark .mepTable th {
   row-gap: 0.85mm;
 }
 
-.mepTplFooterAbsenceGrid {
+.mepTplFooterPauseValue {
+  justify-self: end;
+}
+
+.mepTplFooterPauseValue--short {
+  width: var(--mep-footer-pause-short-width);
+}
+
+.mepTplFooterPauseValue--long {
+  width: var(--mep-footer-pause-long-width);
+}
+
+.mepTplFooterAbsenceColumn {
   display: grid;
-  grid-template-columns: 19mm 50mm;
-  column-gap: 3.6mm;
+  grid-auto-rows: min-content;
   row-gap: 0.95mm;
-  margin-left: 27.8mm;
-  margin-top: 0.45mm;
 }
 
 .mepTplFooterBlock--presence .mepTplFooterText {
   white-space: normal;
-  max-width: 100%;
+  max-width: var(--mep-footer-presence-span-width);
 }
 
 .mepTplStand {
