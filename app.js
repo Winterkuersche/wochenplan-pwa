@@ -1487,9 +1487,21 @@ function isEmployeeBlockedOnIso(emp, isoDate) {
   return Boolean(getBlockingTypeForEmployeeOnIso(emp, isoDate));
 }
 
+function isDayInYearMonth(day, yearMonth) {
+  if (!day || typeof day.iso !== "string") return false;
+  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  if (!normalizedYearMonth) return true;
+  return getYearMonthFromIsoDate(day.iso) === normalizedYearMonth;
+}
+
+function getDaysInYearMonth(days = [], yearMonth = state.activeMonth) {
+  if (!Array.isArray(days)) return [];
+  return days.filter((day) => isDayInYearMonth(day, yearMonth));
+}
+
 function totalMinutesForEmployeeInWeek(emp, weekDays) {
   return weekDays.reduce((sum, day) => {
-    if (day.isOutsideMonth) return sum;
+    if (!day) return sum;
     return sum + getResolvedEntryForEmployeeOnIso(emp, day.iso).minutesForMonth;
   }, 0);
 }
@@ -1547,7 +1559,7 @@ function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays
   if (!employee || !Array.isArray(weekDays)) return 0;
 
   return weekDays.reduce((sum, day) => {
-    if (!day || day.isOutsideMonth) return sum;
+    if (!day) return sum;
 
     const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
     if (!isCreditableResolvedWorkEntry(resolved)) return sum;
@@ -1560,7 +1572,7 @@ function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays
   if (!employee || !Array.isArray(weekDays)) return 0;
 
   return weekDays.reduce((sum, day) => {
-    if (!day || day.isOutsideMonth) return sum;
+    if (!day) return sum;
 
     const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
     const status = getResolvedStatus(resolved);
@@ -1616,12 +1628,12 @@ function getEmployeeContractTargetMinutesForWeeks(employee, weeks = getCurrentMo
   return getEmployeeContractTargetMinutesPerMonth(employee);
 }
 
-function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeeks()) {
+function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeeks(), yearMonth = state.activeMonth) {
   if (!employee || !Array.isArray(weeks)) return 0;
 
   return weeks.reduce((sum, week) => {
     if (!Array.isArray(week) || week.length === 0) return sum;
-    return sum + getEmployeeAccountMinutesForWeek(employee, week);
+    return sum + getEmployeeAccountMinutesForWeek(employee, getDaysInYearMonth(week, yearMonth));
   }, 0);
 }
 
@@ -1631,7 +1643,7 @@ function getEmployeeAccountMinutesForMonth(employee, yearMonth = state.activeMon
   const monthWeeks = getWeeksForYearMonth(yearMonth);
   if (!monthWeeks.length) return 0;
 
-  return getEmployeeAccountMinutesForWeeks(employee, monthWeeks);
+  return getEmployeeAccountMinutesForWeeks(employee, monthWeeks, yearMonth);
 }
 
 function normalizeYearMonthValue(value) {
@@ -1744,7 +1756,7 @@ function totalMinutesForDayIso(iso) {
 function totalMinutesForWeek() {
   const week = getActiveWeekDays();
   return week.reduce((sum, day) => {
-    if (day.isOutsideMonth) return sum;
+    if (!day) return sum;
     return sum + totalMinutesForDayIso(day.iso);
   }, 0);
 }
