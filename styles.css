@@ -2516,7 +2516,7 @@ body.dark .mepTable th {
 }
 
 .mepTplWrap {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
 }
