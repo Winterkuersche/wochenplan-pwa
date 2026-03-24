@@ -401,10 +401,23 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
     .join("");
 }
 
+function isEmployeeActiveInWeekDays(employee, weekDays) {
+  const months = [...new Set((Array.isArray(weekDays) ? weekDays : [])
+    .map((day) => String(day?.iso || "").slice(0, 7))
+    .filter((month) => /^\d{4}-(0[1-9]|1[0-2])$/.test(month)))];
+
+  if (!months.length) {
+    return isEmployeeActiveInMonth(employee, state.activeMonth);
+  }
+
+  return months.some((month) => isEmployeeActiveInMonth(employee, month));
+}
+
 function getMepTemplateSheetModelsForMonth() {
   const monthWeeks = state.monthPlan?.weeks || [];
-  const employees = Array.isArray(state.employees) ? state.employees : [];
-  const employeePageCount = Math.max(1, Math.ceil(Math.max(employees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
+  const allEmployees = Array.isArray(state.employees) ? state.employees : [];
+  const activeMonthEmployees = allEmployees.filter((employee) => isEmployeeActiveInMonth(employee, state.activeMonth));
+  const employeePageCount = Math.max(1, Math.ceil(Math.max(activeMonthEmployees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
 
   if (!monthWeeks.length) {
     return [
@@ -412,7 +425,7 @@ function getMepTemplateSheetModelsForMonth() {
         weekDays: getActiveWeekDays(),
         weekIndex: 0,
         pageIndex: 0,
-        employees: employees.slice(0, MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE),
+        employees: activeMonthEmployees.slice(0, MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE),
         weekFrom: state.weekFrom || "",
         weekTo: state.weekTo || "",
         activeMonth: state.activeMonth || (state.weekFrom || "").slice(0, 7)
@@ -429,11 +442,14 @@ function getMepTemplateSheetModelsForMonth() {
       safeWeekDays.find((day) => day?.inCurrentMonth)?.iso?.slice(0, 7) ||
       weekFrom.slice(0, 7);
 
-    return Array.from({ length: employeePageCount }, (_, pageIndex) => ({
+    const weekEmployees = activeMonthEmployees.filter((employee) => isEmployeeActiveInWeekDays(employee, safeWeekDays));
+    const weekEmployeePageCount = Math.max(1, Math.ceil(Math.max(weekEmployees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
+
+    return Array.from({ length: weekEmployeePageCount }, (_, pageIndex) => ({
       weekDays: safeWeekDays,
       weekIndex,
       pageIndex,
-      employees: employees.slice(
+      employees: weekEmployees.slice(
         pageIndex * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE,
         (pageIndex + 1) * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE
       ),
@@ -446,7 +462,8 @@ function getMepTemplateSheetModelsForMonth() {
 
 function getMepTemplateSheetModelsForWeek() {
   const weekDays = getActiveWeekDays();
-  const employees = Array.isArray(state.employees) ? state.employees : [];
+  const employees = (Array.isArray(state.employees) ? state.employees : [])
+    .filter((employee) => isEmployeeActiveInWeekDays(employee, weekDays));
   const totalPages = Math.max(1, Math.ceil(Math.max(employees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
 
   return Array.from({ length: totalPages }, (_, pageIndex) => ({

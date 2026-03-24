@@ -920,8 +920,13 @@ function renderWeekTable() {
   if (!weekDays.length) return;
 
   const visibleDays = weekDays.slice(0, 6);
+  const visibleMonths = [...new Set(visibleDays.map((day) => String(day?.iso || "").slice(0, 7)).filter((value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)))];
+  const visibleEmployees = state.employees.filter((emp) => {
+    if (!visibleMonths.length) return isEmployeeActiveInMonth(emp, state.activeMonth);
+    return visibleMonths.some((yearMonth) => isEmployeeActiveInMonth(emp, yearMonth));
+  });
 
-  state.employees.forEach((emp) => {
+  visibleEmployees.forEach((emp) => {
     const tr = document.createElement("tr");
     const lastShift = getEmployeeLastShiftLabel(emp);
 

@@ -243,7 +243,9 @@ function renderMonthView() {
       <tbody>
   `;
 
-  state.employees.forEach((emp) => {
+  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth));
+
+  activeEmployees.forEach((emp) => {
     html += buildMonthEmployeeRow(emp, days);
   });
 
