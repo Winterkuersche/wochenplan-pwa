@@ -1,6 +1,5 @@
 const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 9;
 const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
-const MEP_TEMPLATE_MAX_TABLE_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
 
 function mepPad2(value) {
@@ -557,10 +556,7 @@ function fitMepTemplateSheets() {
 
   pagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
     const innerEl = sheetEl.querySelector(".mepTplSheetInner");
-    const wrapEl = sheetEl.querySelector(".mepTplWrap");
-    const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
-
-    if (!innerEl || !wrapEl || !wrapInnerEl) return;
+    if (!innerEl) return;
 
     sheetEl.style.setProperty("--mep-sheet-scale", "1");
     sheetEl.style.setProperty("--mep-table-scale", "1");
@@ -577,13 +573,7 @@ function fitMepTemplateSheets() {
     );
 
     sheetEl.style.setProperty("--mep-sheet-scale", `${sheetScale}`);
-
-    const availableWrapHeight = wrapEl.clientHeight;
-    const tableHeight = wrapInnerEl.getBoundingClientRect().height;
-    const hasStaticTableHeight = availableWrapHeight > 0 && tableHeight > 0;
-    const tableScale = hasStaticTableHeight ? MEP_TEMPLATE_MAX_TABLE_SCALE : 1;
-
-    sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
+    sheetEl.style.setProperty("--mep-table-scale", "1");
   });
 
   syncMepOutsideRunMarkers(pagesEl);
