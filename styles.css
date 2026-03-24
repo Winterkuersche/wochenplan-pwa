@@ -2772,7 +2772,7 @@ body.dark .mepTable th {
 .mepTplFooter {
   --mep-footer-block-lift: 0.52mm;
   width: 100%;
-  margin-top: 0.26mm;
+  margin-top: 0.36mm;
   padding-top: 0.06mm;
   font-size: 0.72rem;
   line-height: 1.04;
@@ -3227,7 +3227,7 @@ body.dark .mepTable th {
 
   .mepTplFooter {
     --mep-footer-block-lift: 0.52mm;
-    margin-top: 0.26mm;
+    margin-top: 0.36mm;
     padding-top: 0.06mm;
     font-size: 0.64rem;
   }
