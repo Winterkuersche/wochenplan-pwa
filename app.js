@@ -1028,6 +1028,48 @@ function roleToContractModel(roleKey) {
   return found?.contractModel || "";
 }
 
+function normalizeYearMonth(value) {
+  const normalized = String(value || "").trim();
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(normalized) ? normalized : "";
+}
+
+function normalizeEmployee(employee, index = 0) {
+  const roleKey = employee?.roleKey || "";
+
+  return {
+    id: employee?.id || `emp_${index + 1}`,
+    name: employee?.name || "",
+    roleKey,
+    target: employee?.target || roleToTarget(roleKey),
+    contractModel: employee?.contractModel || roleToContractModel(roleKey),
+    contractTargetMinutesPerMonth: Number(employee?.contractTargetMinutesPerMonth) || 0,
+    totalVacationDays: Number(employee?.totalVacationDays ?? employee?.vacationDays ?? 30),
+    usedVacationDays: Number(employee?.usedVacationDays ?? 0),
+    remainingVacationDays: Number(employee?.remainingVacationDays ?? employee?.vacationDays ?? 30),
+    vacationDays: Number(employee?.totalVacationDays ?? employee?.vacationDays ?? 30),
+    birthDate: employee?.birthDate || "",
+    serviceBonus: Boolean(employee?.serviceBonus),
+    activeFromMonth: normalizeYearMonth(employee?.activeFromMonth),
+    activeToMonth: normalizeYearMonth(employee?.activeToMonth),
+    shifts: {}
+  };
+}
+
+function isEmployeeActiveInMonth(employee, yearMonth) {
+  if (!employee) return false;
+
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
+  if (!normalizedYearMonth) return true;
+
+  const activeFromMonth = normalizeYearMonth(employee.activeFromMonth);
+  const activeToMonth = normalizeYearMonth(employee.activeToMonth);
+
+  if (activeFromMonth && normalizedYearMonth < activeFromMonth) return false;
+  if (activeToMonth && normalizedYearMonth > activeToMonth) return false;
+
+  return true;
+}
+
 /* ========= STORAGE ========= */
 function loadJson(key, fallback) {
   try {
@@ -1129,7 +1171,9 @@ function saveMasterData() {
       remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
       vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate || "",
-      serviceBonus: Boolean(emp.serviceBonus)
+      serviceBonus: Boolean(emp.serviceBonus),
+      activeFromMonth: normalizeYearMonth(emp.activeFromMonth),
+      activeToMonth: normalizeYearMonth(emp.activeToMonth)
     }))
   });
 }
@@ -1189,31 +1233,31 @@ function loadAppState() {
 /* ========= DEFAULT DATA ========= */
 function createDefaultEmployees() {
   return [
-    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", contractModel: "VZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_1", name: "Stephan M", roleKey: "TL", target: "30:00", contractModel: "VZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", contractModel: "TZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_2", name: "Mitarbeiter 2", roleKey: "TZ30", target: "30:00", contractModel: "TZ30", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_3", name: "Mitarbeiter 3", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", contractModel: "TZ15", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", contractModel: "TZ15", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_6", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_6", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_7", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_7", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_8", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_8", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_9", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_9", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_10", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_10", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_11", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_11", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_12", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_12", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
-    { id: "emp_13", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "",
+    { id: "emp_13", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} }
   ];
 }
@@ -1232,7 +1276,9 @@ function defaultMasterState() {
       remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
       vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate,
-      serviceBonus: emp.serviceBonus
+      serviceBonus: emp.serviceBonus,
+      activeFromMonth: normalizeYearMonth(emp.activeFromMonth),
+      activeToMonth: normalizeYearMonth(emp.activeToMonth)
     }))
   };
 }
@@ -1253,23 +1299,7 @@ function buildInitialState() {
     ? master.employees
     : defaultMasterState().employees;
 
- const employees = baseEmployees.map((emp, index) => {
-  return {
-    id: emp.id || `emp_${index + 1}`,
-    name: emp.name || "",
-    roleKey: emp.roleKey || "",
-    target: emp.target || roleToTarget(emp.roleKey || ""),
-    contractModel: emp.contractModel || roleToContractModel(emp.roleKey || ""),
-    contractTargetMinutesPerMonth: Number(emp.contractTargetMinutesPerMonth) || 0,
-    totalVacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
-    usedVacationDays: Number(emp.usedVacationDays ?? 0),
-    remainingVacationDays: Number(emp.remainingVacationDays ?? emp.vacationDays ?? 30),
-    vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
-    birthDate: emp.birthDate || "",
-    serviceBonus: Boolean(emp.serviceBonus),
-    shifts: {}
-  };
-});
+ const employees = baseEmployees.map((emp, index) => normalizeEmployee(emp, index));
 
   const schedule = plan.schedule && typeof plan.schedule === "object"
     ? normalizeSchedule(plan.schedule)
@@ -2000,7 +2030,10 @@ function isClosingResolvedEntry(entry) {
 }
 
 function getClosingWorkersForIso(iso) {
+  const yearMonth = String(iso || "").slice(0, 7);
+
   return state.employees.filter((emp) => {
+    if (!isEmployeeActiveInMonth(emp, yearMonth)) return false;
     const entry = getScheduleEntry(emp.id, iso);
     return isClosingResolvedEntry(entry);
   });
@@ -2201,9 +2234,43 @@ serviceBonusInput.addEventListener("change", () => {
   renderAllViews();
 });
 
+    const activeFromInput = document.createElement("input");
+    activeFromInput.type = "month";
+    activeFromInput.value = normalizeYearMonth(emp.activeFromMonth);
+    activeFromInput.title = "Aktiv von (YYYY-MM)";
+    activeFromInput.addEventListener("change", () => {
+      emp.activeFromMonth = normalizeYearMonth(activeFromInput.value);
+
+      if (emp.activeFromMonth && emp.activeToMonth && emp.activeToMonth < emp.activeFromMonth) {
+        emp.activeToMonth = emp.activeFromMonth;
+        activeToInput.value = emp.activeToMonth;
+      }
+
+      saveAppStateDebounced();
+      renderAllViews();
+    });
+
+    const activeToInput = document.createElement("input");
+    activeToInput.type = "month";
+    activeToInput.value = normalizeYearMonth(emp.activeToMonth);
+    activeToInput.title = "Aktiv bis (YYYY-MM)";
+    activeToInput.addEventListener("change", () => {
+      emp.activeToMonth = normalizeYearMonth(activeToInput.value);
+
+      if (emp.activeFromMonth && emp.activeToMonth && emp.activeToMonth < emp.activeFromMonth) {
+        emp.activeFromMonth = emp.activeToMonth;
+        activeFromInput.value = emp.activeFromMonth;
+      }
+
+      saveAppStateDebounced();
+      renderAllViews();
+    });
+
     row.appendChild(nameInput);
     row.appendChild(roleSel);
     row.appendChild(targetInput);
+    row.appendChild(activeFromInput);
+    row.appendChild(activeToInput);
     row.appendChild(vacationInput);
     row.appendChild(usedVacationInfo);
     row.appendChild(remainingVacationInfo);
