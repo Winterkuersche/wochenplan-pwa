@@ -920,6 +920,7 @@ const weekToEl = document.getElementById("weekTo");
 
 const teamSectionEl = document.getElementById("teamSection");
 const btnToggleTeamEl = document.getElementById("btnToggleTeam");
+const btnAddEmployeeEl = document.getElementById("btnAddEmployee");
 
 const weeklyHoursActualEl = document.getElementById("weeklyHoursActual");
 const weeklyHoursRemainingEl = document.getElementById("weeklyHoursRemaining");
@@ -1242,22 +1243,6 @@ function createDefaultEmployees() {
     { id: "emp_4", name: "Mitarbeiter 4", roleKey: "TZ15", target: "15:00", contractModel: "TZ15", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} },
     { id: "emp_5", name: "Mitarbeiter 5", roleKey: "TZ20", target: "20:00", contractModel: "TZ20", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_6", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_7", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_8", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_9", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_10", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_11", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_12", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
-  serviceBonus: false, shifts: {} },
-    { id: "emp_13", name: "", roleKey: "", target: "", contractModel: "", totalVacationDays: 30, usedVacationDays: 0, remainingVacationDays: 30, vacationDays: 30, birthDate: "", activeFromMonth: "", activeToMonth: "",
   serviceBonus: false, shifts: {} }
   ];
 }
@@ -2265,6 +2250,18 @@ serviceBonusInput.addEventListener("change", () => {
       saveAppStateDebounced();
       renderAllViews();
     });
+    const removeEmployeeButton = document.createElement("button");
+    removeEmployeeButton.type = "button";
+    removeEmployeeButton.textContent = "Mitarbeiter entfernen";
+    removeEmployeeButton.title = "Mitarbeiter entfernen";
+    removeEmployeeButton.addEventListener("click", () => {
+      const employeeLabel = (emp.name || `Mitarbeiter ${idx + 1}`).trim();
+      const shouldRemoveEmployee = confirm(`"${employeeLabel}" wirklich entfernen?`);
+      if (!shouldRemoveEmployee) return;
+
+      const shouldCleanupPlanData = confirm("Zugehörige Plan- und Absenzdaten ebenfalls löschen?\nOK = Ja, Abbrechen = Nein (nur Stammdaten entfernen)");
+      removeEmployee(emp.id, { cleanupPlanData: shouldCleanupPlanData });
+    });
 
     row.appendChild(nameInput);
     row.appendChild(roleSel);
@@ -2276,9 +2273,60 @@ serviceBonusInput.addEventListener("change", () => {
     row.appendChild(remainingVacationInfo);
     row.appendChild(birthDateInput);
     row.appendChild(serviceBonusInput);
+    row.appendChild(removeEmployeeButton);
 
     teamListEl.appendChild(row);
     });
+}
+
+function getNextEmployeeId() {
+  const maxEmployeeNumber = state.employees.reduce((maxValue, employee) => {
+    const match = String(employee?.id || "").match(/^emp_(\d+)$/);
+    if (!match) return maxValue;
+    return Math.max(maxValue, Number(match[1]) || 0);
+  }, 0);
+
+  return `emp_${maxEmployeeNumber + 1}`;
+}
+
+function createEmptyEmployee() {
+  return normalizeEmployee({
+    id: getNextEmployeeId(),
+    name: "",
+    roleKey: "",
+    target: "",
+    contractModel: "",
+    totalVacationDays: 30,
+    usedVacationDays: 0,
+    remainingVacationDays: 30,
+    vacationDays: 30,
+    birthDate: "",
+    activeFromMonth: "",
+    activeToMonth: "",
+    serviceBonus: false
+  }, state.employees.length);
+}
+
+function removeEmployee(employeeId, options = {}) {
+  if (!employeeId) return;
+  const { cleanupPlanData = true } = options;
+
+  state.employees = (state.employees || []).filter((employee) => employee?.id !== employeeId);
+
+  if (cleanupPlanData) {
+    Object.keys(state.schedule || {}).forEach((isoDate) => {
+      if (!state.schedule?.[isoDate]) return;
+      delete state.schedule[isoDate][employeeId];
+      if (!Object.keys(state.schedule[isoDate]).length) {
+        delete state.schedule[isoDate];
+      }
+    });
+
+    state.absences = (state.absences || []).filter((entry) => entry?.employeeId !== employeeId);
+  }
+
+  commitPlanChange();
+  renderTeamSetup();
 }
 function renderSummary() {
   const totalWeek = totalMinutesForWeek();
@@ -2360,6 +2408,15 @@ if (btnToggleTeamEl) {
     uiState.teamCollapsed = !uiState.teamCollapsed;
     saveAppStateDebounced();
     renderTeamSectionVisibility();
+  });
+}
+
+if (btnAddEmployeeEl) {
+  btnAddEmployeeEl.addEventListener("click", () => {
+    state.employees.push(createEmptyEmployee());
+    saveAppStateDebounced();
+    renderTeamSetup();
+    renderAllViews();
   });
 }
 
