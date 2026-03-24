@@ -171,17 +171,12 @@ function createMepPdfExportRoot() {
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
     sheetEl.style.setProperty("--mep-sheet-scale", "1");
     sheetEl.style.setProperty("--mep-table-scale", "1");
-    sheetEl.style.width = "297mm";
-    sheetEl.style.maxWidth = "297mm";
-    sheetEl.style.height = "210mm";
     sheetEl.style.margin = "0";
     sheetEl.style.breakAfter = "page";
     sheetEl.style.pageBreakAfter = "always";
   });
 
   clonePagesEl.querySelectorAll(".mepTplSheetInner").forEach((innerEl) => {
-    innerEl.style.width = "297mm";
-    innerEl.style.height = "210mm";
     innerEl.style.transform = "none";
   });
 
@@ -193,10 +188,6 @@ function createMepPdfExportRoot() {
 
   exportRoot.appendChild(clonePagesEl);
   document.body.appendChild(exportRoot);
-
-  clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    sheetEl.style.setProperty("--mep-table-scale", "1");
-  });
 
   if (typeof syncMepOutsideRunMarkers === "function") {
     syncMepOutsideRunMarkers(clonePagesEl);

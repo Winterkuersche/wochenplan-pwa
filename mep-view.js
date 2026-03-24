@@ -1,5 +1,5 @@
-const MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE = 8;
-const MEP_TEMPLATE_BASE_SHEET_SCALE = 1;
+const EMPLOYEES_PER_SHEET = 9;
+const MEP_TEMPLATE_FIXED_SHEET_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
 
 function mepPad2(value) {
@@ -485,7 +485,7 @@ function getMepTemplateSheetModelsForMonth() {
   const monthWeeks = state.monthPlan?.weeks || [];
   const allEmployees = Array.isArray(state.employees) ? state.employees : [];
   const activeMonthEmployees = allEmployees.filter((employee) => isEmployeeActiveInMonth(employee, state.activeMonth));
-  const employeePageCount = Math.max(1, Math.ceil(Math.max(activeMonthEmployees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
+  const employeePageCount = Math.max(1, Math.ceil(Math.max(activeMonthEmployees.length, 1) / EMPLOYEES_PER_SHEET));
 
   if (!monthWeeks.length) {
     return [
@@ -493,7 +493,7 @@ function getMepTemplateSheetModelsForMonth() {
         weekDays: getActiveWeekDays(),
         weekIndex: 0,
         pageIndex: 0,
-        employees: activeMonthEmployees.slice(0, MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE),
+        employees: activeMonthEmployees.slice(0, EMPLOYEES_PER_SHEET),
         weekFrom: state.weekFrom || "",
         weekTo: state.weekTo || "",
         activeMonth: state.activeMonth || (state.weekFrom || "").slice(0, 7)
@@ -511,15 +511,15 @@ function getMepTemplateSheetModelsForMonth() {
       weekFrom.slice(0, 7);
 
     const weekEmployees = activeMonthEmployees.filter((employee) => isEmployeeActiveInWeekDays(employee, safeWeekDays));
-    const weekEmployeePageCount = Math.max(1, Math.ceil(Math.max(weekEmployees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
+    const weekEmployeePageCount = Math.max(1, Math.ceil(Math.max(weekEmployees.length, 1) / EMPLOYEES_PER_SHEET));
 
     return Array.from({ length: weekEmployeePageCount }, (_, pageIndex) => ({
       weekDays: safeWeekDays,
       weekIndex,
       pageIndex,
       employees: weekEmployees.slice(
-        pageIndex * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE,
-        (pageIndex + 1) * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE
+        pageIndex * EMPLOYEES_PER_SHEET,
+        (pageIndex + 1) * EMPLOYEES_PER_SHEET
       ),
       weekFrom,
       weekTo,
@@ -532,15 +532,15 @@ function getMepTemplateSheetModelsForWeek() {
   const weekDays = getActiveWeekDays();
   const employees = (Array.isArray(state.employees) ? state.employees : [])
     .filter((employee) => isEmployeeActiveInWeekDays(employee, weekDays));
-  const totalPages = Math.max(1, Math.ceil(Math.max(employees.length, 1) / MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(Math.max(employees.length, 1) / EMPLOYEES_PER_SHEET));
 
   return Array.from({ length: totalPages }, (_, pageIndex) => ({
     weekDays,
     weekIndex: 0,
     pageIndex,
     employees: employees.slice(
-      pageIndex * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE,
-      (pageIndex + 1) * MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE
+      pageIndex * EMPLOYEES_PER_SHEET,
+      (pageIndex + 1) * EMPLOYEES_PER_SHEET
     ),
     weekFrom: state.weekFrom || weekDays[0]?.iso || "",
     weekTo: state.weekTo || weekDays[weekDays.length - 1]?.iso || "",
@@ -552,27 +552,8 @@ function fitMepTemplateSheets() {
   const pagesEl = document.getElementById("mepTemplatePages");
   if (!pagesEl) return;
 
-  const pageContainerWidth = pagesEl.clientWidth || pagesEl.getBoundingClientRect().width || 0;
-
   pagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    const innerEl = sheetEl.querySelector(".mepTplSheetInner");
-    if (!innerEl) return;
-
-    sheetEl.style.setProperty("--mep-sheet-scale", "1");
-    sheetEl.style.setProperty("--mep-table-scale", "1");
-
-    const fullSheetWidth = innerEl.getBoundingClientRect().width || 0;
-    const maxSheetScaleFromWidth =
-      pageContainerWidth > 0 && fullSheetWidth > 0
-        ? Math.min(1, pageContainerWidth / fullSheetWidth)
-        : 1;
-    const minReadableScale = Math.min(1, window.innerWidth < 920 ? 0.82 : 0.9);
-    const sheetScale = Math.max(
-      Math.min(MEP_TEMPLATE_BASE_SHEET_SCALE, maxSheetScaleFromWidth),
-      Math.min(minReadableScale, maxSheetScaleFromWidth)
-    );
-
-    sheetEl.style.setProperty("--mep-sheet-scale", `${sheetScale}`);
+    sheetEl.style.setProperty("--mep-sheet-scale", `${MEP_TEMPLATE_FIXED_SHEET_SCALE}`);
     sheetEl.style.setProperty("--mep-table-scale", "1");
   });
 
@@ -625,7 +606,7 @@ function renderMepTemplateView(options = {}) {
 
     let rowsHtml = "";
 
-    for (let slotIndex = 0; slotIndex < MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE; slotIndex += 1) {
+    for (let slotIndex = 0; slotIndex < EMPLOYEES_PER_SHEET; slotIndex += 1) {
       rowsHtml += buildMepEmployeeRows(sheetModel.employees[slotIndex], weekDays, slotIndex, sheetModel);
     }
 
