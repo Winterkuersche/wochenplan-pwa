@@ -1534,8 +1534,17 @@ function getEmployeeTargetMinutes(employee) {
   return hmToMinutes(employee.target || "0:00");
 }
 
+function isGfbEmployee(employee) {
+  if (!employee) return false;
+  return String(employee.roleKey || "").trim().toUpperCase() === "GFB";
+}
+
 function getEmployeeContractTargetMinutesPerMonth(employee) {
   if (!employee) return 0;
+
+  if (isGfbEmployee(employee)) {
+    return 43 * 60;
+  }
 
   const individualTargetMinutes = Number(employee.contractTargetMinutesPerMonth);
   if (Number.isFinite(individualTargetMinutes) && individualTargetMinutes > 0) {
@@ -1595,6 +1604,11 @@ function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays
 
 function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays()) {
   const accountMinutes = getEmployeeAccountMinutesForWeek(employee, weekDays);
+
+  if (isGfbEmployee(employee)) {
+    return Math.max(0, accountMinutes);
+  }
+
   const targetMinutes = getEmployeeTargetMinutes(employee);
   return accountMinutes - targetMinutes;
 }
@@ -1730,6 +1744,7 @@ function getEmployeeRunningBalanceMinutesUntilActiveMonth(employee) {
 
 function getEmployeeTotalMinusMinutes(employee) {
   if (!employee) return 0;
+  if (isGfbEmployee(employee)) return 0;
 
   const runningBalanceMinutes = getEmployeeRunningBalanceMinutesUntilActiveMonth(employee);
   return runningBalanceMinutes < 0 ? Math.abs(runningBalanceMinutes) : 0;
@@ -1744,7 +1759,29 @@ function getEmployeeMonthDifferenceMinutes(employee, yearMonth = state.activeMon
   const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
   const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
 
+  if (isGfbEmployee(employee)) {
+    return Math.max(0, accountMinutes);
+  }
+
   return accountMinutes - contractTargetMinutes;
+}
+
+function getEmployeeMonthContingentRemainingMinutes(employee, yearMonth = state.activeMonth) {
+  if (!employee) return 0;
+  if (!isGfbEmployee(employee)) return 0;
+
+  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
+  return Math.max(0, contractTargetMinutes - accountMinutes);
+}
+
+function getEmployeeMonthContingentOveruseMinutes(employee, yearMonth = state.activeMonth) {
+  if (!employee) return 0;
+  if (!isGfbEmployee(employee)) return 0;
+
+  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
+  return Math.max(0, accountMinutes - contractTargetMinutes);
 }
 
 function totalMinutesForDayIso(iso) {
