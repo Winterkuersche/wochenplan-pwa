@@ -2415,16 +2415,16 @@ body.dark .mepTable th {
 
 .mepTplSheetInner {
   --mep-table-font-size: 0.67rem;
-  --mep-table-cell-padding-y: 0.55mm;
+  --mep-table-cell-padding-y: 0.5mm;
   --mep-table-cell-padding-x: 0.5mm;
-  --mep-table-row-height: 4.1mm;
+  --mep-table-row-height: 4mm;
   --mep-table-head-bg: #ececec;
   --mep-col-employee-width: 10.85%;
   --mep-col-role-width: 7%;
   --mep-col-target-width: 7.6%;
   --mep-col-metric-width: 7.25%;
   --mep-col-summary-width: 8.92%;
-  --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.38px);
+  --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
   --mep-footer-pause-label-width: 27.4mm;
   --mep-footer-pause-content-width: 50.2mm;
   --mep-footer-pause-short-width: 44.3mm;
@@ -2770,10 +2770,10 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  --mep-footer-block-lift: 0.55mm;
+  --mep-footer-block-lift: 0.48mm;
   width: 100%;
-  margin-top: 0.42mm;
-  padding-top: 0.1mm;
+  margin-top: 0.32mm;
+  padding-top: 0.06mm;
   font-size: 0.72rem;
   line-height: 1.04;
 }
@@ -2794,7 +2794,7 @@ body.dark .mepTable th {
     "presence presence presence presence presence presence presence stand";
   align-items: start;
   column-gap: 0;
-  row-gap: 1.1mm;
+  row-gap: 0.95mm;
   white-space: nowrap;
   transform: translateY(calc(-1 * var(--mep-footer-block-lift)));
   transform-origin: top left;
@@ -3177,10 +3177,10 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: 3.55mm;
-    --mep-table-cell-padding-y: 0.25mm;
+    --mep-table-row-height: 3.5mm;
+    --mep-table-cell-padding-y: 0.22mm;
     --mep-table-cell-padding-x: 0.4mm;
-    --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.4px);
+    --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3226,14 +3226,14 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    --mep-footer-block-lift: 0.55mm;
-    margin-top: 0.42mm;
-    padding-top: 0.08mm;
+    --mep-footer-block-lift: 0.48mm;
+    margin-top: 0.32mm;
+    padding-top: 0.06mm;
     font-size: 0.64rem;
   }
 
   .mepTplFooterGrid {
     column-gap: 3.2mm;
-    row-gap: 0.85mm;
+    row-gap: 0.75mm;
   }
 }
