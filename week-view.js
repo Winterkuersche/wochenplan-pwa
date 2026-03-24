@@ -964,24 +964,44 @@ function renderWeekTable() {
 
     const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays);
     const tdDelta = document.createElement("td");
-    tdDelta.className = `weekDeltaCell weekSummaryCol ${
-      differenceMinutes < 0 ? "deltaNeg" : differenceMinutes > 0 ? "deltaPos" : "deltaZero"
-    }`;
-    tdDelta.textContent = formatSignedMinutes(differenceMinutes);
+    if (isGfbEmployee(emp)) {
+      tdDelta.className = `weekDeltaCell weekSummaryCol ${differenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
+      tdDelta.textContent = `${minutesToHM(differenceMinutes)} genutzt`;
+      tdDelta.title = "GfB: Kontingentnutzung in der aktuellen Woche";
+    } else {
+      tdDelta.className = `weekDeltaCell weekSummaryCol ${
+        differenceMinutes < 0 ? "deltaNeg" : differenceMinutes > 0 ? "deltaPos" : "deltaZero"
+      }`;
+      tdDelta.textContent = formatSignedMinutes(differenceMinutes);
+    }
     tr.appendChild(tdDelta);
 
     const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
     const tdMonthDelta = document.createElement("td");
-    tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${
-      monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"
-    }`;
-    tdMonthDelta.textContent = formatSignedMinutes(monthDifferenceMinutes);
+    if (isGfbEmployee(emp)) {
+      tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
+      tdMonthDelta.textContent = `${minutesToHM(monthDifferenceMinutes)} genutzt`;
+      tdMonthDelta.title = "GfB: Kontingentnutzung im aktuellen Monat";
+    } else {
+      tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${
+        monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"
+      }`;
+      tdMonthDelta.textContent = formatSignedMinutes(monthDifferenceMinutes);
+    }
     tr.appendChild(tdMonthDelta);
 
     const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
     const tdTotalMinus = document.createElement("td");
-    tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}`;
-    tdTotalMinus.textContent = totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00";
+    if (isGfbEmployee(emp)) {
+      const remainingContingentMinutes = getEmployeeMonthContingentRemainingMinutes(emp);
+      const overuseMinutes = getEmployeeMonthContingentOveruseMinutes(emp);
+      tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${overuseMinutes > 0 ? "deltaNeg" : "deltaPos"}`;
+      tdTotalMinus.textContent = overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`;
+      tdTotalMinus.title = "GfB: Restkontingent bzw. Übernutzung im aktuellen Monat";
+    } else {
+      tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}`;
+      tdTotalMinus.textContent = totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00";
+    }
     tr.appendChild(tdTotalMinus);
 
     const tdTarget = document.createElement("td");
