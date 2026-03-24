@@ -234,6 +234,10 @@ select {
   gap: 12px;
 }
 
+.teamActions {
+  margin-bottom: 10px;
+}
+
 .teamRow {
   display: grid;
   grid-template-columns:
