@@ -195,22 +195,7 @@ function createMepPdfExportRoot() {
   document.body.appendChild(exportRoot);
 
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    const wrapEl = sheetEl.querySelector(".mepTplWrap");
-    const wrapInnerEl = sheetEl.querySelector(".mepTplWrapInner");
-    const footerEl = sheetEl.querySelector(".mepTplFooter");
-    if (!wrapEl || !wrapInnerEl || !footerEl) return;
-
-    const availableWrapHeight =
-      typeof getMepTemplateTableHeightBudget === "function"
-        ? getMepTemplateTableHeightBudget(wrapEl, wrapInnerEl, footerEl)
-        : wrapInnerEl.clientHeight || wrapInnerEl.getBoundingClientRect().height || 0;
-    const tableHeight = wrapInnerEl.scrollHeight || wrapInnerEl.getBoundingClientRect().height || 0;
-    const fittedScale =
-      availableWrapHeight > 0 && tableHeight > 0
-        ? Math.min(1, availableWrapHeight / tableHeight)
-        : 1;
-
-    sheetEl.style.setProperty("--mep-table-scale", `${fittedScale || 1}`);
+    sheetEl.style.setProperty("--mep-table-scale", "1");
   });
 
   if (typeof syncMepOutsideRunMarkers === "function") {
