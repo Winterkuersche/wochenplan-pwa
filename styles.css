@@ -2417,7 +2417,14 @@ body.dark .mepTable th {
   --mep-table-font-size: 0.67rem;
   --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
-  --mep-table-row-height: 3.95mm;
+  --mep-table-row-height: 3.55mm;
+  --mep-table-head-rows: 3;
+  --mep-employees-per-sheet: 9;
+  --mep-rows-per-employee: 4;
+  --mep-table-body-rows: calc(var(--mep-employees-per-sheet) * var(--mep-rows-per-employee));
+  --mep-table-total-rows: calc(var(--mep-table-head-rows) + var(--mep-table-body-rows));
+  --mep-table-height: calc(var(--mep-table-total-rows) * var(--mep-table-row-height));
+  --mep-footer-height: 12.1mm;
   --mep-table-head-bg: #ececec;
   --mep-col-employee-width: 10.85%;
   --mep-col-role-width: 7%;
@@ -2539,19 +2546,21 @@ body.dark .mepTable th {
 }
 
 .mepTplWrap {
-  flex: 0 0 auto;
-  min-height: 0;
+  flex: 0 0 var(--mep-table-height);
+  height: var(--mep-table-height);
+  min-height: var(--mep-table-height);
+  max-height: var(--mep-table-height);
   overflow: hidden;
 }
 
 .mepTplWrapInner {
-  width: calc(100% / var(--mep-table-scale));
-  transform: scale(var(--mep-table-scale));
-  transform-origin: top left;
+  width: 100%;
+  transform: none;
 }
 
 .mepTplTable {
   width: 100%;
+  height: var(--mep-table-height);
   border-collapse: collapse;
   table-layout: fixed;
   border: 1.8px solid #000;
@@ -2782,12 +2791,15 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  --mep-footer-block-lift: 0.52mm;
   width: 100%;
-  margin-top: 0.36mm;
+  margin-top: auto;
+  min-height: var(--mep-footer-height);
+  max-height: var(--mep-footer-height);
   padding-top: 0.06mm;
   font-size: 0.72rem;
   line-height: 1.04;
+  display: flex;
+  align-items: flex-end;
 }
 
 .mepTplFooterGrid {
@@ -2808,8 +2820,8 @@ body.dark .mepTable th {
   column-gap: 0;
   row-gap: 0.95mm;
   white-space: nowrap;
-  transform: translateY(calc(-1 * var(--mep-footer-block-lift)));
-  transform-origin: top left;
+  width: 100%;
+  transform: none;
 }
 
 .mepTplFooterBlock {
@@ -2920,7 +2932,7 @@ body.dark .mepTable th {
   white-space: nowrap;
   letter-spacing: -0.01em;
   margin: 0;
-  transform: translateY(0.18mm);
+  transform: none;
 }
 
 .mepTplHandwrite,
@@ -3196,7 +3208,7 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: 3.45mm;
+    --mep-table-row-height: 3.55mm;
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
     --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
@@ -3245,8 +3257,7 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    --mep-footer-block-lift: 0.52mm;
-    margin-top: 0.36mm;
+    margin-top: auto;
     padding-top: 0.06mm;
     font-size: 0.64rem;
   }
