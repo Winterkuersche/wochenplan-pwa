@@ -250,6 +250,71 @@ function getOutsideMonthRuns(weekDays) {
   return runs;
 }
 
+function getMepMonthDateRangeUntilWeek(sheetModel = {}) {
+  const activeMonth = String(sheetModel?.activeMonth || "").trim();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(activeMonth)) {
+    return { startIso: "", endIso: "" };
+  }
+
+  const [year, month] = activeMonth.split("-").map(Number);
+  const startDate = new Date(year, month - 1, 1);
+  const monthEndDate = new Date(year, month, 0);
+  const weekToDate = new Date(`${sheetModel?.weekTo || ""}T00:00:00`);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(monthEndDate.getTime()) || Number.isNaN(weekToDate.getTime())) {
+    return { startIso: "", endIso: "" };
+  }
+
+  const endDate = weekToDate < monthEndDate ? weekToDate : monthEndDate;
+  const startIso = toIsoDate(startDate);
+  const endIso = toIsoDate(endDate);
+
+  if (!startIso || !endIso || endIso < startIso) {
+    return { startIso: "", endIso: "" };
+  }
+
+  return { startIso, endIso };
+}
+
+function getEmployeeAccountMinutesForIsoRange(employee, startIso, endIso) {
+  if (!employee || !startIso || !endIso || endIso < startIso) return 0;
+
+  let sum = 0;
+  const cursor = new Date(`${startIso}T00:00:00`);
+  const endDate = new Date(`${endIso}T00:00:00`);
+
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(endDate.getTime())) return 0;
+
+  while (cursor <= endDate) {
+    const isoDate = toIsoDate(cursor);
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, isoDate);
+    const status = getResolvedStatus(resolved);
+
+    if (isCreditableResolvedAccountEntry(resolved)) {
+      if (status === ENTRY_STATUS.VACATION) {
+        sum += getAbsenceMinutesForEmployee(employee);
+      } else if (resolved?.type === "holiday") {
+        sum += Math.max(0, resolved.minutesForMonth || getAbsenceMinutesForEmployee(employee));
+      } else {
+        sum += Math.max(0, resolved.minutesForMonth || 0);
+      }
+    }
+
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return sum;
+}
+
+function getMepCumulativeMonthMinutes(employee, sheetModel = {}) {
+  if (!employee) return 0;
+
+  const { startIso, endIso } = getMepMonthDateRangeUntilWeek(sheetModel);
+  if (!startIso || !endIso) return 0;
+
+  return getEmployeeAccountMinutesForIsoRange(employee, startIso, endIso);
+}
+
 function getMepEmployeeRowClasses(rowTypeKey) {
   return [
     "mepTplEmployeeRow",
@@ -299,7 +364,7 @@ function syncMepOutsideRunMarkers(root = document) {
   });
 }
 
-function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
+function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel = {}) {
   const safeWeekDays = Array.isArray(weekDays) ? [...weekDays] : [];
 
   while (safeWeekDays.length < 7) {
@@ -385,7 +450,7 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0) {
         index === 0
           ? `
             <td rowspan="4" class="mepTplSummary mepTplSummaryWeek mepTplSummaryCell mepTplSummaryCellWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, safeWeekDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
-            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth mepTplSummaryCell mepTplSummaryCellMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForMonth(employee, state.activeMonth)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryMonth mepTplSummaryCell mepTplSummaryCellMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getMepCumulativeMonthMinutes(employee, sheetModel)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
           `
           : "";
 
@@ -569,7 +634,7 @@ function renderMepTemplateView(options = {}) {
     let rowsHtml = "";
 
     for (let slotIndex = 0; slotIndex < MEP_TEMPLATE_EMPLOYEE_SLOTS_PER_PAGE; slotIndex += 1) {
-      rowsHtml += buildMepEmployeeRows(sheetModel.employees[slotIndex], weekDays, slotIndex);
+      rowsHtml += buildMepEmployeeRows(sheetModel.employees[slotIndex], weekDays, slotIndex, sheetModel);
     }
 
     bodyEl.innerHTML = rowsHtml;
