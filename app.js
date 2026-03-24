@@ -2222,7 +2222,8 @@ serviceBonusInput.addEventListener("change", () => {
     const activeFromInput = document.createElement("input");
     activeFromInput.type = "month";
     activeFromInput.value = normalizeYearMonth(emp.activeFromMonth);
-    activeFromInput.title = "Aktiv von (YYYY-MM)";
+    activeFromInput.placeholder = "YYYY-MM";
+    activeFromInput.title = "Ab diesem Monat im Plan sichtbar";
     activeFromInput.addEventListener("change", () => {
       emp.activeFromMonth = normalizeYearMonth(activeFromInput.value);
 
@@ -2235,10 +2236,18 @@ serviceBonusInput.addEventListener("change", () => {
       renderAllViews();
     });
 
+    const activeFromField = document.createElement("div");
+    activeFromField.className = "teamField";
+    const activeFromLabel = document.createElement("label");
+    activeFromLabel.className = "teamFieldLabel";
+    activeFromLabel.textContent = "Eintritt";
+    activeFromField.append(activeFromLabel, activeFromInput);
+
     const activeToInput = document.createElement("input");
     activeToInput.type = "month";
     activeToInput.value = normalizeYearMonth(emp.activeToMonth);
-    activeToInput.title = "Aktiv bis (YYYY-MM)";
+    activeToInput.placeholder = "YYYY-MM";
+    activeToInput.title = "Ab Folgemonat nicht mehr sichtbar";
     activeToInput.addEventListener("change", () => {
       emp.activeToMonth = normalizeYearMonth(activeToInput.value);
 
@@ -2250,6 +2259,13 @@ serviceBonusInput.addEventListener("change", () => {
       saveAppStateDebounced();
       renderAllViews();
     });
+
+    const activeToField = document.createElement("div");
+    activeToField.className = "teamField";
+    const activeToLabel = document.createElement("label");
+    activeToLabel.className = "teamFieldLabel";
+    activeToLabel.textContent = "Austritt";
+    activeToField.append(activeToLabel, activeToInput);
     const removeEmployeeButton = document.createElement("button");
     removeEmployeeButton.type = "button";
     removeEmployeeButton.textContent = "Mitarbeiter entfernen";
@@ -2266,8 +2282,8 @@ serviceBonusInput.addEventListener("change", () => {
     row.appendChild(nameInput);
     row.appendChild(roleSel);
     row.appendChild(targetInput);
-    row.appendChild(activeFromInput);
-    row.appendChild(activeToInput);
+    row.appendChild(activeFromField);
+    row.appendChild(activeToField);
     row.appendChild(vacationInput);
     row.appendChild(usedVacationInfo);
     row.appendChild(remainingVacationInfo);
