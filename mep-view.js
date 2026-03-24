@@ -366,6 +366,10 @@ function syncMepOutsideRunMarkers(root = document) {
 
 function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel = {}) {
   const safeWeekDays = Array.isArray(weekDays) ? [...weekDays] : [];
+  const activeMonthPrefix = String(sheetModel?.activeMonth || "").trim();
+  const weekSummaryDays = /^\d{4}-(0[1-9]|1[0-2])$/.test(activeMonthPrefix)
+    ? safeWeekDays.filter((day) => String(day?.iso || "").startsWith(activeMonthPrefix))
+    : safeWeekDays;
 
   while (safeWeekDays.length < 7) {
     safeWeekDays.push({ iso: "", isOutsideMonth: false });
@@ -449,7 +453,7 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel
       const summaryColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek mepTplSummaryCell mepTplSummaryCellWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, safeWeekDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
+            <td rowspan="4" class="mepTplSummary mepTplSummaryWeek mepTplSummaryCell mepTplSummaryCellWeek"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getEmployeeAccountMinutesForWeek(employee, weekSummaryDays)) : "", employeeOffset + 3, "mepTplHandSummary")}</div></td>
             <td rowspan="4" class="mepTplSummary mepTplSummaryMonth mepTplSummaryCell mepTplSummaryCellMonth"><div class="mepTplSummaryBox">${renderMepHandText(employee ? minutesToHM(getMepCumulativeMonthMinutes(employee, sheetModel)) : "", employeeOffset + 4, "mepTplHandSummary")}</div></td>
           `
           : "";
