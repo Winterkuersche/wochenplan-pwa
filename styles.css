@@ -2933,7 +2933,7 @@ body.dark .mepTable th {
 .mepTplHandName {
   width: 100%;
   max-width: 100%;
-  font-size: calc(1.28em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.60em + var(--mep-hand-size-adjust, 0px));
   line-height: 0.92;
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.012em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
@@ -2954,7 +2954,7 @@ body.dark .mepTable th {
   display: block;
   width: 100%;
   max-width: 100%;
-  font-size: calc(1.12em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.40em + var(--mep-hand-size-adjust, 0px));
   line-height: 0.86;
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.01em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
