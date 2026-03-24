@@ -2587,11 +2587,12 @@ body.dark .mepTable th {
 
 .mepTplDayCell--outside {
   background: #fff;
+  color: inherit;
 }
 
 .mepTplHeaderDate--outside {
   opacity: 1;
-  color: inherit;
+  color: rgba(0, 0, 0, 0.82);
   background: transparent;
 }
 
@@ -2602,6 +2603,11 @@ body.dark .mepTable th {
 .mepTplDayHeader--outsideMonth .mepTplHeaderDate {
   display: inline-block;
   min-height: 0;
+}
+
+.mepTplTable thead tr:nth-child(2) .mepTplDayHeader,
+.mepTplTable thead tr:nth-child(3) .mepTplDayHeader {
+  background: #fff;
 }
 
 .mepTplDayCell--outsideRunStart {
