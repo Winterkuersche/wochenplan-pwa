@@ -2400,7 +2400,6 @@ body.dark .mepTable th {
 
 .mepTplSheet {
   --mep-sheet-scale: 1;
-  --mep-table-scale: 1;
   width: min(100%, calc(297mm * var(--mep-sheet-scale)));
   max-width: 100%;
   height: calc(210mm * var(--mep-sheet-scale));
@@ -2414,17 +2413,25 @@ body.dark .mepTable th {
 }
 
 .mepTplSheetInner {
+  --mep-sheet-inner-height: 202mm;
+  --mep-header-height: 25.2mm;
+  --mep-footer-height: 12.1mm;
+  --mep-footer-bottom-gap: 0mm;
+  --mep-employee-blocks: 9;
+  --mep-rows-per-employee: 4;
   --mep-table-font-size: 0.67rem;
   --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
-  --mep-table-row-height: 3.55mm;
   --mep-table-head-rows: 3;
-  --mep-employees-per-sheet: 9;
-  --mep-rows-per-employee: 4;
-  --mep-table-body-rows: calc(var(--mep-employees-per-sheet) * var(--mep-rows-per-employee));
-  --mep-table-total-rows: calc(var(--mep-table-head-rows) + var(--mep-table-body-rows));
-  --mep-table-height: calc(var(--mep-table-total-rows) * var(--mep-table-row-height));
-  --mep-footer-height: 12.1mm;
+  --mep-table-height: calc(
+    var(--mep-sheet-inner-height)
+    - var(--mep-header-height)
+    - var(--mep-footer-height)
+    - var(--mep-footer-bottom-gap)
+  );
+  --mep-table-head-height: 10.65mm;
+  --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height)) / var(--mep-employee-blocks));
+  --mep-table-row-height: calc(var(--mep-employee-block-height) / var(--mep-rows-per-employee));
   --mep-table-head-bg: #ececec;
   --mep-col-employee-width: 10.85%;
   --mep-col-role-width: 7%;
@@ -2456,7 +2463,8 @@ body.dark .mepTable th {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin-bottom: 3.2mm;
+  min-height: 11.2mm;
+  margin-bottom: 0;
 }
 
 .mepTplTitleBar {
@@ -2490,7 +2498,8 @@ body.dark .mepTable th {
 }
 
 .mepTplMeta {
-  margin-bottom: 3.4mm;
+  min-height: 14mm;
+  margin-bottom: 0;
   font-size: 0.8rem;
 }
 
@@ -2555,6 +2564,10 @@ body.dark .mepTable th {
 
 .mepTplWrapInner {
   width: 100%;
+  height: var(--mep-table-height);
+  min-height: var(--mep-table-height);
+  max-height: var(--mep-table-height);
+  overflow: hidden;
   transform: none;
 }
 
@@ -2792,8 +2805,9 @@ body.dark .mepTable th {
 
 .mepTplFooter {
   width: 100%;
-  margin-top: auto;
+  margin-top: var(--mep-footer-bottom-gap);
   min-height: var(--mep-footer-height);
+  height: var(--mep-footer-height);
   max-height: var(--mep-footer-height);
   padding-top: 0.06mm;
   font-size: 0.72rem;
@@ -3204,11 +3218,26 @@ body.dark .mepTable th {
   }
 
   .mepTplSheetInner {
+    --mep-sheet-inner-height: 202mm;
+    --mep-header-height: 25.2mm;
+    --mep-footer-height: 12.1mm;
+    --mep-footer-bottom-gap: 0mm;
+    --mep-employee-blocks: 9;
+    --mep-rows-per-employee: 4;
+    --mep-table-head-rows: 3;
+    --mep-table-height: calc(
+      var(--mep-sheet-inner-height)
+      - var(--mep-header-height)
+      - var(--mep-footer-height)
+      - var(--mep-footer-bottom-gap)
+    );
+    --mep-table-head-height: 10.65mm;
+    --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height)) / var(--mep-employee-blocks));
     width: 297mm;
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: 3.55mm;
+    --mep-table-row-height: calc(var(--mep-employee-block-height) / var(--mep-rows-per-employee));
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
     --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
@@ -3248,16 +3277,18 @@ body.dark .mepTable th {
   }
 
   .mepTplHeaderTopRow {
-    margin-bottom: 2.8mm;
+    min-height: 11.2mm;
+    margin-bottom: 0;
   }
 
   .mepTplMeta {
-    margin-bottom: 2.8mm;
+    min-height: 14mm;
+    margin-bottom: 0;
     font-size: 0.8rem;
   }
 
   .mepTplFooter {
-    margin-top: auto;
+    margin-top: var(--mep-footer-bottom-gap);
     padding-top: 0.06mm;
     font-size: 0.64rem;
   }
