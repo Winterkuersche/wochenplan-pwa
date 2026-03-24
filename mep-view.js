@@ -1,5 +1,4 @@
 const EMPLOYEES_PER_SHEET = 9;
-const MEP_TEMPLATE_FIXED_SHEET_SCALE = 1;
 const MEP_HAND_VARIANT_COUNT = 8;
 
 function mepPad2(value) {
@@ -553,8 +552,7 @@ function fitMepTemplateSheets() {
   if (!pagesEl) return;
 
   pagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    sheetEl.style.setProperty("--mep-sheet-scale", `${MEP_TEMPLATE_FIXED_SHEET_SCALE}`);
-    sheetEl.style.setProperty("--mep-table-scale", "1");
+    sheetEl.style.setProperty("--mep-sheet-scale", "1");
   });
 
   syncMepOutsideRunMarkers(pagesEl);

@@ -170,7 +170,6 @@ function createMepPdfExportRoot() {
 
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
     sheetEl.style.setProperty("--mep-sheet-scale", "1");
-    sheetEl.style.setProperty("--mep-table-scale", "1");
     sheetEl.style.margin = "0";
     sheetEl.style.breakAfter = "page";
     sheetEl.style.pageBreakAfter = "always";
@@ -178,6 +177,11 @@ function createMepPdfExportRoot() {
 
   clonePagesEl.querySelectorAll(".mepTplSheetInner").forEach((innerEl) => {
     innerEl.style.transform = "none";
+    innerEl.style.setProperty("--mep-sheet-inner-height", "202mm");
+    innerEl.style.setProperty("--mep-header-height", "25.2mm");
+    innerEl.style.setProperty("--mep-footer-height", "12.1mm");
+    innerEl.style.setProperty("--mep-footer-bottom-gap", "0mm");
+    innerEl.style.setProperty("--mep-employee-blocks", "9");
   });
 
   const lastSheetEl = clonePagesEl.querySelector(".mepTplSheet:last-child");
@@ -452,26 +456,8 @@ async function exportMepTemplatePdf() {
       throw new Error("Keine MEP-Seiten zum Export gefunden.");
     }
 
-    const defaultScale = Math.max(2, window.devicePixelRatio || 1);
-    const fallbackScale = Math.max(1.25, Math.min(1.75, defaultScale - 1));
-
-    try {
-      await runExportAttempt(sheetEls, defaultScale, "default");
-    } catch (error) {
-      if (fallbackScale < defaultScale) {
-        const debugContext = buildMepExportDebugContext(exportState);
-        console.warn("MEP PDF-Export erster Versuch fehlgeschlagen, neuer Versuch mit reduzierter Skalierung", {
-          failedStep: debugContext.currentExportStep,
-          failedPage: debugContext.currentPageNumber,
-          previousScale: defaultScale,
-          fallbackScale,
-          totalSheets: debugContext.totalSheets
-        });
-        await runExportAttempt(sheetEls, fallbackScale, "fallback");
-      } else {
-        throw error;
-      }
-    }
+    const exportScale = Math.max(2, window.devicePixelRatio || 1);
+    await runExportAttempt(sheetEls, exportScale, "default");
   } catch (error) {
     logMepExportError("PDF-Export fehlgeschlagen", error, exportState);
     offerMepExportFallback(exportState);
