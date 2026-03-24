@@ -579,11 +579,9 @@ function fitMepTemplateSheets() {
     sheetEl.style.setProperty("--mep-sheet-scale", `${sheetScale}`);
 
     const availableWrapHeight = wrapEl.clientHeight;
-    const tableHeight = wrapInnerEl.scrollHeight;
-    const heightScale =
-      availableWrapHeight > 0 && tableHeight > 0 ? availableWrapHeight / tableHeight : 1;
-    const tableScale =
-      (heightScale > 0 ? Math.min(MEP_TEMPLATE_MAX_TABLE_SCALE, heightScale) : 1) || 1;
+    const tableHeight = wrapInnerEl.getBoundingClientRect().height;
+    const hasStaticTableHeight = availableWrapHeight > 0 && tableHeight > 0;
+    const tableScale = hasStaticTableHeight ? MEP_TEMPLATE_MAX_TABLE_SCALE : 1;
 
     sheetEl.style.setProperty("--mep-table-scale", `${tableScale}`);
   });

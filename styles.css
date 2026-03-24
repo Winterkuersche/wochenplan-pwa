@@ -2570,6 +2570,13 @@ body.dark .mepTable th {
   line-height: 1;
 }
 
+.mepTplTable tbody tr,
+.mepTplEmployeeRow {
+  height: var(--mep-table-row-height);
+  min-height: var(--mep-table-row-height);
+  max-height: var(--mep-table-row-height);
+}
+
 .mepTplTable thead th {
   background: var(--mep-table-head-bg);
   font-weight: 700;
@@ -2715,6 +2722,11 @@ body.dark .mepTable th {
   font-weight: 600;
   padding-left: 0.75mm !important;
   padding-right: 0.75mm !important;
+  height: calc(4 * var(--mep-table-row-height));
+  min-height: calc(4 * var(--mep-table-row-height));
+  max-height: calc(4 * var(--mep-table-row-height));
+  overflow: hidden;
+  vertical-align: middle !important;
 }
 
 .mepTplMetric {
@@ -2961,13 +2973,17 @@ body.dark .mepTable th {
 }
 
 .mepTplHandName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   width: 100%;
   max-width: 100%;
   font-size: calc(2em + var(--mep-hand-size-adjust, 0px));
-  line-height: 0.88;
+  line-height: 0.92;
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.018em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   overflow: hidden;
 }
 
@@ -2979,7 +2995,9 @@ body.dark .mepTable th {
   gap: 0.1mm;
   width: 100%;
   max-width: 100%;
-  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .mepTplHandNameLine {
@@ -2987,11 +3005,12 @@ body.dark .mepTable th {
   width: 100%;
   max-width: 100%;
   font-size: calc(1.75em + var(--mep-hand-size-adjust, 0px));
-  line-height: 0.82;
+  line-height: 0.9;
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.016em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: clip;
 }
 
 .mepTplHandMeta {
