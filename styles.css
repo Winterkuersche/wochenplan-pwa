@@ -2956,16 +2956,19 @@ body.dark .mepTable th {
 }
 
 .mepTplHandValue {
-  font-size: calc(1.15em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.44em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.9;
 }
 
 .mepTplHandName {
   width: 100%;
   max-width: 100%;
-  font-size: calc(1.60em + var(--mep-hand-size-adjust, 0px));
-  line-height: 0.92;
-  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.012em + var(--mep-hand-letter-spacing, 0em));
+  font-size: calc(2em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.88;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.018em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .mepTplNameStack {
@@ -2983,106 +2986,118 @@ body.dark .mepTable th {
   display: block;
   width: 100%;
   max-width: 100%;
-  font-size: calc(1.40em + var(--mep-hand-size-adjust, 0px));
-  line-height: 0.86;
-  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.01em + var(--mep-hand-letter-spacing, 0em));
+  font-size: calc(1.75em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.82;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.016em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .mepTplHandMeta {
-  font-size: calc(1.14em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.42em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.9;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.006em + var(--mep-hand-letter-spacing, 0em));
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .mepTplHandSummary {
-  font-size: calc(1.24em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.55em + var(--mep-hand-size-adjust, 0px));
+  line-height: 0.88;
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.008em + var(--mep-hand-letter-spacing, 0em));
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .mepTplHandVariant0 {
-  --mep-hand-shift-x: -0.55px;
-  --mep-hand-shift-y: 0.35px;
-  --mep-hand-rotate: -0.8deg;
-  --mep-hand-scale-x: 0.985;
-  --mep-hand-scale-y: 1.01;
-  --mep-hand-ink: #20252a;
+  --mep-hand-shift-x: -0.5px;
+  --mep-hand-shift-y: 0.3px;
+  --mep-hand-rotate: -0.72deg;
+  --mep-hand-scale-x: 0.988;
+  --mep-hand-scale-y: 1.008;
+  --mep-hand-ink: #1f2429;
   --mep-hand-size-adjust: 0.08px;
-  --mep-hand-letter-spacing: -0.004em;
+  --mep-hand-letter-spacing: -0.005em;
 }
 
 .mepTplHandVariant1 {
-  --mep-hand-shift-x: 0.45px;
-  --mep-hand-shift-y: -0.25px;
-  --mep-hand-rotate: 0.55deg;
-  --mep-hand-scale-x: 1.01;
+  --mep-hand-shift-x: 0.42px;
+  --mep-hand-shift-y: -0.22px;
+  --mep-hand-rotate: 0.62deg;
+  --mep-hand-scale-x: 1.012;
   --mep-hand-scale-y: 0.995;
-  --mep-hand-ink: #1f2328;
+  --mep-hand-ink: #1e2328;
   --mep-hand-size-adjust: -0.08px;
-  --mep-hand-letter-spacing: 0.002em;
-}
-
-.mepTplHandVariant2 {
-  --mep-hand-shift-x: 0.25px;
-  --mep-hand-shift-y: 0.45px;
-  --mep-hand-rotate: -0.3deg;
-  --mep-hand-scale-x: 0.99;
-  --mep-hand-scale-y: 1.01;
-  --mep-hand-ink: #24282d;
-  --mep-hand-size-adjust: 0px;
-  --mep-hand-letter-spacing: -0.001em;
-}
-
-.mepTplHandVariant3 {
-  --mep-hand-shift-x: -0.35px;
-  --mep-hand-shift-y: 0.15px;
-  --mep-hand-rotate: 0.75deg;
-  --mep-hand-scale-x: 1.015;
-  --mep-hand-scale-y: 0.99;
-  --mep-hand-ink: #1d2126;
-  --mep-hand-size-adjust: 0.1px;
   --mep-hand-letter-spacing: 0.003em;
 }
 
+.mepTplHandVariant2 {
+  --mep-hand-shift-x: 0.22px;
+  --mep-hand-shift-y: 0.4px;
+  --mep-hand-rotate: -0.34deg;
+  --mep-hand-scale-x: 0.992;
+  --mep-hand-scale-y: 1.008;
+  --mep-hand-ink: #23282d;
+  --mep-hand-size-adjust: 0px;
+  --mep-hand-letter-spacing: -0.002em;
+}
+
+.mepTplHandVariant3 {
+  --mep-hand-shift-x: -0.32px;
+  --mep-hand-shift-y: 0.18px;
+  --mep-hand-rotate: 0.68deg;
+  --mep-hand-scale-x: 1.014;
+  --mep-hand-scale-y: 0.992;
+  --mep-hand-ink: #1d2227;
+  --mep-hand-size-adjust: 0.1px;
+  --mep-hand-letter-spacing: 0.004em;
+}
+
 .mepTplHandVariant4 {
-  --mep-hand-shift-x: 0.15px;
-  --mep-hand-shift-y: -0.35px;
-  --mep-hand-rotate: -0.6deg;
-  --mep-hand-scale-x: 0.98;
-  --mep-hand-scale-y: 1.015;
-  --mep-hand-ink: #22262b;
+  --mep-hand-shift-x: 0.18px;
+  --mep-hand-shift-y: -0.32px;
+  --mep-hand-rotate: -0.66deg;
+  --mep-hand-scale-x: 0.982;
+  --mep-hand-scale-y: 1.013;
+  --mep-hand-ink: #22272c;
   --mep-hand-size-adjust: -0.1px;
-  --mep-hand-letter-spacing: -0.003em;
+  --mep-hand-letter-spacing: -0.004em;
 }
 
 .mepTplHandVariant5 {
-  --mep-hand-shift-x: -0.25px;
-  --mep-hand-shift-y: 0.2px;
-  --mep-hand-rotate: 0.25deg;
-  --mep-hand-scale-x: 1.005;
-  --mep-hand-scale-y: 1;
-  --mep-hand-ink: #25292e;
+  --mep-hand-shift-x: -0.28px;
+  --mep-hand-shift-y: 0.22px;
+  --mep-hand-rotate: 0.3deg;
+  --mep-hand-scale-x: 1.006;
+  --mep-hand-scale-y: 1.001;
+  --mep-hand-ink: #24292e;
   --mep-hand-size-adjust: 0.06px;
-  --mep-hand-letter-spacing: 0.001em;
+  --mep-hand-letter-spacing: 0.002em;
 }
 
 .mepTplHandVariant6 {
-  --mep-hand-shift-x: 0.35px;
-  --mep-hand-shift-y: -0.1px;
-  --mep-hand-rotate: -0.45deg;
-  --mep-hand-scale-x: 0.99;
-  --mep-hand-scale-y: 1.005;
-  --mep-hand-ink: #202429;
+  --mep-hand-shift-x: 0.32px;
+  --mep-hand-shift-y: -0.08px;
+  --mep-hand-rotate: -0.5deg;
+  --mep-hand-scale-x: 0.992;
+  --mep-hand-scale-y: 1.004;
+  --mep-hand-ink: #20252a;
   --mep-hand-size-adjust: -0.04px;
-  --mep-hand-letter-spacing: -0.001em;
+  --mep-hand-letter-spacing: -0.002em;
 }
 
 .mepTplHandVariant7 {
-  --mep-hand-shift-x: -0.15px;
-  --mep-hand-shift-y: 0.45px;
-  --mep-hand-rotate: 0.65deg;
-  --mep-hand-scale-x: 1.012;
-  --mep-hand-scale-y: 0.995;
-  --mep-hand-ink: #1f2429;
+  --mep-hand-shift-x: -0.12px;
+  --mep-hand-shift-y: 0.42px;
+  --mep-hand-rotate: 0.58deg;
+  --mep-hand-scale-x: 1.011;
+  --mep-hand-scale-y: 0.996;
+  --mep-hand-ink: #1f252a;
   --mep-hand-size-adjust: 0.08px;
-  --mep-hand-letter-spacing: 0.002em;
+  --mep-hand-letter-spacing: 0.003em;
 }
 
 
