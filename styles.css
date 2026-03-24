@@ -2415,9 +2415,9 @@ body.dark .mepTable th {
 
 .mepTplSheetInner {
   --mep-table-font-size: 0.67rem;
-  --mep-table-cell-padding-y: 0.5mm;
+  --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
-  --mep-table-row-height: 4mm;
+  --mep-table-row-height: 3.95mm;
   --mep-table-head-bg: #ececec;
   --mep-col-employee-width: 10.85%;
   --mep-col-role-width: 7%;
@@ -2770,9 +2770,9 @@ body.dark .mepTable th {
 }
 
 .mepTplFooter {
-  --mep-footer-block-lift: 0.48mm;
+  --mep-footer-block-lift: 0.52mm;
   width: 100%;
-  margin-top: 0.32mm;
+  margin-top: 0.26mm;
   padding-top: 0.06mm;
   font-size: 0.72rem;
   line-height: 1.04;
@@ -3177,8 +3177,8 @@ body.dark .mepTable th {
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: 3.5mm;
-    --mep-table-cell-padding-y: 0.22mm;
+    --mep-table-row-height: 3.45mm;
+    --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
     --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
     box-sizing: border-box;
@@ -3226,8 +3226,8 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    --mep-footer-block-lift: 0.48mm;
-    margin-top: 0.32mm;
+    --mep-footer-block-lift: 0.52mm;
+    margin-top: 0.26mm;
     padding-top: 0.06mm;
     font-size: 0.64rem;
   }
