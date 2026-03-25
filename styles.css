@@ -2449,8 +2449,9 @@ body.dark .mepTable th {
   display: flex;
   flex-direction: column;
   width: 297mm;
-  height: 210mm;
+  height: var(--mep-sheet-inner-height);
   padding: 4.2mm 4.5mm 3.8mm;
+  box-sizing: border-box;
 }
 
 .mepTplHeaderTopRow {
@@ -3264,7 +3265,7 @@ body.dark .mepTable th {
   .mepTplSheetInner {
     --mep-table-head-rows: 3;
     width: 297mm;
-    height: 210mm;
+    height: var(--mep-sheet-inner-height);
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
     --mep-table-cell-padding-y: 0.17mm;
