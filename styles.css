@@ -3268,14 +3268,12 @@ body.dark .mepTable th {
   }
 
   .mepTplSheetInner {
-    --mep-table-head-rows: 3;
     width: 297mm;
     height: var(--mep-sheet-inner-height);
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
-    --mep-summary-box-top: calc(var(--mep-subrow-height) - 0.35px);
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3296,30 +3294,12 @@ body.dark .mepTable th {
 
   .mepTplTable th,
   .mepTplTable td {
-    height: var(--mep-subrow-height);
     padding: var(--mep-table-cell-padding-y) var(--mep-table-cell-padding-x);
   }
 
   .mepTplTable thead th,
   .mepTplMetric {
     background: #fff;
-  }
-
-  .mepTplSummaryBox {
-    top: var(--mep-summary-box-top);
-    height: calc(2 * var(--mep-subrow-height));
-    min-height: 0;
-  }
-
-  .mepTplHeaderTopRow {
-    min-height: 11.2mm;
-    margin-bottom: 0;
-  }
-
-  .mepTplMeta {
-    min-height: 14mm;
-    margin-bottom: 0;
-    font-size: 0.8rem;
   }
 
   .mepTplFooter {
