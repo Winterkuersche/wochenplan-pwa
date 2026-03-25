@@ -385,7 +385,11 @@ function applyMeasuredMepSheetLayout(root = document) {
     const tableHeadHeight = tableHeadEl.getBoundingClientRect().height;
     const tableHeight = sheetInnerHeight - headerHeight - footerHeight;
     const tableBodyHeight = tableHeight - tableHeadHeight;
-    const subrowHeight = tableBodyHeight / totalSubrows;
+    const computedStyles = window.getComputedStyle(sheetInnerEl);
+    const gridLineWidth = Number.parseFloat(computedStyles.getPropertyValue("--mep-border-grid-line")) || 0;
+    const subrowBorderBudget = totalSubrows * gridLineWidth;
+    const usableBodyHeight = tableBodyHeight - subrowBorderBudget;
+    const subrowHeight = usableBodyHeight / totalSubrows;
 
     if (subrowHeight > 0) {
       sheetInnerEl.style.setProperty("--mep-table-height", `${tableHeight}px`);
