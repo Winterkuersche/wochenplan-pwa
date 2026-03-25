@@ -2556,6 +2556,7 @@ body.dark .mepTable th {
   min-height: var(--mep-table-height);
   max-height: var(--mep-table-height);
   overflow: hidden;
+  transform: none;
 }
 
 .mepTplWrapInner {
@@ -2576,6 +2577,7 @@ body.dark .mepTable th {
   border-bottom: 0;
   border-right: 0;
   font-size: var(--mep-table-font-size);
+  transform: none;
 }
 
 .mepTplTable th,
@@ -2641,7 +2643,7 @@ body.dark .mepTable th {
 
 .mepTplOutsideRunMarker {
   position: absolute;
-  top: -0.8px;
+  top: 0;
   left: -0.8px;
   width: 0;
   height: 1.5px;
@@ -2810,6 +2812,7 @@ body.dark .mepTable th {
   line-height: 1.04;
   display: flex;
   align-items: flex-end;
+  transform: none;
 }
 
 .mepTplFooterGrid {
@@ -2832,6 +2835,7 @@ body.dark .mepTable th {
   white-space: nowrap;
   width: 100%;
   transform: none;
+  translate: none;
 }
 
 .mepTplFooterBlock {
