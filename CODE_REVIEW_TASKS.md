@@ -71,4 +71,17 @@
 **Akzeptanzkriterien:**
 - Auf jeder MEP-Seite sind alle 9 MA-Zeilen vollständig sichtbar.
 - Der Footer wird vollständig angezeigt (kein Abschneiden).
-- In iOS Safari ist das Ergebnis in Bildschirmansicht und im PDF-Export visuell identisch.
+- Die unten definierte QA-Prüfkette für MEP-PDFs ist vollständig durchgeführt und dokumentiert (inkl. Viewer-Vergleich und Befundklassifikation).
+
+### Verbindliche QA-Prüfkette für MEP-PDF-Änderungen
+1. Export erzeugen.
+2. Datei in `Dateien` speichern.
+3. Dieselbe Datei in einem **externen PDF-Viewer** öffnen (z. B. Adobe Acrobat, Foxit, Files-Viewer) – **nicht nur** in der Safari-Tab-Vorschau.
+4. Dieselbe Datei in **mindestens zwei iOS-Viewern** vergleichen (z. B. Safari-Preview + Adobe/Foxit/Files-Viewer).
+5. Ergebnis eindeutig dokumentieren mit der Klassifikation:
+   - **„Safari-Preview-Abweichung“** (Viewer-spezifisches Rendering-Problem), oder
+   - **„Dateiinhalt korrekt“** (PDF-Datei selbst ist korrekt, Abweichung nur in einzelner Vorschau).
+
+**Gate für MEP-PDF-PRs:**
+- Ohne diese Prüfkette gilt die Abnahme als **nicht erfüllt**.
+- Layoutfixes dürfen nicht allein auf Basis einer einzelnen Safari-Vorschau blockiert werden, wenn die Datei in externen Viewern korrekt ist.
