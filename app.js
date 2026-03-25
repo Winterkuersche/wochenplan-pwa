@@ -242,9 +242,6 @@ function copyMepLayoutVariablesToNode(targetNode) {
     "--mep-bottom-gap",
     "--mep-table-head-height",
     "--mep-employees-per-sheet",
-    "--mep-table-height",
-    "--mep-employee-block-height",
-    "--mep-subrow-height"
   ].forEach((varName) => {
     const value = sourceStyle.getPropertyValue(varName).trim();
     if (value) {

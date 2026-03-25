@@ -366,41 +366,6 @@ function syncMepOutsideRunMarkers(root = document) {
   });
 }
 
-function applyMeasuredMepSheetLayout(root = document) {
-  const measureRoot = root?.querySelectorAll ? root : document;
-  const totalSubrows = MEP_EMPLOYEES_PER_SHEET * 4;
-
-  measureRoot.querySelectorAll(".mepTplSheetInner").forEach((sheetInnerEl) => {
-    const headerEl = sheetInnerEl.querySelector(".mepTplHeader");
-    const footerEl = sheetInnerEl.querySelector(".mepTplFooter");
-    const tableHeadEl = sheetInnerEl.querySelector(".mepTplTable thead");
-
-    if (!headerEl || !footerEl || !tableHeadEl || !totalSubrows) {
-      return;
-    }
-
-    const sheetInnerHeight = sheetInnerEl.getBoundingClientRect().height;
-    const headerHeight = headerEl.getBoundingClientRect().height;
-    const footerHeight = footerEl.getBoundingClientRect().height;
-    const tableHeadHeight = tableHeadEl.getBoundingClientRect().height;
-    const tableHeight = sheetInnerHeight - headerHeight - footerHeight;
-    const tableBodyHeight = tableHeight - tableHeadHeight;
-    const computedStyles = window.getComputedStyle(sheetInnerEl);
-    const gridLineWidth = Number.parseFloat(computedStyles.getPropertyValue("--mep-border-grid-line")) || 0;
-    const subrowBorderBudget = totalSubrows * gridLineWidth;
-    const usableBodyHeight = tableBodyHeight - subrowBorderBudget;
-    const subrowHeight = usableBodyHeight / totalSubrows;
-
-    if (subrowHeight > 0) {
-      sheetInnerEl.style.setProperty("--mep-table-height", `${tableHeight}px`);
-      sheetInnerEl.style.setProperty("--mep-subrow-height", `${subrowHeight}px`);
-    } else {
-      sheetInnerEl.style.removeProperty("--mep-table-height");
-      sheetInnerEl.style.removeProperty("--mep-subrow-height");
-    }
-  });
-}
-
 function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel = {}) {
   const safeWeekDays = Array.isArray(weekDays) ? [...weekDays] : [];
   const activeMonthPrefix = String(sheetModel?.activeMonth || "").trim();
@@ -643,7 +608,6 @@ function renderMepTemplateView(options = {}) {
   });
 
   requestAnimationFrame(() => {
-    applyMeasuredMepSheetLayout(pagesEl);
     syncMepOutsideRunMarkers(pagesEl);
   });
 }
