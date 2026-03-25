@@ -561,37 +561,38 @@ L1E-L4E ohne Abrechnung
 
 
 <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    try {
-      const registration = await navigator.serviceWorker.register("./sw.js");
-
-      registration.addEventListener("updatefound", () => {
-        const newWorker = registration.installing;
-        if (!newWorker) return;
-
-        newWorker.addEventListener("statechange", () => {
-          if (
-            newWorker.state === "installed" &&
-            navigator.serviceWorker.controller
-          ) {
-            newWorker.postMessage({ type: "SKIP_WAITING" });
-          }
-        });
-      });
-
-      let refreshing = false;
-
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
-      });
-    } catch (err) {
-      console.log("SW Fehler", err);
-    }
-  });
-}
+// Temporär deaktiviert für Cache-/Layout-Debugging:
+// if ("serviceWorker" in navigator) {
+//   window.addEventListener("load", async () => {
+//     try {
+//       const registration = await navigator.serviceWorker.register("./sw.js");
+//
+//       registration.addEventListener("updatefound", () => {
+//         const newWorker = registration.installing;
+//         if (!newWorker) return;
+//
+//         newWorker.addEventListener("statechange", () => {
+//           if (
+//             newWorker.state === "installed" &&
+//             navigator.serviceWorker.controller
+//           ) {
+//             newWorker.postMessage({ type: "SKIP_WAITING" });
+//           }
+//         });
+//       });
+//
+//       let refreshing = false;
+//
+//       navigator.serviceWorker.addEventListener("controllerchange", () => {
+//         if (refreshing) return;
+//         refreshing = true;
+//         window.location.reload();
+//       });
+//     } catch (err) {
+//       console.log("SW Fehler", err);
+//     }
+//   });
+// }
 </script>
 
 
