@@ -551,6 +551,17 @@ function fitMepTemplateSheets() {
   const pagesEl = document.getElementById("mepTemplatePages");
   if (!pagesEl) return;
 
+  const sheetEls = pagesEl.querySelectorAll(".mepTplSheet");
+  sheetEls.forEach((sheetEl) => {
+    const tableHeadEl = sheetEl.querySelector(".mepTplTable thead");
+    if (!tableHeadEl) return;
+
+    const measuredHeadHeight = tableHeadEl.getBoundingClientRect().height;
+    if (!measuredHeadHeight) return;
+
+    sheetEl.style.setProperty("--mep-table-head-height-actual", `${measuredHeadHeight}px`);
+  });
+
   syncMepOutsideRunMarkers(pagesEl);
 }
 
