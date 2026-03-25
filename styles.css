@@ -24,14 +24,27 @@
   --mep-table-head-height: 10.65mm;
   --mep-table-head-height-actual: var(--mep-table-head-height);
   --mep-employees-per-sheet: 9;
+  --mep-border-grid-line: 0.8px;
+  --mep-border-block-separator: 1.8px;
+  --mep-border-header-separator: 1.4px;
+  --mep-subrows-per-employee: 4;
+  --mep-total-subrows: calc(var(--mep-employees-per-sheet) * var(--mep-subrows-per-employee));
+  --mep-subrow-border-budget: calc(
+    (var(--mep-total-subrows) * var(--mep-border-grid-line))
+    + ((var(--mep-employees-per-sheet) * 2) * (var(--mep-border-block-separator) - var(--mep-border-grid-line)))
+    + (var(--mep-border-header-separator) - var(--mep-border-grid-line))
+  );
   --mep-table-height: calc(
     var(--mep-sheet-content-height)
     - var(--mep-header-height)
     - var(--mep-footer-height)
     - var(--mep-bottom-gap)
   );
-  --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height-actual)) / var(--mep-employees-per-sheet));
-  --mep-subrow-height: calc(var(--mep-employee-block-height) / 4);
+  --mep-subrow-height: calc(
+    (var(--mep-table-height) - var(--mep-table-head-height-actual) - var(--mep-subrow-border-budget))
+    / var(--mep-total-subrows)
+  );
+  --mep-employee-block-height: calc(var(--mep-subrow-height) * var(--mep-subrows-per-employee));
 }
 
 body.dark {
@@ -2598,7 +2611,7 @@ body.dark .mepTable th {
 
 .mepTplTable th,
 .mepTplTable td {
-  border: 0.8px solid #000;
+  border: var(--mep-border-grid-line) solid #000;
   padding: var(--mep-table-cell-padding-y) var(--mep-table-cell-padding-x);
   text-align: center;
   vertical-align: middle;
@@ -2642,7 +2655,7 @@ body.dark .mepTable th {
 }
 
 .mepTplTable thead tr:last-child th {
-  border-bottom-width: 1.4px;
+  border-bottom-width: var(--mep-border-header-separator);
 }
 
 .mepTplDayCell {
@@ -2765,15 +2778,15 @@ body.dark .mepTable th {
 }
 
 .mepTplEmployeeRow--blockStart td {
-  border-top-width: 1.8px;
+  border-top-width: var(--mep-border-block-separator);
 }
 
 .mepTplEmployeeRow--blockEnd td {
-  border-bottom-width: 1.8px;
+  border-bottom-width: var(--mep-border-block-separator);
 }
 
 .mepTplTable tbody tr:last-child td:not(.mepTplSummary) {
-  border-bottom: 1.8px solid #000;
+  border-bottom: var(--mep-border-block-separator) solid #000;
 }
 
 .mepTplEmployee {
