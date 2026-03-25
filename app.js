@@ -113,9 +113,7 @@ function refreshCurrentResponsiveView() {
   const currentView = uiState?.currentView || "week";
 
   if (currentView === "mep") {
-    if (typeof fitMepTemplateSheets === "function") {
-      fitMepTemplateSheets();
-    } else if (typeof renderMepTemplateView === "function") {
+    if (typeof renderMepTemplateView === "function") {
       renderMepTemplateView({ scope: "month" });
     }
   }

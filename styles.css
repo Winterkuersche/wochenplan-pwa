@@ -22,7 +22,6 @@
   --mep-footer-height: 12.1mm;
   --mep-bottom-gap: 0mm;
   --mep-table-head-height: 10.65mm;
-  --mep-table-head-height-actual: var(--mep-table-head-height);
   --mep-employees-per-sheet: 9;
   --mep-border-grid-line: 0.8px;
   --mep-border-block-separator: 1.8px;
@@ -41,7 +40,7 @@
     - var(--mep-bottom-gap)
   );
   --mep-subrow-height: calc(
-    (var(--mep-table-height) - var(--mep-table-head-height-actual) - var(--mep-subrow-border-budget))
+    (var(--mep-table-height) - var(--mep-table-head-height) - var(--mep-subrow-border-budget))
     / var(--mep-total-subrows)
   );
   --mep-employee-block-height: calc(var(--mep-subrow-height) * var(--mep-subrows-per-employee));
