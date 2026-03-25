@@ -62,6 +62,16 @@ let responsiveViewRefreshTimerIds = [];
 let lastMepFitMetricsKey = "";
 let lastResponsiveViewRefreshView = "";
 let hasTriggeredPageShowResponsiveRefresh = false;
+let responsiveRefreshTraceCounter = 0;
+
+function createResponsiveRefreshTraceId() {
+  responsiveRefreshTraceCounter += 1;
+  return `mep-refresh-${Date.now()}-${responsiveRefreshTraceCounter}`;
+}
+
+function logResponsiveRefreshTrace(traceId, stage, payload = {}) {
+  console.debug(`[responsive-mep][${traceId}] ${stage}`, payload);
+}
 
 function sanitizeCurrentView(view) {
   if (view === "form") return "mep";
@@ -130,25 +140,68 @@ function getMepFitMetricsKey() {
   ].join("|");
 }
 
-function fitMepTemplateSheets(options = {}) {
-  const { force = false } = options;
+function shouldRefreshMepTemplateView(options = {}) {
+  const { force = false, traceId = "no-trace" } = options;
   if ((uiState?.currentView || "week") !== "mep") return false;
   if (typeof renderMepTemplateView !== "function") return false;
 
   const metricsKey = getMepFitMetricsKey();
-  if (!force && metricsKey === lastMepFitMetricsKey) return false;
+  const metricsChanged = metricsKey !== lastMepFitMetricsKey;
+
+  logResponsiveRefreshTrace(traceId, "metrics-check", {
+    force,
+    metricsChanged,
+    previousKey: lastMepFitMetricsKey,
+    nextKey: metricsKey
+  });
+
+  if (!force && !metricsChanged) return false;
 
   lastMepFitMetricsKey = metricsKey;
+  return true;
+}
+
+function renderMepTemplateResponsiveView(options = {}) {
+  const { traceId = "no-trace" } = options;
+  logResponsiveRefreshTrace(traceId, "render-start", { scope: "month" });
   renderMepTemplateView({ scope: "month" });
+  logResponsiveRefreshTrace(traceId, "render-end");
+}
+
+function runMepPostRenderSync(options = {}) {
+  const {
+    traceId = "no-trace",
+    postRenderSync = null
+  } = options;
+
+  if (typeof postRenderSync !== "function") return;
+  logResponsiveRefreshTrace(traceId, "post-render-sync-start");
+  postRenderSync();
+  logResponsiveRefreshTrace(traceId, "post-render-sync-end");
+}
+
+function refreshMepTemplateViewIfMetricsChanged(options = {}) {
+  const { traceId = "no-trace" } = options;
+  if (!shouldRefreshMepTemplateView(options)) {
+    logResponsiveRefreshTrace(traceId, "refresh-skip");
+    return false;
+  }
+
+  renderMepTemplateResponsiveView(options);
+  runMepPostRenderSync(options);
   return true;
 }
 
 function refreshCurrentResponsiveView(options = {}) {
+  const { traceId = "no-trace" } = options;
   const currentView = uiState?.currentView || "week";
 
+  logResponsiveRefreshTrace(traceId, "refresh-current-view", { currentView });
   if (currentView === "mep") {
-    fitMepTemplateSheets(options);
+    return refreshMepTemplateViewIfMetricsChanged(options);
   }
+
+  return false;
 }
 
 function waitForAnimationFrames(frameCount = 2) {
@@ -526,24 +579,43 @@ async function exportMepTemplatePdf() {
 function scheduleResponsiveViewRefresh(options = {}) {
   const {
     delays = [120],
-    force = false
+    force = false,
+    postRenderSync = null,
+    traceId = createResponsiveRefreshTraceId()
   } = options;
 
   responsiveViewRefreshTimerIds.forEach((timerId) => window.clearTimeout(timerId));
   responsiveViewRefreshTimerIds = [];
+  let hasRenderedInBatch = false;
+
+  logResponsiveRefreshTrace(traceId, "schedule", { delays, force });
 
   delays.forEach((delay) => {
     const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
     const timerId = window.setTimeout(() => {
       responsiveViewRefreshTimerIds = responsiveViewRefreshTimerIds.filter((id) => id !== timerId);
-      if (!isResponsiveEmbeddedViewActive()) return;
+      if (!isResponsiveEmbeddedViewActive()) {
+        logResponsiveRefreshTrace(traceId, "timer-skip-inactive", { delay: safeDelay });
+        return;
+      }
 
       // Akzeptanzkriterium: Portrait/Querformat dürfen anders zoomen, aber
       // pro Seite muss der Footer in beiden Modi stabil bleiben (kein Tabellen-Drift nach unten).
       // Deshalb nur auf stabilen Triggern neu fitten und nur bei geänderten Containermaßen rendern.
-      const shouldForceFit = force || delays.length > 1;
+      const shouldForceFit = force && !hasRenderedInBatch;
       updateResponsiveViewportMetrics();
-      refreshCurrentResponsiveView({ force: shouldForceFit });
+      const hasRendered = refreshCurrentResponsiveView({
+        force: shouldForceFit,
+        traceId,
+        postRenderSync
+      });
+      hasRenderedInBatch = hasRenderedInBatch || hasRendered;
+      logResponsiveRefreshTrace(traceId, "timer-run", {
+        delay: safeDelay,
+        force: shouldForceFit,
+        hasRendered,
+        hasRenderedInBatch
+      });
     }, safeDelay);
 
     responsiveViewRefreshTimerIds.push(timerId);
