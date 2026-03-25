@@ -7,15 +7,15 @@ function mepPad2(value) {
 
 function formatMepHeaderDate(isoDate) {
   if (!isoDate) return "";
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = fromIsoDate(isoDate);
+  if (!date) return "";
   return `${mepPad2(date.getDate())}.${mepPad2(date.getMonth() + 1)}.`;
 }
 
 function formatMepMonthYear(isoDate) {
   if (!isoDate) return "____________";
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return "____________";
+  const date = fromIsoDate(isoDate);
+  if (!date) return "____________";
   return `${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
@@ -51,8 +51,8 @@ function bindMepMonthNavigation() {
 
 function formatMepFullDate(isoDate) {
   if (!isoDate) return "____________";
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return "____________";
+  const date = fromIsoDate(isoDate);
+  if (!date) return "____________";
   return `${mepPad2(date.getDate())}.${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 

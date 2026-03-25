@@ -984,23 +984,6 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
-function toIsoDate(date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-}
-
-function fromIsoDate(iso) {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function cloneDate(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function getMondayBasedDayIndex(date) {
-  return (date.getDay() + 6) % 7;
-}
-
 function hmToMinutes(hm) {
   if (!hm) return 0;
   const [h, m] = hm.split(":").map(Number);
@@ -1041,8 +1024,8 @@ function formatHMToQuarterLabel(hmValue) {
 
 function formatMonthYear(dateStr) {
   if (!dateStr) return "____________";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "____________";
+  const d = fromIsoDate(dateStr);
+  if (!d) return "____________";
   return `${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
@@ -1384,8 +1367,8 @@ function getMonthPlanSafe(dateStr) {
     return getMonthPlanFromDateString(dateStr);
   }
 
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
+  const d = fromIsoDate(dateStr);
+  if (!d) return null;
 
   return buildMonthPlanFallback(d.getFullYear(), d.getMonth());
 }
