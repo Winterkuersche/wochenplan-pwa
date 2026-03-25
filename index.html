@@ -537,7 +537,18 @@ L1E-L4E ohne Abrechnung
 </div>
 
 <!-- Scripts -->
+<!--
+  Reihenfolge ist absichtlich linear (klassische Scripts, kein type="module"): 
+  1) Basis-Konstanten/Utilities (version, holidays, shift/time/date/status)
+  2) Domänen-Logik (contracts, absences, vacation, day/month engine)
+  3) View-Layer (day/week/mep/month)
+  4) Externe Libs für Export (html2canvas + jsPDF)
+  5) App-Bootstrap (app.js) zuletzt, weil hier auf globale Helper aus den vorherigen Dateien zugegriffen wird.
 
+  Kollisionsschutz für globale Helper-Namen:
+  - Lokal:   node tools/check-global-helper-collisions.js
+  - CI:      .github/workflows/global-helper-collision-check.yml
+-->
 
 <script src="./version.js"></script>
 <script src="./holidays.js"></script>
