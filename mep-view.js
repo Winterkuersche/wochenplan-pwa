@@ -358,7 +358,7 @@ function syncMepOutsideRunMarkers(root = document) {
     const lineAngle = Math.atan2(runHeight, runWidth);
 
     markerEl.style.width = `${lineLength}px`;
-    markerEl.style.transform = `translateY(-50%) rotate(${lineAngle}rad)`;
+    markerEl.style.transform = `rotate(${lineAngle}rad)`;
   });
 }
 
