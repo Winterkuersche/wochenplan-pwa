@@ -551,10 +551,6 @@ function fitMepTemplateSheets() {
   const pagesEl = document.getElementById("mepTemplatePages");
   if (!pagesEl) return;
 
-  pagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    sheetEl.style.setProperty("--mep-sheet-scale", "1");
-  });
-
   syncMepOutsideRunMarkers(pagesEl);
 }
 

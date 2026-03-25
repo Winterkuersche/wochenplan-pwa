@@ -1424,8 +1424,7 @@ select {
     position: relative !important;
     width: var(--mep-page-w) !important;
     height: var(--mep-page-h) !important;
-    transform: scale(var(--mep-print-safe-scale)) !important;
-    transform-origin: top left !important;
+    transform: none !important;
   }
 
   .mepScreenMeta,
@@ -2399,10 +2398,9 @@ body.dark .mepTable th {
 }
 
 .mepTplSheet {
-  --mep-sheet-scale: 1;
-  width: min(100%, calc(297mm * var(--mep-sheet-scale)));
+  width: min(100%, 297mm);
   max-width: 100%;
-  height: calc(210mm * var(--mep-sheet-scale));
+  height: 210mm;
   margin: 0 auto;
   border: 1.8px solid #000;
   border-radius: 0;
@@ -2454,8 +2452,6 @@ body.dark .mepTable th {
   width: 297mm;
   height: 210mm;
   padding: 4.2mm 4.5mm 3.8mm;
-  transform: scale(var(--mep-sheet-scale));
-  transform-origin: top left;
 }
 
 .mepTplHeaderTopRow {
