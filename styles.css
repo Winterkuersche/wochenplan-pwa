@@ -19,7 +19,7 @@
   --mep-sheet-inner-height: 210mm;
   --mep-sheet-content-height: calc(var(--mep-sheet-inner-height) - 8mm);
   --mep-header-height: 25.2mm;
-  --mep-footer-height: 12.1mm;
+  --mep-footer-height: 13.1mm;
   --mep-bottom-gap: 0mm;
   --mep-table-head-height: 10.65mm;
   --mep-employees-per-sheet: 9;
@@ -1729,7 +1729,7 @@ body.dark .mepTable th {
   --mep-sum-value-offset-y: 0.3mm;
 
   --mep-footer-font-size: 1.72mm;
-  --mep-footer-line-height: 1.03;
+  --mep-footer-line-height: 1.01;
   --mep-footer-heading-size: 1.78mm;
   --mep-footer-col-gap: 3.2mm;
 
@@ -2871,7 +2871,7 @@ body.dark .mepTable th {
   height: var(--mep-footer-height);
   max-height: var(--mep-footer-height);
   font-size: var(--mep-footer-font-size);
-  line-height: 1.04;
+  line-height: 1.02;
   display: flex;
   align-items: flex-end;
 }
@@ -2892,7 +2892,7 @@ body.dark .mepTable th {
     "presence presence presence presence presence presence presence stand";
   align-items: start;
   column-gap: 0;
-  row-gap: 0.95mm;
+  row-gap: 0.8mm;
   white-space: nowrap;
   width: 100%;
   transform: none;
@@ -3358,6 +3358,6 @@ body.dark .mepTable th {
 
   .mepTplFooterGrid {
     column-gap: 3.2mm;
-    row-gap: 0.75mm;
+    row-gap: 0.65mm;
   }
 }
