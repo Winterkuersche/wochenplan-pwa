@@ -2572,7 +2572,6 @@ body.dark .mepTable th {
   min-height: var(--mep-table-height);
   max-height: var(--mep-table-height);
   overflow: hidden;
-  transform: none;
 }
 
 .mepTplWrapInner {
@@ -2855,12 +2854,10 @@ body.dark .mepTable th {
   min-height: var(--mep-footer-height);
   height: var(--mep-footer-height);
   max-height: var(--mep-footer-height);
-  padding-top: 0.06mm;
   font-size: 0.72rem;
   line-height: 1.04;
   display: flex;
   align-items: flex-end;
-  transform: none;
 }
 
 .mepTplFooterGrid {
@@ -3287,7 +3284,6 @@ body.dark .mepTable th {
     --mep-table-font-size: 8.2pt;
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
-    --mep-summary-box-top: calc(var(--mep-subrow-height) - 0.35px);
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3308,7 +3304,6 @@ body.dark .mepTable th {
 
   .mepTplTable th,
   .mepTplTable td {
-    height: var(--mep-subrow-height);
     padding: var(--mep-table-cell-padding-y) var(--mep-table-cell-padding-x);
   }
 
