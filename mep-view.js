@@ -567,9 +567,8 @@ function fitMepTemplateSheets() {
 
     const tableBodyHeight = Math.max(0, innerHeight - headerHeight - footerHeight - tableHeadHeight);
     const sheetStyles = getComputedStyle(sheetEl);
-    const innerStyles = getComputedStyle(innerEl);
     const readCssNumber = (name, fallback) => {
-      const rawValue = sheetStyles.getPropertyValue(name).trim() || innerStyles.getPropertyValue(name).trim();
+      const rawValue = sheetStyles.getPropertyValue(name).trim();
       const parsedValue = Number.parseFloat(rawValue);
       return Number.isFinite(parsedValue) ? parsedValue : fallback;
     };
@@ -580,7 +579,7 @@ function fitMepTemplateSheets() {
     const blockSeparator = Math.max(gridLine, readCssNumber("--mep-border-block-separator", gridLine));
     const headerSeparator = Math.max(gridLine, readCssNumber("--mep-border-header-separator", gridLine));
 
-    const totalSubrows = employeesPerSheet * subrowsPerEmployee;
+    const totalSubrows = Math.max(1, employeesPerSheet * subrowsPerEmployee);
     const subrowBorderBudget =
       (totalSubrows * gridLine)
       + ((employeesPerSheet * 2) * (blockSeparator - gridLine))
