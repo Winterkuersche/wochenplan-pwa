@@ -2439,7 +2439,9 @@ body.dark .mepTable th {
 }
 
 .mepTplSheetInner {
-  --mep-table-font-size: 0.67rem;
+  --mep-table-font-size: 0.61rem;
+  --mep-footer-font-size: 0.66rem;
+  --mep-footer-heading-size: 0.88em;
   --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
   --mep-table-head-rows: 3;
@@ -2867,7 +2869,7 @@ body.dark .mepTable th {
   min-height: var(--mep-footer-height);
   height: var(--mep-footer-height);
   max-height: var(--mep-footer-height);
-  font-size: 0.72rem;
+  font-size: var(--mep-footer-font-size);
   line-height: 1.04;
   display: flex;
   align-items: flex-end;
@@ -2938,7 +2940,7 @@ body.dark .mepTable th {
 .mepTplFooterLabel {
   display: inline-block;
   margin: 0;
-  font-size: 0.96em;
+  font-size: var(--mep-footer-heading-size);
   font-weight: 600;
   line-height: 1.05;
   white-space: nowrap;
@@ -3294,7 +3296,9 @@ body.dark .mepTable th {
     width: 100%;
     height: var(--mep-sheet-inner-height);
     padding: 4.2mm 4.5mm 3.8mm;
-    --mep-table-font-size: 8.2pt;
+    --mep-table-font-size: 7.4pt;
+    --mep-footer-font-size: 7.8pt;
+    --mep-footer-heading-size: 7.5pt;
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
     box-sizing: border-box;
@@ -3347,7 +3351,7 @@ body.dark .mepTable th {
   .mepTplFooter {
     margin-top: 0;
     padding-top: 0.06mm;
-    font-size: 0.64rem;
+    font-size: var(--mep-footer-font-size);
   }
 
   .mepTplFooterGrid {
