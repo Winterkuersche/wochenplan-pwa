@@ -58,7 +58,10 @@ let autoSaveTimerId = null;
 let saveStatusTimerId = null;
 let saveStatusMessage = "";
 let saveStatusHasError = false;
-let responsiveViewRefreshTimerId = null;
+let responsiveViewRefreshTimerIds = [];
+let lastMepFitMetricsKey = "";
+let lastResponsiveViewRefreshView = "";
+let hasTriggeredPageShowResponsiveRefresh = false;
 
 function sanitizeCurrentView(view) {
   if (view === "form") return "mep";
@@ -109,13 +112,42 @@ function updateResponsiveViewportMetrics() {
   updateEmbeddedViewMaxHeightVar("#mepTemplateView", "--mep-template-view-max-height");
 }
 
-function refreshCurrentResponsiveView() {
+function getMepFitMetricsKey() {
+  const viewEl = document.getElementById("mepTemplateView");
+  const pagesEl = document.getElementById("mepTemplatePages");
+  const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || 0);
+  const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
+  const viewRect = viewEl?.getBoundingClientRect?.() || null;
+  const pagesRect = pagesEl?.getBoundingClientRect?.() || null;
+
+  return [
+    viewportWidth,
+    viewportHeight,
+    window.screen?.orientation?.type || window.orientation || "",
+    viewRect ? `${Math.round(viewRect.width)}x${Math.round(viewRect.height)}@${Math.round(viewRect.top)}` : "",
+    pagesRect ? `${Math.round(pagesRect.width)}x${Math.round(pagesRect.height)}` : "",
+    pagesEl?.childElementCount || 0
+  ].join("|");
+}
+
+function fitMepTemplateSheets(options = {}) {
+  const { force = false } = options;
+  if ((uiState?.currentView || "week") !== "mep") return false;
+  if (typeof renderMepTemplateView !== "function") return false;
+
+  const metricsKey = getMepFitMetricsKey();
+  if (!force && metricsKey === lastMepFitMetricsKey) return false;
+
+  lastMepFitMetricsKey = metricsKey;
+  renderMepTemplateView({ scope: "month" });
+  return true;
+}
+
+function refreshCurrentResponsiveView(options = {}) {
   const currentView = uiState?.currentView || "week";
 
   if (currentView === "mep") {
-    if (typeof renderMepTemplateView === "function") {
-      renderMepTemplateView({ scope: "month" });
-    }
+    fitMepTemplateSheets(options);
   }
 }
 
@@ -491,21 +523,43 @@ async function exportMepTemplatePdf() {
   }
 }
 
-function scheduleResponsiveViewRefresh() {
-  if (responsiveViewRefreshTimerId) {
-    window.clearTimeout(responsiveViewRefreshTimerId);
-  }
+function scheduleResponsiveViewRefresh(options = {}) {
+  const {
+    delays = [120],
+    force = false
+  } = options;
 
-  responsiveViewRefreshTimerId = window.setTimeout(() => {
-    responsiveViewRefreshTimerId = null;
-    updateResponsiveViewportMetrics();
-    refreshCurrentResponsiveView();
-  }, 120);
+  responsiveViewRefreshTimerIds.forEach((timerId) => window.clearTimeout(timerId));
+  responsiveViewRefreshTimerIds = [];
+
+  delays.forEach((delay) => {
+    const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
+    const timerId = window.setTimeout(() => {
+      responsiveViewRefreshTimerIds = responsiveViewRefreshTimerIds.filter((id) => id !== timerId);
+      if (!isResponsiveEmbeddedViewActive()) return;
+
+      // Akzeptanzkriterium: Portrait/Querformat dürfen anders zoomen, aber
+      // pro Seite muss der Footer in beiden Modi stabil bleiben (kein Tabellen-Drift nach unten).
+      // Deshalb nur auf stabilen Triggern neu fitten und nur bei geänderten Containermaßen rendern.
+      const shouldForceFit = force || delays.length > 1;
+      updateResponsiveViewportMetrics();
+      refreshCurrentResponsiveView({ force: shouldForceFit });
+    }, safeDelay);
+
+    responsiveViewRefreshTimerIds.push(timerId);
+  });
 }
 
-function requestActiveResponsiveViewRefresh() {
-  if (!isResponsiveEmbeddedViewActive()) return;
-  scheduleResponsiveViewRefresh();
+function requestActiveResponsiveViewRefresh(options = {}) {
+  const { force = false } = options;
+  const currentView = uiState?.currentView || "week";
+  const switchedToMep = currentView === "mep" && lastResponsiveViewRefreshView !== "mep";
+  lastResponsiveViewRefreshView = currentView;
+
+  if (currentView !== "mep") return;
+  if (!force && !switchedToMep) return;
+
+  scheduleResponsiveViewRefresh({ force: true });
 }
 
 const loadedAppState = loadAppState();
@@ -2337,7 +2391,6 @@ function renderAllViews() {
   if (typeof renderWeekView === "function") renderWeekView();
   if (typeof renderMonthView === "function") renderMonthView();
   if (typeof renderMepTemplateView === "function") renderMepTemplateView();
-  requestActiveResponsiveViewRefresh();
 }
 
 function renderAll() {
@@ -2583,14 +2636,17 @@ window.addEventListener("load", () => {
   renderAll();
 });
 
-window.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
-window.addEventListener("orientationchange", scheduleResponsiveViewRefresh, { passive: true });
-window.addEventListener("pageshow", scheduleResponsiveViewRefresh, { passive: true });
-
-if (window.visualViewport) {
-  window.visualViewport.addEventListener("resize", scheduleResponsiveViewRefresh, { passive: true });
-  window.visualViewport.addEventListener("scroll", scheduleResponsiveViewRefresh, { passive: true });
-}
+window.addEventListener("orientationchange", () => {
+  scheduleResponsiveViewRefresh({
+    delays: [180, 420],
+    force: true
+  });
+}, { passive: true });
+window.addEventListener("pageshow", () => {
+  if (hasTriggeredPageShowResponsiveRefresh) return;
+  hasTriggeredPageShowResponsiveRefresh = true;
+  scheduleResponsiveViewRefresh({ force: true });
+}, { passive: true });
 window.addEventListener("beforeunload", () => {
   flushPendingAutoSave();
 });
