@@ -16,6 +16,20 @@
   --app-vh: 1vh;
   --app-dvh: calc(var(--app-vh) * 100);
   --mep-template-view-max-height: calc(var(--app-dvh) - 110px);
+  --mep-sheet-inner-height: 202mm;
+  --mep-header-height: 25.2mm;
+  --mep-footer-height: 12.1mm;
+  --mep-bottom-gap: 0mm;
+  --mep-table-head-height: 10.65mm;
+  --mep-employees-per-sheet: 9;
+  --mep-table-height: calc(
+    var(--mep-sheet-inner-height)
+    - var(--mep-header-height)
+    - var(--mep-footer-height)
+    - var(--mep-bottom-gap)
+  );
+  --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height)) / var(--mep-employees-per-sheet));
+  --mep-subrow-height: calc(var(--mep-employee-block-height) / 4);
 }
 
 body.dark {
@@ -2411,32 +2425,17 @@ body.dark .mepTable th {
 }
 
 .mepTplSheetInner {
-  --mep-sheet-inner-height: 202mm;
-  --mep-header-height: 25.2mm;
-  --mep-footer-height: 12.1mm;
-  --mep-footer-bottom-gap: 0mm;
-  --mep-employee-blocks: 9;
-  --mep-rows-per-employee: 4;
   --mep-table-font-size: 0.67rem;
   --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
   --mep-table-head-rows: 3;
-  --mep-table-height: calc(
-    var(--mep-sheet-inner-height)
-    - var(--mep-header-height)
-    - var(--mep-footer-height)
-    - var(--mep-footer-bottom-gap)
-  );
-  --mep-table-head-height: 10.65mm;
-  --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height)) / var(--mep-employee-blocks));
-  --mep-table-row-height: calc(var(--mep-employee-block-height) / var(--mep-rows-per-employee));
   --mep-table-head-bg: #ececec;
   --mep-col-employee-width: 10.85%;
   --mep-col-role-width: 7%;
   --mep-col-target-width: 7.6%;
   --mep-col-metric-width: 7.25%;
   --mep-col-summary-width: 8.92%;
-  --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
+  --mep-summary-box-top: calc(var(--mep-subrow-height) - 0.35px);
   --mep-footer-pause-label-width: 27.4mm;
   --mep-footer-pause-content-width: 50.2mm;
   --mep-footer-pause-short-width: 44.3mm;
@@ -2586,26 +2585,38 @@ body.dark .mepTable th {
   padding: var(--mep-table-cell-padding-y) var(--mep-table-cell-padding-x);
   text-align: center;
   vertical-align: middle;
-  height: var(--mep-table-row-height);
+  height: var(--mep-subrow-height);
   line-height: 1;
   overflow: hidden;
+  min-height: 0;
+  max-height: none;
+}
+
+.mepTplTable thead {
+  height: var(--mep-table-head-height);
+  min-height: 0;
+  max-height: none;
+}
+
+.mepTplTable thead tr {
+  height: calc(var(--mep-table-head-height) / var(--mep-table-head-rows));
 }
 
 .mepTplTable tbody tr,
 .mepTplEmployeeRow {
-  height: var(--mep-table-row-height);
-  min-height: var(--mep-table-row-height);
-  max-height: var(--mep-table-row-height);
+  height: var(--mep-subrow-height);
+  min-height: 0;
+  max-height: none;
 }
 
 .mepTplEmployeeRow--start,
 .mepTplEmployeeRow--pause,
 .mepTplEmployeeRow--end,
 .mepTplEmployeeRow--sum {
-  height: var(--mep-table-row-height);
-  min-height: var(--mep-table-row-height);
-  max-height: var(--mep-table-row-height);
-  line-height: var(--mep-table-row-height);
+  height: var(--mep-subrow-height);
+  min-height: 0;
+  max-height: none;
+  line-height: var(--mep-subrow-height);
 }
 
 .mepTplTable thead th {
@@ -2753,9 +2764,9 @@ body.dark .mepTable th {
   font-weight: 600;
   padding-left: 0.75mm !important;
   padding-right: 0.75mm !important;
-  height: calc(4 * var(--mep-table-row-height));
-  min-height: calc(4 * var(--mep-table-row-height));
-  max-height: calc(4 * var(--mep-table-row-height));
+  height: var(--mep-employee-block-height);
+  min-height: 0;
+  max-height: none;
   overflow: hidden;
   vertical-align: middle !important;
 }
@@ -2763,9 +2774,9 @@ body.dark .mepTable th {
 .mepTplColRole,
 .mepTplColTarget,
 .mepTplSummaryCell {
-  height: calc(4 * var(--mep-table-row-height));
-  min-height: calc(4 * var(--mep-table-row-height));
-  max-height: calc(4 * var(--mep-table-row-height));
+  height: var(--mep-employee-block-height);
+  min-height: 0;
+  max-height: none;
 }
 
 .mepTplMetric {
@@ -2788,8 +2799,8 @@ body.dark .mepTable th {
   top: var(--mep-summary-box-top);
   left: 0.45mm;
   right: 0.45mm;
-  height: calc(2 * var(--mep-table-row-height));
-  min-height: calc(2 * var(--mep-table-row-height));
+  height: calc(2 * var(--mep-subrow-height));
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2822,7 +2833,7 @@ body.dark .mepTable th {
 
 .mepTplFooter {
   width: 100%;
-  margin-top: var(--mep-footer-bottom-gap);
+  margin-top: var(--mep-bottom-gap);
   min-height: var(--mep-footer-height);
   height: var(--mep-footer-height);
   max-height: var(--mep-footer-height);
@@ -3017,7 +3028,8 @@ body.dark .mepTable th {
   margin: 0;
   padding: 0;
   font-size: calc(1.44em + var(--mep-hand-size-adjust, 0px));
-  line-height: var(--mep-table-row-height);
+  line-height: var(--mep-subrow-height);
+  overflow: hidden;
 }
 
 .mepTplHandName {
@@ -3029,7 +3041,7 @@ body.dark .mepTable th {
   margin: 0;
   padding: 0;
   font-size: calc(2em + var(--mep-hand-size-adjust, 0px));
-  line-height: calc(2 * var(--mep-table-row-height));
+  line-height: calc(2 * var(--mep-subrow-height));
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.018em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
   white-space: normal;
@@ -3057,7 +3069,7 @@ body.dark .mepTable th {
   margin: 0;
   padding: 0;
   font-size: calc(1.75em + var(--mep-hand-size-adjust, 0px));
-  line-height: var(--mep-table-row-height);
+  line-height: var(--mep-subrow-height);
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.016em + var(--mep-hand-letter-spacing, 0em));
   text-align: center;
   white-space: nowrap;
@@ -3070,7 +3082,7 @@ body.dark .mepTable th {
   margin: 0;
   padding: 0;
   font-size: calc(1.42em + var(--mep-hand-size-adjust, 0px));
-  line-height: var(--mep-table-row-height);
+  line-height: var(--mep-subrow-height);
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.006em + var(--mep-hand-letter-spacing, 0em));
   white-space: nowrap;
   max-width: 100%;
@@ -3082,7 +3094,7 @@ body.dark .mepTable th {
   margin: 0;
   padding: 0;
   font-size: calc(1.55em + var(--mep-hand-size-adjust, 0px));
-  line-height: calc(2 * var(--mep-table-row-height));
+  line-height: calc(2 * var(--mep-subrow-height));
   letter-spacing: calc(var(--handwrite-letter-spacing) - 0.008em + var(--mep-hand-letter-spacing, 0em));
   white-space: nowrap;
   max-width: 100%;
@@ -3250,29 +3262,14 @@ body.dark .mepTable th {
   }
 
   .mepTplSheetInner {
-    --mep-sheet-inner-height: 202mm;
-    --mep-header-height: 25.2mm;
-    --mep-footer-height: 12.1mm;
-    --mep-footer-bottom-gap: 0mm;
-    --mep-employee-blocks: 9;
-    --mep-rows-per-employee: 4;
     --mep-table-head-rows: 3;
-    --mep-table-height: calc(
-      var(--mep-sheet-inner-height)
-      - var(--mep-header-height)
-      - var(--mep-footer-height)
-      - var(--mep-footer-bottom-gap)
-    );
-    --mep-table-head-height: 10.65mm;
-    --mep-employee-block-height: calc((var(--mep-table-height) - var(--mep-table-head-height)) / var(--mep-employee-blocks));
     width: 297mm;
     height: 210mm;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 8.2pt;
-    --mep-table-row-height: calc(var(--mep-employee-block-height) / var(--mep-rows-per-employee));
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
-    --mep-summary-box-top: calc(var(--mep-table-row-height) - 0.35px);
+    --mep-summary-box-top: calc(var(--mep-subrow-height) - 0.35px);
     box-sizing: border-box;
     overflow: hidden;
     transform: none;
@@ -3293,7 +3290,7 @@ body.dark .mepTable th {
 
   .mepTplTable th,
   .mepTplTable td {
-    height: var(--mep-table-row-height);
+    height: var(--mep-subrow-height);
     padding: var(--mep-table-cell-padding-y) var(--mep-table-cell-padding-x);
   }
 
@@ -3304,8 +3301,8 @@ body.dark .mepTable th {
 
   .mepTplSummaryBox {
     top: var(--mep-summary-box-top);
-    height: calc(2 * var(--mep-table-row-height));
-    min-height: calc(2 * var(--mep-table-row-height));
+    height: calc(2 * var(--mep-subrow-height));
+    min-height: 0;
   }
 
   .mepTplHeaderTopRow {
@@ -3320,7 +3317,7 @@ body.dark .mepTable th {
   }
 
   .mepTplFooter {
-    margin-top: var(--mep-footer-bottom-gap);
+    margin-top: var(--mep-bottom-gap);
     padding-top: 0.06mm;
     font-size: 0.64rem;
   }

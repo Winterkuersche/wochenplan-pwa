@@ -147,6 +147,28 @@ function buildMepPdfFilename() {
   return `mep-${String(monthValue).replace(/[^0-9-]+/g, "-")}.pdf`;
 }
 
+function copyMepLayoutVariablesToNode(targetNode) {
+  if (!targetNode) return;
+
+  const sourceStyle = window.getComputedStyle(document.documentElement);
+  [
+    "--mep-sheet-inner-height",
+    "--mep-header-height",
+    "--mep-footer-height",
+    "--mep-bottom-gap",
+    "--mep-table-head-height",
+    "--mep-employees-per-sheet",
+    "--mep-table-height",
+    "--mep-employee-block-height",
+    "--mep-subrow-height"
+  ].forEach((varName) => {
+    const value = sourceStyle.getPropertyValue(varName).trim();
+    if (value) {
+      targetNode.style.setProperty(varName, value);
+    }
+  });
+}
+
 function createMepPdfExportRoot() {
   const pagesEl = document.getElementById("mepTemplatePages");
   if (!pagesEl) return null;
@@ -181,6 +203,7 @@ function createMepPdfExportRoot() {
   }
 
   exportRoot.appendChild(clonePagesEl);
+  copyMepLayoutVariablesToNode(exportRoot);
   document.body.appendChild(exportRoot);
 
   if (typeof syncMepOutsideRunMarkers === "function") {
@@ -446,7 +469,7 @@ async function exportMepTemplatePdf() {
       throw new Error("Keine MEP-Seiten zum Export gefunden.");
     }
 
-    const exportScale = Math.max(2, window.devicePixelRatio || 1);
+    const exportScale = 2;
     await runExportAttempt(sheetEls, exportScale, "default");
   } catch (error) {
     logMepExportError("PDF-Export fehlgeschlagen", error, exportState);
