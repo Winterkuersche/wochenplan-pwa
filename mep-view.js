@@ -553,13 +553,24 @@ function fitMepTemplateSheets() {
 
   const sheetEls = pagesEl.querySelectorAll(".mepTplSheet");
   sheetEls.forEach((sheetEl) => {
+    const innerEl = sheetEl.querySelector(".mepTplSheetInner");
+    const headerEl = sheetEl.querySelector(".mepTplHeader");
+    const footerEl = sheetEl.querySelector(".mepTplFooter");
     const tableHeadEl = sheetEl.querySelector(".mepTplTable thead");
-    if (!tableHeadEl) return;
+    if (!innerEl || !headerEl || !footerEl || !tableHeadEl) return;
 
-    const measuredHeadHeight = tableHeadEl.getBoundingClientRect().height;
-    if (!measuredHeadHeight) return;
+    const innerHeight = innerEl.getBoundingClientRect().height;
+    const headerHeight = headerEl.getBoundingClientRect().height;
+    const footerHeight = footerEl.getBoundingClientRect().height;
+    const tableHeadHeight = tableHeadEl.getBoundingClientRect().height;
+    if (!innerHeight || !tableHeadHeight) return;
 
-    sheetEl.style.setProperty("--mep-table-head-height-actual", `${measuredHeadHeight}px`);
+    const tableBodyHeight = Math.max(0, innerHeight - headerHeight - footerHeight - tableHeadHeight);
+    const subrowHeight = tableBodyHeight / 36;
+
+    sheetEl.style.setProperty("--mep-table-height", `${tableBodyHeight + tableHeadHeight}px`);
+    sheetEl.style.setProperty("--mep-table-head-height", `${tableHeadHeight}px`);
+    sheetEl.style.setProperty("--mep-subrow-height", `${subrowHeight}px`);
   });
 
   syncMepOutsideRunMarkers(pagesEl);
