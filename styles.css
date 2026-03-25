@@ -21,6 +21,7 @@
   --mep-header-height: 25.2mm;
   --mep-footer-height: 13.1mm;
   --mep-bottom-gap: 0mm;
+  --mep-footer-guard: 1.4mm;
   --mep-table-head-height: 10.65mm;
   --mep-employees-per-sheet: 9;
   --mep-border-grid-line: 0.8px;
@@ -38,6 +39,7 @@
     - var(--mep-header-height)
     - var(--mep-footer-height)
     - var(--mep-bottom-gap)
+    - var(--mep-footer-guard)
   );
   --mep-subrow-height: calc(
     (var(--mep-table-height) - var(--mep-table-head-height) - var(--mep-subrow-border-budget))
