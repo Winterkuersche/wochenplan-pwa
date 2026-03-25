@@ -83,7 +83,8 @@ function sanitizeUiState(rawUi) {
   const mergedUi = { ...defaultUiState(), ...(rawUi || {}) };
   return {
     ...mergedUi,
-    currentView: sanitizeCurrentView(mergedUi.currentView)
+    currentView: sanitizeCurrentView(mergedUi.currentView),
+    mepAnonymized: Boolean(mergedUi.mepAnonymized)
   };
 }
 
@@ -1046,6 +1047,8 @@ const backupFileInputEl = document.getElementById("backupFileInput");
 const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
+const btnMepModeNormalEl = document.getElementById("btnMepModeNormal");
+const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -1176,7 +1179,8 @@ function saveJson(key, value) {
 function defaultUiState() {
   return {
     teamCollapsed: false,
-    currentView: "week"
+    currentView: "week",
+    mepAnonymized: false
   };
 }
 
@@ -2174,6 +2178,7 @@ function isWeekViewActive() {
 
 function renderTopbarVisibility() {
   const isWeek = isWeekViewActive();
+  const isMep = (uiState?.currentView || "week") === "mep";
 
   if (viewMetaLineEl) {
     viewMetaLineEl.classList.toggle("hidden", !isWeek);
@@ -2181,6 +2186,16 @@ function renderTopbarVisibility() {
 
   if (btnResetWeekEl) {
     btnResetWeekEl.classList.toggle("hidden", !isWeek);
+  }
+
+  if (btnMepModeNormalEl) {
+    btnMepModeNormalEl.classList.toggle("hidden", !isMep);
+    btnMepModeNormalEl.classList.toggle("active", !uiState.mepAnonymized);
+  }
+
+  if (btnMepModeAnonymEl) {
+    btnMepModeAnonymEl.classList.toggle("hidden", !isMep);
+    btnMepModeAnonymEl.classList.toggle("active", !!uiState.mepAnonymized);
   }
 }
 
@@ -2552,6 +2567,22 @@ if (btnViewMepEl) {
     renderAllViews();
   });
 }
+
+btnMepModeNormalEl?.addEventListener("click", () => {
+  if (!uiState.mepAnonymized) return;
+  uiState.mepAnonymized = false;
+  saveAppStateDebounced();
+  renderTopbarVisibility();
+  renderMepTemplateView({ scope: "month" });
+});
+
+btnMepModeAnonymEl?.addEventListener("click", () => {
+  if (uiState.mepAnonymized) return;
+  uiState.mepAnonymized = true;
+  saveAppStateDebounced();
+  renderTopbarVisibility();
+  renderMepTemplateView({ scope: "month" });
+});
 
 document.getElementById("btnSaveMaster")?.addEventListener("click", () => {
   const ok = saveAppState();
