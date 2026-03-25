@@ -188,16 +188,6 @@ function renderMepEmployeeName(value, variant = 0) {
   `;
 }
 
-function getMepEmployeeNameForRender(employee, employeeOffset = 0) {
-  if (!uiState?.mepAnonymized) {
-    return employee?.name || "";
-  }
-
-  if (!employee) return "";
-  return `Mitarbeiter ${employeeOffset + 1}`;
-}
-
-
 function getMepDayColumnClass(dayIndex) {
   const dayColumnClasses = [
     "mepTplDayCell--mon",
@@ -451,7 +441,11 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel
       const baseColumns =
         index === 0
           ? `
-            <td rowspan="4" class="mepTplEmployee mepTplColEmployee">${renderMepEmployeeName(getMepEmployeeNameForRender(employee, employeeOffset), employeeOffset)}</td>
+            <td rowspan="4" class="mepTplEmployee mepTplColEmployee">${
+              uiState?.mepAnonymized
+                ? ""
+                : renderMepEmployeeName(employee?.name || "", employeeOffset)
+            }</td>
             <td rowspan="4" class="mepTplColRole">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
             <td rowspan="4" class="mepTplColTarget">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
           `
