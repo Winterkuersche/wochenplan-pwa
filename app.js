@@ -169,19 +169,9 @@ function createMepPdfExportRoot() {
   clonePagesEl.style.gap = "0";
 
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
-    sheetEl.style.setProperty("--mep-sheet-scale", "1");
     sheetEl.style.margin = "0";
     sheetEl.style.breakAfter = "page";
     sheetEl.style.pageBreakAfter = "always";
-  });
-
-  clonePagesEl.querySelectorAll(".mepTplSheetInner").forEach((innerEl) => {
-    innerEl.style.transform = "none";
-    innerEl.style.setProperty("--mep-sheet-inner-height", "202mm");
-    innerEl.style.setProperty("--mep-header-height", "25.2mm");
-    innerEl.style.setProperty("--mep-footer-height", "12.1mm");
-    innerEl.style.setProperty("--mep-footer-bottom-gap", "0mm");
-    innerEl.style.setProperty("--mep-employee-blocks", "9");
   });
 
   const lastSheetEl = clonePagesEl.querySelector(".mepTplSheet:last-child");
