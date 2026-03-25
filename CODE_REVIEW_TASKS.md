@@ -62,3 +62,13 @@
 **Akzeptanzkriterien:**
 - Testfälle decken die genannten Randfälle reproduzierbar ab.
 - Bei Regressionen schlagen Tests deterministisch fehl.
+
+---
+
+## 5) Aufgabe: MEP-Geometrie auf eine Autorität festlegen (CSS-only)
+**Entscheidung:** Für die MEP-Seitengeometrie gilt ausschließlich die feste CSS-Berechnung (mm-basierte Variablen). Die bisherige JS-Nachmessung und das nachträgliche Überschreiben von `--mep-table-height` / `--mep-subrow-height` entfallen vollständig.
+
+**Akzeptanzkriterien:**
+- Auf jeder MEP-Seite sind alle 9 MA-Zeilen vollständig sichtbar.
+- Der Footer wird vollständig angezeigt (kein Abschneiden).
+- In iOS Safari ist das Ergebnis in Bildschirmansicht und im PDF-Export visuell identisch.
