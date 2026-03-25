@@ -44,6 +44,9 @@
     / var(--mep-total-subrows)
   );
   --mep-employee-block-height: calc(var(--mep-subrow-height) * var(--mep-subrows-per-employee));
+  --mep-table-font-size: 0.55rem;
+  --mep-footer-font-size: 0.6rem;
+  --mep-stand-font-size: 0.55rem;
 }
 
 body.dark {
@@ -2439,8 +2442,6 @@ body.dark .mepTable th {
 }
 
 .mepTplSheetInner {
-  --mep-table-font-size: 0.61rem;
-  --mep-footer-font-size: 0.66rem;
   --mep-footer-heading-size: 0.88em;
   --mep-table-cell-padding-y: 0.45mm;
   --mep-table-cell-padding-x: 0.5mm;
@@ -3001,7 +3002,7 @@ body.dark .mepTable th {
   align-self: end;
   text-align: right;
   padding-right: 0.3mm;
-  font-size: 0.61rem;
+  font-size: var(--mep-stand-font-size);
   line-height: 1;
   white-space: nowrap;
   letter-spacing: -0.01em;
@@ -3296,8 +3297,9 @@ body.dark .mepTable th {
     width: 100%;
     height: var(--mep-sheet-inner-height);
     padding: 4.2mm 4.5mm 3.8mm;
-    --mep-table-font-size: 7.4pt;
-    --mep-footer-font-size: 7.8pt;
+    --mep-table-font-size: 6.7pt;
+    --mep-footer-font-size: 7pt;
+    --mep-stand-font-size: 6.7pt;
     --mep-footer-heading-size: 7.5pt;
     --mep-table-cell-padding-y: 0.17mm;
     --mep-table-cell-padding-x: 0.4mm;
