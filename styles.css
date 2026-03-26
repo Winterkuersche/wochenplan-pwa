@@ -2980,10 +2980,10 @@ body.dark .mepTable th {
   line-height: 0.93;
   letter-spacing: calc(var(--handwrite-letter-spacing) + var(--mep-hand-letter-spacing, 0em));
   color: var(--mep-hand-ink, var(--handwrite-color));
-  transform: translate(var(--mep-hand-shift-x, 0px), var(--mep-hand-shift-y, 0px))
-    rotate(var(--mep-hand-rotate, 0deg))
-    scaleX(var(--mep-hand-scale-x, 1))
-    scaleY(var(--mep-hand-scale-y, 1));
+  transform: translate(var(--mep-hand-shift-x-effective, var(--mep-hand-shift-x, 0px)), var(--mep-hand-shift-y-effective, var(--mep-hand-shift-y, 0px)))
+    rotate(var(--mep-hand-rotate-effective, var(--mep-hand-rotate, 0deg)))
+    scaleX(var(--mep-hand-scale-x-effective, var(--mep-hand-scale-x, 1)))
+    scaleY(var(--mep-hand-scale-y-effective, var(--mep-hand-scale-y, 1)));
   transform-origin: left center;
   text-rendering: geometricPrecision;
   text-shadow: 0.015em 0 currentColor;
@@ -3006,10 +3006,10 @@ body.dark .mepTable th {
   color: var(--mep-hand-ink, var(--handwrite-color));
   text-align: center;
   text-rendering: geometricPrecision;
-  transform: translate(var(--mep-hand-shift-x, 0px), var(--mep-hand-shift-y, 0px))
-    rotate(var(--mep-hand-rotate, 0deg))
-    scaleX(var(--mep-hand-scale-x, 1))
-    scaleY(var(--mep-hand-scale-y, 1));
+  transform: translate(var(--mep-hand-shift-x-effective, var(--mep-hand-shift-x, 0px)), var(--mep-hand-shift-y-effective, var(--mep-hand-shift-y, 0px)))
+    rotate(var(--mep-hand-rotate-effective, var(--mep-hand-rotate, 0deg)))
+    scaleX(var(--mep-hand-scale-x-effective, var(--mep-hand-scale-x, 1)))
+    scaleY(var(--mep-hand-scale-y-effective, var(--mep-hand-scale-y, 1)));
   transform-origin: center center;
   text-shadow: 0.015em 0 currentColor;
 }
@@ -3018,7 +3018,11 @@ body.dark .mepTable th {
   display: block;
   margin: 0;
   padding: 0;
-  font-size: calc(1.44em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.44em + (var(--mep-hand-size-adjust, 0px) * 0.45));
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.004em + (var(--mep-hand-letter-spacing, 0em) * 0.45));
+  --mep-hand-shift-x-effective: calc(var(--mep-hand-shift-x, 0px) * 0.45);
+  --mep-hand-shift-y-effective: calc(var(--mep-hand-shift-y, 0px) * 0.4);
+  --mep-hand-rotate-effective: calc(var(--mep-hand-rotate, 0deg) * 0.45);
   line-height: var(--mep-subrow-height);
   overflow: hidden;
 }
@@ -3031,9 +3035,12 @@ body.dark .mepTable th {
   max-width: 100%;
   margin: 0;
   padding: 0;
-  font-size: calc(2em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(2em + (var(--mep-hand-size-adjust, 0px) * 1.15));
   line-height: calc(2 * var(--mep-subrow-height));
-  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.018em + var(--mep-hand-letter-spacing, 0em));
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.022em + (var(--mep-hand-letter-spacing, 0em) * 1.25));
+  --mep-hand-shift-x-effective: calc(var(--mep-hand-shift-x, 0px) * 1.18);
+  --mep-hand-shift-y-effective: calc(var(--mep-hand-shift-y, 0px) * 1.35);
+  --mep-hand-rotate-effective: calc(var(--mep-hand-rotate, 0deg) * 1.22);
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -3059,9 +3066,12 @@ body.dark .mepTable th {
   max-width: 100%;
   margin: 0;
   padding: 0;
-  font-size: calc(1.75em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.75em + (var(--mep-hand-size-adjust, 0px) * 1.1));
   line-height: var(--mep-subrow-height);
-  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.016em + var(--mep-hand-letter-spacing, 0em));
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.02em + (var(--mep-hand-letter-spacing, 0em) * 1.35));
+  --mep-hand-shift-x-effective: calc(var(--mep-hand-shift-x, 0px) * 1.12);
+  --mep-hand-shift-y-effective: calc(var(--mep-hand-shift-y, 0px) * 1.28);
+  --mep-hand-rotate-effective: calc(var(--mep-hand-rotate, 0deg) * 1.28);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -3084,100 +3094,103 @@ body.dark .mepTable th {
   display: block;
   margin: 0;
   padding: 0;
-  font-size: calc(1.55em + var(--mep-hand-size-adjust, 0px));
+  font-size: calc(1.55em + (var(--mep-hand-size-adjust, 0px) * 0.55));
   line-height: calc(2 * var(--mep-subrow-height));
-  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.008em + var(--mep-hand-letter-spacing, 0em));
+  letter-spacing: calc(var(--handwrite-letter-spacing) - 0.01em + (var(--mep-hand-letter-spacing, 0em) * 0.5));
+  --mep-hand-shift-x-effective: calc(var(--mep-hand-shift-x, 0px) * 0.5);
+  --mep-hand-shift-y-effective: calc(var(--mep-hand-shift-y, 0px) * 0.45);
+  --mep-hand-rotate-effective: calc(var(--mep-hand-rotate, 0deg) * 0.5);
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
 }
 
 .mepTplHandVariant0 {
-  --mep-hand-shift-x: -0.5px;
-  --mep-hand-shift-y: 0.3px;
-  --mep-hand-rotate: -0.72deg;
-  --mep-hand-scale-x: 0.988;
-  --mep-hand-scale-y: 1.008;
+  --mep-hand-shift-x: -1.05px;
+  --mep-hand-shift-y: 0.75px;
+  --mep-hand-rotate: -1.35deg;
+  --mep-hand-scale-x: 0.978;
+  --mep-hand-scale-y: 1.02;
   --mep-hand-ink: #1f2429;
-  --mep-hand-size-adjust: 0.08px;
-  --mep-hand-letter-spacing: -0.005em;
+  --mep-hand-size-adjust: 0.4px;
+  --mep-hand-letter-spacing: -0.012em;
 }
 
 .mepTplHandVariant1 {
-  --mep-hand-shift-x: 0.42px;
-  --mep-hand-shift-y: -0.22px;
-  --mep-hand-rotate: 0.62deg;
-  --mep-hand-scale-x: 1.012;
-  --mep-hand-scale-y: 0.995;
+  --mep-hand-shift-x: 0.96px;
+  --mep-hand-shift-y: -0.68px;
+  --mep-hand-rotate: 1.28deg;
+  --mep-hand-scale-x: 1.024;
+  --mep-hand-scale-y: 0.986;
   --mep-hand-ink: #1e2328;
-  --mep-hand-size-adjust: -0.08px;
-  --mep-hand-letter-spacing: 0.003em;
+  --mep-hand-size-adjust: -0.34px;
+  --mep-hand-letter-spacing: 0.011em;
 }
 
 .mepTplHandVariant2 {
-  --mep-hand-shift-x: 0.22px;
-  --mep-hand-shift-y: 0.4px;
-  --mep-hand-rotate: -0.34deg;
-  --mep-hand-scale-x: 0.992;
-  --mep-hand-scale-y: 1.008;
+  --mep-hand-shift-x: 0.5px;
+  --mep-hand-shift-y: 0.9px;
+  --mep-hand-rotate: -0.82deg;
+  --mep-hand-scale-x: 0.984;
+  --mep-hand-scale-y: 1.016;
   --mep-hand-ink: #23282d;
-  --mep-hand-size-adjust: 0px;
-  --mep-hand-letter-spacing: -0.002em;
+  --mep-hand-size-adjust: 0.16px;
+  --mep-hand-letter-spacing: -0.006em;
 }
 
 .mepTplHandVariant3 {
-  --mep-hand-shift-x: -0.32px;
-  --mep-hand-shift-y: 0.18px;
-  --mep-hand-rotate: 0.68deg;
-  --mep-hand-scale-x: 1.014;
-  --mep-hand-scale-y: 0.992;
+  --mep-hand-shift-x: -0.72px;
+  --mep-hand-shift-y: 0.52px;
+  --mep-hand-rotate: 1.4deg;
+  --mep-hand-scale-x: 1.028;
+  --mep-hand-scale-y: 0.983;
   --mep-hand-ink: #1d2227;
-  --mep-hand-size-adjust: 0.1px;
-  --mep-hand-letter-spacing: 0.004em;
+  --mep-hand-size-adjust: 0.52px;
+  --mep-hand-letter-spacing: 0.013em;
 }
 
 .mepTplHandVariant4 {
-  --mep-hand-shift-x: 0.18px;
-  --mep-hand-shift-y: -0.32px;
-  --mep-hand-rotate: -0.66deg;
-  --mep-hand-scale-x: 0.982;
-  --mep-hand-scale-y: 1.013;
+  --mep-hand-shift-x: 0.44px;
+  --mep-hand-shift-y: -0.94px;
+  --mep-hand-rotate: -1.22deg;
+  --mep-hand-scale-x: 0.974;
+  --mep-hand-scale-y: 1.022;
   --mep-hand-ink: #22272c;
-  --mep-hand-size-adjust: -0.1px;
-  --mep-hand-letter-spacing: -0.004em;
+  --mep-hand-size-adjust: -0.46px;
+  --mep-hand-letter-spacing: -0.013em;
 }
 
 .mepTplHandVariant5 {
-  --mep-hand-shift-x: -0.28px;
-  --mep-hand-shift-y: 0.22px;
-  --mep-hand-rotate: 0.3deg;
-  --mep-hand-scale-x: 1.006;
-  --mep-hand-scale-y: 1.001;
+  --mep-hand-shift-x: -0.64px;
+  --mep-hand-shift-y: 0.58px;
+  --mep-hand-rotate: 0.72deg;
+  --mep-hand-scale-x: 1.016;
+  --mep-hand-scale-y: 0.996;
   --mep-hand-ink: #24292e;
-  --mep-hand-size-adjust: 0.06px;
-  --mep-hand-letter-spacing: 0.002em;
+  --mep-hand-size-adjust: 0.28px;
+  --mep-hand-letter-spacing: 0.007em;
 }
 
 .mepTplHandVariant6 {
-  --mep-hand-shift-x: 0.32px;
-  --mep-hand-shift-y: -0.08px;
-  --mep-hand-rotate: -0.5deg;
-  --mep-hand-scale-x: 0.992;
-  --mep-hand-scale-y: 1.004;
+  --mep-hand-shift-x: 0.7px;
+  --mep-hand-shift-y: -0.24px;
+  --mep-hand-rotate: -0.98deg;
+  --mep-hand-scale-x: 0.986;
+  --mep-hand-scale-y: 1.012;
   --mep-hand-ink: #20252a;
-  --mep-hand-size-adjust: -0.04px;
-  --mep-hand-letter-spacing: -0.002em;
+  --mep-hand-size-adjust: -0.2px;
+  --mep-hand-letter-spacing: -0.007em;
 }
 
 .mepTplHandVariant7 {
-  --mep-hand-shift-x: -0.12px;
-  --mep-hand-shift-y: 0.42px;
-  --mep-hand-rotate: 0.58deg;
-  --mep-hand-scale-x: 1.011;
-  --mep-hand-scale-y: 0.996;
+  --mep-hand-shift-x: -0.36px;
+  --mep-hand-shift-y: 0.96px;
+  --mep-hand-rotate: 1.05deg;
+  --mep-hand-scale-x: 1.022;
+  --mep-hand-scale-y: 0.989;
   --mep-hand-ink: #1f252a;
-  --mep-hand-size-adjust: 0.08px;
-  --mep-hand-letter-spacing: 0.003em;
+  --mep-hand-size-adjust: 0.34px;
+  --mep-hand-letter-spacing: 0.01em;
 }
 
 .mepTplFooter {
