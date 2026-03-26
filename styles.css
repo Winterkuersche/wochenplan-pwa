@@ -9,8 +9,8 @@
   --subtext: #666;
   --accent: #0a58ff;
   --handwrite-font-family: "Caveat", "Segoe Print", "Bradley Hand", "Comic Sans MS", cursive;
-  --handwrite-color: #20242a;
-  --handwrite-weight: 500;
+  --handwrite-color: #2a3036;
+  --handwrite-weight: 490;
   --handwrite-line-height: 0.95;
   --handwrite-letter-spacing: -0.01em;
   --app-vh: 1vh;
@@ -2152,7 +2152,7 @@ body.dark .mepTable th {
   font-size: 3.35mm;
   line-height: var(--handwrite-line-height);
   color: var(--handwrite-color);
-  font-weight: var(--handwrite-weight);
+  font-weight: var(--mep-hand-weight, var(--handwrite-weight));
   letter-spacing: var(--handwrite-letter-spacing);
   text-rendering: geometricPrecision;
 }
@@ -2976,7 +2976,7 @@ body.dark .mepTable th {
 .mepTplMeta [data-mep-week-to] {
   display: inline-block;
   font-family: var(--handwrite-font-family);
-  font-weight: var(--handwrite-weight);
+  font-weight: var(--mep-hand-weight, var(--handwrite-weight));
   line-height: 0.93;
   letter-spacing: calc(var(--handwrite-letter-spacing) + var(--mep-hand-letter-spacing, 0em));
   color: var(--mep-hand-ink, var(--handwrite-color));
@@ -3000,7 +3000,7 @@ body.dark .mepTable th {
   min-width: 100%;
   font-family: var(--handwrite-font-family);
   font-size: calc(1.1em + var(--mep-hand-size-adjust, 0px));
-  font-weight: var(--handwrite-weight);
+  font-weight: var(--mep-hand-weight, var(--handwrite-weight));
   line-height: 0.95;
   letter-spacing: calc(var(--handwrite-letter-spacing) + var(--mep-hand-letter-spacing, 0em));
   color: var(--mep-hand-ink, var(--handwrite-color));
@@ -3111,7 +3111,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: -1.35deg;
   --mep-hand-scale-x: 0.978;
   --mep-hand-scale-y: 1.02;
-  --mep-hand-ink: #1f2429;
+  --mep-hand-ink: #2b3138;
+  --mep-hand-weight: 488;
   --mep-hand-size-adjust: 0.4px;
   --mep-hand-letter-spacing: -0.012em;
 }
@@ -3122,7 +3123,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: 1.28deg;
   --mep-hand-scale-x: 1.024;
   --mep-hand-scale-y: 0.986;
-  --mep-hand-ink: #1e2328;
+  --mep-hand-ink: #2d343b;
+  --mep-hand-weight: 494;
   --mep-hand-size-adjust: -0.34px;
   --mep-hand-letter-spacing: 0.011em;
 }
@@ -3133,7 +3135,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: -0.82deg;
   --mep-hand-scale-x: 0.984;
   --mep-hand-scale-y: 1.016;
-  --mep-hand-ink: #23282d;
+  --mep-hand-ink: #2c333a;
+  --mep-hand-weight: 490;
   --mep-hand-size-adjust: 0.16px;
   --mep-hand-letter-spacing: -0.006em;
 }
@@ -3144,7 +3147,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: 1.4deg;
   --mep-hand-scale-x: 1.028;
   --mep-hand-scale-y: 0.983;
-  --mep-hand-ink: #1d2227;
+  --mep-hand-ink: #2e353c;
+  --mep-hand-weight: 496;
   --mep-hand-size-adjust: 0.52px;
   --mep-hand-letter-spacing: 0.013em;
 }
@@ -3155,7 +3159,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: -1.22deg;
   --mep-hand-scale-x: 0.974;
   --mep-hand-scale-y: 1.022;
-  --mep-hand-ink: #22272c;
+  --mep-hand-ink: #2b3239;
+  --mep-hand-weight: 489;
   --mep-hand-size-adjust: -0.46px;
   --mep-hand-letter-spacing: -0.013em;
 }
@@ -3166,7 +3171,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: 0.72deg;
   --mep-hand-scale-x: 1.016;
   --mep-hand-scale-y: 0.996;
-  --mep-hand-ink: #24292e;
+  --mep-hand-ink: #2d343b;
+  --mep-hand-weight: 495;
   --mep-hand-size-adjust: 0.28px;
   --mep-hand-letter-spacing: 0.007em;
 }
@@ -3177,7 +3183,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: -0.98deg;
   --mep-hand-scale-x: 0.986;
   --mep-hand-scale-y: 1.012;
-  --mep-hand-ink: #20252a;
+  --mep-hand-ink: #2c333a;
+  --mep-hand-weight: 491;
   --mep-hand-size-adjust: -0.2px;
   --mep-hand-letter-spacing: -0.007em;
 }
@@ -3188,7 +3195,8 @@ body.dark .mepTable th {
   --mep-hand-rotate: 1.05deg;
   --mep-hand-scale-x: 1.022;
   --mep-hand-scale-y: 0.989;
-  --mep-hand-ink: #1f252a;
+  --mep-hand-ink: #2e353c;
+  --mep-hand-weight: 497;
   --mep-hand-size-adjust: 0.34px;
   --mep-hand-letter-spacing: 0.01em;
 }
