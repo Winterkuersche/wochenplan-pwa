@@ -3219,8 +3219,8 @@ body.dark .mepTable th {
 
 .mepTplStand {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: -0.25mm;
+  bottom: -0.15mm;
   text-align: right;
   padding-right: 4mm;
   font-size: 0.63rem;
