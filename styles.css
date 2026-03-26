@@ -3192,6 +3192,7 @@ body.dark .mepTable th {
   line-height: 1.02;
   display: flex;
   align-items: flex-start;
+  position: relative;
 }
 
 .mepTplFooterGrid {
@@ -3203,11 +3204,10 @@ body.dark .mepTable th {
     var(--mep-footer-absence-col1-width)
     var(--mep-footer-absence-col2-width)
     var(--mep-footer-vacation-width)
-    minmax(0, 1fr)
-    auto;
+    minmax(0, 1fr);
   grid-template-areas:
-    "pause pause absence absence absence vacation . stand"
-    "presence presence presence presence presence presence presence stand";
+    "pause pause absence absence absence vacation ."
+    "presence presence presence presence presence presence presence";
   align-items: start;
   column-gap: 0;
   row-gap: 0.44mm;
@@ -3218,19 +3218,15 @@ body.dark .mepTable th {
 }
 
 .mepTplStand {
-  grid-area: stand;
-  grid-column: 8 / 9;
-  grid-row: 2 / 3;
-  justify-self: end;
-  align-self: end;
+  position: absolute;
+  right: 0;
+  bottom: 0;
   text-align: right;
   padding-right: 4mm;
   font-size: 0.63rem;
   line-height: 1;
   white-space: nowrap;
   letter-spacing: -0.01em;
-  margin: 0;
-  transform: translateY(0.45mm);
 }
 
 
