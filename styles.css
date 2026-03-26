@@ -2950,9 +2950,9 @@ body.dark .mepTable th {
 .mepTplFooterLabel {
   display: inline-block;
   margin: 0;
-  font-size: calc(var(--mep-footer-heading-size) * 1.01);
-  font-weight: 600;
-  line-height: 1.06;
+  font-size: calc(var(--mep-footer-heading-size) * 1.04);
+  font-weight: 650;
+  line-height: 1.05;
   white-space: nowrap;
   letter-spacing: -0.01em;
 }
@@ -2960,9 +2960,9 @@ body.dark .mepTable th {
 .mepTplFooterText {
   display: inline-block;
   margin: 0;
-  line-height: 1.03;
+  line-height: 1.01;
   white-space: nowrap;
-  font-size: 0.95em;
+  font-size: 0.98em;
   font-weight: 400;
 }
 
