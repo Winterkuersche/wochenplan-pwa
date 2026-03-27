@@ -513,10 +513,6 @@ function buildWeekSelectClass(value) {
   return `weekSelect ${getShiftClassByKey(value === "H" ? "-" : value)}`;
 }
 
-function isReusableShiftValue(value) {
-  return ["FO", "F3", "F4", "F5", "F6", "L", "G"].includes(value);
-}
-
 function getEmployeeLastShiftLabel(emp) {
   const shiftDays = Object.keys(state.schedule || {}).sort().reverse();
 
@@ -528,11 +524,6 @@ function getEmployeeLastShiftLabel(emp) {
   }
 
   return null;
-}
-
-function rememberLastSelectedShift(value) {
-  if (!isReusableShiftValue(value)) return;
-  lastSelectedShift = value;
 }
 
 function getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
@@ -680,8 +671,6 @@ function createWeekSelect(emp, isoDate) {
   const wrap = document.createElement("div");
   wrap.className = "weekCellControl";
 
-  const isEmptyCell = currentValue === "-";
-
   const cellFlags = getWeekCellFlags(emp, isoDate);
   if (cellFlags.isLateToEarlyBridge) {
     wrap.classList.add("weekCellHandoverOk");
@@ -752,8 +741,6 @@ function createWeekSelect(emp, isoDate) {
       }
     }
 
-    rememberLastSelectedShift(selectedValue);
-
     if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
       sel.value = previousValue;
       return;
@@ -785,13 +772,6 @@ commitPlanChange();
   });
 
   wrap.appendChild(sel);
-
-  if (isEmptyCell && lastSelectedShift !== null) {
-    const hint = document.createElement("span");
-    hint.className = "weekCellHint";
-    hint.textContent = lastSelectedShift;
-    wrap.appendChild(hint);
-  }
 
   return wrap;
 }
@@ -937,7 +917,7 @@ function renderWeekTable() {
     tdNameRole.innerHTML = `
       <div class="nameRoleName">${emp.name || "—"}</div>
       <div class="nameRoleSub">${emp.roleKey || "-"}</div>
-      ${lastShift ? `<div class="nameRoleLast">letzte: ${lastShift}</div>` : ""}
+      ${lastShift ? `<div class="nameRoleLast">zuletzt verwendet: ${lastShift}</div>` : ""}
     `;
     tr.appendChild(tdNameRole);
 
