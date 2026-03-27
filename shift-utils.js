@@ -15,10 +15,13 @@ function buildEarlyShiftEntry(code) {
   const shift = findEarlyShiftByCode(code);
   if (!shift) return null;
 
+  const breakMinutes = getEffectiveBreakMinutes(shift.start, shift.end, shift.breakMinutes, {
+    includeBillingBonus: shift.end === "19:10"
+  });
   const workedMinutes = getWorkedMinutesFromRange(
     shift.start,
     shift.end,
-    shift.breakMinutes
+    breakMinutes
   );
 
   return {
@@ -31,8 +34,8 @@ function buildEarlyShiftEntry(code) {
     label: shift.label,
     start: shift.start,
     end: shift.end,
-    pause: shift.breakMinutes,
-    breakMinutes: shift.breakMinutes,
+    pause: breakMinutes,
+    breakMinutes,
     note: "",
     minutes: workedMinutes
   };
