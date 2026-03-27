@@ -486,6 +486,26 @@ L1E-L4E ohne Abrechnung
         </div>
       </label>
     </div>
+
+    <div id="shiftDialogFoFields" class="dialogFields hidden">
+      <label>
+        Startzeit
+        <input id="shiftDialogFoStart" type="time" value="08:55" readonly>
+      </label>
+
+      <label>
+        Endzeit
+        <select id="shiftDialogFoEnd"></select>
+      </label>
+
+      <label>
+        Abrechnung
+        <select id="shiftDialogFoCheckout">
+          <option value="no">ohne Kasse</option>
+          <option value="yes">mit Kasse bis 19:10</option>
+        </select>
+      </label>
+    </div>
         <div id="shiftDialogAbsenceFields" class="dialogFields hidden">
       <label>
         Status

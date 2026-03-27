@@ -32,6 +32,7 @@ const SHIFT_CONFIG = {
 
   statusOptions: [
     { value: "", label: "—", type: "off" },
+    { value: "FÖ", label: "FÖ", type: "shift" },
     { value: "FO", label: "FÖ", type: "shift" },
     { value: "F3", label: "F3", type: "shift" },
     { value: "F4", label: "F4", type: "shift" },

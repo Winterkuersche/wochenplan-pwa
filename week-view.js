@@ -4,11 +4,15 @@ const shiftDialogTitle = document.getElementById("shiftDialogTitle");
 const shiftDialogLateFields = document.getElementById("shiftDialogLateFields");
 const shiftDialogFullFields = document.getElementById("shiftDialogFullFields");
 const shiftDialogFlexFields = document.getElementById("shiftDialogFlexFields");
+const shiftDialogFoFields = document.getElementById("shiftDialogFoFields");
 
 const shiftDialogLateStart = document.getElementById("shiftDialogLateStart");
 const shiftDialogLateCheckout = document.getElementById("shiftDialogLateCheckout");
 
 const shiftDialogFullCheckout = document.getElementById("shiftDialogFullCheckout");
+const shiftDialogFoStart = document.getElementById("shiftDialogFoStart");
+const shiftDialogFoEnd = document.getElementById("shiftDialogFoEnd");
+const shiftDialogFoCheckout = document.getElementById("shiftDialogFoCheckout");
 
 const shiftDialogFlexStartHour = document.getElementById("shiftDialogFlexStartHour");
 const shiftDialogFlexStartMinute = document.getElementById("shiftDialogFlexStartMinute");
@@ -37,6 +41,33 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 let shiftDialogContext = null;
 
 const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
+const FO_START_TIME = "08:55";
+
+function buildFoEndOptions() {
+  const options = [];
+  let currentMinutes = hhmmToMinutes("12:00");
+  const latestMinutes = hhmmToMinutes("19:00");
+
+  while (currentMinutes <= latestMinutes) {
+    options.push(minutesToHHMM(currentMinutes));
+    currentMinutes += 15;
+  }
+
+  options.push("19:10");
+  return options;
+}
+
+function initFoEndSelect() {
+  if (!shiftDialogFoEnd) return;
+  shiftDialogFoEnd.innerHTML = "";
+
+  buildFoEndOptions().forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    shiftDialogFoEnd.appendChild(option);
+  });
+}
 
 function initHourSelect(selectEl) {
   if (!selectEl) return;
@@ -86,6 +117,7 @@ initQuarterTimePicker(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
 initQuarterTimePicker(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
 initQuarterTimePicker(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
 initQuarterTimePicker(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute);
+initFoEndSelect();
 
 function getAbsenceTypeMeta(type) {
   if (type === "sick") {
@@ -122,6 +154,10 @@ function resetShiftDialogInputs(isoDate) {
   shiftDialogLateStart.value = "13:00";
   shiftDialogLateCheckout.value = "yes";
   shiftDialogFullCheckout.value = "yes";
+  if (shiftDialogFoStart) shiftDialogFoStart.value = FO_START_TIME;
+  if (shiftDialogFoEnd) shiftDialogFoEnd.value = "12:00";
+  if (shiftDialogFoCheckout) shiftDialogFoCheckout.value = "no";
+  if (shiftDialogFoEnd) shiftDialogFoEnd.disabled = false;
   setQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute, "00:00");
   setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, "00:00");
 
@@ -150,6 +186,7 @@ function openShiftDialog(type, context) {
   shiftDialogLateFields.classList.add("hidden");
   shiftDialogFullFields.classList.add("hidden");
   shiftDialogFlexFields.classList.add("hidden");
+  shiftDialogFoFields.classList.add("hidden");
   shiftDialogAbsenceFields.classList.add("hidden");
   shiftDialogExternalHelpFields.classList.add("hidden");
 
@@ -174,7 +211,11 @@ function openShiftDialog(type, context) {
     shiftDialogFullFields.classList.remove("hidden");
   }
 
-  
+  if (type === "FO") {
+    shiftDialogTitle.textContent = "FÖ";
+    shiftDialogFoFields.classList.remove("hidden");
+  }
+
   if (type === "FLEX") {
   shiftDialogTitle.textContent = "Flexible Schicht";
   shiftDialogFlexFields.classList.remove("hidden");
@@ -183,7 +224,7 @@ function openShiftDialog(type, context) {
 if (shiftDialogDelete) {
   shiftDialogDelete.classList.toggle(
     "hidden",
-    !["L", "G", "FLEX", "AH", "U", "K"].includes(type)
+    !["FO", "L", "G", "FLEX", "AH", "U", "K"].includes(type)
   );
 }
 
@@ -206,7 +247,7 @@ shiftDialogDelete?.addEventListener("click", () => {
 
   const { emp, isoDate, type } = shiftDialogContext;
 
-  if (type === "L" || type === "G" || type === "FLEX" || type === "AH") {
+  if (type === "FO" || type === "L" || type === "G" || type === "FLEX" || type === "AH") {
     clearDay(emp.id, isoDate);
     closeShiftDialog();
     return;
@@ -251,6 +292,22 @@ shiftDialogSave.addEventListener("click", () => {
   if (type === "G") {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
+
+    clearDay(emp.id, isoDate, { commit: false });
+    setPlanEntry(emp.id, isoDate, entry);
+    closeShiftDialog();
+    return;
+  }
+
+  if (type === "FO") {
+    const withCheckout = shiftDialogFoCheckout.value === "yes";
+    const selectedEnd = withCheckout ? "19:10" : shiftDialogFoEnd.value;
+    const entry = buildFoShiftEntry(selectedEnd);
+
+    if (!entry) {
+      alert("Ungültige FÖ-Schicht.");
+      return;
+    }
 
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
@@ -496,7 +553,10 @@ function getWeekSelectValueForDay(emp, isoDate) {
   if (resolved.type === "shift" && resolved.sourceEntry) {
     const entry = resolved.sourceEntry;
 
-    if (entry.mode === "early") return entry.code || "-";
+    if (entry.mode === "early") {
+      if (entry.code === "FO") return "FÖ";
+      return entry.code || "-";
+    }
     if (entry.mode === "late") return "L";
     if (entry.mode === "full") return "G";
     if (entry.mode === "flex") return "FLEX";
@@ -510,7 +570,8 @@ function buildWeekSelectClass(value) {
     return `weekSelect ${value === "U" ? "vacation" : "free"}`;
   }
 
-  return `weekSelect ${getShiftClassByKey(value === "H" ? "-" : value)}`;
+  const normalizedValue = value === "FÖ" ? "FO" : value;
+  return `weekSelect ${getShiftClassByKey(normalizedValue === "H" ? "-" : normalizedValue)}`;
 }
 
 function getEmployeeLastShiftLabel(emp) {
@@ -518,7 +579,7 @@ function getEmployeeLastShiftLabel(emp) {
 
   for (const isoDate of shiftDays) {
     const value = getWeekSelectValueForDay(emp, isoDate);
-    if (["FO", "F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(value)) {
+    if (["FO", "F3", "F4", "F5", "F6", "L", "G", "FLEX", "FÖ"].includes(value)) {
       return value;
     }
   }
@@ -590,6 +651,16 @@ function fillShiftDialogFromExisting(type, context) {
     setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, entry.end || "00:00");
   }
 
+  if (type === "FO" && resolved.type === "shift" && resolved.sourceEntry?.code === "FO") {
+    const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
+    if (shiftDialogFoStart) shiftDialogFoStart.value = FO_START_TIME;
+    if (shiftDialogFoEnd) {
+      shiftDialogFoEnd.value = entry.end === "19:10" ? "19:10" : (entry.end || "12:00");
+      shiftDialogFoEnd.disabled = entry.end === "19:10";
+    }
+    if (shiftDialogFoCheckout) shiftDialogFoCheckout.value = entry.end === "19:10" ? "yes" : "no";
+  }
+
   if (type === "AH" && resolved.type === "external-help" && resolved.sourceEntry) {
     const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
     const start = entry.start || "09:00";
@@ -654,10 +725,24 @@ function refreshExternalHelpDurationField() {
   el?.addEventListener("change", refreshExternalHelpDurationField);
 });
 
+shiftDialogFoCheckout?.addEventListener("change", () => {
+  const withCheckout = shiftDialogFoCheckout.value === "yes";
+  if (shiftDialogFoEnd) {
+    shiftDialogFoEnd.disabled = withCheckout;
+    if (withCheckout) {
+      shiftDialogFoEnd.value = "19:10";
+    } else if (shiftDialogFoEnd.value === "19:10") {
+      shiftDialogFoEnd.value = "19:00";
+    }
+  }
+});
+
 
 function openShiftDialogForSelectValue(value, context) {
-  if (value === "U" || value === "K" || value === "AH" || value === "L" || value === "G" || value === "FLEX") {
-    openShiftDialog(value, { ...context, type: value });
+  const normalizedValue = value === "FÖ" ? "FO" : value;
+
+  if (normalizedValue === "U" || normalizedValue === "K" || normalizedValue === "AH" || normalizedValue === "FO" || normalizedValue === "L" || normalizedValue === "G" || normalizedValue === "FLEX") {
+    openShiftDialog(normalizedValue, { ...context, type: normalizedValue });
     return true;
   }
 
@@ -697,7 +782,7 @@ function createWeekSelect(emp, isoDate) {
 
   [
     { value: "-", label: "-" },
-    { value: "FO", label: "FÖ" },
+    { value: "FÖ", label: "FÖ" },
     { value: "F3", label: "F3" },
     { value: "F4", label: "F4" },
     { value: "F5", label: "F5" },
@@ -749,7 +834,8 @@ function createWeekSelect(emp, isoDate) {
     clearDay(emp.id, isoDate, { commit: false });
 
    if (selectedValue !== "-") {
-  const entry = buildEarlyShiftEntry(selectedValue);
+  const normalizedValue = selectedValue === "FÖ" ? "FO" : selectedValue;
+  const entry = buildEarlyShiftEntry(normalizedValue);
 
   if (!entry) {
     alert("Ungültige Frühschicht.");
