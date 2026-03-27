@@ -142,7 +142,12 @@ const SHIFT_OPTION_GROUPS = Object.freeze([
 
 function normalizeShiftCode(code) {
   const normalized = String(code || "").trim().toUpperCase();
+  if (!normalized) return "";
+
   if (normalized === "FÖ") return "FO";
+  if (/^L[1-4](E)?$/.test(normalized)) return "L";
+  if (normalized === "G1") return "G";
+
   return normalized;
 }
 

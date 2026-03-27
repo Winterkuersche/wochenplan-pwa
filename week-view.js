@@ -524,15 +524,16 @@ function getWeekSelectValueForDay(emp, isoDate) {
   if (dialogType) return dialogType;
 
   if (resolved.type === "shift" && resolved.sourceEntry) {
-    const entry = resolved.sourceEntry;
+    const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
+    const normalizedCode = normalizeShiftCode(entry.code || entry.shiftKey || "");
 
-    if (entry.mode === "early") {
-      if (normalizeShiftCode(entry.code) === "FO") return "FO";
-      return entry.code || "-";
+    if (normalizedCode === "FO") return "FO";
+    if (["F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(normalizedCode)) {
+      return normalizedCode;
     }
-    if (entry.mode === "late") return "L";
-    if (entry.mode === "full") return "G";
-    if (entry.mode === "flex") return "FLEX";
+
+    if (entry.start && hhmmToMinutes(entry.start) >= hhmmToMinutes("13:00")) return "L";
+    if (entry.start && entry.end && entry.start === "09:00" && ["19:00", "19:10"].includes(entry.end)) return "G";
   }
 
   return "-";

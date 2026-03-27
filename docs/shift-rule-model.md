@@ -11,6 +11,7 @@
 ### Architektur-Festlegung
 - Die Schichtlogik ist **code- und policy-basiert**.
 - `mode` bleibt als Kompatibilitätsfeld erhalten, ist aber nicht mehr die führende Entscheidungsquelle.
+- Legacy-Codes werden beim Normalisieren auf Basis-Codes abgebildet (z. B. `FÖ → FO`, `L1/L2/L3/L4/L1E..L4E → L`, `G1 → G`).
 
 ## 2) Regel-Schema je Schicht
 

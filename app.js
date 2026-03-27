@@ -705,7 +705,18 @@ function normalizePlanEntry(entry) {
   }
 
   const shiftKey = knownRule?.code || normalizedCode || rawCode;
-  const shiftType = entry.shiftType || entry.mode || "";
+  const mappedShiftType = shiftKey === "L"
+    ? "late"
+    : shiftKey === "G"
+      ? "full"
+      : shiftKey === "FLEX"
+        ? "flex"
+        : shiftKey === "AH"
+          ? "external-help"
+          : shiftKey
+            ? "early"
+            : "";
+  const shiftType = entry.shiftType || entry.mode || mappedShiftType;
 
   return {
     ...entry,
