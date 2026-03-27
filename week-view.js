@@ -41,20 +41,32 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 let shiftDialogContext = null;
 
 const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
-const FO_START_TIME = "08:55";
+
+function getFoRule() {
+  return getShiftRuleByCode("FO");
+}
+
+function getFoStartTime() {
+  return getFoRule()?.startPolicy?.value || "08:55";
+}
 
 function buildFoEndOptions() {
-  const options = [];
-  let currentMinutes = hhmmToMinutes("12:00");
-  const latestMinutes = hhmmToMinutes("19:00");
+  return [...(getFoRule()?.endPolicy?.options || [])];
+}
 
-  while (currentMinutes <= latestMinutes) {
-    options.push(minutesToHHMM(currentMinutes));
-    currentMinutes += 15;
-  }
+function initLateStartSelect() {
+  if (!shiftDialogLateStart) return;
+  const lateRule = getShiftRuleByCode("L");
+  const options = lateRule?.startPolicy?.options || [];
+  if (!options.length) return;
 
-  options.push("19:10");
-  return options;
+  shiftDialogLateStart.innerHTML = "";
+  options.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    shiftDialogLateStart.appendChild(option);
+  });
 }
 
 function initFoEndSelect() {
@@ -117,6 +129,7 @@ initQuarterTimePicker(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
 initQuarterTimePicker(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
 initQuarterTimePicker(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
 initQuarterTimePicker(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute);
+initLateStartSelect();
 initFoEndSelect();
 
 function getAbsenceTypeMeta(type) {
@@ -154,7 +167,7 @@ function resetShiftDialogInputs(isoDate) {
   shiftDialogLateStart.value = "13:00";
   shiftDialogLateCheckout.value = "yes";
   shiftDialogFullCheckout.value = "yes";
-  if (shiftDialogFoStart) shiftDialogFoStart.value = FO_START_TIME;
+  if (shiftDialogFoStart) shiftDialogFoStart.value = getFoStartTime();
   if (shiftDialogFoEnd) shiftDialogFoEnd.value = "12:00";
   if (shiftDialogFoCheckout) shiftDialogFoCheckout.value = "no";
   if (shiftDialogFoEnd) shiftDialogFoEnd.disabled = false;
@@ -190,6 +203,9 @@ function openShiftDialog(type, context) {
   shiftDialogAbsenceFields.classList.add("hidden");
   shiftDialogExternalHelpFields.classList.add("hidden");
 
+  const rule = getShiftRuleByCode(type);
+  shiftDialogTitle.textContent = rule?.label || type;
+
   if (type === "AH") {
     shiftDialogTitle.textContent = "Aushilfe";
     shiftDialogExternalHelpFields.classList.remove("hidden");
@@ -212,21 +228,17 @@ function openShiftDialog(type, context) {
   }
 
   if (type === "FO") {
-    shiftDialogTitle.textContent = "FÖ";
     shiftDialogFoFields.classList.remove("hidden");
   }
 
   if (type === "FLEX") {
-  shiftDialogTitle.textContent = "Flexible Schicht";
-  shiftDialogFlexFields.classList.remove("hidden");
-}
+    shiftDialogTitle.textContent = "Flexible Schicht";
+    shiftDialogFlexFields.classList.remove("hidden");
+  }
 
-if (shiftDialogDelete) {
-  shiftDialogDelete.classList.toggle(
-    "hidden",
-    !["FO", "L", "G", "FLEX", "AH", "U", "K"].includes(type)
-  );
-}
+  if (shiftDialogDelete) {
+    shiftDialogDelete.classList.toggle("hidden", !isDialogShift(type));
+  }
 
   fillShiftDialogFromExisting(type, context);
   shiftDialogOverlay.classList.remove("hidden");
@@ -247,7 +259,7 @@ shiftDialogDelete?.addEventListener("click", () => {
 
   const { emp, isoDate, type } = shiftDialogContext;
 
-  if (type === "FO" || type === "L" || type === "G" || type === "FLEX" || type === "AH") {
+  if (["shift", "external-help"].includes(getShiftRuleByCode(type)?.entryType || "")) {
     clearDay(emp.id, isoDate);
     closeShiftDialog();
     return;
@@ -570,7 +582,7 @@ function buildWeekSelectClass(value) {
     return `weekSelect ${value === "U" ? "vacation" : "free"}`;
   }
 
-  const normalizedValue = value === "FÖ" ? "FO" : value;
+  const normalizedValue = getShiftCodeForSelectValue(value);
   return `weekSelect ${getShiftClassByKey(normalizedValue === "H" ? "-" : normalizedValue)}`;
 }
 
@@ -653,7 +665,7 @@ function fillShiftDialogFromExisting(type, context) {
 
   if (type === "FO" && resolved.type === "shift" && resolved.sourceEntry?.code === "FO") {
     const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
-    if (shiftDialogFoStart) shiftDialogFoStart.value = FO_START_TIME;
+    if (shiftDialogFoStart) shiftDialogFoStart.value = getFoStartTime();
     if (shiftDialogFoEnd) {
       shiftDialogFoEnd.value = entry.end === "19:10" ? "19:10" : (entry.end || "12:00");
       shiftDialogFoEnd.disabled = entry.end === "19:10";
@@ -739,14 +751,11 @@ shiftDialogFoCheckout?.addEventListener("change", () => {
 
 
 function openShiftDialogForSelectValue(value, context) {
-  const normalizedValue = value === "FÖ" ? "FO" : value;
+  const normalizedValue = getShiftCodeForSelectValue(value);
+  if (!isDialogShift(normalizedValue)) return false;
 
-  if (normalizedValue === "U" || normalizedValue === "K" || normalizedValue === "AH" || normalizedValue === "FO" || normalizedValue === "L" || normalizedValue === "G" || normalizedValue === "FLEX") {
-    openShiftDialog(normalizedValue, { ...context, type: normalizedValue });
-    return true;
-  }
-
-  return false;
+  openShiftDialog(normalizedValue, { ...context, type: normalizedValue });
+  return true;
 }
 
 function createWeekSelect(emp, isoDate) {
@@ -777,42 +786,26 @@ function createWeekSelect(emp, isoDate) {
   wrap.appendChild(sel);
   return wrap;
 }
-  const groupShifts = document.createElement("optgroup");
-  groupShifts.label = "Schichten";
+  const groupedOptions = getShiftSelectOptions().reduce((acc, option) => {
+    const group = option.group || "Schichten";
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(option);
+    return acc;
+  }, {});
 
-  [
-    { value: "-", label: "-" },
-    { value: "FÖ", label: "FÖ" },
-    { value: "F3", label: "F3" },
-    { value: "F4", label: "F4" },
-    { value: "F5", label: "F5" },
-    { value: "F6", label: "F6" },
-    { value: "L", label: "L" },
-    { value: "G", label: "G" },
-    { value: "FLEX", label: "Flex" }
-  ].forEach((shift) => {
-    const opt = document.createElement("option");
-    opt.value = shift.value;
-    opt.textContent = shift.label;
-    groupShifts.appendChild(opt);
+  Object.entries(groupedOptions).forEach(([groupLabel, options]) => {
+    const optGroup = document.createElement("optgroup");
+    optGroup.label = groupLabel;
+
+    options.forEach((item) => {
+      const opt = document.createElement("option");
+      opt.value = item.value;
+      opt.textContent = item.label;
+      optGroup.appendChild(opt);
+    });
+
+    sel.appendChild(optGroup);
   });
-
-  const groupSpecial = document.createElement("optgroup");
-  groupSpecial.label = "Abwesenheit / Sonstiges";
-
-  [
-    { value: "U", label: "U" },
-    { value: "K", label: "K" },
-    { value: "AH", label: "AH" }
-  ].forEach((item) => {
-    const opt = document.createElement("option");
-    opt.value = item.value;
-    opt.textContent = item.label;
-    groupSpecial.appendChild(opt);
-  });
-
-  sel.appendChild(groupShifts);
-  sel.appendChild(groupSpecial);
   sel.value = currentValue;
 
   sel.addEventListener("change", () => {
@@ -834,7 +827,7 @@ function createWeekSelect(emp, isoDate) {
     clearDay(emp.id, isoDate, { commit: false });
 
    if (selectedValue !== "-") {
-  const normalizedValue = selectedValue === "FÖ" ? "FO" : selectedValue;
+  const normalizedValue = getShiftCodeForSelectValue(selectedValue);
   const entry = buildEarlyShiftEntry(normalizedValue);
 
   if (!entry) {
