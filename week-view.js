@@ -36,7 +36,7 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 
 let shiftDialogContext = null;
 
-const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45"];
+const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
 
 function initHourSelect(selectEl) {
   if (!selectEl) return;
@@ -514,7 +514,7 @@ function buildWeekSelectClass(value) {
 }
 
 function isReusableShiftValue(value) {
-  return ["F3", "F4", "F5", "F6", "L", "G"].includes(value);
+  return ["FO", "F3", "F4", "F5", "F6", "L", "G"].includes(value);
 }
 
 function getEmployeeLastShiftLabel(emp) {
@@ -522,7 +522,7 @@ function getEmployeeLastShiftLabel(emp) {
 
   for (const isoDate of shiftDays) {
     const value = getWeekSelectValueForDay(emp, isoDate);
-    if (["F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(value)) {
+    if (["FO", "F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(value)) {
       return value;
     }
   }
@@ -708,6 +708,7 @@ function createWeekSelect(emp, isoDate) {
 
   [
     { value: "-", label: "-" },
+    { value: "FO", label: "FÖ" },
     { value: "F3", label: "F3" },
     { value: "F4", label: "F4" },
     { value: "F5", label: "F5" },

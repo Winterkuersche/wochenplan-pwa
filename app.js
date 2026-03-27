@@ -26,6 +26,7 @@ const ROLE_OPTIONS = [
 
 const SHIFTS = [
   { key: "-", label: "-", start: "", end: "", type: "free" },
+  { key: "FO", label: "FÖ", start: "08:55", end: "12:00", type: "early" },
   { key: "F3", label: "F3", start: "09:00", end: "12:00", type: "early" },
   { key: "F4", label: "F4", start: "09:00", end: "13:00", type: "early" },
   { key: "F5", label: "F5", start: "09:00", end: "14:00", type: "early" },

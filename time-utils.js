@@ -17,7 +17,7 @@ function hhmmToMinutes(value) {
 }
 
 const QUARTER_HOUR_STEP_MINUTES = 15;
-const PLAN_TIME_EXCEPTIONS = new Set(["19:10"]);
+const PLAN_TIME_EXCEPTIONS = new Set(["08:55", "19:10"]);
 const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10, 70]);
 const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
 const REQUIRED_BREAK_BASE_MINUTES = 60;
