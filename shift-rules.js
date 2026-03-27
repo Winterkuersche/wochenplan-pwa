@@ -159,6 +159,11 @@ function getShiftRuleByCode(code) {
   return SHIFT_RULE_BY_CODE[normalizedCode] || null;
 }
 
+// Legacy alias (backward compatibility)
+function getShiftRule(code) {
+  return getShiftRuleByCode(code);
+}
+
 function isDialogShift(code) {
   return Boolean(getShiftRuleByCode(code)?.uiPolicy?.isDialogShift);
 }
@@ -174,6 +179,11 @@ function getShiftSelectOptions() {
       isDialogShift: Boolean(rule.uiPolicy?.isDialogShift)
     }))
   ];
+}
+
+// Legacy alias (backward compatibility)
+function listShiftOptions() {
+  return getShiftSelectOptions();
 }
 
 function getShiftCodeForSelectValue(value) {
