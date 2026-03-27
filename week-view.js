@@ -920,6 +920,7 @@ function renderWeekTable() {
   if (!weekDays.length) return;
 
   const visibleDays = weekDays.slice(0, 6);
+  const visibleDaysInActiveMonth = visibleDays.filter((day) => day && !day.isOutsideMonth);
   const visibleMonths = [...new Set(visibleDays.map((day) => String(day?.iso || "").slice(0, 7)).filter((value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)))];
   const visibleEmployees = state.employees.filter((emp) => {
     if (!visibleMonths.length) return isEmployeeActiveInMonth(emp, state.activeMonth);
@@ -956,28 +957,30 @@ function renderWeekTable() {
 
     const tdActual = document.createElement("td");
     tdActual.className = "weekHoursCell weekSummaryCol weekSummaryStart";
-    const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
+    const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDaysInActiveMonth);
     tdActual.textContent = minutesToHM(plannedMinutes);
+    tdActual.title = "Ist nur für Tage im aktiven Monat berechnet.";
     tr.appendChild(tdActual);
 
     const tdAccount = document.createElement("td");
     tdAccount.className = "weekHoursCell weekSummaryCol";
-    const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDays);
+    const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth);
     tdAccount.textContent = minutesToHM(accountMinutes);
-    tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag)";
+    tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag) – berechnet nur für Tage im aktiven Monat.";
     tr.appendChild(tdAccount);
 
-    const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays);
+    const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDaysInActiveMonth, state.activeMonth);
     const tdDelta = document.createElement("td");
     if (isGfbEmployee(emp)) {
       tdDelta.className = `weekDeltaCell weekSummaryCol ${differenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
       tdDelta.textContent = `${minutesToHM(differenceMinutes)} genutzt`;
-      tdDelta.title = "GfB: Kontingentnutzung in der aktuellen Woche";
+      tdDelta.title = "GfB: Kontingentnutzung in der aktuellen Woche, berechnet nur für Tage im aktiven Monat.";
     } else {
       tdDelta.className = `weekDeltaCell weekSummaryCol ${
         differenceMinutes < 0 ? "deltaNeg" : differenceMinutes > 0 ? "deltaPos" : "deltaZero"
       }`;
       tdDelta.textContent = formatSignedMinutes(differenceMinutes);
+      tdDelta.title = "Delta der Woche, berechnet nur für Tage im aktiven Monat.";
     }
     tr.appendChild(tdDelta);
 
@@ -1011,7 +1014,8 @@ function renderWeekTable() {
 
     const tdTarget = document.createElement("td");
     tdTarget.className = "weekTargetCell weekSummaryCol";
-    tdTarget.textContent = minutesToHM(getEmployeeTargetMinutes(emp));
+    tdTarget.textContent = minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth));
+    tdTarget.title = "Sollzeit der Woche, berechnet nur für Tage im aktiven Monat (ohne Sonntage).";
     tr.appendChild(tdTarget);
 
     weekTableBodyEl.appendChild(tr);

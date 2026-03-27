@@ -1675,10 +1675,25 @@ function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays
   }, 0);
 }
 
-function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
+function getEmployeeTargetMinutesForWeek(employee, weekDays = getActiveWeekDays(), yearMonth = state.activeMonth) {
   if (!employee || !Array.isArray(weekDays)) return 0;
 
-  return weekDays.reduce((sum, day) => {
+  const dailyTargetMinutes = getAbsenceMinutesForEmployee(employee);
+  const eligibleWeekDays = getDaysInYearMonth(weekDays, yearMonth);
+
+  return eligibleWeekDays.reduce((sum, day) => {
+    if (!day) return sum;
+    if (isSundayIsoDate(day.iso)) return sum;
+    return sum + dailyTargetMinutes;
+  }, 0);
+}
+
+function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays(), yearMonth = state.activeMonth) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  const eligibleWeekDays = getDaysInYearMonth(weekDays, yearMonth);
+
+  return eligibleWeekDays.reduce((sum, day) => {
     if (!day) return sum;
 
     const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
@@ -1700,19 +1715,19 @@ function getEmployeeAccountMinutesForWeek(employee, weekDays = getActiveWeekDays
   }, 0);
 }
 
-function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays()) {
-  const accountMinutes = getEmployeeAccountMinutesForWeek(employee, weekDays);
+function getEmployeeWeekDifferenceMinutes(employee, weekDays = getActiveWeekDays(), yearMonth = state.activeMonth) {
+  const accountMinutes = getEmployeeAccountMinutesForWeek(employee, weekDays, yearMonth);
 
   if (isGfbEmployee(employee)) {
     return Math.max(0, accountMinutes);
   }
 
-  const targetMinutes = getEmployeeTargetMinutes(employee);
+  const targetMinutes = getEmployeeTargetMinutesForWeek(employee, weekDays, yearMonth);
   return accountMinutes - targetMinutes;
 }
 
-function getEmployeeMinusMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
-  const difference = getEmployeeWeekDifferenceMinutes(employee, weekDays);
+function getEmployeeMinusMinutesForWeek(employee, weekDays = getActiveWeekDays(), yearMonth = state.activeMonth) {
+  const difference = getEmployeeWeekDifferenceMinutes(employee, weekDays, yearMonth);
   return difference < 0 ? Math.abs(difference) : 0;
 }
 
@@ -1745,7 +1760,7 @@ function getEmployeeAccountMinutesForWeeks(employee, weeks = getCurrentMonthWeek
 
   return weeks.reduce((sum, week) => {
     if (!Array.isArray(week) || week.length === 0) return sum;
-    return sum + getEmployeeAccountMinutesForWeek(employee, getDaysInYearMonth(week, yearMonth));
+    return sum + getEmployeeAccountMinutesForWeek(employee, getDaysInYearMonth(week, yearMonth), yearMonth);
   }, 0);
 }
 
