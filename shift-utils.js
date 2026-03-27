@@ -152,7 +152,8 @@ function buildFoShiftEntry(endHHMM) {
   if (spanMinutes <= 0) return null;
 
   const includeBillingBonus = normalizedEnd === "19:10";
-  const breakMinutes = getEffectiveBreakMinutes(startHHMM, normalizedEnd, 0, {
+  const configuredBreakMinutes = 5;
+  const breakMinutes = getEffectiveBreakMinutes(startHHMM, normalizedEnd, configuredBreakMinutes, {
     includeBillingBonus
   });
   if (breakMinutes >= spanMinutes) return null;

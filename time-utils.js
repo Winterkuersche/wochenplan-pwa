@@ -18,7 +18,7 @@ function hhmmToMinutes(value) {
 
 const QUARTER_HOUR_STEP_MINUTES = 15;
 const PLAN_TIME_EXCEPTIONS = new Set(["08:55", "19:10"]);
-const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([10, 70]);
+const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([5, 10, 70]);
 const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
 const REQUIRED_BREAK_BASE_MINUTES = 60;
 const REQUIRED_BREAK_BILLING_BONUS_MINUTES = 10;
@@ -158,12 +158,16 @@ function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes
 
 function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedConfiguredBreak = normalizePlanBreakMinutes(configuredBreakMinutes);
+  const normalizedStart = normalizePlanTime(startHHMM);
+  const minimumBreakMinutes = normalizedStart === "08:55" ? 5 : 0;
+  const configuredBreakWithMinimum = Math.max(normalizedConfiguredBreak, minimumBreakMinutes);
+
   if (isLateCheckoutBreakException(startHHMM, endHHMM, normalizedConfiguredBreak, options)) {
-    return normalizedConfiguredBreak;
+    return configuredBreakWithMinimum;
   }
 
   const requiredBreakMinutes = getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
-  return Math.max(normalizedConfiguredBreak, requiredBreakMinutes);
+  return Math.max(configuredBreakWithMinimum, requiredBreakMinutes);
 }
 
 function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
