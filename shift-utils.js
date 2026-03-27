@@ -143,6 +143,40 @@ function buildFlexibleShiftEntry(startHHMM, endHHMM) {
   };
 }
 
+function buildFoShiftEntry(endHHMM) {
+  const startHHMM = "08:55";
+  const normalizedEnd = normalizePlanTime(endHHMM);
+  if (!normalizedEnd || !isAllowedPlanTime(normalizedEnd)) return null;
+
+  const spanMinutes = diffMinutesBetweenHHMM(startHHMM, normalizedEnd);
+  if (spanMinutes <= 0) return null;
+
+  const includeBillingBonus = normalizedEnd === "19:10";
+  const breakMinutes = getEffectiveBreakMinutes(startHHMM, normalizedEnd, 0, {
+    includeBillingBonus
+  });
+  if (breakMinutes >= spanMinutes) return null;
+
+  const workedMinutes = getWorkedMinutesFromRange(startHHMM, normalizedEnd, breakMinutes);
+
+  return {
+    type: "shift",
+    status: "shift",
+    mode: "early",
+    shiftType: "early",
+    code: "FO",
+    shiftKey: "FO",
+    label: "FÖ",
+    start: startHHMM,
+    end: normalizedEnd,
+    pause: breakMinutes,
+    breakMinutes,
+    note: "",
+    withCheckout: includeBillingBonus,
+    minutes: workedMinutes
+  };
+}
+
 function isShiftEntry(value) {
   return !!value && value.type === "shift";
 }
