@@ -41,7 +41,7 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 let shiftDialogContext = null;
 
 const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
-const FO_START_TIME = "08:55";
+const FO_START_TIME = getShiftRule("FO")?.startPolicy?.value || "08:55";
 
 function buildFoEndOptions() {
   const options = [];
@@ -213,6 +213,10 @@ function openShiftDialog(type, context) {
 
   if (type === "FO") {
     shiftDialogTitle.textContent = "FÖ";
+    if (shiftDialogFoStart) {
+      shiftDialogFoStart.value = FO_START_TIME;
+      shiftDialogFoStart.readOnly = true;
+    }
     shiftDialogFoFields.classList.remove("hidden");
   }
 
@@ -224,7 +228,7 @@ function openShiftDialog(type, context) {
 if (shiftDialogDelete) {
   shiftDialogDelete.classList.toggle(
     "hidden",
-    !["FO", "L", "G", "FLEX", "AH", "U", "K"].includes(type)
+    !isDialogShift(type)
   );
 }
 
@@ -247,7 +251,7 @@ shiftDialogDelete?.addEventListener("click", () => {
 
   const { emp, isoDate, type } = shiftDialogContext;
 
-  if (type === "FO" || type === "L" || type === "G" || type === "FLEX" || type === "AH") {
+  if (["FO", "L", "G", "FLEX", "AH"].includes(normalizeShiftCode(type))) {
     clearDay(emp.id, isoDate);
     closeShiftDialog();
     return;
@@ -272,40 +276,35 @@ shiftDialogSave.addEventListener("click", () => {
   if (!shiftDialogContext) return;
 
   const { emp, isoDate, type } = shiftDialogContext;
+  const normalizedType = normalizeShiftCode(type);
 
-  if (type === "L") {
-    const start = shiftDialogLateStart.value;
-    const checkout = shiftDialogLateCheckout.value === "yes";
+  if (normalizedType === "L" || normalizedType === "G" || normalizedType === "FO" || normalizedType === "FLEX") {
+    const rule = getShiftRule(normalizedType);
+    const userInput = {};
 
-    const entry = buildLateShiftEntry(start, checkout);
-    if (!entry) {
-      alert("Ungültige Spätschicht.");
-      return;
+    if (normalizedType === "L") {
+      userInput.start = shiftDialogLateStart.value;
+      userInput.withCheckout = shiftDialogLateCheckout.value === "yes";
     }
 
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
-    closeShiftDialog();
-    return;
-  }
+    if (normalizedType === "G") {
+      userInput.withCheckout = shiftDialogFullCheckout.value === "yes";
+    }
 
-  if (type === "G") {
-    const checkout = shiftDialogFullCheckout.value === "yes";
-    const entry = buildFullShiftEntry(checkout);
+    if (normalizedType === "FO") {
+      userInput.withCheckout = shiftDialogFoCheckout.value === "yes";
+      userInput.end = userInput.withCheckout ? "19:10" : shiftDialogFoEnd.value;
+    }
 
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
-    closeShiftDialog();
-    return;
-  }
+    if (normalizedType === "FLEX") {
+      userInput.start = getQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute);
+      userInput.end = getQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
+    }
 
-  if (type === "FO") {
-    const withCheckout = shiftDialogFoCheckout.value === "yes";
-    const selectedEnd = withCheckout ? "19:10" : shiftDialogFoEnd.value;
-    const entry = buildFoShiftEntry(selectedEnd);
+    const entry = buildShiftEntryFromRule(rule, userInput, { emp, isoDate });
 
     if (!entry) {
-      alert("Ungültige FÖ-Schicht.");
+      alert("Ungültige Schicht. Bitte Eingaben prüfen.");
       return;
     }
 
@@ -315,29 +314,7 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  if (type === "FLEX") {
-    const start = getQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute);
-    const end = getQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
-
-    if (!start || !end) {
-      alert("Start und Ende wählen.");
-      return;
-    }
-
-    const entry = buildFlexibleShiftEntry(start, end);
-
-    if (!entry) {
-      alert("Ungültige flexible Schicht. Bitte Zeiten prüfen.");
-      return;
-    }
-
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
-    closeShiftDialog();
-    return;
-  }
-
-  if (type === "U" || type === "K") {
+  if (normalizedType === "U" || normalizedType === "K") {
     const absenceType = getAbsenceTypeFromDialogContext(type);
     const meta = getAbsenceTypeMeta(absenceType);
     const fromIso = shiftDialogAbsenceFrom.value;
@@ -354,23 +331,19 @@ shiftDialogSave.addEventListener("click", () => {
     return;
   }
 
-  if (type === "AH") {
+  if (normalizedType === "AH") {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
     const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
-    clearDay(emp.id, isoDate, { commit: false });
 
-    const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
-      branch,
-      start,
-      end
-    });
-
-    if (!ok) {
+    const entry = buildShiftEntryFromRule(getShiftRule("AH"), { start, end, branch }, { emp, isoDate });
+    if (!entry) {
       alert("Ungültige Aushilfe-Zeiten. Bitte Start/Ende prüfen (15-Minuten-Schritte plus definierte Ausnahmezeiten wie 19:10).");
       return;
     }
 
+    clearDay(emp.id, isoDate, { commit: false });
+    setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -554,7 +527,7 @@ function getWeekSelectValueForDay(emp, isoDate) {
     const entry = resolved.sourceEntry;
 
     if (entry.mode === "early") {
-      if (entry.code === "FO") return "FÖ";
+      if (normalizeShiftCode(entry.code) === "FO") return "FO";
       return entry.code || "-";
     }
     if (entry.mode === "late") return "L";
@@ -570,7 +543,7 @@ function buildWeekSelectClass(value) {
     return `weekSelect ${value === "U" ? "vacation" : "free"}`;
   }
 
-  const normalizedValue = value === "FÖ" ? "FO" : value;
+  const normalizedValue = normalizeShiftCode(value);
   return `weekSelect ${getShiftClassByKey(normalizedValue === "H" ? "-" : normalizedValue)}`;
 }
 
@@ -579,7 +552,7 @@ function getEmployeeLastShiftLabel(emp) {
 
   for (const isoDate of shiftDays) {
     const value = getWeekSelectValueForDay(emp, isoDate);
-    if (["FO", "F3", "F4", "F5", "F6", "L", "G", "FLEX", "FÖ"].includes(value)) {
+    if (["FO", "F3", "F4", "F5", "F6", "L", "G", "FLEX"].includes(value)) {
       return value;
     }
   }
@@ -651,7 +624,7 @@ function fillShiftDialogFromExisting(type, context) {
     setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, entry.end || "00:00");
   }
 
-  if (type === "FO" && resolved.type === "shift" && resolved.sourceEntry?.code === "FO") {
+  if (type === "FO" && resolved.type === "shift" && normalizeShiftCode(resolved.sourceEntry?.code) === "FO") {
     const entry = normalizePlanEntry(resolved.sourceEntry) || resolved.sourceEntry;
     if (shiftDialogFoStart) shiftDialogFoStart.value = FO_START_TIME;
     if (shiftDialogFoEnd) {
@@ -739,9 +712,9 @@ shiftDialogFoCheckout?.addEventListener("change", () => {
 
 
 function openShiftDialogForSelectValue(value, context) {
-  const normalizedValue = value === "FÖ" ? "FO" : value;
+  const normalizedValue = normalizeShiftCode(value);
 
-  if (normalizedValue === "U" || normalizedValue === "K" || normalizedValue === "AH" || normalizedValue === "FO" || normalizedValue === "L" || normalizedValue === "G" || normalizedValue === "FLEX") {
+  if (isDialogShift(normalizedValue)) {
     openShiftDialog(normalizedValue, { ...context, type: normalizedValue });
     return true;
   }
@@ -780,35 +753,19 @@ function createWeekSelect(emp, isoDate) {
   const groupShifts = document.createElement("optgroup");
   groupShifts.label = "Schichten";
 
-  [
-    { value: "-", label: "-" },
-    { value: "FÖ", label: "FÖ" },
-    { value: "F3", label: "F3" },
-    { value: "F4", label: "F4" },
-    { value: "F5", label: "F5" },
-    { value: "F6", label: "F6" },
-    { value: "L", label: "L" },
-    { value: "G", label: "G" },
-    { value: "FLEX", label: "Flex" }
-  ].forEach((shift) => {
-    const opt = document.createElement("option");
-    opt.value = shift.value;
-    opt.textContent = shift.label;
-    groupShifts.appendChild(opt);
-  });
-
   const groupSpecial = document.createElement("optgroup");
   groupSpecial.label = "Abwesenheit / Sonstiges";
 
-  [
-    { value: "U", label: "U" },
-    { value: "K", label: "K" },
-    { value: "AH", label: "AH" }
-  ].forEach((item) => {
+  listShiftOptions().forEach((item) => {
     const opt = document.createElement("option");
     opt.value = item.value;
     opt.textContent = item.label;
-    groupSpecial.appendChild(opt);
+
+    if (item.group === "special") {
+      groupSpecial.appendChild(opt);
+    } else {
+      groupShifts.appendChild(opt);
+    }
   });
 
   sel.appendChild(groupShifts);
@@ -834,8 +791,8 @@ function createWeekSelect(emp, isoDate) {
     clearDay(emp.id, isoDate, { commit: false });
 
    if (selectedValue !== "-") {
-  const normalizedValue = selectedValue === "FÖ" ? "FO" : selectedValue;
-  const entry = buildEarlyShiftEntry(normalizedValue);
+  const normalizedValue = normalizeShiftCode(selectedValue);
+  const entry = buildShiftEntryFromRule(getShiftRule(normalizedValue), {}, { emp, isoDate });
 
   if (!entry) {
     alert("Ungültige Frühschicht.");

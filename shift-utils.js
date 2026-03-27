@@ -1,181 +1,189 @@
 function findEarlyShiftByCode(code) {
-  return SHIFT_CONFIG.earlyShifts.find((shift) => shift.code === code) || null;
+  const normalizedCode = normalizeShiftCode(code);
+  if (!["FO", "F3", "F4", "F5", "F6"].includes(normalizedCode)) return null;
+  return getShiftRule(normalizedCode);
 }
 
 function getLateShiftCodeFromStart(startHHMM) {
   const startMinutes = hhmmToMinutes(startHHMM);
-  const endMinutes = hhmmToMinutes(SHIFT_CONFIG.lateShift.endWithoutCheckout);
+  const endMinutes = hhmmToMinutes("19:00");
   const workedMinutes = endMinutes - startMinutes;
   const workedHours = Math.round(workedMinutes / 60);
 
   return `L${workedHours}`;
 }
 
+function resolvePolicyTime(policy, userInput, fieldName) {
+  if (!policy) return "";
+
+  if (policy.type === "fixed") {
+    return normalizePlanTime(policy.value);
+  }
+
+  if (policy.type === "checkout") {
+    const useCheckout = Boolean(userInput.withCheckout);
+    return useCheckout
+      ? normalizePlanTime(policy.withCheckout)
+      : normalizePlanTime(policy.withoutCheckout);
+  }
+
+  if (policy.type === "select" || policy.type === "user-input") {
+    return normalizePlanTime(userInput[fieldName] || "");
+  }
+
+  return "";
+}
+
+function resolvePolicyBreakMinutes(rule, startHHMM, endHHMM, userInput) {
+  const breakPolicy = rule?.breakPolicy || { type: "none" };
+
+  if (breakPolicy.type === "fixed") {
+    return normalizePlanBreakMinutes(breakPolicy.minutes || 0);
+  }
+
+  if (breakPolicy.type === "fixedByCheckout") {
+    const configuredMinutes = Boolean(userInput.withCheckout)
+      ? breakPolicy.byCheckout?.yes
+      : breakPolicy.byCheckout?.no;
+    return normalizePlanBreakMinutes(configuredMinutes || 0);
+  }
+
+  if (breakPolicy.type === "external-help") {
+    return getExternalHelpBreakDeductionMinutes(startHHMM, endHHMM);
+  }
+
+  if (breakPolicy.type === "effective") {
+    const configuredMinutes = typeof breakPolicy.configuredBreakByCheckout === "object"
+      ? (Boolean(userInput.withCheckout)
+        ? breakPolicy.configuredBreakByCheckout?.yes
+        : breakPolicy.configuredBreakByCheckout?.no)
+      : breakPolicy.configuredBreak;
+
+    return getEffectiveBreakMinutes(startHHMM, endHHMM, configuredMinutes || 0, {
+      includeBillingBonus: Boolean(userInput.withCheckout) && Boolean(breakPolicy.includeBillingBonusOnCheckout)
+    });
+  }
+
+  return 0;
+}
+
+function buildShiftEntryFromRule(rule, userInput = {}, context = {}) {
+  if (!rule) return null;
+
+  const startHHMM = resolvePolicyTime(rule.startPolicy, userInput, "start");
+  const endHHMM = resolvePolicyTime(rule.endPolicy, userInput, "end");
+
+  if (["shift", "external-help"].includes(rule.entryType)) {
+    if (!startHHMM || !endHHMM) return null;
+    if (!isAllowedPlanTime(startHHMM) || !isAllowedPlanTime(endHHMM)) return null;
+
+    const spanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
+    if (spanMinutes <= 0) return null;
+
+    const breakMinutes = resolvePolicyBreakMinutes(rule, startHHMM, endHHMM, userInput);
+    if (breakMinutes >= spanMinutes) return null;
+
+    const workedMinutes = rule.entryType === "external-help"
+      ? getExternalHelpWorkedMinutes(startHHMM, endHHMM)
+      : getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes);
+
+    if (rule.code === "FLEX" && workedMinutes < (rule.uiPolicy?.minWorkMinutes || 0)) {
+      return null;
+    }
+
+    const baseEntry = {
+      type: rule.entryType,
+      status: rule.entryType === "external-help" ? ENTRY_STATUS.EXTERNAL : ENTRY_STATUS.WORK,
+      mode: rule.code === "L"
+        ? "late"
+        : rule.code === "G"
+          ? "full"
+          : rule.code === "FLEX"
+            ? "flex"
+            : "early",
+      shiftType: rule.code === "L"
+        ? "late"
+        : rule.code === "G"
+          ? "full"
+          : rule.code === "FLEX"
+            ? "flex"
+            : "early",
+      code: rule.code,
+      shiftKey: rule.code,
+      label: rule.code === "FLEX"
+        ? `${startHHMM}-${endHHMM}`
+        : (rule.label || rule.code),
+      start: startHHMM,
+      end: endHHMM,
+      pause: breakMinutes,
+      breakMinutes,
+      note: "",
+      minutes: workedMinutes,
+      withCheckout: Boolean(userInput.withCheckout)
+    };
+
+    if (rule.code === "L") {
+      baseEntry.label = getLateShiftCodeFromStart(startHHMM);
+      baseEntry.code = baseEntry.label;
+      baseEntry.shiftKey = baseEntry.label;
+    }
+
+    if (rule.entryType === "external-help") {
+      baseEntry.label = "AH";
+      baseEntry.externalHelp = true;
+      baseEntry.branch = (userInput.branch || context.branch || "").trim();
+      baseEntry.mode = "external-help";
+      baseEntry.shiftType = "external-help";
+      baseEntry.code = "AH";
+      baseEntry.shiftKey = "AH";
+    }
+
+    return baseEntry;
+  }
+
+  return null;
+}
+
 function buildEarlyShiftEntry(code) {
-  const shift = findEarlyShiftByCode(code);
-  if (!shift) return null;
+  const shiftRule = findEarlyShiftByCode(code);
+  if (!shiftRule) return null;
 
-  const workedMinutes = getWorkedMinutesFromRange(
-    shift.start,
-    shift.end,
-    shift.breakMinutes
-  );
+  const normalizedCode = normalizeShiftCode(code);
+  if (normalizedCode === "FO") {
+    return buildShiftEntryFromRule(shiftRule, { end: "12:00", withCheckout: false });
+  }
 
-  return {
-    type: "shift",
-    status: "shift",
-    mode: "early",
-    shiftType: "early",
-    code: shift.code,
-    shiftKey: shift.code,
-    label: shift.label,
-    start: shift.start,
-    end: shift.end,
-    pause: shift.breakMinutes,
-    breakMinutes: shift.breakMinutes,
-    note: "",
-    minutes: workedMinutes
-  };
+  return buildShiftEntryFromRule(shiftRule, {});
 }
 
 function buildLateShiftEntry(startHHMM, withCheckout) {
-  if (!SHIFT_CONFIG.lateShift.possibleStarts.includes(startHHMM)) {
-    return null;
-  }
-
-  const endHHMM = withCheckout
-    ? SHIFT_CONFIG.lateShift.endWithCheckout
-    : SHIFT_CONFIG.lateShift.endWithoutCheckout;
-
-  const configuredBreakMinutes = withCheckout
-    ? SHIFT_CONFIG.lateShift.extraBreakMinutesWithCheckout
-    : 0;
-  const breakMinutes = getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes, {
-    includeBillingBonus: withCheckout
-  });
-
-  const workedMinutes = getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes);
-  const code = getLateShiftCodeFromStart(startHHMM);
-
-  return {
-    type: "shift",
-    status: "shift",
-    mode: "late",
-    shiftType: "late",
-    code,
-    shiftKey: code,
-    label: code,
+  const shiftRule = getShiftRule("L");
+  return buildShiftEntryFromRule(shiftRule, {
     start: startHHMM,
-    end: endHHMM,
-    pause: breakMinutes,
-    breakMinutes,
-    note: "",
-    withCheckout: !!withCheckout,
-    minutes: workedMinutes
-  };
+    withCheckout: Boolean(withCheckout)
+  });
 }
 
 function buildFullShiftEntry(withCheckout) {
-  const startHHMM = SHIFT_CONFIG.fullShift.start;
-  const endHHMM = withCheckout
-    ? SHIFT_CONFIG.fullShift.endWithCheckout
-    : SHIFT_CONFIG.fullShift.endWithoutCheckout;
-
-  const breakMinutes = SHIFT_CONFIG.fullShift.baseBreakMinutes +
-    (withCheckout ? SHIFT_CONFIG.fullShift.extraBreakMinutesWithCheckout : 0);
-
-  const workedMinutes = getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes);
-
-  return {
-    type: "shift",
-    status: "shift",
-    mode: "full",
-    shiftType: "full",
-    code: "G",
-    shiftKey: "G",
-    label: "G",
-    start: startHHMM,
-    end: endHHMM,
-    pause: breakMinutes,
-    breakMinutes,
-    note: "",
-    withCheckout: !!withCheckout,
-    minutes: workedMinutes
-  };
+  const shiftRule = getShiftRule("G");
+  return buildShiftEntryFromRule(shiftRule, { withCheckout: Boolean(withCheckout) });
 }
 
 function buildFlexibleShiftEntry(startHHMM, endHHMM) {
-  const normalizedStart = normalizePlanTime(startHHMM);
-  const normalizedEnd = normalizePlanTime(endHHMM);
-
-  if (!normalizedStart || !normalizedEnd) {
-    return null;
-  }
-
-  if (!isAllowedPlanTime(normalizedStart) || !isAllowedPlanTime(normalizedEnd)) {
-    return null;
-  }
-
-  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
-  if (totalSpanMinutes <= 0) return null;
-
-  const breakMinutes = getBreakMinutesForFlexibleShift(normalizedStart, normalizedEnd);
-  const workedMinutes = getWorkedMinutesFromRange(normalizedStart, normalizedEnd, breakMinutes);
-
-  if (workedMinutes < SHIFT_CONFIG.minWorkMinutes) {
-    return null;
-  }
-
-  return {
-    type: "shift",
-    status: "shift",
-    mode: "flex",
-    shiftType: "flex",
-    code: "FLEX",
-    shiftKey: "FLEX",
-    label: `${normalizedStart}-${normalizedEnd}`,
-    start: normalizedStart,
-    end: normalizedEnd,
-    pause: breakMinutes,
-    breakMinutes,
-    note: "",
-    minutes: workedMinutes
-  };
+  const shiftRule = getShiftRule("FLEX");
+  return buildShiftEntryFromRule(shiftRule, {
+    start: startHHMM,
+    end: endHHMM
+  });
 }
 
 function buildFoShiftEntry(endHHMM) {
-  const startHHMM = "08:55";
+  const shiftRule = getShiftRule("FO");
   const normalizedEnd = normalizePlanTime(endHHMM);
-  if (!normalizedEnd || !isAllowedPlanTime(normalizedEnd)) return null;
-
-  const spanMinutes = diffMinutesBetweenHHMM(startHHMM, normalizedEnd);
-  if (spanMinutes <= 0) return null;
-
-  const includeBillingBonus = normalizedEnd === "19:10";
-  const configuredBreakMinutes = 5;
-  const breakMinutes = getEffectiveBreakMinutes(startHHMM, normalizedEnd, configuredBreakMinutes, {
-    includeBillingBonus
-  });
-  if (breakMinutes >= spanMinutes) return null;
-
-  const workedMinutes = getWorkedMinutesFromRange(startHHMM, normalizedEnd, breakMinutes);
-
-  return {
-    type: "shift",
-    status: "shift",
-    mode: "early",
-    shiftType: "early",
-    code: "FO",
-    shiftKey: "FO",
-    label: "FÖ",
-    start: startHHMM,
+  return buildShiftEntryFromRule(shiftRule, {
     end: normalizedEnd,
-    pause: breakMinutes,
-    breakMinutes,
-    note: "",
-    withCheckout: includeBillingBonus,
-    minutes: workedMinutes
-  };
+    withCheckout: normalizedEnd === "19:10"
+  });
 }
 
 function isShiftEntry(value) {

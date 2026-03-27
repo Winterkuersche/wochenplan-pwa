@@ -63,6 +63,7 @@ let lastMepFitMetricsKey = "";
 let lastResponsiveViewRefreshView = "";
 let hasTriggeredPageShowResponsiveRefresh = false;
 let responsiveRefreshTraceCounter = 0;
+const unknownShiftCodeWarnings = new Set();
 
 function createResponsiveRefreshTraceId() {
   responsiveRefreshTraceCounter += 1;
@@ -693,7 +694,17 @@ function normalizePlanEntry(entry) {
       : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
   }
 
-  const shiftKey = entry.shiftKey || entry.code || "";
+  const rawCode = entry.shiftKey || entry.code || "";
+  const normalizedCode = normalizeShiftCode(rawCode);
+  const hasShiftCode = type === "shift" || type === "external-help";
+  const knownRule = hasShiftCode ? getShiftRule(normalizedCode || rawCode) : null;
+
+  if (hasShiftCode && rawCode && !knownRule && !unknownShiftCodeWarnings.has(rawCode)) {
+    console.warn(`[shift-normalize] Unbekannter Schichtcode '${rawCode}' – Eintrag wird mit Fallback normalisiert.`);
+    unknownShiftCodeWarnings.add(rawCode);
+  }
+
+  const shiftKey = knownRule?.code || normalizedCode || rawCode;
   const shiftType = entry.shiftType || entry.mode || "";
 
   return {
@@ -702,7 +713,7 @@ function normalizePlanEntry(entry) {
     status,
     shiftKey,
     shiftType,
-    code: entry.code || shiftKey,
+    code: knownRule?.code || entry.code || shiftKey,
     mode: entry.mode || shiftType,
     start,
     end,
@@ -922,16 +933,25 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   let entry = entryOrShiftKey;
 
   if (typeof entryOrShiftKey === "string") {
-    if (entryOrShiftKey === "L") {
-      entry = buildLateShiftEntry("13:00", true);
-    } else if (entryOrShiftKey === "G") {
-      entry = buildFullShiftEntry(true);
+    const normalizedCode = normalizeShiftCode(entryOrShiftKey);
+    const rule = getShiftRule(normalizedCode);
+
+    if (rule) {
+      const defaultInput = normalizedCode === "L"
+        ? { start: "13:00", withCheckout: true }
+        : normalizedCode === "G"
+          ? { withCheckout: true }
+          : normalizedCode === "FO"
+            ? { end: "12:00", withCheckout: false }
+            : {};
+      entry = buildShiftEntryFromRule(rule, defaultInput, { employeeId, isoDate });
     } else {
-      entry = buildEarlyShiftEntry(entryOrShiftKey);
+      console.warn(`[setShift] Unbekannter Schichtcode '${entryOrShiftKey}', Eintrag wird ignoriert.`);
+      entry = null;
     }
   }
 
-  if (!entry || entry.type !== "shift") return;
+  if (!entry || (entry.type !== "shift" && entry.type !== "external-help")) return;
   setScheduleEntry(employeeId, isoDate, entry);
 }
 

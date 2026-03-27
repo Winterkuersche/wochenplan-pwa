@@ -204,6 +204,27 @@ function getFixedLateCheckoutPauseRange(startHHMM) {
   return "";
 }
 
+
+function getFixedFoPauseRange(startHHMM, endHHMM, pauseMinutes) {
+  const normalizedStart = normalizePlanTime(startHHMM);
+  const normalizedEnd = normalizePlanTime(endHHMM);
+
+  if (normalizedStart !== "08:55") return "";
+  if (pauseMinutes !== 5) return "";
+  if (!normalizedEnd) return "";
+
+  const startMinutes = hhmmToMinutes(normalizedStart);
+  const endMinutes = hhmmToMinutes(normalizedEnd);
+  const spanMinutes = endMinutes - startMinutes;
+  if (spanMinutes <= pauseMinutes) return "";
+
+  const centeredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
+  const roundedStart = roundMinutesToStep(centeredStart, 5);
+  const clampedStart = clampMinutes(roundedStart, startMinutes, endMinutes - pauseMinutes);
+
+  return `${minutesToHHMM(clampedStart)}-${minutesToHHMM(clampedStart + pauseMinutes)}`;
+}
+
 function getFixedFullShiftPauseRange(startHHMM, endHHMM) {
   const normalizedStart = normalizePlanTime(startHHMM);
   const normalizedEnd = normalizePlanTime(endHHMM);
@@ -232,6 +253,9 @@ function getPauseRangeForMep(entry) {
 
   const fixedFullShiftRange = getFixedFullShiftPauseRange(entry.start, entry.end);
   if (fixedFullShiftRange) return fixedFullShiftRange;
+
+  const fixedFoRange = getFixedFoPauseRange(entry.start, entry.end, pauseMinutes);
+  if (fixedFoRange) return fixedFoRange;
 
   const fixedLateCheckoutRange = getFixedLateCheckoutPauseRange(entry.start);
   if (pauseMinutes === 10 && entry.end === "19:10" && fixedLateCheckoutRange) {
