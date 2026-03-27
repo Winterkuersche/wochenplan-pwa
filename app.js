@@ -24,23 +24,6 @@ const ROLE_OPTIONS = [
   { key: "GFB", label: "GfB", target: "9:30", contractModel: "" }
 ];
 
-const SHIFTS = [
-  { key: "-", label: "-", start: "", end: "", type: "free" },
-  { key: "FO", label: "FÖ", start: "08:55", end: "12:00", type: "early" },
-  { key: "F3", label: "F3", start: "09:00", end: "12:00", type: "early" },
-  { key: "F4", label: "F4", start: "09:00", end: "13:00", type: "early" },
-  { key: "F5", label: "F5", start: "09:00", end: "14:00", type: "early" },
-  { key: "F6", label: "F6", start: "09:00", end: "15:00", type: "early" },
-  { key: "G1", label: "G1", start: "09:00", end: "19:10", type: "full" },
-  { key: "L1", label: "L1", start: "13:00", end: "19:10", type: "late" },
-  { key: "L2", label: "L2", start: "14:00", end: "19:10", type: "late" },
-  { key: "L3", label: "L3", start: "15:00", end: "19:10", type: "late" },
-  { key: "L4", label: "L4", start: "16:00", end: "19:10", type: "late" },
-  { key: "L1E", label: "L1E", start: "13:00", end: "19:00", type: "lateNo" },
-  { key: "L2E", label: "L2E", start: "14:00", end: "19:00", type: "lateNo" },
-  { key: "L3E", label: "L3E", start: "15:00", end: "19:00", type: "lateNo" },
-  { key: "L4E", label: "L4E", start: "16:00", end: "19:00", type: "lateNo" }
-];
 
 const MASTER_KEY = "wochenplan_master_v10";
 const PLAN_KEY = "wochenplan_plan_v10";
@@ -647,6 +630,8 @@ function ensureScheduleDay(isoDate) {
   return state.schedule[isoDate];
 }
 
+const warnedUnknownShiftCodes = new Set();
+
 function normalizePlanEntry(entry) {
   // status is unified via status-utils.js
   if (!entry || typeof entry !== "object") return null;
@@ -654,6 +639,7 @@ function normalizePlanEntry(entry) {
   const entryStatus = getEntryStatus(entry);
   const isExternalHelp = entryStatus === ENTRY_STATUS.EXTERNAL || Boolean(entry.externalHelp);
   const isVacation = entryStatus === ENTRY_STATUS.VACATION;
+  const isShiftWork = entryStatus === ENTRY_STATUS.WORK && !isExternalHelp;
   const type = isExternalHelp
     ? "external-help"
     : isVacation
@@ -693,17 +679,46 @@ function normalizePlanEntry(entry) {
       : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
   }
 
-  const shiftKey = entry.shiftKey || entry.code || "";
-  const shiftType = entry.shiftType || entry.mode || "";
+  const rawCode = normalizeShiftCode(entry.shiftKey || entry.code || "");
+  const rule = getShiftRuleByCode(rawCode);
+
+  if (isShiftWork && rawCode && !rule && !warnedUnknownShiftCodes.has(rawCode)) {
+    warnedUnknownShiftCodes.add(rawCode);
+    console.warn(`[schedule] Unbekannter Schichtcode '${rawCode}', Eintrag wird als generische Schicht normalisiert.`);
+  }
+
+  const derivedShiftKey = rule?.code || rawCode || "";
+  const normalizedMode = entry.mode || entry.shiftType || rule?.mode || "";
+  const normalizedShiftType = entry.shiftType || entry.mode || rule?.shiftType || "";
+
+  let normalizedCode = entry.code || derivedShiftKey;
+  if (rule?.code === "L" && start) {
+    normalizedCode = getLateShiftCodeFromStart(start);
+  } else if (rule?.code === "FO") {
+    normalizedCode = "FO";
+  }
+
+  let normalizedLabel = entry.label || "";
+  if (!normalizedLabel && isExternalHelp) {
+    normalizedLabel = "AH";
+  } else if (!normalizedLabel && isVacation) {
+    normalizedLabel = "U";
+  } else if (rule?.code === "FLEX") {
+    normalizedLabel = `${start || "00:00"}-${end || "00:00"}`;
+  } else if (rule?.label) {
+    normalizedLabel = rule.label;
+  } else if (!normalizedLabel) {
+    normalizedLabel = normalizedCode || derivedShiftKey || "";
+  }
 
   return {
     ...entry,
     type,
     status,
-    shiftKey,
-    shiftType,
-    code: entry.code || shiftKey,
-    mode: entry.mode || shiftType,
+    shiftKey: derivedShiftKey,
+    shiftType: normalizedShiftType,
+    code: normalizedCode,
+    mode: normalizedMode,
     start,
     end,
     pause,
@@ -712,7 +727,7 @@ function normalizePlanEntry(entry) {
     branch: entry.branch || "",
     externalHelp: isExternalHelp,
     minutes,
-    label: entry.label || (isExternalHelp ? "AH" : isVacation ? "U" : shiftKey || "")
+    label: normalizedLabel
   };
 }
 
@@ -922,12 +937,13 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   let entry = entryOrShiftKey;
 
   if (typeof entryOrShiftKey === "string") {
-    if (entryOrShiftKey === "L") {
+    const normalizedShiftKey = normalizeShiftCode(entryOrShiftKey);
+    if (normalizedShiftKey === "L") {
       entry = buildLateShiftEntry("13:00", true);
-    } else if (entryOrShiftKey === "G") {
+    } else if (normalizedShiftKey === "G") {
       entry = buildFullShiftEntry(true);
     } else {
-      entry = buildEarlyShiftEntry(entryOrShiftKey);
+      entry = buildEarlyShiftEntry(normalizedShiftKey);
     }
   }
 
@@ -1516,7 +1532,17 @@ function shiftActiveWeek(days) {
 
 /* ========= SHIFT HELPERS ========= */
 function getShiftByKey(key) {
-  return SHIFTS.find((s) => s.key === key) || SHIFTS[0];
+  const normalizedKey = normalizeShiftCode(key);
+  const rule = getShiftRuleByCode(normalizedKey);
+
+  if (!rule || rule.entryType !== "shift") {
+    return { key: "-", type: "free" };
+  }
+
+  return {
+    key: rule.code,
+    type: rule.mode || "free"
+  };
 }
 
 function getShiftClassByKey(key) {
@@ -1533,17 +1559,21 @@ function getShiftForEmployeeOnIso(emp, iso) {
 
 
 function shiftDurationMinutes(shiftKey) {
-  const shift = getShiftByKey(shiftKey);
-  if (!shift.start || !shift.end) return 0;
-  return hmToMinutes(shift.end) - hmToMinutes(shift.start);
+  const rule = getShiftRuleByCode(shiftKey);
+  if (!rule || rule.entryType !== "shift") return 0;
+
+  if (rule.startPolicy?.type !== "fixed" || rule.endPolicy?.type !== "fixed") return 0;
+
+  return hhmmToMinutes(rule.endPolicy.value) - hhmmToMinutes(rule.startPolicy.value);
 }
 
 function appliedPauseMinutes(shiftKey) {
-  const duration = shiftDurationMinutes(shiftKey);
+  const rule = getShiftRuleByCode(shiftKey);
+  if (!rule || rule.entryType !== "shift") return 0;
 
-  if (shiftKey === "G1") return 70;
-  if (["L1", "L2", "L3", "L4"].includes(shiftKey)) return 10;
-  if (duration > 6 * 60) return 60;
+  if (rule.breakPolicy?.type === "configured") {
+    return Number(rule.breakPolicy.baseMinutes || 0);
+  }
 
   return 0;
 }
