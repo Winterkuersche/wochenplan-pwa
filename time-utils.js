@@ -246,7 +246,7 @@ function getPauseRangeForMep(entry) {
     : latestStart;
 
   const centeredStart = startMinutes + Math.floor((spanMinutes - pauseMinutes) / 2);
-  const stepMinutes = pauseMinutes === 10 ? 5 : 15;
+  const stepMinutes = pauseMinutes <= 10 ? 5 : 15;
   const roundedCenteredStart = roundMinutesToStep(centeredStart, stepMinutes);
   const pauseStart = clampMinutes(roundedCenteredStart, earliestStart, latestPreferredStart);
   const pauseEnd = pauseStart + pauseMinutes;

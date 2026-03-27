@@ -133,7 +133,7 @@ function getMepResolvedDayContent(employee, isoDate) {
 
   return {
     start: sourceEntry.start || "",
-    pause: pauseLabel || (isShiftEntry(sourceEntry) ? "-" : ""),
+    pause: pauseLabel,
     end: sourceEntry.end || "",
     sum: sourceEntry.minutes ? minutesToHM(sourceEntry.minutes) : ""
   };
