@@ -2,6 +2,7 @@ const SHIFT_CONFIG = {
   minWorkMinutes: 180,
 
   earlyShifts: [
+    { code: "FO", label: "FÖ", start: "08:55", end: "12:00", breakMinutes: 0 },
     { code: "F3", label: "F3", start: "09:00", end: "12:00", breakMinutes: 0 },
     { code: "F4", label: "F4", start: "09:00", end: "13:00", breakMinutes: 0 },
     { code: "F5", label: "F5", start: "09:00", end: "14:00", breakMinutes: 0 },
@@ -31,6 +32,7 @@ const SHIFT_CONFIG = {
 
   statusOptions: [
     { value: "", label: "—", type: "off" },
+    { value: "FO", label: "FÖ", type: "shift" },
     { value: "F3", label: "F3", type: "shift" },
     { value: "F4", label: "F4", type: "shift" },
     { value: "F5", label: "F5", type: "shift" },
