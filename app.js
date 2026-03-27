@@ -54,7 +54,6 @@ const AUTOSAVE_DELAY_MS = 600;
 const MAX_WEEKLY_MINUTES = 159 * 60;
 
 let currentDayIndex = 0;
-let lastSelectedShift = null;
 let autoSaveTimerId = null;
 let saveStatusTimerId = null;
 let saveStatusMessage = "";
