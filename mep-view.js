@@ -67,9 +67,10 @@ function getMepRoleLabel(employee) {
   return roleLabel;
 }
 
-function getMepTargetLabel(employee) {
+function getMepWeekTargetLabel(employee, weekDays = [], activeMonth = state.activeMonth) {
   if (!employee) return "";
-  return employee.target || "";
+  const targetMinutes = getEmployeeTargetMinutesForWeek(employee, weekDays, activeMonth);
+  return minutesToHM(targetMinutes);
 }
 
 function getMepPauseLabel(entry) {
@@ -372,6 +373,7 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel
   const weekSummaryDays = /^\d{4}-(0[1-9]|1[0-2])$/.test(activeMonthPrefix)
     ? safeWeekDays.filter((day) => String(day?.iso || "").startsWith(activeMonthPrefix))
     : safeWeekDays;
+  const weekTargetLabel = getMepWeekTargetLabel(employee, weekSummaryDays, sheetModel?.activeMonth);
 
   while (safeWeekDays.length < 7) {
     safeWeekDays.push({ iso: "", isOutsideMonth: false });
@@ -450,7 +452,7 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel
               getMepEmployeeNameCellContent(employee, employeeOffset, uiState)
             }</td>
             <td rowspan="4" class="mepTplColRole">${renderMepHandText(getMepRoleLabel(employee), employeeOffset + 1, "mepTplHandMeta")}</td>
-            <td rowspan="4" class="mepTplColTarget">${renderMepHandText(getMepTargetLabel(employee), employeeOffset + 2, "mepTplHandMeta")}</td>
+            <td rowspan="4" class="mepTplColTarget" title="anteilig nach Tagen im sichtbaren Monat">${renderMepHandText(weekTargetLabel, employeeOffset + 2, "mepTplHandMeta")}</td>
           `
           : "";
 
