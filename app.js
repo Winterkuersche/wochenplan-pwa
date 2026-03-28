@@ -2715,6 +2715,8 @@ btnDarkMode?.addEventListener("click", () => {
   updateDarkModeButton();
 });
 
+console.info("handlers-bound");
+
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
   updateResponsiveViewportMetrics();
@@ -2761,7 +2763,12 @@ window.addEventListener("load", () => {
   refreshEmployeeVacationCounters();
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
-  renderAll();
+
+  try {
+    renderAll();
+  } catch (err) {
+    console.error("startup-failed", err);
+  }
 });
 
 window.addEventListener("orientationchange", () => {
