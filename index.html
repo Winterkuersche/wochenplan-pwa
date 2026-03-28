@@ -440,6 +440,32 @@ L1E-L4E ohne Abrechnung
   </template>
 </section>
 
+<div id="manualMonthDialogOverlay" class="dialogOverlay hidden no-print">
+  <div class="dialogBox dialogBoxWide">
+    <h3 id="manualMonthDialogTitle">Monats-Iststunden</h3>
+    <div class="manualMonthDialogTableWrap">
+      <table class="manualMonthTable">
+        <thead>
+          <tr>
+            <th>Monat (YYYY-MM)</th>
+            <th>Iststunden (HH:MM)</th>
+            <th>Löschen</th>
+          </tr>
+        </thead>
+        <tbody id="manualMonthRows"></tbody>
+      </table>
+    </div>
+    <div id="manualMonthValidation" class="manualMonthValidation" aria-live="polite"></div>
+    <div class="dialogActions dialogActionsSpread">
+      <button id="btnManualMonthAddRow" type="button">Monat hinzufügen</button>
+      <div class="dialogActions">
+        <button id="btnManualMonthCancel" type="button">Abbrechen</button>
+        <button id="btnManualMonthSave" type="button">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="shiftDialogOverlay" class="dialogOverlay hidden no-print">
   <div class="dialogBox">
     <h3 id="shiftDialogTitle">Schicht auswählen</h3>

@@ -113,12 +113,23 @@ if (status === ENTRY_STATUS.WORK) {
 `;
   });
 
+  const monthIsManual = isMonthActualManual(emp, state.activeMonth);
+  const manualMonthActualMinutes = getManualMonthActualMinutes(emp, state.activeMonth);
+  const monthDisplayMinutes = monthIsManual && manualMonthActualMinutes !== null
+    ? manualMonthActualMinutes
+    : monthMinutes;
   const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
   const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
+  const monthDeltaTitle = monthIsManual
+    ? "Delta des Monats. Iststunden manuell hinterlegt."
+    : "Delta des Monats.";
+  const monthActualTitle = monthIsManual
+    ? "Monats-Iststunden manuell hinterlegt."
+    : "Monats-Iststunden planbasiert berechnet.";
 
   html += `
-      <td class="weekHoursCell">${minutesToHM(monthMinutes)}</td>
-      <td class="weekDeltaCell ${monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
+      <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}</td>
+      <td class="weekDeltaCell ${monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
       <td class="weekDeltaCell ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
     </tr>
   `;
