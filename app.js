@@ -751,7 +751,15 @@ function normalizePlanEntry(entry) {
     : "";
 
   const rawCode = normalizeShiftCode(entry.shiftKey || entry.code || "");
-  const rule = getShiftRuleByCode(rawCode);
+  const explicitRule = getShiftRuleByCode(rawCode);
+  const foRule = getShiftRuleByCode("FO");
+  const isFoFallbackWindowMatch = isShiftWork
+    && !explicitRule
+    && start === "08:55"
+    && Boolean(end)
+    && Array.isArray(foRule?.endPolicy?.options)
+    && foRule.endPolicy.options.includes(end);
+  const rule = isFoFallbackWindowMatch ? foRule : explicitRule;
 
   const manualRawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
   const isKnownRuleBasedShift = isShiftWork && rule?.entryType === "shift" && rule.code !== "FLEX";
@@ -819,16 +827,18 @@ function normalizePlanEntry(entry) {
   }
 
   const warnedUnknownCodes = getWarnedUnknownShiftCodesSet();
-  if (isShiftWork && rawCode && !rule && !warnedUnknownCodes.has(rawCode)) {
+  if (isShiftWork && rawCode && !explicitRule && !isFoFallbackWindowMatch && !warnedUnknownCodes.has(rawCode)) {
     warnedUnknownCodes.add(rawCode);
     console.warn(`[schedule] Unbekannter Schichtcode '${rawCode}', Eintrag wird als generische Schicht normalisiert.`);
   }
 
-  const derivedShiftKey = rule?.code || rawCode || "";
+  const derivedShiftKey = isFoFallbackWindowMatch ? "FO" : (rule?.code || rawCode || "");
   const normalizedMode = entry.mode || entry.shiftType || rule?.mode || "";
   const normalizedShiftType = entry.shiftType || entry.mode || rule?.shiftType || "";
 
-  let normalizedCode = entry.code || derivedShiftKey;
+  let normalizedCode = isFoFallbackWindowMatch
+    ? "FO"
+    : (entry.code || derivedShiftKey);
   if (rule?.code === "L" && start) {
     normalizedCode = getLateShiftCodeFromStart(start);
   } else if (rule?.code === "FO") {
