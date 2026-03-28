@@ -84,10 +84,7 @@ function getMepPauseTooltip(entry) {
   const spanMinutes = diffMinutesBetweenHHMM(entry.start, entry.end);
   if (spanMinutes <= 0) return "";
 
-  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  const pauseMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
-    includeBillingBonus: entry.end === "19:10"
-  });
+  const pauseMinutes = getPauseMinutesForMepDisplay(entry);
   if (pauseMinutes <= 0) return "";
 
   return `Pause gesamt: ${pauseMinutes} Minuten (darstellungstechnisch im Raster platziert)`;
