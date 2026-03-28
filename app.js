@@ -750,7 +750,24 @@ function normalizePlanEntry(entry) {
     ? normalizePlanTime(entry.end)
     : "";
 
-  const rawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
+  const rawCode = normalizeShiftCode(entry.shiftKey || entry.code || "");
+  const rule = getShiftRuleByCode(rawCode);
+
+  const manualRawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
+  const isKnownRuleBasedShift = isShiftWork && rule?.entryType === "shift" && rule.code !== "FLEX";
+
+  let rawPause = manualRawPause;
+  if (isKnownRuleBasedShift) {
+    if (rule.breakPolicy?.type === "checkout-dependent") {
+      const hasCheckout = end === "19:10" || Boolean(entry.withCheckout);
+      rawPause = hasCheckout
+        ? Number(rule.breakPolicy.withCheckout || 0)
+        : Number(rule.breakPolicy.withoutCheckout || 0);
+    } else {
+      rawPause = Number(rule.breakPolicy?.baseMinutes || 0);
+    }
+  }
+
   const pause = isExternalHelp
     ? 0
     : start && end
@@ -772,9 +789,6 @@ function normalizePlanEntry(entry) {
       ? normalizeMinutesToQuarterHour(getExternalHelpWorkedMinutes(start, end))
       : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
   }
-
-  const rawCode = normalizeShiftCode(entry.shiftKey || entry.code || "");
-  const rule = getShiftRuleByCode(rawCode);
 
   const warnedUnknownCodes = getWarnedUnknownShiftCodesSet();
   if (isShiftWork && rawCode && !rule && !warnedUnknownCodes.has(rawCode)) {
