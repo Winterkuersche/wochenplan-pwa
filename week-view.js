@@ -490,15 +490,16 @@ function subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso) {
   return [leftPart, rightPart].filter(Boolean);
 }
 
-function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso) {
+function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
   state.absences = (state.absences || []).flatMap((entry) => {
     if (!entry || entry.employeeId !== employeeId) return entry ? [entry] : [];
+    if (entry.type !== type) return [entry];
     return subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso);
   });
 }
 
 function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
-  removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso);
+  removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso, type);
   setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
 
   syncVacationScheduleFromAbsences(employeeId);
