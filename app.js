@@ -779,7 +779,7 @@ function normalizePlanEntry(entry) {
     }
   } else if (isFlexibleShift && hasValidSpan) {
     const requiredFlexPause = getBreakMinutesForFlexibleShift(start, end);
-    const normalizedManualPause = normalizePlanBreakMinutes(manualRawPause);
+    const normalizedManualPause = normalizeBusinessBreakMinutes(manualRawPause);
     const isManualPausePlausible = Number.isFinite(manualRawPause)
       && normalizedManualPause >= requiredFlexPause
       && normalizedManualPause < spanMinutes;
@@ -789,10 +789,10 @@ function normalizePlanEntry(entry) {
   const pause = isExternalHelp
     ? 0
     : start && end
-      ? getEffectiveBreakMinutes(start, end, rawPause, {
+      ? getBusinessRequiredBreakMinutes(start, end, rawPause, {
         includeBillingBonus: end === "19:10"
       })
-      : normalizePlanBreakMinutes(rawPause);
+      : normalizeBusinessBreakMinutes(rawPause);
 
   let minutes = 0;
   const hasValidTimeRange = Boolean(start && end);
