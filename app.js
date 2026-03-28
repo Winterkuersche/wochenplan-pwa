@@ -777,17 +777,23 @@ function normalizePlanEntry(entry) {
       : normalizePlanBreakMinutes(rawPause);
 
   let minutes = 0;
+  const hasValidTimeRange = Boolean(start && end);
+  const parsedEntryMinutes = typeof entry.minutes === "number"
+    ? entry.minutes
+    : typeof entry.minutes === "string" && isValidHHMM(entry.minutes)
+      ? parseTimeToMinutes(entry.minutes)
+      : null;
 
   if (isVacation) {
     minutes = 0;
-  } else if (typeof entry.minutes === "number") {
-    minutes = normalizeMinutesToQuarterHour(entry.minutes);
-  } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
-    minutes = normalizeMinutesToQuarterHour(parseTimeToMinutes(entry.minutes));
-  } else if (start && end) {
+  } else if (isShiftWork && hasValidTimeRange) {
+    minutes = normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
+  } else if (hasValidTimeRange) {
     minutes = isExternalHelp
       ? normalizeMinutesToQuarterHour(getExternalHelpWorkedMinutes(start, end))
       : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
+  } else if (!isShiftWork && parsedEntryMinutes !== null) {
+    minutes = normalizeMinutesToQuarterHour(parsedEntryMinutes);
   }
 
   const warnedUnknownCodes = getWarnedUnknownShiftCodesSet();
