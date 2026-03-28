@@ -158,15 +158,13 @@ function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes
 
 function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedStart = normalizePlanTime(startHHMM);
-  const openingOffsetMinutes = normalizedStart === "08:55" ? 5 : 0;
+  const foeZuschlagMinutes = normalizedStart === "08:55" ? 5 : 0;
   const baseBreakMinutes = normalizePlanBreakMinutes(configuredBreakMinutes);
+  const requiredBreakMinutes = isLateCheckoutBreakException(startHHMM, endHHMM, baseBreakMinutes, options)
+    ? baseBreakMinutes
+    : getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
 
-  if (isLateCheckoutBreakException(startHHMM, endHHMM, baseBreakMinutes, options)) {
-    return baseBreakMinutes + openingOffsetMinutes;
-  }
-
-  const requiredBreakMinutes = getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
-  return Math.max(baseBreakMinutes, requiredBreakMinutes) + openingOffsetMinutes;
+  return Math.max(baseBreakMinutes, requiredBreakMinutes) + foeZuschlagMinutes;
 }
 
 function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
