@@ -5,7 +5,19 @@ function getMobileErrorPanelElements() {
   };
 }
 
-function showMobileRuntimeError(details) {
+function isMobileDebugPanelEnabled() {
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    return params.get("debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function showMobileRuntimeError(details, options = {}) {
+  const { force = false } = options;
+  if (!force && !isMobileDebugPanelEnabled()) return;
+
   const { panel, text } = getMobileErrorPanelElements();
   if (!panel || !text) return;
 
@@ -662,13 +674,43 @@ function requestActiveResponsiveViewRefresh(options = {}) {
 
 let warnedUnknownShiftCodes = null;
 
-function getWarnedUnknownShiftCodesSet() {
-  if (!(warnedUnknownShiftCodes instanceof Set)) {
-    warnedUnknownShiftCodes = new Set();
-  }
-  return warnedUnknownShiftCodes;
+const startupMutableHelpers = {
+  warnedUnknownShiftCodes: null
+};
+
+function isStartupSelfTestEnabled() {
+  const isDebugFlagEnabled = isMobileDebugPanelEnabled();
+  const hostName = (window.location?.hostname || "").toLowerCase();
+  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(hostName);
+  const isLocalFile = window.location?.protocol === "file:";
+  return isDebugFlagEnabled || isLocalHost || isLocalFile;
 }
 
+function runStartupSelfTest() {
+  if (!isStartupSelfTestEnabled()) return;
+
+  const globalChecks = [
+    ["getShiftRuleByCode", typeof getShiftRuleByCode === "function"],
+    ["normalizeShiftCode", typeof normalizeShiftCode === "function"],
+    ["warnedUnknownShiftCodes", "warnedUnknownShiftCodes" in startupMutableHelpers]
+  ];
+
+  const failedChecks = globalChecks.filter(([, ok]) => !ok);
+  if (!failedChecks.length) return;
+
+  const missingNames = failedChecks.map(([name]) => name).join(", ");
+  throw new Error(`Startup-Selbsttest fehlgeschlagen. Fehlende Globals: ${missingNames}`);
+}
+
+function getWarnedUnknownShiftCodesSet() {
+  if (!(startupMutableHelpers.warnedUnknownShiftCodes instanceof Set)) {
+    startupMutableHelpers.warnedUnknownShiftCodes = new Set();
+  }
+  warnedUnknownShiftCodes = startupMutableHelpers.warnedUnknownShiftCodes;
+  return startupMutableHelpers.warnedUnknownShiftCodes;
+}
+
+runStartupSelfTest();
 const loadedAppState = loadAppState();
 let uiState = loadedAppState.ui;
 let state = loadedAppState.state;
@@ -2568,6 +2610,87 @@ function renderAll() {
   updateResponsiveViewportMetrics();
 }
 
+function showStartupFailureMessage(error) {
+  const message = error?.message || "Unbekannter Startfehler";
+  const fallbackText = `⚠️ App-Start fehlgeschlagen. Bitte Seite neu laden. Details: ${message}`;
+  const fallbackId = "startupFailureBanner";
+  let banner = document.getElementById(fallbackId);
+
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = fallbackId;
+    banner.setAttribute("role", "alert");
+    banner.style.cssText = "margin:8px;padding:10px;border-radius:8px;background:#b00020;color:#fff;font-weight:600;white-space:pre-wrap;";
+    document.body?.prepend(banner);
+  }
+
+  banner.textContent = fallbackText;
+}
+
+function bootstrapApp() {
+  window.__APP_BOOT_OK__ = false;
+
+  try {
+    updateResponsiveViewportMetrics();
+
+    if (!state.weekFrom) {
+      const today = new Date();
+      state.weekFrom = toIsoDate(today);
+    }
+
+    if (!state.activeMonth) {
+      state.activeMonth = (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
+    }
+
+    let savedTheme = null;
+    try {
+      savedTheme = localStorage.getItem("wochenplan_dark");
+    } catch {
+      savedTheme = null;
+    }
+
+    if (savedTheme === "true") {
+      document.body.classList.add("dark");
+    } else if (savedTheme === "false") {
+      document.body.classList.remove("dark");
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.body.classList.add("dark");
+    }
+
+    updateDarkModeButton();
+    updateBackupInfoLabel();
+    refreshSaveStatusLabel();
+
+    if (typeof bindMonthNavigation === "function") {
+      bindMonthNavigation();
+    }
+
+    if (typeof bindMepMonthNavigation === "function") {
+      bindMepMonthNavigation();
+    }
+
+    syncVacationScheduleFromAbsences();
+    refreshEmployeeVacationCounters();
+    syncMonthPlanToState();
+    syncWeekRangeFromActiveWeek();
+
+    renderAll();
+    window.__APP_BOOT_OK__ = true;
+    console.info("startup: render-complete");
+  } catch (err) {
+    console.error("startup-failed", err);
+    showStartupFailureMessage(err);
+
+    if (isMobileDebugPanelEnabled()) {
+      showMobileRuntimeError({
+        message: err?.message || "Startup fehlgeschlagen",
+        file: "bootstrapApp",
+        line: "-"
+      }, { force: true });
+    }
+  }
+}
+
 /* ========= EVENTS ========= */
 console.info("startup: begin");
 
@@ -2779,57 +2902,11 @@ console.info("startup: handlers-bound");
 
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
-  updateResponsiveViewportMetrics();
-
-  if (!state.weekFrom) {
-    const today = new Date();
-    state.weekFrom = toIsoDate(today);
+  if (!isMobileDebugPanelEnabled()) {
+    document.getElementById("mobileErrorPanel")?.classList.add("hidden");
   }
 
-  if (!state.activeMonth) {
-    state.activeMonth = (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
-  }
-
-  let savedTheme = null;
-  try {
-    savedTheme = localStorage.getItem("wochenplan_dark");
-  } catch {
-    savedTheme = null;
-  }
-
-  if (savedTheme === "true") {
-    document.body.classList.add("dark");
-  } else if (savedTheme === "false") {
-    document.body.classList.remove("dark");
-  } else {
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      document.body.classList.add("dark");
-    }
-  }
-
-  updateDarkModeButton();
-  updateBackupInfoLabel();
-  refreshSaveStatusLabel();
-
-  if (typeof bindMonthNavigation === "function") {
-    bindMonthNavigation();
-  }
-
-  if (typeof bindMepMonthNavigation === "function") {
-    bindMepMonthNavigation();
-  }
-
-  syncVacationScheduleFromAbsences();
-  refreshEmployeeVacationCounters();
-  syncMonthPlanToState();
-  syncWeekRangeFromActiveWeek();
-
-  try {
-    renderAll();
-    console.info("startup: render-complete");
-  } catch (err) {
-    console.error("startup-failed", err);
-  }
+  bootstrapApp();
 });
 
 window.addEventListener("orientationchange", () => {
