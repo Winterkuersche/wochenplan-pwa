@@ -26,7 +26,8 @@ Jede Regel enthält:
 
 - Start fix `08:55`.
 - Endzeit über Registry auswählbar (`12:00` bis `19:00` in 15-Min-Schritten + `19:10`).
-- Basispause fix `5` Minuten, über `getEffectiveBreakMinutes` mit Mindestpause abgesichert.
+- Basispause fix `5` Minuten.
+- Zusätzlich fließen für FÖ immer weitere `5` Minuten als additiver Zuschlag in die gesamte Tagespause ein (Start `08:55`), auch bei Pflichtpause/Late-Checkout-Sonderfall; der Zuschlag wirkt nicht nur als Mindestpause.
 
 ## UI-Anbindung
 
