@@ -1266,6 +1266,13 @@ const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnMepModeNormalEl = document.getElementById("btnMepModeNormal");
 const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
+const manualMonthDialogOverlayEl = document.getElementById("manualMonthDialogOverlay");
+const manualMonthDialogTitleEl = document.getElementById("manualMonthDialogTitle");
+const manualMonthRowsEl = document.getElementById("manualMonthRows");
+const manualMonthValidationEl = document.getElementById("manualMonthValidation");
+const btnManualMonthAddRowEl = document.getElementById("btnManualMonthAddRow");
+const btnManualMonthCancelEl = document.getElementById("btnManualMonthCancel");
+const btnManualMonthSaveEl = document.getElementById("btnManualMonthSave");
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -1336,6 +1343,27 @@ function normalizeYearMonth(value) {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(normalized) ? normalized : "";
 }
 
+function isValidYearMonth(value) {
+  return Boolean(normalizeYearMonth(value));
+}
+
+function normalizeManualMonthActualMinutes(rawValue) {
+  if (!rawValue || typeof rawValue !== "object" || Array.isArray(rawValue)) {
+    return {};
+  }
+
+  return Object.entries(rawValue).reduce((acc, [yearMonth, minutes]) => {
+    const normalizedYearMonth = normalizeYearMonth(yearMonth);
+    const numericMinutes = Number(minutes);
+    if (!normalizedYearMonth || !Number.isFinite(numericMinutes) || numericMinutes < 0) {
+      return acc;
+    }
+
+    acc[normalizedYearMonth] = Math.round(numericMinutes);
+    return acc;
+  }, {});
+}
+
 function normalizeEmployee(employee, index = 0) {
   const roleKey = employee?.roleKey || "";
 
@@ -1354,6 +1382,7 @@ function normalizeEmployee(employee, index = 0) {
     serviceBonus: Boolean(employee?.serviceBonus),
     activeFromMonth: normalizeYearMonth(employee?.activeFromMonth),
     activeToMonth: normalizeYearMonth(employee?.activeToMonth),
+    manualMonthActualMinutes: normalizeManualMonthActualMinutes(employee?.manualMonthActualMinutes),
     shifts: {}
   };
 }
@@ -1477,7 +1506,8 @@ function saveMasterData() {
       birthDate: emp.birthDate || "",
       serviceBonus: Boolean(emp.serviceBonus),
       activeFromMonth: normalizeYearMonth(emp.activeFromMonth),
-      activeToMonth: normalizeYearMonth(emp.activeToMonth)
+      activeToMonth: normalizeYearMonth(emp.activeToMonth),
+      manualMonthActualMinutes: normalizeManualMonthActualMinutes(emp.manualMonthActualMinutes)
     }))
   });
 }
@@ -2034,7 +2064,7 @@ function getEmployeeAccountMinutesForMonth(employee, yearMonth = state.activeMon
 function normalizeYearMonthValue(value) {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}$/.test(trimmed)) return "";
+  if (!isValidYearMonth(trimmed)) return "";
   return trimmed;
 }
 
@@ -2065,7 +2095,7 @@ function getWeeksForYearMonth(yearMonth) {
   return buildMonthPlanFallback(year, month - 1).weeks || [];
 }
 
-function getRelevantYearMonthsUntilActiveMonth() {
+function getRelevantYearMonthsUntilActiveMonth(employee = null) {
   const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
   if (!activeYearMonth) return [];
 
@@ -2083,6 +2113,15 @@ function getRelevantYearMonthsUntilActiveMonth() {
     if (fromMonth && fromMonth <= activeYearMonth) candidates.push(fromMonth);
     if (toMonth && toMonth <= activeYearMonth) candidates.push(toMonth);
   });
+
+  if (employee?.manualMonthActualMinutes && typeof employee.manualMonthActualMinutes === "object") {
+    Object.keys(employee.manualMonthActualMinutes).forEach((yearMonth) => {
+      const normalized = normalizeYearMonthValue(yearMonth);
+      if (normalized && normalized <= activeYearMonth) {
+        candidates.push(normalized);
+      }
+    });
+  }
 
   const unique = [...new Set(candidates)].sort();
   if (!unique.length) return [activeYearMonth];
@@ -2102,11 +2141,11 @@ function getRelevantYearMonthsUntilActiveMonth() {
 function getEmployeeRunningBalanceMinutesUntilActiveMonth(employee) {
   if (!employee) return 0;
 
-  return getRelevantYearMonthsUntilActiveMonth().reduce((sum, yearMonth) => {
+  return getRelevantYearMonthsUntilActiveMonth(employee).reduce((sum, yearMonth) => {
     const weeks = getWeeksForYearMonth(yearMonth);
     if (!weeks.length) return sum;
 
-    const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+    const accountMinutes = getEmployeeActualMinutesForMonth(employee, yearMonth);
     const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
 
     return sum + (accountMinutes - contractTargetMinutes);
@@ -2127,7 +2166,7 @@ function getEmployeeMonthDifferenceMinutes(employee, yearMonth = state.activeMon
   const monthWeeks = getWeeksForYearMonth(yearMonth);
   if (!monthWeeks.length) return 0;
 
-  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const accountMinutes = getEmployeeActualMinutesForMonth(employee, yearMonth);
   const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
 
   if (isGfbEmployee(employee)) {
@@ -2141,7 +2180,7 @@ function getEmployeeMonthContingentRemainingMinutes(employee, yearMonth = state.
   if (!employee) return 0;
   if (!isGfbEmployee(employee)) return 0;
 
-  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const accountMinutes = getEmployeeActualMinutesForMonth(employee, yearMonth);
   const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
   return Math.max(0, contractTargetMinutes - accountMinutes);
 }
@@ -2150,9 +2189,211 @@ function getEmployeeMonthContingentOveruseMinutes(employee, yearMonth = state.ac
   if (!employee) return 0;
   if (!isGfbEmployee(employee)) return 0;
 
-  const accountMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const accountMinutes = getEmployeeActualMinutesForMonth(employee, yearMonth);
   const contractTargetMinutes = getEmployeeContractTargetMinutesPerMonth(employee);
   return Math.max(0, accountMinutes - contractTargetMinutes);
+}
+
+function getManualMonthActualMinutes(employee, yearMonth) {
+  if (!employee) return null;
+  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  if (!normalizedYearMonth) return null;
+
+  const minutes = employee.manualMonthActualMinutes?.[normalizedYearMonth];
+  const numericMinutes = Number(minutes);
+  if (!Number.isFinite(numericMinutes) || numericMinutes < 0) return null;
+  return Math.round(numericMinutes);
+}
+
+function setManualMonthActualMinutes(employee, yearMonth, minutes) {
+  if (!employee) return false;
+  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  const numericMinutes = Number(minutes);
+  if (!normalizedYearMonth || !Number.isFinite(numericMinutes) || numericMinutes < 0) return false;
+
+  employee.manualMonthActualMinutes = normalizeManualMonthActualMinutes(employee.manualMonthActualMinutes);
+  employee.manualMonthActualMinutes[normalizedYearMonth] = Math.round(numericMinutes);
+  return true;
+}
+
+function removeManualMonthActualMinutes(employee, yearMonth) {
+  if (!employee) return false;
+  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  if (!normalizedYearMonth) return false;
+  if (!employee.manualMonthActualMinutes || typeof employee.manualMonthActualMinutes !== "object") {
+    employee.manualMonthActualMinutes = {};
+    return false;
+  }
+
+  const existed = Object.prototype.hasOwnProperty.call(employee.manualMonthActualMinutes, normalizedYearMonth);
+  delete employee.manualMonthActualMinutes[normalizedYearMonth];
+  return existed;
+}
+
+function isMonthActualManual(employee, yearMonth) {
+  return getManualMonthActualMinutes(employee, yearMonth) !== null;
+}
+
+function getEmployeeActualMinutesForMonth(employee, yearMonth = state.activeMonth) {
+  const manualMinutes = getManualMonthActualMinutes(employee, yearMonth);
+  if (manualMinutes !== null) return manualMinutes;
+  return getEmployeeAccountMinutesForMonth(employee, yearMonth);
+}
+
+function parseManualHoursToMinutes(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d+):([0-5]\d)$/);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || minutes < 0) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function formatManualMonthRows(entries = []) {
+  if (!manualMonthRowsEl) return;
+
+  manualMonthRowsEl.innerHTML = "";
+
+  entries.forEach((entry) => {
+    const tr = document.createElement("tr");
+    tr.className = "manualMonthRow";
+
+    const monthTd = document.createElement("td");
+    const monthInput = document.createElement("input");
+    monthInput.type = "month";
+    monthInput.className = "manualMonthInput";
+    monthInput.value = normalizeYearMonth(entry?.yearMonth);
+    monthInput.placeholder = "YYYY-MM";
+    monthTd.appendChild(monthInput);
+
+    const hoursTd = document.createElement("td");
+    const hoursInput = document.createElement("input");
+    hoursInput.type = "text";
+    hoursInput.className = "manualMonthInput";
+    hoursInput.placeholder = "HH:MM";
+    hoursInput.value = typeof entry?.minutes === "number" ? minutesToHM(entry.minutes) : "";
+    hoursTd.appendChild(hoursInput);
+
+    const removeTd = document.createElement("td");
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "Löschen";
+    removeButton.addEventListener("click", () => {
+      tr.remove();
+      if (!manualMonthRowsEl.querySelector("tr")) {
+        addManualMonthDialogRow();
+      }
+    });
+    removeTd.appendChild(removeButton);
+
+    tr.append(monthTd, hoursTd, removeTd);
+    manualMonthRowsEl.appendChild(tr);
+  });
+}
+
+function addManualMonthDialogRow(defaults = {}) {
+  if (!manualMonthRowsEl) return;
+
+  const currentRows = [...manualMonthRowsEl.querySelectorAll("tr.manualMonthRow")].map((tr) => ({
+    yearMonth: tr.querySelector("td:nth-child(1) input")?.value || "",
+    minutes: parseManualHoursToMinutes(tr.querySelector("td:nth-child(2) input")?.value || "")
+  }));
+
+  currentRows.push({
+    yearMonth: normalizeYearMonth(defaults.yearMonth) || "",
+    minutes: typeof defaults.minutes === "number" ? defaults.minutes : null
+  });
+
+  formatManualMonthRows(currentRows);
+}
+
+function closeManualMonthDialog() {
+  if (!manualMonthDialogOverlayEl) return;
+  manualMonthDialogOverlayEl.classList.add("hidden");
+  manualMonthDialogOverlayEl.dataset.employeeId = "";
+  if (manualMonthValidationEl) manualMonthValidationEl.textContent = "";
+}
+
+function collectAndValidateManualMonthDialogRows() {
+  const rows = [...manualMonthRowsEl.querySelectorAll("tr.manualMonthRow")];
+  const normalizedMap = {};
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    const monthValue = row.querySelector("td:nth-child(1) input")?.value || "";
+    const hoursValue = row.querySelector("td:nth-child(2) input")?.value || "";
+    const isEmptyRow = !monthValue.trim() && !hoursValue.trim();
+    if (isEmptyRow) continue;
+
+    if (!isValidYearMonth(monthValue)) {
+      return { error: `Zeile ${index + 1}: Monat muss YYYY-MM sein.` };
+    }
+
+    const minutes = parseManualHoursToMinutes(hoursValue);
+    if (minutes === null || minutes < 0) {
+      return { error: `Zeile ${index + 1}: Iststunden müssen im Format HH:MM (>= 0) sein.` };
+    }
+
+    normalizedMap[normalizeYearMonth(monthValue)] = minutes;
+  }
+
+  return { value: normalizedMap };
+}
+
+function saveManualMonthDialog() {
+  if (!manualMonthDialogOverlayEl) return;
+
+  const employeeId = manualMonthDialogOverlayEl.dataset.employeeId || "";
+  const employee = state.employees.find((emp) => emp.id === employeeId);
+  if (!employee) {
+    closeManualMonthDialog();
+    return;
+  }
+
+  const result = collectAndValidateManualMonthDialogRows();
+  if (result.error) {
+    if (manualMonthValidationEl) manualMonthValidationEl.textContent = result.error;
+    return;
+  }
+
+  const existingMonths = Object.keys(employee.manualMonthActualMinutes || {});
+  existingMonths.forEach((yearMonth) => {
+    removeManualMonthActualMinutes(employee, yearMonth);
+  });
+
+  Object.entries(result.value || {}).forEach(([yearMonth, minutes]) => setManualMonthActualMinutes(employee, yearMonth, minutes));
+
+  saveAppStateDebounced();
+  renderAllViews();
+  renderTeamSetup();
+  closeManualMonthDialog();
+}
+
+function openManualMonthDialog(employee) {
+  if (!employee || !manualMonthDialogOverlayEl || !manualMonthRowsEl) return;
+
+  manualMonthDialogOverlayEl.dataset.employeeId = employee.id || "";
+  if (manualMonthDialogTitleEl) {
+    manualMonthDialogTitleEl.textContent = `Monats-Iststunden für ${employee.name || "Mitarbeiter"}`;
+  }
+  if (manualMonthValidationEl) manualMonthValidationEl.textContent = "";
+
+  const entries = Object.entries(employee.manualMonthActualMinutes || {})
+    .map(([yearMonth, minutes]) => ({
+      yearMonth,
+      minutes: Number(minutes)
+    }))
+    .filter((entry) => isValidYearMonth(entry.yearMonth) && Number.isFinite(entry.minutes) && entry.minutes >= 0)
+    .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+
+  formatManualMonthRows(entries.length ? entries : [{ yearMonth: state.activeMonth, minutes: null }]);
+  manualMonthDialogOverlayEl.classList.remove("hidden");
 }
 
 function totalMinutesForDayIso(iso) {
@@ -2645,6 +2886,13 @@ serviceBonusInput.addEventListener("change", () => {
       const shouldCleanupPlanData = confirm("Zugehörige Plan- und Absenzdaten ebenfalls löschen?\nOK = Ja, Abbrechen = Nein (nur Stammdaten entfernen)");
       removeEmployee(emp.id, { cleanupPlanData: shouldCleanupPlanData });
     });
+    const manualMonthButton = document.createElement("button");
+    manualMonthButton.type = "button";
+    manualMonthButton.textContent = "Monats-Iststunden";
+    manualMonthButton.title = "Monats-Iststunden";
+    manualMonthButton.addEventListener("click", () => {
+      openManualMonthDialog(emp);
+    });
 
     row.appendChild(nameInput);
     row.appendChild(roleSel);
@@ -2656,11 +2904,30 @@ serviceBonusInput.addEventListener("change", () => {
     row.appendChild(remainingVacationInfo);
     row.appendChild(birthDateInput);
     row.appendChild(serviceBonusInput);
+    row.appendChild(manualMonthButton);
     row.appendChild(removeEmployeeButton);
 
     teamListEl.appendChild(row);
     });
 }
+
+btnManualMonthAddRowEl?.addEventListener("click", () => {
+  addManualMonthDialogRow();
+});
+
+btnManualMonthCancelEl?.addEventListener("click", () => {
+  closeManualMonthDialog();
+});
+
+btnManualMonthSaveEl?.addEventListener("click", () => {
+  saveManualMonthDialog();
+});
+
+manualMonthDialogOverlayEl?.addEventListener("click", (event) => {
+  if (event.target === manualMonthDialogOverlayEl) {
+    closeManualMonthDialog();
+  }
+});
 
 function getNextEmployeeId() {
   const maxEmployeeNumber = state.employees.reduce((maxValue, employee) => {
