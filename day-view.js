@@ -117,7 +117,7 @@ function renderDayView() {
 
   body.innerHTML = "";
 
-  const year = new Date().getFullYear();
+  const year = getVacationViewYear();
 
   state.employees.forEach((emp) => {
     const summary = getVacationSummaryForEmployee(emp, year);
@@ -166,6 +166,20 @@ body.appendChild(tr);
 
   bindVacationRangeActions();
 }
+
+function getVacationViewYear() {
+  const activeMonth = typeof state.activeMonth === "string" ? state.activeMonth.trim() : "";
+  const weekFrom = typeof state.weekFrom === "string" ? state.weekFrom.trim() : "";
+
+  const activeMonthMatch = activeMonth.match(/^(\d{4})-\d{2}$/);
+  if (activeMonthMatch) return Number(activeMonthMatch[1]);
+
+  const weekFromMatch = weekFrom.match(/^(\d{4})-\d{2}-\d{2}$/);
+  if (weekFromMatch) return Number(weekFromMatch[1]);
+
+  return new Date().getFullYear();
+}
+
 function getVacationMonthsForEmployee(emp, year) {
   const months = new Array(12).fill(false);
 
