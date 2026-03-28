@@ -660,6 +660,15 @@ function requestActiveResponsiveViewRefresh(options = {}) {
   scheduleResponsiveViewRefresh({ force: true });
 }
 
+let warnedUnknownShiftCodes = null;
+
+function getWarnedUnknownShiftCodesSet() {
+  if (!(warnedUnknownShiftCodes instanceof Set)) {
+    warnedUnknownShiftCodes = new Set();
+  }
+  return warnedUnknownShiftCodes;
+}
+
 const loadedAppState = loadAppState();
 let uiState = loadedAppState.ui;
 let state = loadedAppState.state;
@@ -674,8 +683,6 @@ function ensureScheduleDay(isoDate) {
   if (!state.schedule[isoDate]) state.schedule[isoDate] = {};
   return state.schedule[isoDate];
 }
-
-const warnedUnknownShiftCodes = new Set();
 
 function normalizePlanEntry(entry) {
   // status is unified via status-utils.js
@@ -727,8 +734,9 @@ function normalizePlanEntry(entry) {
   const rawCode = normalizeShiftCode(entry.shiftKey || entry.code || "");
   const rule = getShiftRuleByCode(rawCode);
 
-  if (isShiftWork && rawCode && !rule && !warnedUnknownShiftCodes.has(rawCode)) {
-    warnedUnknownShiftCodes.add(rawCode);
+  const warnedUnknownCodes = getWarnedUnknownShiftCodesSet();
+  if (isShiftWork && rawCode && !rule && !warnedUnknownCodes.has(rawCode)) {
+    warnedUnknownCodes.add(rawCode);
     console.warn(`[schedule] Unbekannter Schichtcode '${rawCode}', Eintrag wird als generische Schicht normalisiert.`);
   }
 
