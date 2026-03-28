@@ -222,6 +222,31 @@ function getFixedFullShiftPauseRange(startHHMM, endHHMM) {
   return "";
 }
 
+function getPauseMinutesForMepDisplay(entry) {
+  if (!entry || !entry.start || !entry.end) return 0;
+  if (getEntryStatus(entry) === ENTRY_STATUS.EXTERNAL) return 0;
+
+  const spanMinutes = diffMinutesBetweenHHMM(entry.start, entry.end);
+  if (spanMinutes <= 0) return 0;
+
+  const parsedEntryMinutes = typeof entry.minutes === "number"
+    ? entry.minutes
+    : typeof entry.minutes === "string" && isValidHHMM(entry.minutes)
+      ? parseTimeToMinutes(entry.minutes)
+      : null;
+
+  // Anzeige basiert auf derselben Tagesgrundlage wie Stundenkonto.
+  if (parsedEntryMinutes !== null) {
+    const workedMinutes = normalizeMinutesToQuarterHour(parsedEntryMinutes);
+    return Math.max(0, spanMinutes - workedMinutes);
+  }
+
+  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
+  return getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
+    includeBillingBonus: entry.end === "19:10"
+  });
+}
+
 function getPauseRangeForMep(entry) {
   if (!entry || !entry.start || !entry.end) return "";
   if (getEntryStatus(entry) === ENTRY_STATUS.EXTERNAL) return "";
@@ -231,10 +256,7 @@ function getPauseRangeForMep(entry) {
   const spanMinutes = endMinutes - startMinutes;
   if (spanMinutes <= 0) return "";
 
-  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  const pauseMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
-    includeBillingBonus: endMinutes === hhmmToMinutes("19:10")
-  });
+  const pauseMinutes = getPauseMinutesForMepDisplay(entry);
   if (pauseMinutes <= 0) return "-";
 
   const fixedFullShiftRange = getFixedFullShiftPauseRange(entry.start, entry.end);
