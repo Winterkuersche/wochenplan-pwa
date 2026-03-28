@@ -755,6 +755,9 @@ function normalizePlanEntry(entry) {
 
   const manualRawPause = Number(entry.pause ?? entry.breakMinutes ?? 0) || 0;
   const isKnownRuleBasedShift = isShiftWork && rule?.entryType === "shift" && rule.code !== "FLEX";
+  const isFlexibleShift = isShiftWork && rule?.entryType === "shift" && rule.code === "FLEX";
+  const spanMinutes = start && end ? diffMinutesBetweenHHMM(start, end) : 0;
+  const hasValidSpan = spanMinutes > 0;
 
   let rawPause = manualRawPause;
   if (isKnownRuleBasedShift) {
@@ -766,6 +769,13 @@ function normalizePlanEntry(entry) {
     } else {
       rawPause = Number(rule.breakPolicy?.baseMinutes || 0);
     }
+  } else if (isFlexibleShift && hasValidSpan) {
+    const requiredFlexPause = getBreakMinutesForFlexibleShift(start, end);
+    const normalizedManualPause = normalizePlanBreakMinutes(manualRawPause);
+    const isManualPausePlausible = Number.isFinite(manualRawPause)
+      && normalizedManualPause >= requiredFlexPause
+      && normalizedManualPause < spanMinutes;
+    rawPause = isManualPausePlausible ? normalizedManualPause : requiredFlexPause;
   }
 
   const pause = isExternalHelp
@@ -1450,9 +1460,27 @@ function flushPendingAutoSave() {
 }
 
 function loadAppState() {
+  const rawPlan = loadJson(PLAN_KEY, defaultPlanState());
+  const normalizedSchedule = rawPlan.schedule && typeof rawPlan.schedule === "object"
+    ? normalizeSchedule(rawPlan.schedule)
+    : {};
+  const shouldPersistNormalizedSchedule = JSON.stringify(rawPlan.schedule || {}) !== JSON.stringify(normalizedSchedule);
+
+  if (shouldPersistNormalizedSchedule) {
+    saveJson(PLAN_KEY, {
+      ...rawPlan,
+      schedule: normalizedSchedule
+    });
+  }
+
   return {
     ui: loadUiState(),
-    state: buildInitialState(),
+    state: buildInitialState({
+      planOverride: {
+        ...rawPlan,
+        schedule: normalizedSchedule
+      }
+    }),
     lastSavedAt: getLastSavedAt()
   };
 }
@@ -1502,9 +1530,9 @@ function defaultPlanState() {
     absences: []
   };
 }
-function buildInitialState() {
+function buildInitialState(options = {}) {
   const master = loadJson(MASTER_KEY, defaultMasterState());
-  const plan = loadJson(PLAN_KEY, defaultPlanState());
+  const plan = options.planOverride || loadJson(PLAN_KEY, defaultPlanState());
 
   const baseEmployees = Array.isArray(master.employees)
     ? master.employees
