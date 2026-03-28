@@ -972,6 +972,63 @@ function normalizeSchedule(schedule) {
   return normalized;
 }
 
+function validateNormalizedSchedule(schedule, options = {}) {
+  const { logWarnings = false } = options;
+
+  if (!schedule || typeof schedule !== "object") {
+    return { schedule: {}, report: { correctedEntries: 0 } };
+  }
+
+  const report = { correctedEntries: 0 };
+  const validatedSchedule = {};
+
+  Object.entries(schedule).forEach(([isoDate, dayEntries]) => {
+    if (!dayEntries || typeof dayEntries !== "object") return;
+
+    const nextDay = {};
+
+    Object.entries(dayEntries).forEach(([employeeId, entry]) => {
+      if (!entry || typeof entry !== "object") return;
+
+      const nextEntry = { ...entry };
+      const start = nextEntry.start;
+      const end = nextEntry.end;
+
+      if (start && end) {
+        const span = diffMinutesBetweenHHMM(start, end);
+        const pauseMinutes = Number(nextEntry.pause ?? nextEntry.breakMinutes ?? 0) || 0;
+        const expectedMinutes = normalizeMinutesToQuarterHour(Math.max(0, span - pauseMinutes));
+        const parsedStoredMinutes = Number(nextEntry.minutes);
+        const storedMinutes = Number.isFinite(parsedStoredMinutes)
+          ? normalizeMinutesToQuarterHour(parsedStoredMinutes)
+          : 0;
+
+        if (storedMinutes !== expectedMinutes) {
+          nextEntry.minutes = expectedMinutes;
+          report.correctedEntries += 1;
+
+          if (logWarnings) {
+            console.warn(
+              `[schedule-validation] korrigiert ${isoDate}/${employeeId}: gespeichert=${storedMinutes}, erwartet=${expectedMinutes}`
+            );
+          }
+        }
+      }
+
+      nextDay[employeeId] = nextEntry;
+    });
+
+    if (Object.keys(nextDay).length > 0) {
+      validatedSchedule[isoDate] = nextDay;
+    }
+  });
+
+  return {
+    schedule: validatedSchedule,
+    report
+  };
+}
+
 function cleanupScheduleDay(isoDate) {
   const day = state.schedule?.[isoDate];
   if (!day) return;
@@ -1464,12 +1521,16 @@ function loadAppState() {
   const normalizedSchedule = rawPlan.schedule && typeof rawPlan.schedule === "object"
     ? normalizeSchedule(rawPlan.schedule)
     : {};
-  const shouldPersistNormalizedSchedule = JSON.stringify(rawPlan.schedule || {}) !== JSON.stringify(normalizedSchedule);
+  const {
+    schedule: validatedSchedule,
+    report: scheduleValidationReport
+  } = validateNormalizedSchedule(normalizedSchedule, { logWarnings: true });
+  const shouldPersistNormalizedSchedule = JSON.stringify(rawPlan.schedule || {}) !== JSON.stringify(validatedSchedule);
 
   if (shouldPersistNormalizedSchedule) {
     saveJson(PLAN_KEY, {
       ...rawPlan,
-      schedule: normalizedSchedule
+      schedule: validatedSchedule
     });
   }
 
@@ -1478,9 +1539,10 @@ function loadAppState() {
     state: buildInitialState({
       planOverride: {
         ...rawPlan,
-        schedule: normalizedSchedule
+        schedule: validatedSchedule
       }
     }),
+    scheduleValidationReport,
     lastSavedAt: getLastSavedAt()
   };
 }
@@ -1540,9 +1602,10 @@ function buildInitialState(options = {}) {
 
  const employees = baseEmployees.map((emp, index) => normalizeEmployee(emp, index));
 
-  const schedule = plan.schedule && typeof plan.schedule === "object"
+  const normalizedSchedule = plan.schedule && typeof plan.schedule === "object"
     ? normalizeSchedule(plan.schedule)
     : {};
+  const { schedule } = validateNormalizedSchedule(normalizedSchedule);
 
   const absences = Array.isArray(plan.absences)
     ? normalizeAbsences(plan.absences)
