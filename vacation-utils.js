@@ -1,9 +1,24 @@
-function isWorkdayForVacation(isoDate) {
+function getVacationHolidayStateKey() {
+  return APP_META?.stateKey || null;
+}
+
+function isWorkdayForVacation(isoDate, options = {}) {
   const date = fromIsoDate(isoDate);
   if (!date) return false;
 
+  const {
+    considerHolidays = false,
+    stateKey = getVacationHolidayStateKey()
+  } = options;
+
   // Sonntag nicht zählen
-  return date.getDay() !== 0;
+  if (date.getDay() === 0) return false;
+
+  if (considerHolidays && stateKey && typeof getHolidayByDate === "function") {
+    return !getHolidayByDate(stateKey, isoDate);
+  }
+
+  return true;
 }
 
 function countVacationDaysInRange(fromIso, toIso) {
@@ -18,7 +33,7 @@ function countVacationDaysInRange(fromIso, toIso) {
   while (cursor <= to) {
     const iso = toIsoDate(cursor);
 
-    if (isWorkdayForVacation(iso)) {
+    if (isWorkdayForVacation(iso, { considerHolidays: true })) {
       count += 1;
     }
 
@@ -42,7 +57,7 @@ function countVacationDaysInRangeForYear(fromIso, toIso, year) {
     if (cursor.getFullYear() === year) {
       const iso = toIsoDate(cursor);
 
-      if (isWorkdayForVacation(iso)) {
+      if (isWorkdayForVacation(iso, { considerHolidays: true })) {
         count += 1;
       }
     }

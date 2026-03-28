@@ -2557,7 +2557,7 @@ vacationInput.addEventListener("change", () => {
     const usedVacationInfo = document.createElement("input");
     usedVacationInfo.type = "text";
     usedVacationInfo.value = String(Number(emp.usedVacationDays ?? 0));
-    usedVacationInfo.title = "Genommene Urlaubstage";
+    usedVacationInfo.title = "Genommene Urlaubstage (ohne Sonntage und Feiertage)";
     usedVacationInfo.readOnly = true;
 
     const remainingVacationInfo = document.createElement("input");
