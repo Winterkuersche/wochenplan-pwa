@@ -121,6 +121,40 @@ select {
   color: var(--subtext);
 }
 
+.mobileErrorPanel {
+  position: sticky;
+  top: 8px;
+  z-index: 10000;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 2px solid #b42318;
+  border-radius: 12px;
+  background: #fde8e8;
+  color: #7a271a;
+}
+
+.mobileErrorPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mobileErrorPanelText {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 45vh;
+  overflow: auto;
+}
+
+@media (max-width: 640px) {
+  .mobileErrorPanel {
+    width: 100%;
+  }
+}
+
 /* =============================
    TOPBAR
    ============================= */
