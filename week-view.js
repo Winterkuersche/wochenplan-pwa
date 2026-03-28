@@ -41,13 +41,14 @@ const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExte
 let shiftDialogContext = null;
 
 const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
+const FO_START_TIME = "08:55";
 
 function getFoRule() {
   return getShiftRuleByCode("FO");
 }
 
 function getFoStartTime() {
-  return getFoRule()?.startPolicy?.value || "08:55";
+  return getFoRule()?.startPolicy?.value || FO_START_TIME;
 }
 
 function buildFoEndOptions() {
