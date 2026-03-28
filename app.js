@@ -1,3 +1,48 @@
+function getMobileErrorPanelElements() {
+  return {
+    panel: document.getElementById("mobileErrorPanel"),
+    text: document.getElementById("mobileErrorPanelText")
+  };
+}
+
+function showMobileRuntimeError(details) {
+  const { panel, text } = getMobileErrorPanelElements();
+  if (!panel || !text) return;
+
+  const nextMessage = [
+    `Zeit: ${new Date().toISOString()}`,
+    `Fehler: ${details.message || "Unbekannter Fehler"}`,
+    `Datei: ${details.file || "-"}`,
+    `Zeile: ${details.line || "-"}`,
+    details.column ? `Spalte: ${details.column}` : ""
+  ].filter(Boolean).join("\n");
+
+  text.textContent = `${nextMessage}\n\n${text.textContent || ""}`.trim();
+  panel.classList.remove("hidden");
+}
+
+window.addEventListener("error", (event) => {
+  showMobileRuntimeError({
+    message: event.message,
+    file: event.filename,
+    line: event.lineno,
+    column: event.colno
+  });
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason;
+  const message = typeof reason === "string"
+    ? reason
+    : reason?.message || JSON.stringify(reason);
+
+  showMobileRuntimeError({
+    message,
+    file: reason?.fileName || reason?.sourceURL || "",
+    line: reason?.line || reason?.lineNumber || ""
+  });
+});
+
 document.title = `${APP_META.name} ${APP_META.version}`;
 
 const appTitleEl = document.getElementById("app-title");
@@ -2516,6 +2561,13 @@ function renderAll() {
 }
 
 /* ========= EVENTS ========= */
+console.info("startup: begin");
+
+const btnCloseMobileErrorPanelEl = document.getElementById("btnCloseMobileErrorPanel");
+btnCloseMobileErrorPanelEl?.addEventListener("click", () => {
+  document.getElementById("mobileErrorPanel")?.classList.add("hidden");
+});
+
 if (btnPrevWeekEl) {
   btnPrevWeekEl.addEventListener("click", () => {
     shiftActiveWeek(-7);
@@ -2715,7 +2767,7 @@ btnDarkMode?.addEventListener("click", () => {
   updateDarkModeButton();
 });
 
-console.info("handlers-bound");
+console.info("startup: handlers-bound");
 
 /* ========= INIT ========= */
 window.addEventListener("load", () => {
@@ -2766,6 +2818,7 @@ window.addEventListener("load", () => {
 
   try {
     renderAll();
+    console.info("startup: render-complete");
   } catch (err) {
     console.error("startup-failed", err);
   }
