@@ -78,6 +78,21 @@ function getMepPauseLabel(entry) {
   return getPauseRangeForMep(entry);
 }
 
+function getMepPauseTooltip(entry) {
+  if (!entry || !entry.start || !entry.end) return "";
+
+  const spanMinutes = diffMinutesBetweenHHMM(entry.start, entry.end);
+  if (spanMinutes <= 0) return "";
+
+  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
+  const pauseMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
+    includeBillingBonus: entry.end === "19:10"
+  });
+  if (pauseMinutes <= 0) return "";
+
+  return `Pause gesamt: ${pauseMinutes} Minuten (darstellungstechnisch im Raster platziert)`;
+}
+
 function getMepResolvedDayContent(employee, isoDate) {
   if (!employee || !isoDate) {
     return {
@@ -130,10 +145,12 @@ function getMepResolvedDayContent(employee, isoDate) {
   }
 
   const pauseLabel = getMepPauseLabel(sourceEntry);
+  const pauseTooltip = getMepPauseTooltip(sourceEntry);
 
   return {
     start: sourceEntry.start || "",
     pause: pauseLabel,
+    pauseTooltip,
     end: sourceEntry.end || "",
     sum: sourceEntry.minutes ? minutesToHM(sourceEntry.minutes) : ""
   };
@@ -430,7 +447,10 @@ function buildMepEmployeeRows(employee, weekDays, employeeOffset = 0, sheetModel
           }
 
           if (rowType.key === "pause") {
-            return `<td ${dayCellAttributes.join(" ")}>${renderMepHandText(resolvedDayContent.pause, variant + 1, "mepTplHandValue")}</td>`;
+            const tooltipAttribute = resolvedDayContent.pauseTooltip
+              ? ` title="${escapeMepHtml(resolvedDayContent.pauseTooltip)}"`
+              : "";
+            return `<td ${dayCellAttributes.join(" ")}${tooltipAttribute}>${renderMepHandText(resolvedDayContent.pause, variant + 1, "mepTplHandValue")}</td>`;
           }
 
           if (rowType.key === "end") {

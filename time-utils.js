@@ -126,6 +126,12 @@ function normalizePlanBreakMinutes(value) {
   return normalizeMinutesToQuarterHour(safeMinutes);
 }
 
+function normalizeBusinessBreakMinutes(value) {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return 0;
+  return Math.max(0, Math.round(numeric));
+}
+
 function clampMinutes(value, minValue, maxValue) {
   return Math.min(Math.max(value, minValue), maxValue);
 }
@@ -148,7 +154,7 @@ function getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options = {}) {
 }
 
 function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
-  const normalizedConfiguredBreak = normalizePlanBreakMinutes(configuredBreakMinutes);
+  const normalizedConfiguredBreak = normalizeBusinessBreakMinutes(configuredBreakMinutes);
   if (!Boolean(options.includeBillingBonus)) return false;
   if (endHHMM !== "19:10") return false;
   if (!PLAN_BREAK_MINUTE_EXCEPTIONS.has(normalizedConfiguredBreak)) return false;
@@ -156,15 +162,19 @@ function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes
   return LATE_SHIFT_STARTS_WITH_CHECKOUT_BREAK.has(normalizePlanTime(startHHMM));
 }
 
-function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
+function getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedStart = normalizePlanTime(startHHMM);
   const foeZuschlagMinutes = normalizedStart === "08:55" ? 5 : 0;
-  const baseBreakMinutes = normalizePlanBreakMinutes(configuredBreakMinutes);
+  const baseBreakMinutes = normalizeBusinessBreakMinutes(configuredBreakMinutes);
   const requiredBreakMinutes = isLateCheckoutBreakException(startHHMM, endHHMM, baseBreakMinutes, options)
     ? baseBreakMinutes
     : getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
 
   return Math.max(baseBreakMinutes, requiredBreakMinutes) + foeZuschlagMinutes;
+}
+
+function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
+  return getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes, options);
 }
 
 function getWorkedMinutesFromRange(startHHMM, endHHMM, breakMinutes = 0) {
@@ -222,7 +232,7 @@ function getPauseRangeForMep(entry) {
   if (spanMinutes <= 0) return "";
 
   const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  const pauseMinutes = getEffectiveBreakMinutes(entry.start, entry.end, configuredBreak, {
+  const pauseMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
     includeBillingBonus: endMinutes === hhmmToMinutes("19:10")
   });
   if (pauseMinutes <= 0) return "-";
