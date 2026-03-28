@@ -783,17 +783,29 @@ function normalizePlanEntry(entry) {
     : typeof entry.minutes === "string" && isValidHHMM(entry.minutes)
       ? parseTimeToMinutes(entry.minutes)
       : null;
+  const calculatedWorkedMinutes = hasValidTimeRange
+    ? normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause))
+    : null;
 
   if (isVacation) {
     minutes = 0;
   } else if (isShiftWork && hasValidTimeRange) {
-    minutes = normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
+    minutes = calculatedWorkedMinutes;
   } else if (hasValidTimeRange) {
     minutes = isExternalHelp
       ? normalizeMinutesToQuarterHour(getExternalHelpWorkedMinutes(start, end))
-      : normalizeMinutesToQuarterHour(Math.max(0, diffMinutesBetweenHHMM(start, end) - pause));
-  } else if (!isShiftWork && parsedEntryMinutes !== null) {
+      : calculatedWorkedMinutes;
+  } else if (parsedEntryMinutes !== null) {
     minutes = normalizeMinutesToQuarterHour(parsedEntryMinutes);
+  }
+
+  if (isShiftWork && calculatedWorkedMinutes !== null) {
+    const normalizedStoredMinutes = parsedEntryMinutes !== null
+      ? normalizeMinutesToQuarterHour(parsedEntryMinutes)
+      : null;
+    if (normalizedStoredMinutes !== null && normalizedStoredMinutes !== calculatedWorkedMinutes) {
+      minutes = calculatedWorkedMinutes;
+    }
   }
 
   const warnedUnknownCodes = getWarnedUnknownShiftCodesSet();
