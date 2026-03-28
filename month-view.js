@@ -175,9 +175,48 @@ function bindMonthCellActions() {
         }
       }
 
-      openShiftDialog("U", { emp, isoDate, type: "U" });
+      openMonthFallbackDialog(emp, isoDate);
     });
   });
+}
+
+function openMonthFallbackDialog(emp, isoDate) {
+  const fallbackOptions = [
+    { code: "G", label: "Ganztag (G)" },
+    { code: "U", label: "Urlaub (U)" },
+    { code: "K", label: "Krank (K)" },
+    { code: "AH", label: "Aushilfe (AH)" }
+  ];
+
+  const availableDialogOptions = typeof getShiftSelectOptions === "function"
+    ? getShiftSelectOptions()
+      .filter((option) => option?.isDialogShift)
+      .map((option) => {
+        const code = getShiftCodeForSelectValue(option.value);
+        return { code, label: `${option.label} (${code})` };
+      })
+      .filter((option) => option.code)
+    : [];
+
+  const optionPool = availableDialogOptions.length ? availableDialogOptions : fallbackOptions;
+  const uniqueOptions = optionPool.filter((option, index, arr) => (
+    arr.findIndex((entry) => entry.code === option.code) === index
+  ));
+  const optionHint = uniqueOptions.map((option) => option.label).join(", ");
+  const defaultCode = uniqueOptions[0]?.code || "G";
+
+  const rawSelection = window.prompt(
+    `Bitte Schicht/Typ wählen (${optionHint}).\nCode eingeben:`,
+    defaultCode
+  );
+
+  if (!rawSelection) return;
+
+  const selectedCode = getShiftCodeForSelectValue(rawSelection);
+  const selectedOption = uniqueOptions.find((option) => option.code === selectedCode);
+  if (!selectedOption) return;
+
+  openShiftDialog(selectedOption.code, { emp, isoDate, type: selectedOption.code });
 }
 
 function getShiftedYearMonth(yearMonth, offset) {
