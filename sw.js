@@ -9,6 +9,8 @@ const APP_FILES = [
   "./version.js",
   "./app.js",
   "./month-engine.js",
+  "./balance-utils.js",
+  "./backup-utils.js",
   "./day-view.js",
   "./week-view.js",
   "./mep-view.js",

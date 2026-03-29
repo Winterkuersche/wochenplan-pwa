@@ -98,3 +98,66 @@ function getAbsenceDisplayLabel(absenceType) {
 function getAbsenceMinutesForEmployee(employee) {
   return getDailyTargetMinutesFromWeeklyHHMM(employee?.target || "00:00");
 }
+
+function shiftIsoDateForAbsence(isoDate, dayOffset) {
+  const date = fromIsoDate(isoDate);
+  if (!date) return isoDate;
+
+  date.setDate(date.getDate() + dayOffset);
+  return toIsoDate(date);
+}
+
+function subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso) {
+  if (!entry) return [];
+
+  const entryFrom = entry.from;
+  const entryTo = entry.to;
+
+  const hasOverlap = !(removeToIso < entryFrom || removeFromIso > entryTo);
+  if (!hasOverlap) return [entry];
+
+  if (removeFromIso <= entryFrom && removeToIso >= entryTo) {
+    return [];
+  }
+
+  if (removeFromIso <= entryFrom && removeToIso < entryTo) {
+    const nextFrom = shiftIsoDateForAbsence(removeToIso, 1);
+    const trimmed = createAbsenceEntry({
+      ...entry,
+      id: null,
+      from: nextFrom,
+      to: entryTo
+    });
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (removeFromIso > entryFrom && removeToIso >= entryTo) {
+    const nextTo = shiftIsoDateForAbsence(removeFromIso, -1);
+    const trimmed = createAbsenceEntry({
+      ...entry,
+      id: null,
+      from: entryFrom,
+      to: nextTo
+    });
+    return trimmed ? [trimmed] : [];
+  }
+
+  const leftTo = shiftIsoDateForAbsence(removeFromIso, -1);
+  const rightFrom = shiftIsoDateForAbsence(removeToIso, 1);
+
+  const leftPart = createAbsenceEntry({
+    ...entry,
+    id: null,
+    from: entryFrom,
+    to: leftTo
+  });
+
+  const rightPart = createAbsenceEntry({
+    ...entry,
+    id: null,
+    from: rightFrom,
+    to: entryTo
+  });
+
+  return [leftPart, rightPart].filter(Boolean);
+}

@@ -2102,6 +2102,16 @@ function getRelevantYearMonthsUntilActiveMonth(employee = null) {
   const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
   if (!activeYearMonth) return [];
 
+  if (typeof collectRelevantYearMonthsUntilActiveMonthBalance === "function") {
+    return collectRelevantYearMonthsUntilActiveMonthBalance({
+      activeYearMonth,
+      scheduleIsoDates: Object.keys(state.schedule || {}),
+      absences: state.absences || [],
+      manualMonthActualMinutes: employee?.manualMonthActualMinutes || {},
+      historyStartMonth: BALANCE_HISTORY_START_MONTH
+    });
+  }
+
   const candidates = [activeYearMonth];
 
   Object.keys(state.schedule || {}).forEach((isoDate) => {
@@ -2464,40 +2474,6 @@ function collectFullBackupSnapshot() {
   };
 }
 
-function validateBackupData(backup) {
-  if (!backup || typeof backup !== "object") {
-    return "Die Sicherungsdatei ist ungültig.";
-  }
-
-  if (!backup.storage || typeof backup.storage !== "object") {
-    return "Die Sicherungsdatei enthält keine wiederherstellbaren Daten.";
-  }
-
-  const requiredKeys = [MASTER_KEY, PLAN_KEY, UI_KEY];
-  const missing = requiredKeys.filter((key) => !(key in backup.storage));
-
-  if (missing.length > 0) {
-    return `Die Sicherungsdatei ist unvollständig (fehlend: ${missing.join(", ")}).`;
-  }
-
-  const master = backup.storage[MASTER_KEY];
-  if (!master || typeof master !== "object" || !Array.isArray(master.employees)) {
-    return "Die Stammdaten in der Sicherungsdatei sind ungültig.";
-  }
-
-  const plan = backup.storage[PLAN_KEY];
-  if (!plan || typeof plan !== "object") {
-    return "Die Planungsdaten in der Sicherungsdatei sind ungültig.";
-  }
-
-  const ui = backup.storage[UI_KEY];
-  if (!ui || typeof ui !== "object") {
-    return "Die Einstellungen in der Sicherungsdatei sind ungültig.";
-  }
-
-  return "";
-}
-
 function triggerBackupDownload(snapshot) {
   const payload = JSON.stringify(snapshot, null, 2);
   const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
@@ -2532,12 +2508,32 @@ function exportBackup() {
 }
 
 function importBackupFromObject(backupData) {
-  const validationError = validateBackupData(backupData);
+  const normalizedBackup = normalizeBackupPayload(backupData);
+  const validationError = validateBackupData(normalizedBackup);
   if (validationError) {
     throw new Error(validationError);
   }
 
-  const storage = backupData.storage;
+  const storage = normalizedBackup.storage;
+  const normalizedMaster = {
+    ...defaultMasterState(),
+    ...storage[MASTER_KEY],
+    employees: (Array.isArray(storage[MASTER_KEY]?.employees)
+      ? storage[MASTER_KEY].employees
+      : []).map((employee, index) => normalizeEmployee(employee, index))
+  };
+  const normalizedPlanInput = {
+    ...defaultPlanState(),
+    ...storage[PLAN_KEY]
+  };
+  const normalizedPlanSchedule = normalizeSchedule(normalizedPlanInput.schedule || {});
+  const { schedule: validatedSchedule } = validateNormalizedSchedule(normalizedPlanSchedule);
+  const normalizedPlan = {
+    ...normalizedPlanInput,
+    schedule: validatedSchedule,
+    absences: normalizeAbsences(normalizedPlanInput.absences || [])
+  };
+  const normalizedUi = sanitizeUiState(storage[UI_KEY]);
 
   const preImportSnapshot = {
     savedAt: new Date().toISOString(),
@@ -2554,9 +2550,9 @@ function importBackupFromObject(backupData) {
   saveJson(BACKUP_INTERNAL_KEY, preImportSnapshot);
   saveJson(LAST_BACKUP_BEFORE_IMPORT_KEY, preImportSnapshot);
 
-  const masterSaved = saveJson(MASTER_KEY, storage[MASTER_KEY]);
-  const planSaved = saveJson(PLAN_KEY, storage[PLAN_KEY]);
-  const uiSaved = saveJson(UI_KEY, sanitizeUiState(storage[UI_KEY]));
+  const masterSaved = saveJson(MASTER_KEY, normalizedMaster);
+  const planSaved = saveJson(PLAN_KEY, normalizedPlan);
+  const uiSaved = saveJson(UI_KEY, normalizedUi);
 
   try {
     if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
@@ -2579,7 +2575,7 @@ function importBackupFromObject(backupData) {
   }
 
   saveJson(BACKUP_META_KEY, {
-    lastExportAt: backupData.createdAt || new Date().toISOString(),
+    lastExportAt: normalizedBackup.createdAt || new Date().toISOString(),
     lastImportAt: new Date().toISOString()
   });
 
