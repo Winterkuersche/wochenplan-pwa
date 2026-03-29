@@ -7,13 +7,15 @@ Stand: 2026-03-29
 ### Automatisierte Tests (voller Lauf)
 - Befehl: `node --test tests/*.test.js`
 - Ergebnis: **PASS**
-- Statistik: **34 Tests**, **34 bestanden**, **0 fehlgeschlagen**, Dauer **1852.50678 ms** (~1.85s).
+- Statistik: **40 Tests**, **40 bestanden**, **0 fehlgeschlagen**, Dauer **1500.514405 ms** (Lauf vom 2026-03-29).
 
 ### Kritische Bereiche mit Nachweis
 - Abwesenheits-Trim/Split/Entfernung korrekt (`tests/absences.test.js`).
 - Backup-Formatvalidierung und Legacy-Normalisierung sind automatisiert abgedeckt (`tests/backup-validation.test.js`). Ein echter Export->Import->Reload-UI-Roundtrip bleibt als manueller Smoke-Check offen.
 - Monatsgrenzen/Monatsnavigation stabil (`tests/month-boundaries.test.js`).
 - Zeitlogik inkl. Rundung/Pausen robust (`tests/time-logic.test.js`).
+- Dialog-Hardening regressionsseitig abgedeckt: ESC schließt Month-Fallback und gibt Fokus zurück (`tests/month-fallback-dialog.test.js`).
+- Mobile-Toolbar-/Manual-Month-Markup-Regressionschecks vorhanden (`tests/mobile-ui-regressions.test.js`).
 - Service Worker Fallback-Regeln testseitig vorhanden (`tests/sw-cache-behavior.test.js`):
   - Navigation nutzt `index.html` mit `ignoreSearch`.
   - Statische Assets nutzen `ignoreSearch`.
@@ -29,12 +31,12 @@ Stand: 2026-03-29
 2. **SW im echten Offline-Browserlauf** ist nicht als aktivierter End-to-End-Lauf nachgewiesen, weil Registrierung bewusst deaktiviert ist.
 3. **Schedule-Sanitizing** bleibt als separater offener Nachweis (kein dedizierter Testfall im aktuellen Set).
 
-## 3) Risiken (priorisiert)
+## 3) Risiken (priorisiert, nach Mobile-UX-Hardening)
 
-- **Hoch:** Kein real ausgeführter Browser-Smoke für die vier Kernflows vor dem Gate-Abschluss.
+- **Mittel-Hoch:** Kein real ausgeführter Browser-Smoke für die vier Kernflows vor dem Gate-Abschluss.
 - **Mittel:** Service Worker ist deaktiviert; Offline-/Update-Verhalten bleibt ohne temporäre Aktivierung unbestätigt.
 - **Mittel:** Precache-Liste in `sw.js` enthält nicht alle lokalen Skripte, daher eingeschränkte Offline-Abdeckung.
-- **Niedrig-Mittel:** Kein dedizierter Automationsnachweis für Schedule-Sanitizing.
+- **Niedrig:** Kein dedizierter Automationsnachweis für Schedule-Sanitizing.
 
 ## 4) Go/No-Go Empfehlung
 

@@ -1986,6 +1986,42 @@ body.dark #monthTable th:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
 
+body.dark .dialogOverlay {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+body.dark .dialogBox,
+body.dark .manualMonthTable tr.manualMonthRow,
+body.dark .mobileMoreMenu {
+  background: #232529;
+  color: #f1f1f1;
+}
+
+body.dark .dialogFields select,
+body.dark .dialogFields input[type="time"],
+body.dark .dialogFields input[type="text"],
+body.dark .dialogFields input[type="month"],
+body.dark .manualMonthInput,
+body.dark .manualMonthBulkInput,
+body.dark .dialogActions button,
+body.dark .monthFallbackOptionBtn,
+body.dark .mobileMoreMenu button {
+  background: #1f2126;
+  color: #f1f1f1;
+  border-color: #4a4f58;
+}
+
+body.dark .manualMonthTable th,
+body.dark .manualMonthTable td,
+body.dark .monthFallbackOptionBtn {
+  border-color: #4a4f58;
+}
+
+body.dark .monthFallbackHint,
+body.dark .manualMonthTable td::before {
+  color: #c2c6cf;
+}
+
 body.dark #monthTable td:first-child,
 body.dark #monthTable th:first-child {
   background: #2a2c30;

@@ -167,3 +167,22 @@ test('Escape closes month fallback dialog and restores previous focus', () => {
   assert.equal(env.doc.activeElement, env.previousFocus);
   assert.equal(env.doc.body.style.overflow, '');
 });
+
+test('month fallback dialog ignores non-focusable previous activeElement safely', () => {
+  const env = buildInteractiveDocumentStub();
+  env.doc.activeElement = { id: 'not-focusable' };
+  const ctx = loadScripts([
+    'time-utils.js',
+    'shift-rules.js',
+    'month-view.js'
+  ], {
+    document: env.doc
+  });
+
+  const emp = { id: 'emp-2', name: 'Anna' };
+  assert.doesNotThrow(() => {
+    ctx.openMonthFallbackDialog(emp, '2026-03-17');
+    ctx.closeMonthFallbackDialog();
+  });
+  assert.equal(env.overlay.classList.contains('hidden'), true);
+});
