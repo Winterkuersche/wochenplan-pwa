@@ -2,6 +2,37 @@ function getMonthViewContentEl() {
   return document.getElementById("monthViewContent");
 }
 
+const MONTH_FALLBACK_ALLOWED_CODES = ["G", "U", "K", "AH", "FLEX"];
+const MONTH_FALLBACK_DEFAULT_OPTIONS = [
+  { code: "G", label: "Ganztag (G)" },
+  { code: "U", label: "Urlaub (U)" },
+  { code: "K", label: "Krank (K)" },
+  { code: "AH", label: "Aushilfe (AH)" },
+  { code: "FLEX", label: "Flexible Schicht (FLEX)" }
+];
+const monthFallbackOverlayEl = document.getElementById("monthFallbackOverlay");
+const monthFallbackOptionsEl = document.getElementById("monthFallbackOptions");
+const monthFallbackCancelEl = document.getElementById("monthFallbackCancel");
+let monthFallbackDialogState = null;
+
+function setMonthFallbackBodyScrollLock(isLocked) {
+  const body = document.body;
+  if (!body?.style) return;
+
+  if (isLocked) {
+    if (!body.dataset.monthFallbackPrevOverflow) {
+      body.dataset.monthFallbackPrevOverflow = body.style.overflow || "";
+    }
+    body.style.overflow = "hidden";
+    return;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body.dataset, "monthFallbackPrevOverflow")) {
+    body.style.overflow = body.dataset.monthFallbackPrevOverflow;
+    delete body.dataset.monthFallbackPrevOverflow;
+  }
+}
+
 function getActiveMonthDays() {
   const monthPlan = state.monthPlan;
   if (!monthPlan?.weeks) return [];
@@ -192,41 +223,38 @@ function bindMonthCellActions() {
 }
 
 function openMonthFallbackDialog(emp, isoDate) {
-  const fallbackOptions = [
-    { code: "G", label: "Ganztag (G)" },
-    { code: "U", label: "Urlaub (U)" },
-    { code: "K", label: "Krank (K)" },
-    { code: "AH", label: "Aushilfe (AH)" }
-  ];
+  if (!monthFallbackOverlayEl || !monthFallbackOptionsEl) return;
+  if (monthFallbackDialogState) closeMonthFallbackDialog();
 
-  const availableDialogOptions = typeof getShiftSelectOptions === "function"
-    ? getShiftSelectOptions()
-      .filter((option) => option?.isDialogShift)
-      .map((option) => {
-        const code = getShiftCodeForSelectValue(option.value);
-        return { code, label: `${option.label} (${code})` };
-      })
-      .filter((option) => option.code)
-    : [];
+  const options = getMonthFallbackDialogOptions();
+  if (!options.length) return;
 
-  const optionPool = availableDialogOptions.length ? availableDialogOptions : fallbackOptions;
-  const uniqueOptions = optionPool.filter((option, index, arr) => (
-    arr.findIndex((entry) => entry.code === option.code) === index
-  ));
-  const optionHint = uniqueOptions.map((option) => option.label).join(", ");
+  monthFallbackDialogState = {
+    emp,
+    isoDate,
+    options,
+    previousFocusEl: document.activeElement
+  };
 
-  const rawSelection = window.prompt(
-    `Bitte Schicht/Typ wählen (${optionHint}).\nCode eingeben (keine Vorauswahl):`,
-    ""
-  );
+  monthFallbackOptionsEl.innerHTML = "";
 
-  if (!rawSelection) return;
+  options.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "monthFallbackOptionBtn";
+    button.textContent = option.label;
+    button.setAttribute("aria-label", `${option.label} auswählen`);
+    button.dataset.code = option.code;
+    button.addEventListener("click", () => {
+      selectMonthFallbackOption(option.code);
+    });
+    monthFallbackOptionsEl.appendChild(button);
+  });
 
-  const selectedCode = getShiftCodeForSelectValue(rawSelection);
-  const selectedOption = uniqueOptions.find((option) => option.code === selectedCode);
-  if (!selectedOption) return;
-
-  openShiftDialog(selectedOption.code, { emp, isoDate, type: selectedOption.code });
+  monthFallbackOverlayEl.classList.remove("hidden");
+  monthFallbackOverlayEl.setAttribute("aria-hidden", "false");
+  setMonthFallbackBodyScrollLock(true);
+  monthFallbackOptionsEl.querySelector("button")?.focus();
 }
 
 function getShiftedYearMonth(yearMonth, offset) {
@@ -307,3 +335,100 @@ function renderMonthView() {
 
   bindMonthCellActions();
 }
+
+function getMonthFallbackDialogOptions() {
+  const allowedCodeSet = new Set(MONTH_FALLBACK_ALLOWED_CODES);
+  const availableDialogOptions = typeof getShiftSelectOptions === "function"
+    ? getShiftSelectOptions()
+      .filter((option) => option?.isDialogShift)
+      .map((option) => {
+        const code = getShiftCodeForSelectValue(option.value);
+        return { code, label: `${option.label} (${code})` };
+      })
+      .filter((option) => allowedCodeSet.has(option.code))
+    : [];
+
+  const optionPool = availableDialogOptions.length ? availableDialogOptions : MONTH_FALLBACK_DEFAULT_OPTIONS;
+  return optionPool.filter((option, index, arr) => (
+    arr.findIndex((entry) => entry.code === option.code) === index
+  ));
+}
+
+function closeMonthFallbackDialog() {
+  if (!monthFallbackOverlayEl || !monthFallbackDialogState) return;
+
+  monthFallbackOverlayEl.classList.add("hidden");
+  monthFallbackOverlayEl.setAttribute("aria-hidden", "true");
+  setMonthFallbackBodyScrollLock(false);
+  if (monthFallbackOptionsEl) monthFallbackOptionsEl.innerHTML = "";
+
+  const previousFocusEl = monthFallbackDialogState.previousFocusEl;
+  monthFallbackDialogState = null;
+  previousFocusEl?.focus?.();
+}
+
+function getMonthFallbackFocusableElements() {
+  const optionButtons = monthFallbackOptionsEl
+    ? [...monthFallbackOptionsEl.querySelectorAll("button")]
+    : [];
+  return [...optionButtons, monthFallbackCancelEl].filter(Boolean);
+}
+
+function selectMonthFallbackOption(code) {
+  if (!monthFallbackDialogState) return;
+  const selectedCode = getShiftCodeForSelectValue(code);
+  const selectedOption = monthFallbackDialogState.options.find((option) => option.code === selectedCode);
+  if (!selectedOption) return;
+
+  const { emp, isoDate } = monthFallbackDialogState;
+  closeMonthFallbackDialog();
+  openShiftDialog(selectedOption.code, { emp, isoDate, type: selectedOption.code });
+}
+
+function handleMonthFallbackDialogKeydown(event) {
+  if (monthFallbackOverlayEl?.classList.contains("hidden")) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMonthFallbackDialog();
+    return;
+  }
+
+  if (event.key !== "Tab") return;
+
+  const focusableEls = getMonthFallbackFocusableElements();
+  if (!focusableEls.length) return;
+
+  const firstEl = focusableEls[0];
+  const lastEl = focusableEls[focusableEls.length - 1];
+  const activeEl = document.activeElement;
+
+  if (event.shiftKey) {
+    if (activeEl === firstEl || !focusableEls.includes(activeEl)) {
+      event.preventDefault();
+      lastEl.focus();
+    }
+    return;
+  }
+
+  if (activeEl === lastEl || !focusableEls.includes(activeEl)) {
+    event.preventDefault();
+    firstEl.focus();
+  }
+}
+
+if (monthFallbackCancelEl) {
+  monthFallbackCancelEl.addEventListener("click", () => {
+    closeMonthFallbackDialog();
+  });
+}
+
+if (monthFallbackOverlayEl) {
+  monthFallbackOverlayEl.addEventListener("click", (event) => {
+    if (event.target === monthFallbackOverlayEl) {
+      closeMonthFallbackDialog();
+    }
+  });
+}
+
+document.addEventListener("keydown", handleMonthFallbackDialogKeydown);

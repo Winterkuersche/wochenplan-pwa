@@ -606,6 +606,28 @@ L1E-L4E ohne Abrechnung
   </div>
 </div>
 
+<div
+  id="monthFallbackOverlay"
+  class="dialogOverlay dialogOverlayBottomSheet hidden no-print"
+  aria-hidden="true"
+>
+  <div
+    id="monthFallbackSheet"
+    class="dialogBox monthFallbackSheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="monthFallbackTitle"
+    aria-label="Schichtauswahl für Monatsansicht"
+  >
+    <h3 id="monthFallbackTitle">Schicht oder Typ wählen</h3>
+    <p class="monthFallbackHint">Bitte eine Option auswählen.</p>
+    <div id="monthFallbackOptions" class="monthFallbackOptions" aria-label="Verfügbare Optionen"></div>
+    <div class="dialogActions">
+      <button id="monthFallbackCancel" type="button" aria-label="Auswahldialog schließen">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <!-- Scripts -->
 <!--
   Reihenfolge ist absichtlich linear (klassische Scripts, kein type="module"): 

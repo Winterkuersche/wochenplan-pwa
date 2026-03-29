@@ -1488,6 +1488,49 @@ select {
   font-weight: 600;
 }
 
+.dialogOverlayBottomSheet {
+  align-items: flex-end;
+  padding: 0;
+}
+
+.monthFallbackSheet {
+  width: min(100%, 560px);
+  border-radius: 18px 18px 0 0;
+  padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.monthFallbackHint {
+  margin: 0 0 12px;
+  color: #444;
+}
+
+.monthFallbackOptions {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.monthFallbackOptionBtn {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid #cfcfcf;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.monthFallbackOptionBtn:focus-visible,
+.monthFallbackOptionBtn:hover {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.2);
+}
+
 /* =============================
    RESPONSIVE
    ============================= */
@@ -1536,6 +1579,10 @@ select {
     padding: 0;
     border-radius: 0;
   }
+
+  .monthFallbackSheet {
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1552,6 +1599,11 @@ select {
 
   .weekMobileCards {
     display: block;
+  }
+
+  .monthFallbackOptionBtn {
+    min-height: 56px;
+    font-size: 17px;
   }
 }
 
