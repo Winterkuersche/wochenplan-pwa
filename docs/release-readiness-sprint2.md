@@ -1,43 +1,59 @@
-# Sprint 2 – UI-Sicherheit, Smoke-Checks und Release-Härtung
+# Release Readiness Gate – Sprint 2
 
 Stand: 2026-03-29
 
-## 1) Stabilisiert in diesem Sprint
+## 1) Verifiziert
 
-- **UI-Defaults entschärft (Month View):**
-  - Für leere Monatszellen gibt es weiter den Auswahldialog per Prompt, aber **ohne voreingestellten Aktions-Default**.
-  - Damit wird verhindert, dass eine versehentliche Enter-Bestätigung implizit eine Fachaktion auslöst.
-- **Transparenz bei manuellen Monats-Iststunden erhöht:**
-  - Konsistenter, dezenter Marker `•` an Monats-Ist/Monats-Delta Stellen.
-  - Bestehende Tooltips bleiben erhalten und verweisen explizit auf manuell hinterlegte Werte.
-- **Smoke-Checks ergänzt (Node-basierte Integration statt Browser-E2E):**
-  - Flow A: Schicht erzeugt Ist-Minuten + Delta ist berechenbar.
-  - Flow B: Urlaub trimmen/löschen liefert erwartete Restintervalle.
-  - Flow C: Backup-Validierung für aktuelles + Legacy-Format ohne Crash.
-- **Service Worker Cache-Fallback gehärtet:**
-  - `ignoreSearch` nur noch dort, wo es beabsichtigt ist (Navigation + statische Assets).
-  - Für sonstige Requests (z. B. API-ähnliche Pfade) kein pauschales `ignoreSearch`, um falsche Cache-Treffer zu vermeiden.
+### Automatisierte Tests (voller Lauf)
+- Befehl: `node --test tests/*.test.js`
+- Ergebnis: **PASS**
+- Statistik: **34 Tests**, **34 bestanden**, **0 fehlgeschlagen**, Dauer **1852.50678 ms** (~1.85s).
 
-## 2) Bewusst verbleibende Risiken (Priorität)
+### Kritische Bereiche mit Nachweis
+- Abwesenheits-Trim/Split/Entfernung korrekt (`tests/absences.test.js`).
+- Backup-Formatvalidierung und Legacy-Normalisierung sind automatisiert abgedeckt (`tests/backup-validation.test.js`). Ein echter Export->Import->Reload-UI-Roundtrip bleibt als manueller Smoke-Check offen.
+- Monatsgrenzen/Monatsnavigation stabil (`tests/month-boundaries.test.js`).
+- Zeitlogik inkl. Rundung/Pausen robust (`tests/time-logic.test.js`).
+- Service Worker Fallback-Regeln testseitig vorhanden (`tests/sw-cache-behavior.test.js`):
+  - Navigation nutzt `index.html` mit `ignoreSearch`.
+  - Statische Assets nutzen `ignoreSearch`.
+  - API-ähnliche Requests nutzen **kein** pauschales `ignoreSearch`.
 
-1. **Mittel:** Service Worker ist in `index.html` weiterhin deaktiviert (Debug-Konfiguration), daher greifen Runtime-Fallbacks nur nach Reaktivierung.
-2. **Mittel:** Node-Smoke-Tests validieren Kernlogik, aber kein echtes Browser-Interaktionsverhalten (Dialoge, Renderdetails, SW-Lebenszyklus).
-3. **Niedrig-Mittel:** Marker `•` ist bewusst dezent; bei sehr dichter Darstellung könnte die Sichtbarkeit je nach Gerät begrenzt sein.
+### Service Worker Status im Code
+- Service Worker Registrierung in `index.html` ist aktuell **deaktiviert** (kompletter Block auskommentiert).
+- Auswirkung: Die in `sw.js` implementierte Cache-/Offline-Logik greift im aktuellen App-Standardlauf nicht.
 
-## 3) Go / No-Go Empfehlung
+## 2) Offen / nicht abschließend verifiziert
 
-- **Empfehlung: GO (mit Auflagen).**
-- Begründung:
-  - Kritische implizite UI-Defaults wurden entschärft.
-  - Kern-Smoke-Pfade sind automatisiert abgedeckt.
-  - SW-Fallback-Regeln sind präziser und risikoärmer.
-- Auflage vor nächster Feature-Phase:
-  - SW-Reaktivierung bewusst und kontrolliert testen (mind. ein realer Offline-Browserlauf).
+1. **Manuelle Browser-Smokes A-D als Pflichtflows vor GO** (Monatszelle, Urlaub/Krank-Trim, Monats-Iststunden-Bulk-Paste, Backup Export/Import Roundtrip) sind dokumentiert, aber nicht als durchgeführter Browserlauf protokolliert.
+2. **SW im echten Offline-Browserlauf** ist nicht als aktivierter End-to-End-Lauf nachgewiesen, weil Registrierung bewusst deaktiviert ist.
+3. **Schedule-Sanitizing** bleibt als separater offener Nachweis (kein dedizierter Testfall im aktuellen Set).
 
-## 4) Konkrete Next Steps (max. 5)
+## 3) Risiken (priorisiert)
 
-1. Service Worker in einer Testumgebung gezielt aktivieren und Offline-/Update-Flows einmal Ende-zu-Ende gegenprüfen.
-2. Optional minimalen Browser-Smoke (Playwright/Cypress) nur für „Monatszelle klicken → Dialog speichern“ ergänzen.
-3. UI-Feinschliff: Marker-Kontrast im Dark-Mode auf echten Geräten kurz validieren.
-4. Release-Checkliste um „SW aktiv/deaktiviert“-Schalter und erwartetes Verhalten ergänzen.
-5. Nachfolgende Feature-Sprints auf denselben Smoke-Bausteinen aufsetzen (Regressionsschutz).
+- **Hoch:** Kein real ausgeführter Browser-Smoke für die vier Kernflows vor dem Gate-Abschluss.
+- **Mittel:** Service Worker ist deaktiviert; Offline-/Update-Verhalten bleibt ohne temporäre Aktivierung unbestätigt.
+- **Mittel:** Precache-Liste in `sw.js` enthält nicht alle lokalen Skripte, daher eingeschränkte Offline-Abdeckung.
+- **Niedrig-Mittel:** Kein dedizierter Automationsnachweis für Schedule-Sanitizing.
+
+## 4) Go/No-Go Empfehlung
+
+**Empfehlung: NO-GO (konservativ), bis die manuellen Browser-Smokes A–D dokumentiert durchgeführt sind.**
+
+Begründung:
+- Die automatisierten Node-Tests sind vollständig grün (Kernlogik, Validierung, SW-Fallback-Regeln).
+- Ein realer Browser-Interaktionsnachweis (DOM-Flow) für die Gate-Flows A–D ist noch offen.
+- Die Service-Worker-Registrierung ist im Standardlauf aktuell deaktiviert; Offline-Verhalten ist daher noch nicht im echten UI-Laufpfad bestätigt.
+
+## 5) SW-Testmodus: temporär aktivieren (ohne riskanten Umbau)
+
+Die Schritt-für-Schritt-Anleitung ist in `docs/manual-smoke-checks.md` enthalten:
+- SW-Block in `index.html` nur lokal temporär einkommentieren.
+- Offline-Navigation/Asset-Fallback prüfen.
+- Danach auf den ursprünglichen Zustand zurücksetzen.
+
+## 6) Nächste 3 konkrete Schritte
+
+1. Manuelle Browser-Smokes A-D gemäß `docs/manual-smoke-checks.md` durchführen und mit Datum/Ergebnis protokollieren.
+2. SW lokal temporär aktivieren, einen Offline-Durchlauf dokumentieren, dann wieder deaktivieren.
+3. Nach erfolgreichem Nachweis Gate-Status in `docs/stability-checklist.md` auf GO aktualisieren.
