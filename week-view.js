@@ -435,61 +435,6 @@ function clearDayRange(employeeId, fromIso, toIso, options = {}) {
   }
 }
 
-function subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso) {
-  if (!entry) return [];
-
-  const entryFrom = entry.from;
-  const entryTo = entry.to;
-
-  const hasOverlap = !(removeToIso < entryFrom || removeFromIso > entryTo);
-  if (!hasOverlap) return [entry];
-
-  if (removeFromIso <= entryFrom && removeToIso >= entryTo) {
-    return [];
-  }
-
-  if (removeFromIso <= entryFrom && removeToIso < entryTo) {
-    const nextFrom = shiftIsoDateByDays(removeToIso, 1);
-    const trimmed = createAbsenceEntry({
-      ...entry,
-      id: null,
-      from: nextFrom,
-      to: entryTo
-    });
-    return trimmed ? [trimmed] : [];
-  }
-
-  if (removeFromIso > entryFrom && removeToIso >= entryTo) {
-    const nextTo = shiftIsoDateByDays(removeFromIso, -1);
-    const trimmed = createAbsenceEntry({
-      ...entry,
-      id: null,
-      from: entryFrom,
-      to: nextTo
-    });
-    return trimmed ? [trimmed] : [];
-  }
-
-  const leftTo = shiftIsoDateByDays(removeFromIso, -1);
-  const rightFrom = shiftIsoDateByDays(removeToIso, 1);
-
-  const leftPart = createAbsenceEntry({
-    ...entry,
-    id: null,
-    from: entryFrom,
-    to: leftTo
-  });
-
-  const rightPart = createAbsenceEntry({
-    ...entry,
-    id: null,
-    from: rightFrom,
-    to: entryTo
-  });
-
-  return [leftPart, rightPart].filter(Boolean);
-}
-
 function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
   state.absences = (state.absences || []).flatMap((entry) => {
     if (!entry || entry.employeeId !== employeeId) return entry ? [entry] : [];

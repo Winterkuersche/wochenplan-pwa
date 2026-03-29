@@ -9,6 +9,8 @@ const APP_FILES = [
   "./version.js",
   "./app.js",
   "./month-engine.js",
+  "./balance-utils.js",
+  "./backup-utils.js",
   "./day-view.js",
   "./week-view.js",
   "./mep-view.js",
@@ -54,8 +56,8 @@ self.addEventListener("fetch", (event) => {
         return networkResponse;
       })
       .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || caches.match("./index.html");
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+          return cachedResponse || caches.match("./index.html", { ignoreSearch: true });
         });
       })
   );
