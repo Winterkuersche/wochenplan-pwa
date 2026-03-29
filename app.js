@@ -1277,6 +1277,7 @@ const btnManualMonthAddRowEl = document.getElementById("btnManualMonthAddRow");
 const btnManualMonthApplyBulkEl = document.getElementById("btnManualMonthApplyBulk");
 const btnManualMonthCancelEl = document.getElementById("btnManualMonthCancel");
 const btnManualMonthSaveEl = document.getElementById("btnManualMonthSave");
+let manualMonthDialogPreviousFocusEl = null;
 
 const mepWeekFromEl = document.getElementById("mepWeekFrom");
 const mepWeekToEl = document.getElementById("mepWeekTo");
@@ -2298,6 +2299,7 @@ function formatManualMonthRows(entries = []) {
     tr.className = "manualMonthRow";
 
     const monthTd = document.createElement("td");
+    monthTd.dataset.label = "Monat (YYYY-MM)";
     const monthInput = document.createElement("input");
     monthInput.type = "month";
     monthInput.className = "manualMonthInput";
@@ -2306,6 +2308,7 @@ function formatManualMonthRows(entries = []) {
     monthTd.appendChild(monthInput);
 
     const hoursTd = document.createElement("td");
+    hoursTd.dataset.label = "Iststunden (HH:MM)";
     const hoursInput = document.createElement("input");
     hoursInput.type = "text";
     hoursInput.className = "manualMonthInput";
@@ -2314,8 +2317,10 @@ function formatManualMonthRows(entries = []) {
     hoursTd.appendChild(hoursInput);
 
     const removeTd = document.createElement("td");
+    removeTd.dataset.label = "Aktion";
     const removeButton = document.createElement("button");
     removeButton.type = "button";
+    removeButton.className = "manualMonthRemoveBtn";
     removeButton.textContent = "Löschen";
     removeButton.addEventListener("click", () => {
       tr.remove();
@@ -2349,9 +2354,12 @@ function addManualMonthDialogRow(defaults = {}) {
 function closeManualMonthDialog() {
   if (!manualMonthDialogOverlayEl) return;
   manualMonthDialogOverlayEl.classList.add("hidden");
+  manualMonthDialogOverlayEl.setAttribute("aria-hidden", "true");
   manualMonthDialogOverlayEl.dataset.employeeId = "";
   if (manualMonthBulkInputEl) manualMonthBulkInputEl.value = "";
   if (manualMonthValidationEl) manualMonthValidationEl.textContent = "";
+  manualMonthDialogPreviousFocusEl?.focus?.();
+  manualMonthDialogPreviousFocusEl = null;
 }
 
 function applyManualMonthBulkInput() {
@@ -2472,7 +2480,12 @@ function openManualMonthDialog(employee) {
     .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
 
   formatManualMonthRows(entries.length ? entries : [{ yearMonth: state.activeMonth, minutes: null }]);
+  const isHtmlEl = typeof HTMLElement !== "undefined" && document.activeElement instanceof HTMLElement;
+  manualMonthDialogPreviousFocusEl = isHtmlEl ? document.activeElement : null;
   manualMonthDialogOverlayEl.classList.remove("hidden");
+  manualMonthDialogOverlayEl.setAttribute("aria-hidden", "false");
+  const firstInput = manualMonthRowsEl.querySelector("input");
+  firstInput?.focus();
 }
 
 function totalMinutesForDayIso(iso) {
@@ -3036,6 +3049,13 @@ manualMonthDialogOverlayEl?.addEventListener("click", (event) => {
   if (event.target === manualMonthDialogOverlayEl) {
     closeManualMonthDialog();
   }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (manualMonthDialogOverlayEl?.classList.contains("hidden")) return;
+  event.preventDefault();
+  closeManualMonthDialog();
 });
 
 function getNextEmployeeId() {

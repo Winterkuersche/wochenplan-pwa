@@ -39,6 +39,7 @@ const shiftDialogExternalHelpPauseMinute = document.getElementById("shiftDialogE
 const shiftDialogExternalHelpDuration = document.getElementById("shiftDialogExternalHelpDuration");
 
 let shiftDialogContext = null;
+let shiftDialogPreviousFocusEl = null;
 
 const PLAN_MINUTE_OPTIONS = ["00", "10", "15", "30", "45", "55"];
 const FO_START_TIME = "08:55";
@@ -194,6 +195,7 @@ function updateAbsenceDialogTitle() {
 }
 
 function openShiftDialog(type, context) {
+  if (!shiftDialogOverlay) return;
   shiftDialogContext = context;
   resetShiftDialogInputs(context.isoDate);
 
@@ -242,15 +244,24 @@ function openShiftDialog(type, context) {
   }
 
   fillShiftDialogFromExisting(type, context);
+  const isHtmlEl = typeof HTMLElement !== "undefined" && document.activeElement instanceof HTMLElement;
+  shiftDialogPreviousFocusEl = isHtmlEl ? document.activeElement : null;
   shiftDialogOverlay.classList.remove("hidden");
+  shiftDialogOverlay.setAttribute("aria-hidden", "false");
+  const firstFocusable = shiftDialogOverlay.querySelector("select, input, button, textarea");
+  firstFocusable?.focus();
 }
 
 function closeShiftDialog() {
+  if (!shiftDialogOverlay) return;
   shiftDialogOverlay.classList.add("hidden");
+  shiftDialogOverlay.setAttribute("aria-hidden", "true");
   if (shiftDialogDelete) {
     shiftDialogDelete.classList.add("hidden");
   }
   shiftDialogContext = null;
+  shiftDialogPreviousFocusEl?.focus?.();
+  shiftDialogPreviousFocusEl = null;
 }
 shiftDialogCancel.addEventListener("click", () => {
   closeShiftDialog();
@@ -390,6 +401,19 @@ shiftDialogSave.addEventListener("click", () => {
 
   saveAppStateDebounced();
   renderAllViews();
+  closeShiftDialog();
+});
+
+shiftDialogOverlay?.addEventListener("click", (event) => {
+  if (event.target === shiftDialogOverlay) {
+    closeShiftDialog();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  if (shiftDialogOverlay?.classList.contains("hidden")) return;
+  event.preventDefault();
   closeShiftDialog();
 });
 
