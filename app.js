@@ -2095,6 +2095,9 @@ function getWeeksForYearMonth(yearMonth) {
   return buildMonthPlanFallback(year, month - 1).weeks || [];
 }
 
+// Historische Saldo-Berechnung startet fachlich bewusst ab 2026-01.
+const BALANCE_HISTORY_START_MONTH = "2026-01";
+
 function getRelevantYearMonthsUntilActiveMonth(employee = null) {
   const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
   if (!activeYearMonth) return [];
@@ -2103,21 +2106,21 @@ function getRelevantYearMonthsUntilActiveMonth(employee = null) {
 
   Object.keys(state.schedule || {}).forEach((isoDate) => {
     const yearMonth = getYearMonthFromIsoDate(isoDate);
-    if (yearMonth && yearMonth <= activeYearMonth) candidates.push(yearMonth);
+    if (yearMonth && yearMonth >= BALANCE_HISTORY_START_MONTH && yearMonth <= activeYearMonth) candidates.push(yearMonth);
   });
 
   (state.absences || []).forEach((entry) => {
     const fromMonth = getYearMonthFromIsoDate(entry?.from || "");
     const toMonth = getYearMonthFromIsoDate(entry?.to || "");
 
-    if (fromMonth && fromMonth <= activeYearMonth) candidates.push(fromMonth);
-    if (toMonth && toMonth <= activeYearMonth) candidates.push(toMonth);
+    if (fromMonth && fromMonth >= BALANCE_HISTORY_START_MONTH && fromMonth <= activeYearMonth) candidates.push(fromMonth);
+    if (toMonth && toMonth >= BALANCE_HISTORY_START_MONTH && toMonth <= activeYearMonth) candidates.push(toMonth);
   });
 
   if (employee?.manualMonthActualMinutes && typeof employee.manualMonthActualMinutes === "object") {
     Object.keys(employee.manualMonthActualMinutes).forEach((yearMonth) => {
       const normalized = normalizeYearMonthValue(yearMonth);
-      if (normalized && normalized <= activeYearMonth) {
+      if (normalized && normalized >= BALANCE_HISTORY_START_MONTH && normalized <= activeYearMonth) {
         candidates.push(normalized);
       }
     });
@@ -2126,7 +2129,10 @@ function getRelevantYearMonthsUntilActiveMonth(employee = null) {
   const unique = [...new Set(candidates)].sort();
   if (!unique.length) return [activeYearMonth];
 
-  const first = unique[0];
+  const firstDetectedMonth = unique[0];
+  const first = firstDetectedMonth < BALANCE_HISTORY_START_MONTH
+    ? BALANCE_HISTORY_START_MONTH
+    : firstDetectedMonth;
   const months = [];
   let cursor = first;
 
