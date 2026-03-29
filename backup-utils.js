@@ -1,30 +1,39 @@
+function getNormalizedStoragePayload(storageLike = {}) {
+  if (!storageLike || typeof storageLike !== "object") return null;
+
+  const normalizedStorage = {
+    [MASTER_KEY]: storageLike[MASTER_KEY] ?? storageLike.master ?? null,
+    [PLAN_KEY]: storageLike[PLAN_KEY] ?? storageLike.plan ?? null,
+    [UI_KEY]: storageLike[UI_KEY] ?? storageLike.ui ?? storageLike.uiState ?? null,
+    wochenplan_dark: storageLike.wochenplan_dark
+  };
+
+  if (!normalizedStorage[MASTER_KEY] && !normalizedStorage[PLAN_KEY] && !normalizedStorage[UI_KEY]) {
+    return null;
+  }
+
+  return normalizedStorage;
+}
+
 function normalizeBackupPayload(backup) {
   if (!backup || typeof backup !== "object") return null;
 
   const hasStorageEnvelope = backup.storage && typeof backup.storage === "object";
-  if (hasStorageEnvelope) return backup;
+  const normalizedStorage = hasStorageEnvelope
+    ? getNormalizedStoragePayload(backup.storage)
+    : getNormalizedStoragePayload(backup);
 
-  const legacyMaster = backup.master || backup[MASTER_KEY] || null;
-  const legacyPlan = backup.plan || backup[PLAN_KEY] || null;
-  const legacyUi = backup.ui || backup.uiState || backup[UI_KEY] || null;
-  const legacyDarkMode = backup.wochenplan_dark;
-
-  if (!legacyMaster && !legacyPlan && !legacyUi) return null;
+  if (!normalizedStorage) return null;
 
   return {
     backupVersion: backup.backupVersion || 0,
     createdAt: backup.createdAt || "",
-    storage: {
-      [MASTER_KEY]: legacyMaster,
-      [PLAN_KEY]: legacyPlan,
-      [UI_KEY]: legacyUi,
-      wochenplan_dark: legacyDarkMode
-    }
+    storage: normalizedStorage
   };
 }
 
-function validateBackupData(backup) {
-  const normalizedBackup = normalizeBackupPayload(backup);
+function validateBackupData(backup, options = {}) {
+  const normalizedBackup = options.skipNormalization ? backup : normalizeBackupPayload(backup);
   if (!normalizedBackup) {
     return "Die Sicherungsdatei ist ungültig.";
   }
@@ -60,7 +69,7 @@ function validateBackupData(backup) {
 
 function validateAndNormalizeBackupData(backup) {
   const normalizedBackup = normalizeBackupPayload(backup);
-  const validationError = validateBackupData(normalizedBackup);
+  const validationError = validateBackupData(normalizedBackup, { skipNormalization: true });
 
   return {
     backup: validationError ? null : normalizedBackup,

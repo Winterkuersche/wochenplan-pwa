@@ -44,3 +44,49 @@ test('subtractRangeFromAbsenceEntry keeps non-overlapping entry', () => {
   assert.equal(result.length, 1);
   assert.equal(result[0], baseEntry);
 });
+
+test('subtractRangeFromAbsenceEntry trims correctly at month start boundary', () => {
+  const entry = {
+    ...baseEntry,
+    from: '2026-03-01',
+    to: '2026-03-10'
+  };
+  const result = ctx.subtractRangeFromAbsenceEntry(entry, '2026-03-01', '2026-03-01');
+  const ranges = JSON.parse(JSON.stringify(result.map((x) => [x.from, x.to])));
+  assert.deepEqual(ranges, [['2026-03-02', '2026-03-10']]);
+});
+
+test('subtractRangeFromAbsenceEntry trims correctly at month end boundary', () => {
+  const entry = {
+    ...baseEntry,
+    from: '2026-03-21',
+    to: '2026-03-31'
+  };
+  const result = ctx.subtractRangeFromAbsenceEntry(entry, '2026-03-31', '2026-03-31');
+  const ranges = JSON.parse(JSON.stringify(result.map((x) => [x.from, x.to])));
+  assert.deepEqual(ranges, [['2026-03-21', '2026-03-30']]);
+});
+
+test('subtractRangeFromAbsenceEntry keeps directly adjacent ranges unchanged', () => {
+  const resultBefore = ctx.subtractRangeFromAbsenceEntry(baseEntry, '2026-03-01', '2026-03-09');
+  const resultAfter = ctx.subtractRangeFromAbsenceEntry(baseEntry, '2026-03-21', '2026-03-31');
+
+  assert.equal(resultBefore.length, 1);
+  assert.equal(resultBefore[0], baseEntry);
+  assert.equal(resultAfter.length, 1);
+  assert.equal(resultAfter[0], baseEntry);
+});
+
+test('subtractRangeFromAbsenceEntry preserves absence type for vacation and sick', () => {
+  const sickEntry = {
+    ...baseEntry,
+    id: 'abs-2',
+    type: 'sick'
+  };
+
+  const vacationResult = ctx.subtractRangeFromAbsenceEntry(baseEntry, '2026-03-14', '2026-03-16');
+  const sickResult = ctx.subtractRangeFromAbsenceEntry(sickEntry, '2026-03-14', '2026-03-16');
+
+  assert.deepEqual(JSON.parse(JSON.stringify(vacationResult.map((x) => x.type))), ['vacation', 'vacation']);
+  assert.deepEqual(JSON.parse(JSON.stringify(sickResult.map((x) => x.type))), ['sick', 'sick']);
+});

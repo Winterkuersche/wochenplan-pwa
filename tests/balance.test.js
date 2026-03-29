@@ -25,3 +25,14 @@ test('collectRelevantYearMonthsUntilActiveMonthBalance keeps active month when n
 
   assert.deepEqual(JSON.parse(JSON.stringify(months)), ['2026-03']);
 });
+
+test('collectRelevantYearMonthsUntilActiveMonthBalance ignores out-of-range month fragments from week overlaps', () => {
+  const months = ctx.collectRelevantYearMonthsUntilActiveMonthBalance({
+    activeYearMonth: '2026-03',
+    scheduleIsoDates: ['2026-02-28', '2026-03-01', '2026-04-01'],
+    absences: [{ from: '2026-02-27', to: '2026-03-02' }],
+    historyStartMonth: '2026-03'
+  });
+
+  assert.deepEqual(JSON.parse(JSON.stringify(months)), ['2026-03']);
+});
