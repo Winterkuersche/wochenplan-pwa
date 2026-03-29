@@ -11,6 +11,7 @@ const APP_FILES = [
   "./month-engine.js",
   "./balance-utils.js",
   "./backup-utils.js",
+  "./manual-month-utils.js",
   "./day-view.js",
   "./week-view.js",
   "./mep-view.js",
