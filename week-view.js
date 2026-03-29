@@ -928,15 +928,12 @@ function renderWeekTable() {
 
   const visibleDays = weekDays.slice(0, 6);
   const visibleDaysInActiveMonth = visibleDays.filter((day) => day && !day.isOutsideMonth);
-  const visibleMonths = [...new Set(visibleDays.map((day) => String(day?.iso || "").slice(0, 7)).filter((value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)))];
-  const visibleEmployees = state.employees.filter((emp) => {
-    if (!visibleMonths.length) return isEmployeeActiveInMonth(emp, state.activeMonth);
-    return visibleMonths.some((yearMonth) => isEmployeeActiveInMonth(emp, yearMonth));
-  });
+  const visibleEmployees = getWeekVisibleEmployees(visibleDays);
 
   visibleEmployees.forEach((emp) => {
     const tr = document.createElement("tr");
-    const lastShift = getEmployeeLastShiftLabel(emp);
+    const metrics = getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth);
+    const lastShift = metrics.lastShift;
 
     const tdNameRole = document.createElement("td");
     tdNameRole.className = "nameRoleCell";
@@ -964,68 +961,37 @@ function renderWeekTable() {
 
     const tdActual = document.createElement("td");
     tdActual.className = "weekHoursCell weekSummaryCol weekSummaryStart";
-    const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDaysInActiveMonth);
-    tdActual.textContent = minutesToHM(plannedMinutes);
+    tdActual.textContent = metrics.actualText;
     tdActual.title = "Ist nur für Tage im aktiven Monat berechnet.";
     tr.appendChild(tdActual);
 
     const tdAccount = document.createElement("td");
     tdAccount.className = "weekHoursCell weekSummaryCol";
-    const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth);
-    tdAccount.textContent = minutesToHM(accountMinutes);
+    tdAccount.textContent = metrics.accountText;
     tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag) – berechnet nur für Tage im aktiven Monat.";
     tr.appendChild(tdAccount);
 
-    const differenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDaysInActiveMonth, state.activeMonth);
     const tdDelta = document.createElement("td");
-    if (isGfbEmployee(emp)) {
-      tdDelta.className = `weekDeltaCell weekSummaryCol ${differenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
-      tdDelta.textContent = `${minutesToHM(differenceMinutes)} genutzt`;
-      tdDelta.title = "GfB: Kontingentnutzung in der aktuellen Woche, berechnet nur für Tage im aktiven Monat.";
-    } else {
-      tdDelta.className = `weekDeltaCell weekSummaryCol ${
-        differenceMinutes < 0 ? "deltaNeg" : differenceMinutes > 0 ? "deltaPos" : "deltaZero"
-      }`;
-      tdDelta.textContent = formatSignedMinutes(differenceMinutes);
-      tdDelta.title = "Delta der Woche, berechnet nur für Tage im aktiven Monat.";
-    }
+    tdDelta.className = `weekDeltaCell weekSummaryCol ${metrics.weekDeltaClass}`;
+    tdDelta.textContent = metrics.weekDeltaText;
+    tdDelta.title = metrics.weekDeltaTitle;
     tr.appendChild(tdDelta);
 
-    const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
     const tdMonthDelta = document.createElement("td");
-    const monthIsManual = isMonthActualManual(emp, state.activeMonth);
-    const manualSuffix = monthIsManual ? " Iststunden manuell hinterlegt." : "";
-    const manualMarker = monthIsManual ? " •" : "";
-    if (isGfbEmployee(emp)) {
-      tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
-      tdMonthDelta.textContent = `${minutesToHM(monthDifferenceMinutes)} genutzt${manualMarker}`;
-      tdMonthDelta.title = `GfB: Kontingentnutzung im aktuellen Monat.${manualSuffix}`;
-    } else {
-      tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${
-        monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"
-      }`;
-      tdMonthDelta.textContent = `${formatSignedMinutes(monthDifferenceMinutes)}${manualMarker}`;
-      tdMonthDelta.title = `Delta des Monats.${manualSuffix}`;
-    }
+    tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${metrics.monthDeltaClass}`;
+    tdMonthDelta.textContent = metrics.monthDeltaText;
+    tdMonthDelta.title = metrics.monthDeltaTitle;
     tr.appendChild(tdMonthDelta);
 
-    const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
     const tdTotalMinus = document.createElement("td");
-    if (isGfbEmployee(emp)) {
-      const remainingContingentMinutes = getEmployeeMonthContingentRemainingMinutes(emp);
-      const overuseMinutes = getEmployeeMonthContingentOveruseMinutes(emp);
-      tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${overuseMinutes > 0 ? "deltaNeg" : "deltaPos"}`;
-      tdTotalMinus.textContent = overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`;
-      tdTotalMinus.title = "GfB: Restkontingent bzw. Übernutzung im aktuellen Monat";
-    } else {
-      tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}`;
-      tdTotalMinus.textContent = totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00";
-    }
+    tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${metrics.totalMinusClass}`;
+    tdTotalMinus.textContent = metrics.totalMinusText;
+    tdTotalMinus.title = metrics.totalMinusTitle;
     tr.appendChild(tdTotalMinus);
 
     const tdTarget = document.createElement("td");
     tdTarget.className = "weekTargetCell weekSummaryCol";
-    tdTarget.textContent = minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth));
+    tdTarget.textContent = metrics.targetText;
     tdTarget.title = "Sollzeit der Woche, berechnet nur für Tage im aktiven Monat (ohne Sonntage).";
     tr.appendChild(tdTarget);
 
@@ -1033,8 +999,144 @@ function renderWeekTable() {
   });
 }
 
+function getWeekVisibleEmployees(visibleDays) {
+  const visibleMonths = [...new Set(visibleDays.map((day) => String(day?.iso || "").slice(0, 7)).filter((value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)))];
+  return state.employees.filter((emp) => {
+    if (!visibleMonths.length) return isEmployeeActiveInMonth(emp, state.activeMonth);
+    return visibleMonths.some((yearMonth) => isEmployeeActiveInMonth(emp, yearMonth));
+  });
+}
+
+function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
+  const isGfb = isGfbEmployee(emp);
+  const lastShift = getEmployeeLastShiftLabel(emp);
+  const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDaysInActiveMonth);
+  const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth);
+  const weekDifferenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDaysInActiveMonth, state.activeMonth);
+  const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
+  const monthIsManual = isMonthActualManual(emp, state.activeMonth);
+  const manualSuffix = monthIsManual ? " Iststunden manuell hinterlegt." : "";
+  const manualMarker = monthIsManual ? " •" : "";
+  const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
+  const remainingContingentMinutes = getEmployeeMonthContingentRemainingMinutes(emp);
+  const overuseMinutes = getEmployeeMonthContingentOveruseMinutes(emp);
+
+  return {
+    lastShift,
+    actualText: minutesToHM(plannedMinutes),
+    accountText: minutesToHM(accountMinutes),
+    weekDeltaClass: isGfb ? (weekDifferenceMinutes > 0 ? "deltaPos" : "deltaZero")
+      : (weekDifferenceMinutes < 0 ? "deltaNeg" : weekDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"),
+    weekDeltaText: isGfb ? `${minutesToHM(weekDifferenceMinutes)} genutzt` : formatSignedMinutes(weekDifferenceMinutes),
+    weekDeltaTitle: isGfb
+      ? "GfB: Kontingentnutzung in der aktuellen Woche, berechnet nur für Tage im aktiven Monat."
+      : "Delta der Woche, berechnet nur für Tage im aktiven Monat.",
+    monthDeltaClass: isGfb ? (monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero")
+      : (monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"),
+    monthDeltaText: isGfb
+      ? `${minutesToHM(monthDifferenceMinutes)} genutzt${manualMarker}`
+      : `${formatSignedMinutes(monthDifferenceMinutes)}${manualMarker}`,
+    monthDeltaTitle: isGfb
+      ? `GfB: Kontingentnutzung im aktuellen Monat.${manualSuffix}`
+      : `Delta des Monats.${manualSuffix}`,
+    totalMinusClass: isGfb ? (overuseMinutes > 0 ? "deltaNeg" : "deltaPos") : (totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"),
+    totalMinusText: isGfb
+      ? (overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`)
+      : (totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"),
+    totalMinusTitle: isGfb ? "GfB: Restkontingent bzw. Übernutzung im aktuellen Monat" : "Gesamtminus.",
+    targetText: minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth))
+  };
+}
+
+function getMobileChipLabel(value) {
+  if (value === "FLEX") return "Flex";
+  return value || "-";
+}
+
+function getMobileChipAriaLabel(day, chipValue, isOutsideMonth) {
+  const stateSuffix = isOutsideMonth ? ", außerhalb des aktiven Monats, nicht bearbeitbar" : ", tippen zum Bearbeiten";
+  return `${day.weekdayLabel} ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}, aktuell ${chipValue}${stateSuffix}`;
+}
+
+function renderWeekMobileCards() {
+  const cardsEl = document.getElementById("weekMobileCards");
+  if (!cardsEl) return;
+
+  cardsEl.innerHTML = "";
+
+  const weekDays = getActiveWeekDays();
+  if (!weekDays.length) return;
+
+  const visibleDays = weekDays.slice(0, 6);
+  const visibleDaysInActiveMonth = visibleDays.filter((day) => day && !day.isOutsideMonth);
+  const visibleEmployees = getWeekVisibleEmployees(visibleDays);
+
+  visibleEmployees.forEach((emp) => {
+    const metrics = getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth);
+    const card = document.createElement("article");
+    card.className = "weekMobileCard";
+
+    const header = document.createElement("div");
+    header.className = "weekMobileCardHeader";
+    header.innerHTML = `
+      <div class="nameRoleName">${emp.name || "—"}</div>
+      <div class="nameRoleSub">${emp.roleKey || "-"}</div>
+      ${metrics.lastShift ? `<div class="nameRoleLast">zuletzt verwendet: ${metrics.lastShift}</div>` : ""}
+    `;
+    card.appendChild(header);
+
+    const chips = document.createElement("div");
+    chips.className = "weekMobileChipGrid";
+
+    visibleDays.forEach((day) => {
+      const chipValue = getMobileChipLabel(getWeekSelectValueForDay(emp, day.iso));
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = `weekMobileDayChip ${buildWeekSelectClass(getWeekSelectValueForDay(emp, day.iso))}`;
+      chip.dataset.isoDate = day.iso;
+      chip.dataset.employeeId = emp.id;
+      chip.title = `${day.weekdayLabel} ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}`;
+      chip.setAttribute("aria-label", getMobileChipAriaLabel(day, chipValue, day.isOutsideMonth));
+      chip.disabled = day.isOutsideMonth;
+      if (day.isOutsideMonth) {
+        chip.classList.add("weekMobileDayChipOutsideMonth");
+      }
+      chip.innerHTML = `
+        <span class="weekMobileChipDay">${day.weekdayLabel}</span>
+        <span class="weekMobileChipValue">${chipValue}</span>
+      `;
+      chip.addEventListener("click", () => {
+        const currentEntryValue = getWeekSelectValueForDay(emp, day.iso);
+        if (!openShiftDialogForSelectValue(currentEntryValue, { emp, isoDate: day.iso })) return;
+      });
+      chips.appendChild(chip);
+    });
+    card.appendChild(chips);
+
+    const metricsGrid = document.createElement("dl");
+    metricsGrid.className = "weekMobileMetrics";
+    [
+      ["Ist", metrics.actualText, "weekHoursCell"],
+      ["Konto", metrics.accountText, "weekHoursCell"],
+      ["Δ Woche", metrics.weekDeltaText, metrics.weekDeltaClass],
+      ["Δ Monat", metrics.monthDeltaText, metrics.monthDeltaClass],
+      ["Gesamtminus", metrics.totalMinusText, metrics.totalMinusClass],
+      ["Soll", metrics.targetText, "weekTargetCell"]
+    ].forEach(([label, value, className]) => {
+      const item = document.createElement("div");
+      item.className = "weekMobileMetricItem";
+      item.innerHTML = `<dt>${label}</dt><dd class="${className}">${value}</dd>`;
+      metricsGrid.appendChild(item);
+    });
+    card.appendChild(metricsGrid);
+
+    cardsEl.appendChild(card);
+  });
+}
+
 function renderWeekView() {
   renderWeekHeader();
   renderWeekWarnings();
   renderWeekTable();
+  renderWeekMobileCards();
 }

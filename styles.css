@@ -427,6 +427,10 @@ select {
   -webkit-overflow-scrolling: touch;
 }
 
+.weekMobileCards {
+  display: none;
+}
+
 #weekTable,
 .weekTable {
   width: 100%;
@@ -667,6 +671,83 @@ select {
 #weekTable th.weekSummaryStart,
 #weekTable td.weekSummaryStart {
   border-left: 2px solid #000;
+}
+
+.weekMobileCard {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.weekMobileCard + .weekMobileCard {
+  margin-top: 10px;
+}
+
+.weekMobileCardHeader {
+  margin-bottom: 10px;
+}
+
+.weekMobileChipGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.weekMobileDayChip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 44px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.weekMobileChipDay {
+  font-size: 0.72rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.weekMobileChipValue {
+  font-size: 0.92rem;
+}
+
+.weekMobileDayChipOutsideMonth,
+.weekMobileDayChip:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.weekMobileMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin: 0;
+}
+
+.weekMobileMetricItem {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid #d0d0d0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.weekMobileMetricItem dt {
+  margin: 0 0 2px;
+  font-size: 0.78rem;
+  color: var(--subtext);
+}
+
+.weekMobileMetricItem dd {
+  margin: 0;
+  font-weight: 800;
 }
 
 /* =============================
@@ -1457,6 +1538,23 @@ select {
   }
 }
 
+@media (max-width: 640px) {
+  button,
+  select,
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+  }
+
+  #weekView .compactTableWrap {
+    display: none;
+  }
+
+  .weekMobileCards {
+    display: block;
+  }
+}
+
 
 
 
@@ -1768,6 +1866,16 @@ body.dark #weekTable td.weekSummaryStart {
 
 body.dark .weekCellHint {
   color: #9fa4ad;
+}
+
+body.dark .weekMobileCard {
+  border-color: #3e434c;
+  background: #232529;
+}
+
+body.dark .weekMobileMetricItem {
+  border-color: #434852;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* MEP-Druckansicht immer hell lassen */
