@@ -1266,6 +1266,8 @@ const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnMepModeNormalEl = document.getElementById("btnMepModeNormal");
 const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
+const btnMoreActionsEl = document.getElementById("btnMoreActions");
+const mobileMoreMenuPanelEl = document.getElementById("mobileMoreMenuPanel");
 const manualMonthDialogOverlayEl = document.getElementById("manualMonthDialogOverlay");
 const manualMonthDialogTitleEl = document.getElementById("manualMonthDialogTitle");
 const manualMonthRowsEl = document.getElementById("manualMonthRows");
@@ -2771,6 +2773,38 @@ function renderTopbarVisibility() {
     btnMepModeAnonymEl.classList.toggle("hidden", !isMep);
     btnMepModeAnonymEl.classList.toggle("active", !!uiState.mepAnonymized);
   }
+
+  syncMobileMoreMenuState();
+}
+
+function closeMobileMoreMenu({ restoreFocus = false } = {}) {
+  if (!btnMoreActionsEl || !mobileMoreMenuPanelEl) return;
+  btnMoreActionsEl.setAttribute("aria-expanded", "false");
+  mobileMoreMenuPanelEl.classList.add("hidden");
+  if (restoreFocus) {
+    btnMoreActionsEl.focus();
+  }
+}
+
+function openMobileMoreMenu() {
+  if (!btnMoreActionsEl || !mobileMoreMenuPanelEl) return;
+  btnMoreActionsEl.setAttribute("aria-expanded", "true");
+  mobileMoreMenuPanelEl.classList.remove("hidden");
+  const firstVisibleAction = mobileMoreMenuPanelEl.querySelector("button:not(.hidden):not(:disabled)");
+  firstVisibleAction?.focus();
+}
+
+function syncMobileMoreMenuState() {
+  if (!mobileMoreMenuPanelEl) return;
+  const menuItems = mobileMoreMenuPanelEl.querySelectorAll("[data-forward-target]");
+  menuItems.forEach((item) => {
+    const targetId = item.getAttribute("data-forward-target");
+    if (!targetId) return;
+    const targetButton = document.getElementById(targetId);
+    const shouldHide = !targetButton || targetButton.classList.contains("hidden");
+    item.classList.toggle("hidden", shouldHide);
+    item.disabled = !!targetButton?.disabled;
+  });
 }
 
 function renderView() {
@@ -3372,6 +3406,61 @@ btnDarkMode?.addEventListener("click", () => {
 
   updateDarkModeButton();
 });
+
+btnMoreActionsEl?.addEventListener("click", () => {
+  if (!mobileMoreMenuPanelEl) return;
+  const isOpen = btnMoreActionsEl.getAttribute("aria-expanded") === "true";
+  if (isOpen) {
+    closeMobileMoreMenu();
+    return;
+  }
+  syncMobileMoreMenuState();
+  openMobileMoreMenu();
+});
+
+mobileMoreMenuPanelEl?.addEventListener("click", (event) => {
+  const triggerButton = event.target.closest("[data-forward-target]");
+  if (!triggerButton) return;
+  const targetId = triggerButton.getAttribute("data-forward-target");
+  if (!targetId) return;
+  const targetButton = document.getElementById(targetId);
+  closeMobileMoreMenu({ restoreFocus: true });
+  targetButton?.click();
+});
+
+document.addEventListener("click", (event) => {
+  if (!btnMoreActionsEl || !mobileMoreMenuPanelEl) return;
+  const clickTarget = event.target;
+  if (!(clickTarget instanceof Node)) return;
+  const clickedInsideMenu = mobileMoreMenuPanelEl.contains(clickTarget) || btnMoreActionsEl.contains(clickTarget);
+  if (!clickedInsideMenu) {
+    closeMobileMoreMenu();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!btnMoreActionsEl || !mobileMoreMenuPanelEl) return;
+  const isMenuOpen = btnMoreActionsEl.getAttribute("aria-expanded") === "true";
+  if (!isMenuOpen) return;
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMobileMoreMenu({ restoreFocus: true });
+  }
+});
+
+const mobileToolbarMediaQuery = window.matchMedia("(max-width: 640px)");
+const handleMobileToolbarBreakpointChange = (event) => {
+  if (!event.matches) {
+    closeMobileMoreMenu();
+  }
+};
+
+if (typeof mobileToolbarMediaQuery.addEventListener === "function") {
+  mobileToolbarMediaQuery.addEventListener("change", handleMobileToolbarBreakpointChange);
+} else if (typeof mobileToolbarMediaQuery.addListener === "function") {
+  mobileToolbarMediaQuery.addListener(handleMobileToolbarBreakpointChange);
+}
 
 console.info("startup: handlers-bound");
 
