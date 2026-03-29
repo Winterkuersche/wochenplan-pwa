@@ -307,6 +307,8 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -317,6 +319,8 @@ shiftDialogSave.addEventListener("click", () => {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
 
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -333,6 +337,8 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -355,6 +361,8 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -372,6 +380,8 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
+    const otherAbsenceType = absenceType === "vacation" ? "sick" : "vacation";
+    removeAbsenceCoverageForEmployee(emp.id, fromIso, toIso, otherAbsenceType);
     clearDayRange(emp.id, fromIso, toIso, { commit: false });
     addOrReplaceAbsenceForEmployee(emp.id, absenceType, fromIso, toIso);
     closeShiftDialog();
@@ -382,6 +392,8 @@ shiftDialogSave.addEventListener("click", () => {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
     const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
+    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
     clearDay(emp.id, isoDate, { commit: false });
 
     const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
@@ -782,11 +794,16 @@ function createWeekSelect(emp, isoDate) {
   sel.addEventListener("change", () => {
     const selectedValue = sel.value;
     const previousValue = getWeekSelectValueForDay(emp, isoDate);
+    const currentBlockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
+    const selectedAbsenceType = selectedValue === "U"
+      ? "vacation"
+      : selectedValue === "K"
+        ? "sick"
+        : null;
 
-        if (blockingType === "vacation" || blockingType === "sick") {
-      if (selectedValue !== "U" && selectedValue !== "K" && selectedValue !== "-") {
-        sel.value = previousValue;
-        return;
+    if (currentBlockingType === "vacation" || currentBlockingType === "sick") {
+      if (selectedAbsenceType !== currentBlockingType) {
+        removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, currentBlockingType);
       }
     }
 
