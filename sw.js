@@ -43,10 +43,16 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+  const isNavigationRequest = event.request.mode === "navigate";
+  const isStaticAssetRequest = isSameOrigin && ["script", "style", "image", "font"].includes(event.request.destination);
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
+        if (!isSameOrigin) return networkResponse;
+
         const responseClone = networkResponse.clone();
 
         caches.open(CACHE_NAME).then((cache) => {
@@ -56,9 +62,15 @@ self.addEventListener("fetch", (event) => {
         return networkResponse;
       })
       .catch(() => {
-        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-          return cachedResponse || caches.match("./index.html", { ignoreSearch: true });
-        });
+        if (isNavigationRequest) {
+          return caches.match("./index.html", { ignoreSearch: true });
+        }
+
+        if (isStaticAssetRequest) {
+          return caches.match(event.request, { ignoreSearch: true });
+        }
+
+        return caches.match(event.request);
       })
   );
 });

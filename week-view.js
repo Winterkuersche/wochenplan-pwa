@@ -995,15 +995,16 @@ function renderWeekTable() {
     const tdMonthDelta = document.createElement("td");
     const monthIsManual = isMonthActualManual(emp, state.activeMonth);
     const manualSuffix = monthIsManual ? " Iststunden manuell hinterlegt." : "";
+    const manualMarker = monthIsManual ? " •" : "";
     if (isGfbEmployee(emp)) {
       tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}`;
-      tdMonthDelta.textContent = `${minutesToHM(monthDifferenceMinutes)} genutzt`;
+      tdMonthDelta.textContent = `${minutesToHM(monthDifferenceMinutes)} genutzt${manualMarker}`;
       tdMonthDelta.title = `GfB: Kontingentnutzung im aktuellen Monat.${manualSuffix}`;
     } else {
       tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${
         monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"
       }`;
-      tdMonthDelta.textContent = formatSignedMinutes(monthDifferenceMinutes);
+      tdMonthDelta.textContent = `${formatSignedMinutes(monthDifferenceMinutes)}${manualMarker}`;
       tdMonthDelta.title = `Delta des Monats.${manualSuffix}`;
     }
     tr.appendChild(tdMonthDelta);

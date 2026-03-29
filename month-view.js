@@ -114,6 +114,9 @@ if (status === ENTRY_STATUS.WORK) {
   });
 
   const monthIsManual = isMonthActualManual(emp, state.activeMonth);
+  const manualMarker = monthIsManual
+    ? '<span class="manualMonthMarker" aria-label="Monats-Ist manuell" title="Monats-Iststunden manuell hinterlegt.">•</span>'
+    : "";
   const monthDisplayMinutes = getEffectiveMonthActualMinutes(emp, state.activeMonth, monthMinutes);
   const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
   const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
@@ -125,7 +128,7 @@ if (status === ENTRY_STATUS.WORK) {
     : "Monats-Iststunden planbasiert berechnet.";
 
   html += `
-      <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}</td>
+      <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}${manualMarker}</td>
       <td class="weekDeltaCell ${monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
       <td class="weekDeltaCell ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
     </tr>
@@ -211,11 +214,10 @@ function openMonthFallbackDialog(emp, isoDate) {
     arr.findIndex((entry) => entry.code === option.code) === index
   ));
   const optionHint = uniqueOptions.map((option) => option.label).join(", ");
-  const defaultCode = uniqueOptions[0]?.code || "G";
 
   const rawSelection = window.prompt(
-    `Bitte Schicht/Typ wählen (${optionHint}).\nCode eingeben:`,
-    defaultCode
+    `Bitte Schicht/Typ wählen (${optionHint}).\nCode eingeben (keine Vorauswahl):`,
+    ""
   );
 
   if (!rawSelection) return;
