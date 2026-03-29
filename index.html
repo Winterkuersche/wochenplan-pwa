@@ -100,6 +100,22 @@ Team ausblenden
 Stammdaten speichern
 </button>
 
+<div class="mobileMoreWrap">
+  <button id="btnMoreActions" type="button" class="mobileOnlyButton" aria-expanded="false" aria-controls="mobileMoreMenuPanel">
+    Mehr ▾
+  </button>
+  <div id="mobileMoreMenuPanel" class="mobileMoreMenu hidden" role="menu" aria-label="Weitere Aktionen">
+    <button type="button" data-forward-target="btnToggleTeam" role="menuitem">Team ein-/ausblenden</button>
+    <button type="button" data-forward-target="btnResetWeek" role="menuitem">Aktuelle Woche leeren</button>
+    <button type="button" data-forward-target="btnExportBackup" role="menuitem">Sicherung exportieren</button>
+    <button type="button" data-forward-target="btnImportBackup" role="menuitem">Sicherung importieren</button>
+    <button type="button" data-forward-target="btnDarkMode" role="menuitem">Dark Mode wechseln</button>
+    <button type="button" data-forward-target="btnPrint" role="menuitem">Drucken / PDF</button>
+    <button type="button" data-forward-target="btnMepModeNormal" role="menuitem">MEP normal</button>
+    <button type="button" data-forward-target="btnMepModeAnonym" role="menuitem">MEP anonym</button>
+  </div>
+</div>
+
 <button id="btnResetWeek">
 Aktuelle Woche leeren
 </button>
