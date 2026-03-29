@@ -41,3 +41,16 @@ test('validateBackupData rejects invalid employee payload', () => {
 
   assert.match(ctx.validateBackupData(payload), /Stammdaten/);
 });
+
+test('validateAndNormalizeBackupData returns normalized backup for legacy payload', () => {
+  const payload = {
+    master: { employees: [] },
+    plan: {},
+    ui: {}
+  };
+
+  const result = ctx.validateAndNormalizeBackupData(payload);
+  assert.equal(result.error, '');
+  assert.equal(typeof result.backup, 'object');
+  assert.equal(typeof result.backup.storage, 'object');
+});

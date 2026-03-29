@@ -2508,12 +2508,12 @@ function exportBackup() {
 }
 
 function importBackupFromObject(backupData) {
-  const normalizedBackup = normalizeBackupPayload(backupData);
-  const validationError = validateBackupData(normalizedBackup);
-  if (validationError) {
-    throw new Error(validationError);
+  const validationResult = validateAndNormalizeBackupData(backupData);
+  if (validationResult.error || !validationResult.backup) {
+    throw new Error(validationResult.error || "Die Sicherungsdatei ist ungültig.");
   }
 
+  const normalizedBackup = validationResult.backup;
   const storage = normalizedBackup.storage;
   const normalizedMaster = {
     ...defaultMasterState(),

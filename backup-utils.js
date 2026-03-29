@@ -57,3 +57,13 @@ function validateBackupData(backup) {
 
   return "";
 }
+
+function validateAndNormalizeBackupData(backup) {
+  const normalizedBackup = normalizeBackupPayload(backup);
+  const validationError = validateBackupData(normalizedBackup);
+
+  return {
+    backup: validationError ? null : normalizedBackup,
+    error: validationError
+  };
+}
