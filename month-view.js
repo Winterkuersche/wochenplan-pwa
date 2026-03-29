@@ -229,11 +229,17 @@ function openMonthFallbackDialog(emp, isoDate) {
   const options = getMonthFallbackDialogOptions();
   if (!options.length) return;
 
+  const activeElement = document.activeElement;
+  const canRestoreFocus = (
+    (typeof HTMLElement !== "undefined" && activeElement instanceof HTMLElement)
+    || (activeElement && typeof activeElement.focus === "function")
+  );
+
   monthFallbackDialogState = {
     emp,
     isoDate,
     options,
-    previousFocusEl: document.activeElement
+    previousFocusEl: canRestoreFocus ? activeElement : null
   };
 
   monthFallbackOptionsEl.innerHTML = "";
@@ -364,7 +370,9 @@ function closeMonthFallbackDialog() {
 
   const previousFocusEl = monthFallbackDialogState.previousFocusEl;
   monthFallbackDialogState = null;
-  previousFocusEl?.focus?.();
+  if (previousFocusEl && typeof previousFocusEl.focus === "function") {
+    previousFocusEl.focus();
+  }
 }
 
 function getMonthFallbackFocusableElements() {

@@ -2794,7 +2794,7 @@ function closeMobileMoreMenu({ restoreFocus = false } = {}) {
   if (!btnMoreActionsEl || !mobileMoreMenuPanelEl) return;
   btnMoreActionsEl.setAttribute("aria-expanded", "false");
   mobileMoreMenuPanelEl.classList.add("hidden");
-  if (restoreFocus) {
+  if (restoreFocus && typeof btnMoreActionsEl.focus === "function") {
     btnMoreActionsEl.focus();
   }
 }
@@ -3439,6 +3439,7 @@ btnMoreActionsEl?.addEventListener("click", () => {
 });
 
 mobileMoreMenuPanelEl?.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
   const triggerButton = event.target.closest("[data-forward-target]");
   if (!triggerButton) return;
   const targetId = triggerButton.getAttribute("data-forward-target");

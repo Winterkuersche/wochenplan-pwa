@@ -18,9 +18,12 @@ Stand: 2026-03-29
 - [ ] **Import-Flow**: Vor Import existiert eine interne Rückfallsicherung (`pre-import`) (funktional vorhanden, aber nicht dediziert testseitig abgehakt).
 - [x] **Monatsnavigation**: Monatsgrid zeigt vollständige Wochen inkl. Monatsgrenzen (abgedeckt in `tests/month-boundaries.test.js`).
 - [ ] **Absence-Änderungen**: UI-Operationen auf Abwesenheiten zerstören keine nicht überlappenden Teilintervalle (Logiktest vorhanden, Browser-UI-Smoke noch offen).
+- [x] **Dialog-Fokusmanagement (Monat-Fallback)**: ESC schließt Dialog und Fokus wird auf Trigger zurückgesetzt (`tests/month-fallback-dialog.test.js`).
+- [x] **Mobile Toolbar Basisstruktur**: „Mehr“-Menü und Forward-Targets bleiben vorhanden (`tests/mobile-ui-regressions.test.js`).
+- [x] **Manual-Month Mobile Labeling**: Responsive `data-label`-Texte bleiben im Rendercode erhalten (`tests/mobile-ui-regressions.test.js`).
 
 ## 2) Stabilitäts-Checks vor Release
-- [x] `node --test tests/*.test.js` (2026-03-29: 34/34 pass, 0 fail, Dauer ~1.85s)
+- [x] `node --test tests/*.test.js` (2026-03-29: 40/40 pass, 0 fail, Dauer 1500.514405 ms)
 - [x] Automatisierte Backup-Formatvalidierung und Legacy-Normalisierung (`tests/backup-validation.test.js`)
 - [ ] Manueller Backup Export->Import->Reload-UI-Roundtrip (aktuelles Format) durchgeführt
 - [ ] Manuelle Smoke-Checks im Browser (A-D) dokumentiert durchgeführt (siehe `docs/manual-smoke-checks.md`)
