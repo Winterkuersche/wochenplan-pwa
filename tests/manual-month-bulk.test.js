@@ -44,3 +44,17 @@ test('parseManualMonthBulkInput rejects invalid months clearly', () => {
     'Zeile 3: Bitte Format YYYY-MM HH:MM verwenden.'
   ]);
 });
+
+test('parseManualMonthBulkInput trims lines and rejects invalid minute ranges', () => {
+  const result = ctx.parseManualMonthBulkInput(`
+  2026-03    140:15
+2026-04 140:60
+`);
+
+  assert.deepEqual(JSON.parse(JSON.stringify(result.values)), {
+    '2026-03': 8415
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(result.lineErrors)), [
+    'Zeile 3: Bitte Format YYYY-MM HH:MM verwenden.'
+  ]);
+});

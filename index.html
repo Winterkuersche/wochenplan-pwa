@@ -458,8 +458,13 @@ L1E-L4E ohne Abrechnung
   </template>
 </section>
 
-<div id="manualMonthDialogOverlay" class="dialogOverlay hidden no-print">
-  <div class="dialogBox dialogBoxWide">
+<div id="manualMonthDialogOverlay" class="dialogOverlay hidden no-print" aria-hidden="true">
+  <div
+    class="dialogBox dialogBoxWide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="manualMonthDialogTitle"
+  >
     <h3 id="manualMonthDialogTitle">Monats-Iststunden</h3>
     <div class="manualMonthDialogTableWrap">
       <table class="manualMonthTable">
@@ -491,8 +496,8 @@ L1E-L4E ohne Abrechnung
   </div>
 </div>
 
-<div id="shiftDialogOverlay" class="dialogOverlay hidden no-print">
-  <div class="dialogBox">
+<div id="shiftDialogOverlay" class="dialogOverlay hidden no-print" aria-hidden="true">
+  <div class="dialogBox" role="dialog" aria-modal="true" aria-labelledby="shiftDialogTitle">
     <h3 id="shiftDialogTitle">Schicht auswählen</h3>
 
     <div id="shiftDialogLateFields" class="dialogFields hidden">
