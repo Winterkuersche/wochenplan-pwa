@@ -2250,10 +2250,23 @@ function isMonthActualManual(employee, yearMonth) {
   return getManualMonthActualMinutes(employee, yearMonth) !== null;
 }
 
-function getEmployeeActualMinutesForMonth(employee, yearMonth = state.activeMonth) {
+function getEffectiveMonthActualMinutes(employee, yearMonth = state.activeMonth, plannedMinutes = null) {
   const manualMinutes = getManualMonthActualMinutes(employee, yearMonth);
   if (manualMinutes !== null) return manualMinutes;
+
+  if (Number.isFinite(plannedMinutes) && plannedMinutes >= 0) {
+    return Math.round(plannedMinutes);
+  }
+
   return getEmployeeAccountMinutesForMonth(employee, yearMonth);
+}
+
+// Public API (derzeit): getEmployeeActualMinutesForMonth.
+// TODO (Folgesprint): auf eine einzige zentrale öffentliche Funktion reduzieren,
+// damit kein Drift zwischen "effective" und "actual" Benennung entsteht.
+function getEmployeeActualMinutesForMonth(employee, yearMonth = state.activeMonth) {
+  const plannedMinutes = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  return getEffectiveMonthActualMinutes(employee, yearMonth, plannedMinutes);
 }
 
 function parseManualHoursToMinutes(value) {

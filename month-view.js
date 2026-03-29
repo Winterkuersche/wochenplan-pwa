@@ -114,10 +114,7 @@ if (status === ENTRY_STATUS.WORK) {
   });
 
   const monthIsManual = isMonthActualManual(emp, state.activeMonth);
-  const manualMonthActualMinutes = getManualMonthActualMinutes(emp, state.activeMonth);
-  const monthDisplayMinutes = monthIsManual && manualMonthActualMinutes !== null
-    ? manualMonthActualMinutes
-    : monthMinutes;
+  const monthDisplayMinutes = getEffectiveMonthActualMinutes(emp, state.activeMonth, monthMinutes);
   const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
   const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
   const monthDeltaTitle = monthIsManual
