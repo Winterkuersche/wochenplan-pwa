@@ -1353,6 +1353,24 @@ select {
   font-weight: 600;
 }
 
+.manualMonthBulkLabel {
+  display: block;
+  margin: 8px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.manualMonthBulkInput {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
 .dialogActionsSpread {
   justify-content: space-between;
   align-items: center;

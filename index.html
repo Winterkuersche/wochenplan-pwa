@@ -455,9 +455,16 @@ L1E-L4E ohne Abrechnung
         <tbody id="manualMonthRows"></tbody>
       </table>
     </div>
+    <label class="manualMonthBulkLabel" for="manualMonthBulkInput">
+      Bulk-Paste (pro Zeile: YYYY-MM HH:MM)
+    </label>
+    <textarea id="manualMonthBulkInput" class="manualMonthBulkInput" rows="6" placeholder="2026-01 154:30&#10;2026-02 148:00"></textarea>
     <div id="manualMonthValidation" class="manualMonthValidation" aria-live="polite"></div>
     <div class="dialogActions dialogActionsSpread">
-      <button id="btnManualMonthAddRow" type="button">Monat hinzufügen</button>
+      <div class="dialogActions">
+        <button id="btnManualMonthAddRow" type="button">Monat hinzufügen</button>
+        <button id="btnManualMonthApplyBulk" type="button">Bulk übernehmen</button>
+      </div>
       <div class="dialogActions">
         <button id="btnManualMonthCancel" type="button">Abbrechen</button>
         <button id="btnManualMonthSave" type="button">Speichern</button>
@@ -629,6 +636,7 @@ L1E-L4E ohne Abrechnung
 <script src="./month-view.js?v=2026-03-28-3"></script>
 <script src="./balance-utils.js?v=2026-03-29-1"></script>
 <script src="./backup-utils.js?v=2026-03-29-1"></script>
+<script src="./manual-month-utils.js?v=2026-03-29-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="./app.js?v=2026-03-28-3"></script>

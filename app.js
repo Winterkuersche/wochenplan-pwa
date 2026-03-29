@@ -1269,8 +1269,10 @@ const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
 const manualMonthDialogOverlayEl = document.getElementById("manualMonthDialogOverlay");
 const manualMonthDialogTitleEl = document.getElementById("manualMonthDialogTitle");
 const manualMonthRowsEl = document.getElementById("manualMonthRows");
+const manualMonthBulkInputEl = document.getElementById("manualMonthBulkInput");
 const manualMonthValidationEl = document.getElementById("manualMonthValidation");
 const btnManualMonthAddRowEl = document.getElementById("btnManualMonthAddRow");
+const btnManualMonthApplyBulkEl = document.getElementById("btnManualMonthApplyBulk");
 const btnManualMonthCancelEl = document.getElementById("btnManualMonthCancel");
 const btnManualMonthSaveEl = document.getElementById("btnManualMonthSave");
 
@@ -2346,7 +2348,46 @@ function closeManualMonthDialog() {
   if (!manualMonthDialogOverlayEl) return;
   manualMonthDialogOverlayEl.classList.add("hidden");
   manualMonthDialogOverlayEl.dataset.employeeId = "";
+  if (manualMonthBulkInputEl) manualMonthBulkInputEl.value = "";
   if (manualMonthValidationEl) manualMonthValidationEl.textContent = "";
+}
+
+function applyManualMonthBulkInput() {
+  if (!manualMonthBulkInputEl || !manualMonthRowsEl) return;
+
+  const parsed = parseManualMonthBulkInput(manualMonthBulkInputEl.value || "");
+  if (parsed.lineErrors?.length) {
+    if (manualMonthValidationEl) {
+      manualMonthValidationEl.style.color = "";
+      manualMonthValidationEl.textContent = parsed.lineErrors[0];
+    }
+    return;
+  }
+
+  const existing = collectAndValidateManualMonthDialogRows();
+  if (existing.error) {
+    if (manualMonthValidationEl) {
+      manualMonthValidationEl.style.color = "";
+      manualMonthValidationEl.textContent = existing.error;
+    }
+    return;
+  }
+
+  const merged = {
+    ...(existing.value || {}),
+    ...(parsed.values || {})
+  };
+  const entries = Object.entries(merged)
+    .map(([yearMonth, minutes]) => ({ yearMonth, minutes }))
+    .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
+  formatManualMonthRows(entries.length ? entries : [{ yearMonth: state.activeMonth, minutes: null }]);
+
+  if (manualMonthValidationEl) {
+    manualMonthValidationEl.style.color = "#1f6f3f";
+    manualMonthValidationEl.textContent = Object.keys(parsed.values || {}).length
+      ? `${Object.keys(parsed.values || {}).length} Monate aus Bulk-Paste übernommen.`
+      : "Kein Bulk-Inhalt erkannt.";
+  }
 }
 
 function collectAndValidateManualMonthDialogRows() {
@@ -2387,7 +2428,10 @@ function saveManualMonthDialog() {
 
   const result = collectAndValidateManualMonthDialogRows();
   if (result.error) {
-    if (manualMonthValidationEl) manualMonthValidationEl.textContent = result.error;
+    if (manualMonthValidationEl) {
+      manualMonthValidationEl.style.color = "";
+      manualMonthValidationEl.textContent = result.error;
+    }
     return;
   }
 
@@ -2411,7 +2455,11 @@ function openManualMonthDialog(employee) {
   if (manualMonthDialogTitleEl) {
     manualMonthDialogTitleEl.textContent = `Monats-Iststunden für ${employee.name || "Mitarbeiter"}`;
   }
-  if (manualMonthValidationEl) manualMonthValidationEl.textContent = "";
+  if (manualMonthValidationEl) {
+    manualMonthValidationEl.textContent = "";
+    manualMonthValidationEl.style.color = "";
+  }
+  if (manualMonthBulkInputEl) manualMonthBulkInputEl.value = "";
 
   const entries = Object.entries(employee.manualMonthActualMinutes || {})
     .map(([yearMonth, minutes]) => ({
@@ -2927,7 +2975,19 @@ serviceBonusInput.addEventListener("change", () => {
 }
 
 btnManualMonthAddRowEl?.addEventListener("click", () => {
+  if (manualMonthValidationEl) {
+    manualMonthValidationEl.textContent = "";
+    manualMonthValidationEl.style.color = "";
+  }
   addManualMonthDialogRow();
+});
+
+btnManualMonthApplyBulkEl?.addEventListener("click", () => {
+  if (manualMonthValidationEl) {
+    manualMonthValidationEl.textContent = "";
+    manualMonthValidationEl.style.color = "";
+  }
+  applyManualMonthBulkInput();
 });
 
 btnManualMonthCancelEl?.addEventListener("click", () => {
