@@ -1254,7 +1254,9 @@ function getMobileChipLabel(value) {
 }
 
 function getMobileChipAriaLabel(day, chipValue, isOutsideMonth) {
-  const stateSuffix = isOutsideMonth ? ", außerhalb des aktiven Monats, nicht bearbeitbar" : ", tippen zum Bearbeiten";
+  const stateSuffix = isOutsideMonth
+    ? ", außerhalb des aktiven Monats, bearbeitbar"
+    : ", tippen zum Bearbeiten";
   return `${day.weekdayLabel} ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}, aktuell ${chipValue}${stateSuffix}`;
 }
 
@@ -1297,7 +1299,6 @@ function renderWeekMobileCards() {
       chip.dataset.employeeId = emp.id;
       chip.title = `${day.weekdayLabel} ${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}`;
       chip.setAttribute("aria-label", getMobileChipAriaLabel(day, chipValue, day.isOutsideMonth));
-      chip.disabled = day.isOutsideMonth;
       if (day.isOutsideMonth) {
         chip.classList.add("weekMobileDayChipOutsideMonth");
       }
