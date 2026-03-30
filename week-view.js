@@ -126,6 +126,20 @@ function getQuarterPickerValue(hourEl, minuteEl) {
   return `${hour}:${minute}`;
 }
 
+function syncEndPickerToStartIfNeeded(startHourEl, startMinuteEl, endHourEl, endMinuteEl, options = {}) {
+  const start = normalizePlanTime(getQuarterPickerValue(startHourEl, startMinuteEl));
+  const end = normalizePlanTime(getQuarterPickerValue(endHourEl, endMinuteEl));
+  if (!start || !end) return;
+
+  const startMinutes = hhmmToMinutes(start);
+  const endMinutes = hhmmToMinutes(end);
+  if (endMinutes >= startMinutes && options.forceAlign !== true) return;
+
+  const defaultMinutes = Number.isFinite(options.defaultMinutes) ? options.defaultMinutes : 0;
+  const alignedEnd = addMinutesToHHMM(start, defaultMinutes);
+  setQuarterPickerValue(endHourEl, endMinuteEl, alignedEnd);
+}
+
 initQuarterTimePicker(shiftDialogFlexStartHour, shiftDialogFlexStartMinute);
 initQuarterTimePicker(shiftDialogFlexEndHour, shiftDialogFlexEndMinute);
 initQuarterTimePicker(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
@@ -175,10 +189,24 @@ function resetShiftDialogInputs(isoDate) {
   if (shiftDialogFoEnd) shiftDialogFoEnd.disabled = false;
   setQuarterPickerValue(shiftDialogFlexStartHour, shiftDialogFlexStartMinute, "00:00");
   setQuarterPickerValue(shiftDialogFlexEndHour, shiftDialogFlexEndMinute, "00:00");
+  syncEndPickerToStartIfNeeded(
+    shiftDialogFlexStartHour,
+    shiftDialogFlexStartMinute,
+    shiftDialogFlexEndHour,
+    shiftDialogFlexEndMinute,
+    { forceAlign: true }
+  );
 
   shiftDialogExternalHelpBranch.value = "";
   setQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute, "09:00");
   setQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute, "14:00");
+  syncEndPickerToStartIfNeeded(
+    shiftDialogExternalHelpStartHour,
+    shiftDialogExternalHelpStartMinute,
+    shiftDialogExternalHelpEndHour,
+    shiftDialogExternalHelpEndMinute,
+    { forceAlign: true, defaultMinutes: 300 }
+  );
   setQuarterPickerValue(shiftDialogExternalHelpPauseHour, shiftDialogExternalHelpPauseMinute, "00:00");
   shiftDialogExternalHelpDuration.value = "05:00";
   refreshExternalHelpDurationField();
@@ -244,6 +272,23 @@ function openShiftDialog(type, context) {
   }
 
   fillShiftDialogFromExisting(type, context);
+  if (type === "FLEX") {
+    syncEndPickerToStartIfNeeded(
+      shiftDialogFlexStartHour,
+      shiftDialogFlexStartMinute,
+      shiftDialogFlexEndHour,
+      shiftDialogFlexEndMinute,
+      { forceAlign: false }
+    );
+  }
+  if (type === "AH") {
+    syncEndPickerToStartIfNeeded(
+      shiftDialogExternalHelpStartHour,
+      shiftDialogExternalHelpStartMinute,
+      shiftDialogExternalHelpEndHour,
+      shiftDialogExternalHelpEndMinute
+    );
+  }
   const isHtmlEl = typeof HTMLElement !== "undefined" && document.activeElement instanceof HTMLElement;
   shiftDialogPreviousFocusEl = isHtmlEl ? document.activeElement : null;
   shiftDialogOverlay.classList.remove("hidden");
@@ -718,6 +763,29 @@ function refreshExternalHelpDurationField() {
 [shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute,
   shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute].forEach((el) => {
   el?.addEventListener("change", refreshExternalHelpDurationField);
+});
+
+[shiftDialogFlexStartHour, shiftDialogFlexStartMinute].forEach((el) => {
+  el?.addEventListener("change", () => {
+    syncEndPickerToStartIfNeeded(
+      shiftDialogFlexStartHour,
+      shiftDialogFlexStartMinute,
+      shiftDialogFlexEndHour,
+      shiftDialogFlexEndMinute
+    );
+  });
+});
+
+[shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute].forEach((el) => {
+  el?.addEventListener("change", () => {
+    syncEndPickerToStartIfNeeded(
+      shiftDialogExternalHelpStartHour,
+      shiftDialogExternalHelpStartMinute,
+      shiftDialogExternalHelpEndHour,
+      shiftDialogExternalHelpEndMinute
+    );
+    refreshExternalHelpDurationField();
+  });
 });
 
 shiftDialogFoCheckout?.addEventListener("change", () => {
