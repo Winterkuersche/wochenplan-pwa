@@ -306,3 +306,61 @@ test('mobile dialog excludes holiday option values', () => {
   assert.equal(optionsWrap.children.length, 1);
   assert.equal(optionsWrap.children[0].value, 'FO');
 });
+
+test('FLEX start change keeps end at or after start', () => {
+  const ctx = buildContext();
+  ctx.normalizePlanTime = (v) => v;
+  ctx.hhmmToMinutes = (v) => {
+    const [h, m] = v.split(':').map(Number);
+    return (h * 60) + m;
+  };
+  ctx.addMinutesToHHMM = (v, mins) => {
+    const total = ctx.hhmmToMinutes(v) + mins;
+    const hour = String(Math.floor(total / 60)).padStart(2, '0');
+    const minute = String(total % 60).padStart(2, '0');
+    return `${hour}:${minute}`;
+  };
+
+  const flexStartHour = ctx.document.getElementById('shiftDialogFlexStartHour');
+  const flexStartMinute = ctx.document.getElementById('shiftDialogFlexStartMinute');
+  const flexEndHour = ctx.document.getElementById('shiftDialogFlexEndHour');
+  const flexEndMinute = ctx.document.getElementById('shiftDialogFlexEndMinute');
+
+  flexStartHour.value = '10';
+  flexStartMinute.value = '15';
+  flexEndHour.value = '09';
+  flexEndMinute.value = '00';
+  flexStartHour.dispatchEvent('change');
+
+  assert.equal(flexEndHour.value, '10');
+  assert.equal(flexEndMinute.value, '15');
+});
+
+test('AH start change keeps end at or after start', () => {
+  const ctx = buildContext();
+  ctx.normalizePlanTime = (v) => v;
+  ctx.hhmmToMinutes = (v) => {
+    const [h, m] = v.split(':').map(Number);
+    return (h * 60) + m;
+  };
+  ctx.addMinutesToHHMM = (v, mins) => {
+    const total = ctx.hhmmToMinutes(v) + mins;
+    const hour = String(Math.floor(total / 60)).padStart(2, '0');
+    const minute = String(total % 60).padStart(2, '0');
+    return `${hour}:${minute}`;
+  };
+
+  const ahStartHour = ctx.document.getElementById('shiftDialogExternalHelpStartHour');
+  const ahStartMinute = ctx.document.getElementById('shiftDialogExternalHelpStartMinute');
+  const ahEndHour = ctx.document.getElementById('shiftDialogExternalHelpEndHour');
+  const ahEndMinute = ctx.document.getElementById('shiftDialogExternalHelpEndMinute');
+
+  ahStartHour.value = '11';
+  ahStartMinute.value = '30';
+  ahEndHour.value = '10';
+  ahEndMinute.value = '15';
+  ahStartMinute.dispatchEvent('change');
+
+  assert.equal(ahEndHour.value, '11');
+  assert.equal(ahEndMinute.value, '30');
+});
