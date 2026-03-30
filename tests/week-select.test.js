@@ -17,13 +17,22 @@ class MockElement {
     this.classList = {
       add: () => {},
       remove: () => {},
-      toggle: () => false
+      toggle: () => false,
+      contains: () => false
     };
   }
 
   appendChild(child) {
+    child.parentNode = this;
     this.children.push(child);
     return child;
+  }
+
+  remove() {
+    if (!this.parentNode) return;
+    const idx = this.parentNode.children.indexOf(this);
+    if (idx >= 0) this.parentNode.children.splice(idx, 1);
+    this.parentNode = null;
   }
 
   addEventListener(type, handler) {
@@ -46,14 +55,24 @@ class MockElement {
 
 function buildContext() {
   const elementsById = new Map();
+  const body = new MockElement('body');
+  const documentListeners = new Map();
   const document = {
     createElement: (tagName) => new MockElement(tagName),
     getElementById: (id) => {
       if (!elementsById.has(id)) elementsById.set(id, new MockElement('div'));
       return elementsById.get(id);
     },
-    addEventListener: () => {},
-    activeElement: null
+    addEventListener: (type, handler) => {
+      if (!documentListeners.has(type)) documentListeners.set(type, []);
+      documentListeners.get(type).push(handler);
+    },
+    dispatchEvent: (type, event = {}) => {
+      const handlers = documentListeners.get(type) || [];
+      handlers.forEach((handler) => handler(event));
+    },
+    activeElement: null,
+    body
   };
 
   return loadScripts(['week-view.js'], {
@@ -110,7 +129,8 @@ function buildContext() {
     getEmployeeTargetMinutesForWeek: () => 0,
     formatSignedMinutes: () => '0:00',
     getAbsenceTypeMeta: () => ({ invalidRangeMessage: 'x', confirmDeleteMessage: 'x', title: 'x' }),
-    getAbsenceTypeFromDialogContext: (v) => (v === 'K' ? 'sick' : 'vacation')
+    getAbsenceTypeFromDialogContext: (v) => (v === 'K' ? 'sick' : 'vacation'),
+    pad2: (value) => String(value).padStart(2, '0')
   });
 }
 
@@ -178,4 +198,111 @@ test('holiday remains locked and disabled', () => {
   assert.equal(select.value, 'H');
   assert.equal(select.children.length, 1);
   assert.equal(select.children[0].value, 'H');
+});
+
+test('mobile chip click opens week selection dialog', () => {
+  const ctx = buildContext();
+  let opened = 0;
+  ctx.openWeekMobileSelectDialog = () => {
+    opened += 1;
+    return true;
+  };
+  ctx.getActiveWeekDays = () => [
+    { iso: '2026-04-06', isOutsideMonth: false, weekdayLabel: 'Mo', date: new Date('2026-04-06T00:00:00Z') }
+  ];
+  ctx.getWeekVisibleEmployees = () => [{ id: 'e1', name: 'Max', roleKey: 'FO' }];
+  ctx.getEmployeeWeekMetrics = () => ({
+    actualText: '0:00',
+    accountText: '0:00',
+    weekDeltaText: '0:00',
+    weekDeltaClass: 'deltaZero',
+    monthDeltaText: '0:00',
+    monthDeltaClass: 'deltaZero',
+    totalMinusText: '0:00',
+    totalMinusClass: 'deltaZero',
+    targetText: '0:00'
+  });
+  ctx.getWeekSelectValueForDay = () => '-';
+
+  ctx.renderWeekMobileCards();
+  const cardsEl = ctx.document.getElementById('weekMobileCards');
+  const chip = cardsEl.children[0].children[1].children[0];
+  chip.dispatchEvent('click');
+
+  assert.equal(opened, 1);
+});
+
+test('mobile selection FO applies early shift directly', () => {
+  const ctx = buildContext();
+  const calls = [];
+  ctx.clearDay = (...args) => calls.push(['clearDay', ...args]);
+  ctx.setPlanEntry = (...args) => calls.push(['setPlanEntry', ...args]);
+  ctx.renderWeekView = () => {};
+  ctx.getWeekSelectValueForDay = () => '-';
+
+  ctx.getShiftSelectOptions = () => [{ value: 'FO', label: 'FO' }];
+  ctx.openWeekMobileSelectDialog({ id: 'e1' }, '2026-04-07');
+  const overlay = ctx.document.body.children[0];
+  const optionButton = overlay.children[0].children[1].children[0];
+  optionButton.dispatchEvent('click');
+
+  assert.equal(calls.some((entry) => entry[0] === 'setPlanEntry'), true);
+});
+
+test('mobile selection U opens absence dialog flow', () => {
+  const ctx = buildContext();
+  const calls = [];
+  ctx.renderWeekView = () => {};
+  ctx.getShiftSelectOptions = () => [{ value: 'U', label: 'U' }];
+  ctx.isDialogShift = (value) => value === 'U';
+  ctx.openShiftDialog = (...args) => calls.push(args);
+  ctx.getWeekSelectValueForDay = () => '-';
+
+  ctx.openWeekMobileSelectDialog({ id: 'e1' }, '2026-04-08');
+  const overlay = ctx.document.body.children[0];
+  const optionButton = overlay.children[0].children[1].children[0];
+  optionButton.dispatchEvent('click');
+
+  assert.equal(calls[0][0], 'U');
+  assert.equal(calls[0][1].isoDate, '2026-04-08');
+  assert.equal(calls[0][1].type, 'U');
+  assert.equal(calls[0][1].emp.id, 'e1');
+});
+
+test('mobile holiday remains not editable', () => {
+  const ctx = buildContext();
+  ctx.getBlockingTypeForEmployeeOnIso = () => 'holiday';
+
+  const opened = ctx.openWeekMobileSelectDialog({ id: 'e1' }, '2026-12-25');
+  assert.equal(opened, false);
+  assert.equal(ctx.document.body.children.length, 0);
+});
+
+test('mobile dialog closes on Escape and removes overlay', () => {
+  const ctx = buildContext();
+  ctx.getShiftSelectOptions = () => [{ value: 'FO', label: 'FO' }];
+
+  ctx.openWeekMobileSelectDialog({ id: 'e1' }, '2026-04-09');
+  assert.equal(ctx.document.body.children.length, 1);
+
+  ctx.document.dispatchEvent('keydown', {
+    key: 'Escape',
+    preventDefault: () => {}
+  });
+
+  assert.equal(ctx.document.body.children.length, 0);
+});
+
+test('mobile dialog excludes holiday option values', () => {
+  const ctx = buildContext();
+  ctx.getShiftSelectOptions = () => [
+    { value: 'H', label: 'H' },
+    { value: 'FO', label: 'FO' }
+  ];
+
+  ctx.openWeekMobileSelectDialog({ id: 'e1' }, '2026-04-10');
+  const overlay = ctx.document.body.children[0];
+  const optionsWrap = overlay.children[0].children[1];
+  assert.equal(optionsWrap.children.length, 1);
+  assert.equal(optionsWrap.children[0].value, 'FO');
 });
