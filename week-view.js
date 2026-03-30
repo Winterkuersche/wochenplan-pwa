@@ -741,6 +741,128 @@ function openShiftDialogForSelectValue(value, context) {
   return true;
 }
 
+function applyWeekSelection(emp, isoDate, selectedValue, previousValue) {
+  const priorValue = previousValue ?? getWeekSelectValueForDay(emp, isoDate);
+  const currentBlockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
+  const selectedAbsenceType = selectedValue === "U"
+    ? "vacation"
+    : selectedValue === "K"
+      ? "sick"
+      : null;
+
+  if (currentBlockingType === "vacation" || currentBlockingType === "sick") {
+    if (selectedAbsenceType !== currentBlockingType) {
+      removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, currentBlockingType);
+    }
+  }
+
+  if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
+    return { openedDialog: true, previousValue: priorValue };
+  }
+
+  clearDay(emp.id, isoDate, { commit: false });
+
+  if (selectedValue !== "-") {
+    const normalizedValue = getShiftCodeForSelectValue(selectedValue);
+    const entry = buildEarlyShiftEntry(normalizedValue);
+
+    if (!entry) {
+      alert("Ungültige Frühschicht.");
+      return { rejected: true, previousValue: priorValue };
+    }
+
+    setPlanEntry(emp.id, isoDate, entry);
+    return { applied: true };
+  }
+
+  commitPlanChange();
+  return { applied: true };
+}
+
+let weekMobileSelectDialogState = null;
+
+function closeWeekMobileSelectDialog() {
+  if (!weekMobileSelectDialogState) return;
+  const { overlay, previousFocusEl } = weekMobileSelectDialogState;
+  overlay?.remove?.();
+  previousFocusEl?.focus?.();
+  weekMobileSelectDialogState = null;
+}
+
+function openWeekMobileSelectDialog(emp, isoDate) {
+  if (!emp || !isoDate) return false;
+  if (getBlockingTypeForEmployeeOnIso(emp, isoDate) === "holiday") return false;
+  if (!document?.body || typeof document.createElement !== "function") return false;
+
+  if (weekMobileSelectDialogState) closeWeekMobileSelectDialog();
+
+  const previousFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const options = getShiftSelectOptions().filter((option) => option?.value && option.value !== "H");
+  if (!Array.isArray(options) || !options.length) return false;
+
+  const overlay = document.createElement("div");
+  overlay.className = "dialogOverlay dialogOverlayBottomSheet";
+  overlay.setAttribute("role", "presentation");
+  overlay.setAttribute("aria-hidden", "false");
+
+  const box = document.createElement("div");
+  box.className = "dialogBox";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-modal", "true");
+  box.setAttribute("aria-label", "Tag auswählen");
+
+  const title = document.createElement("h3");
+  title.textContent = "Tag auswählen";
+  box.appendChild(title);
+
+  const optionsWrap = document.createElement("div");
+  optionsWrap.className = "dialogButtonRow";
+  options.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.value = option.value;
+    button.textContent = option.label;
+    button.addEventListener("click", () => {
+      closeWeekMobileSelectDialog();
+      applyWeekSelection(emp, isoDate, option.value);
+      renderWeekView();
+    });
+    optionsWrap.appendChild(button);
+  });
+  box.appendChild(optionsWrap);
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.textContent = "Abbrechen";
+  cancelButton.addEventListener("click", () => {
+    closeWeekMobileSelectDialog();
+  });
+  box.appendChild(cancelButton);
+
+  overlay.appendChild(box);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeWeekMobileSelectDialog();
+  });
+  document.body.appendChild(overlay);
+
+  weekMobileSelectDialogState = {
+    overlay,
+    previousFocusEl
+  };
+
+  return true;
+}
+
+function handleWeekMobileSelectDialogKeydown(event) {
+  if (!weekMobileSelectDialogState) return;
+  if (event.key !== "Escape") return;
+
+  event.preventDefault();
+  closeWeekMobileSelectDialog();
+}
+
+document.addEventListener("keydown", handleWeekMobileSelectDialogKeydown);
+
 function createWeekSelect(emp, isoDate) {
   const currentValue = getWeekSelectValueForDay(emp, isoDate);
   const blockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
@@ -794,41 +916,10 @@ function createWeekSelect(emp, isoDate) {
   sel.addEventListener("change", () => {
     const selectedValue = sel.value;
     const previousValue = getWeekSelectValueForDay(emp, isoDate);
-    const currentBlockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
-    const selectedAbsenceType = selectedValue === "U"
-      ? "vacation"
-      : selectedValue === "K"
-        ? "sick"
-        : null;
-
-    if (currentBlockingType === "vacation" || currentBlockingType === "sick") {
-      if (selectedAbsenceType !== currentBlockingType) {
-        removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, currentBlockingType);
-      }
-    }
-
-    if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
+    const result = applyWeekSelection(emp, isoDate, selectedValue, previousValue);
+    if (result?.openedDialog || result?.rejected) {
       sel.value = previousValue;
-      return;
     }
-
-    clearDay(emp.id, isoDate, { commit: false });
-
-   if (selectedValue !== "-") {
-  const normalizedValue = getShiftCodeForSelectValue(selectedValue);
-  const entry = buildEarlyShiftEntry(normalizedValue);
-
-  if (!entry) {
-    alert("Ungültige Frühschicht.");
-    sel.value = previousValue;
-    return;
-  }
-
-  setPlanEntry(emp.id, isoDate, entry);
-  return;
-}
-
-commitPlanChange();
   });
 
   sel.addEventListener("dblclick", () => {
@@ -1147,8 +1238,7 @@ function renderWeekMobileCards() {
         <span class="weekMobileChipValue">${chipValue}</span>
       `;
       chip.addEventListener("click", () => {
-        const currentEntryValue = getWeekSelectValueForDay(emp, day.iso);
-        if (!openShiftDialogForSelectValue(currentEntryValue, { emp, isoDate: day.iso })) return;
+        openWeekMobileSelectDialog(emp, day.iso);
       });
       chips.appendChild(chip);
     });
