@@ -14,6 +14,7 @@ class MockElement {
     this.innerHTML = '';
     this.title = '';
     this.dataset = {};
+    this.attributes = new Map();
     this.classList = {
       add: () => {},
       remove: () => {},
@@ -49,7 +50,12 @@ class MockElement {
     return null;
   }
 
-  setAttribute() {}
+  setAttribute(name, value) {
+    this.attributes.set(name, String(value));
+  }
+  getAttribute(name) {
+    return this.attributes.get(name) || null;
+  }
   focus() {}
 }
 
@@ -200,7 +206,7 @@ test('holiday remains locked and disabled', () => {
   assert.equal(select.children[0].value, 'H');
 });
 
-test('mobile chip click opens week selection dialog', () => {
+test('mobile chip outside active month stays editable and opens week selection dialog', () => {
   const ctx = buildContext();
   let opened = 0;
   ctx.openWeekMobileSelectDialog = () => {
@@ -208,7 +214,7 @@ test('mobile chip click opens week selection dialog', () => {
     return true;
   };
   ctx.getActiveWeekDays = () => [
-    { iso: '2026-04-06', isOutsideMonth: false, weekdayLabel: 'Mo', date: new Date('2026-04-06T00:00:00Z') }
+    { iso: '2026-05-01', isOutsideMonth: true, weekdayLabel: 'Fr', date: new Date('2026-05-01T00:00:00Z') }
   ];
   ctx.getWeekVisibleEmployees = () => [{ id: 'e1', name: 'Max', roleKey: 'FO' }];
   ctx.getEmployeeWeekMetrics = () => ({
@@ -227,6 +233,8 @@ test('mobile chip click opens week selection dialog', () => {
   ctx.renderWeekMobileCards();
   const cardsEl = ctx.document.getElementById('weekMobileCards');
   const chip = cardsEl.children[0].children[1].children[0];
+  assert.equal(chip.disabled, false);
+  assert.match(chip.getAttribute('aria-label'), /außerhalb des aktiven Monats, bearbeitbar/);
   chip.dispatchEvent('click');
 
   assert.equal(opened, 1);
