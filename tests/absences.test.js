@@ -90,3 +90,19 @@ test('subtractRangeFromAbsenceEntry preserves absence type for vacation and sick
   assert.deepEqual(JSON.parse(JSON.stringify(vacationResult.map((x) => x.type))), ['vacation', 'vacation']);
   assert.deepEqual(JSON.parse(JSON.stringify(sickResult.map((x) => x.type))), ['sick', 'sick']);
 });
+
+test('normalizeAbsences merges overlapping and directly adjacent ranges for same employee and type', () => {
+  const input = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-04-06', to: '2026-04-08', note: '' },
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-04-09', to: '2026-04-12', note: '' },
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-04-18', to: '2026-04-18', note: '' }
+  ];
+
+  const result = ctx.normalizeAbsences(input);
+  const ranges = JSON.parse(JSON.stringify(result.map((x) => [x.from, x.to])));
+
+  assert.deepEqual(ranges, [
+    ['2026-04-06', '2026-04-12'],
+    ['2026-04-18', '2026-04-18']
+  ]);
+});

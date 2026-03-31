@@ -17,9 +17,57 @@ function createAbsenceEntry({ id, employeeId, type, from, to, note = "" }) {
 
 function normalizeAbsences(absences) {
   if (!Array.isArray(absences)) return [];
-  return absences
+  const normalizedEntries = absences
     .map((entry) => createAbsenceEntry(entry))
     .filter(Boolean);
+
+  return mergeAbsenceEntries(normalizedEntries);
+}
+
+function mergeAbsenceEntries(absences) {
+  if (!Array.isArray(absences) || absences.length === 0) return [];
+
+  const grouped = new Map();
+  absences.forEach((entry) => {
+    if (!entry) return;
+    const key = `${entry.employeeId}__${entry.type}`;
+    const group = grouped.get(key) || [];
+    group.push(entry);
+    grouped.set(key, group);
+  });
+
+  const merged = [];
+  grouped.forEach((entries) => {
+    const sorted = [...entries].sort((a, b) => {
+      if (a.from !== b.from) return a.from.localeCompare(b.from);
+      return a.to.localeCompare(b.to);
+    });
+
+    sorted.forEach((entry) => {
+      const last = merged[merged.length - 1];
+      if (!last || last.employeeId !== entry.employeeId || last.type !== entry.type) {
+        merged.push({ ...entry });
+        return;
+      }
+
+      const isOverlapping = entry.from <= last.to;
+      const isAdjacent = shiftIsoDateForAbsence(last.to, 1) === entry.from;
+      if (!isOverlapping && !isAdjacent) {
+        merged.push({ ...entry });
+        return;
+      }
+
+      if (entry.to > last.to) {
+        last.to = entry.to;
+      }
+
+      if (!last.note && entry.note) {
+        last.note = entry.note;
+      }
+    });
+  });
+
+  return merged;
 }
 
 function getAbsencesForEmployee(absences, employeeId) {
