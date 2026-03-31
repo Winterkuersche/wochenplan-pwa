@@ -937,7 +937,7 @@ function getUsedVacationDaysFromScheduleForEmployee(employeeId, year = new Date(
 
   return Object.entries(state.schedule || {}).reduce((sum, [isoDate, dayEntries]) => {
     if (!isoDate.startsWith(`${year}-`)) return sum;
-    if (!isWorkdayForVacation(isoDate)) return sum;
+    if (!isWorkdayForVacation(isoDate, { considerHolidays: true })) return sum;
 
     const entry = dayEntries?.[employeeId];
     return sum + (isVacationScheduleEntry(entry) ? 1 : 0);
