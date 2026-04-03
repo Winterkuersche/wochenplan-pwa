@@ -321,13 +321,15 @@ L1E-L4E ohne Abrechnung
 <section id="overviewView" class="overview hidden no-print">
 
   <div class="sectionhead">
-    <h2>Übersicht</h2>
+    <div class="monthHeader">
+      <button id="overviewMonthPrev" type="button" aria-label="Vorheriger Monat">◀</button>
+      <h2 id="overviewMonthTitle">Monatsübersicht</h2>
+      <button id="overviewMonthNext" type="button" aria-label="Nächster Monat">▶</button>
+    </div>
     <div class="small">
-      Monatsüberblick mit kompakten Kennzahlen der aktuellen Woche
+      Monatsüberblick in Wochenabschnitten mit Wochenkennzahlen (Mo-Sa)
     </div>
   </div>
-
-  <div id="overviewWeekInfo" class="overviewWeekInfo"></div>
 
   <div class="tableWrap compactTableWrap">
     <div id="overviewMonthContent"></div>
