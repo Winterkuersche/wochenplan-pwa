@@ -3969,4 +3969,68 @@ body.dark .mepTable th {
     font-size: 0.8rem;
   }
 
+  body.export-overview-mode {
+    background: #fff !important;
+  }
+
+  body.export-overview-mode > *:not(#overviewView) {
+    display: none !important;
+  }
+
+  body.export-overview-mode #overviewView {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #fff !important;
+  }
+
+  body.export-overview-mode #overviewView .sectionhead {
+    margin-bottom: 10mm;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body.export-overview-mode #overviewMonthContent,
+  body.export-overview-mode #overviewView .tableWrap,
+  body.export-overview-mode .compactTableWrap,
+  body.export-overview-mode .overviewWeekTableWrap {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  body.export-overview-mode .overviewWeekSection {
+    margin: 0 0 8mm;
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body.export-overview-mode .overviewWeekSection:last-child {
+    margin-bottom: 0;
+  }
+
+  body.export-overview-mode .overviewWeekInfo,
+  body.export-overview-mode .overviewWeekTableWrap {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body.export-overview-mode .overviewPlannerTable {
+    min-width: 100% !important;
+    width: 100% !important;
+    table-layout: fixed;
+  }
+
+  body.export-overview-mode .overviewPlannerTable th,
+  body.export-overview-mode .overviewPlannerTable td,
+  body.export-overview-mode .overviewPlannerTable thead th,
+  body.export-overview-mode .overviewPlannerTable th:first-child,
+  body.export-overview-mode .overviewPlannerTable td:first-child {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    box-shadow: none !important;
+  }
+
 }
