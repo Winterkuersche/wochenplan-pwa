@@ -326,6 +326,9 @@ L1E-L4E ohne Abrechnung
       <h2 id="overviewMonthTitle">Monatsübersicht</h2>
       <button id="overviewMonthNext" type="button" aria-label="Nächster Monat">▶</button>
     </div>
+    <div class="toolbarRow">
+      <button id="btnOverviewUpload" type="button">Übersicht hochladen</button>
+    </div>
     <div class="small">
       Monatsüberblick in Wochenabschnitten mit Wochenkennzahlen (Mo-Sa)
     </div>
@@ -705,6 +708,16 @@ L1E-L4E ohne Abrechnung
 <script src="./manual-month-utils.js?v=2026-03-29-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+window.WOCHENPLAN_DRIVE_CONFIG = {
+  enabled: false,
+  folderId: "",
+  clientId: "",
+  scope: "https://www.googleapis.com/auth/drive"
+};
+</script>
+<script src="./pdf-export.js?v=2026-04-03-1"></script>
 <script src="./app.js?v=2026-03-28-3"></script>
 
 
