@@ -271,6 +271,11 @@ function buildMepPdfFilename() {
   return `mep-${String(monthValue).replace(/[^0-9-]+/g, "-")}.pdf`;
 }
 
+function buildOverviewPdfFilename() {
+  const monthValue = state.activeMonth || (state.weekFrom || new Date().toISOString().slice(0, 10)).slice(0, 7);
+  return `uebersicht-${String(monthValue).replace(/[^0-9-]+/g, "-")}.pdf`;
+}
+
 function copyMepLayoutVariablesToNode(targetNode) {
   if (!targetNode) return;
 
@@ -403,7 +408,9 @@ Fallback jetzt öffnen?`;
   alert("Tipp: Wechsle zur Wochenansicht und nutze dort 'Drucken / PDF', falls der Monats-Export auf diesem Gerät zu groß ist.");
 }
 
-async function shareOrDownloadPdfBlob(blob, filename) {
+async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
+  const shareTitle = options.shareTitle || "PDF";
+  const shareText = options.shareText || "PDF exportiert";
   const file = new File([blob], filename, { type: "application/pdf" });
   const isIos = isIosLikeDevice();
   const canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
@@ -419,8 +426,8 @@ async function shareOrDownloadPdfBlob(blob, filename) {
     try {
       await navigator.share({
         files: [file],
-        title: "MEP PDF",
-        text: "MEP als PDF"
+        title: shareTitle,
+        text: shareText
       });
       return { deliveryMethod: "navigator.share" };
     } catch (error) {
@@ -475,6 +482,31 @@ async function shareOrDownloadPdfBlob(blob, filename) {
   } finally {
     window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   }
+}
+
+function createOverviewPdfExportRoot() {
+  const overviewView = document.getElementById("overviewView");
+  const overviewContent = document.getElementById("overviewMonthContent");
+  if (!overviewView || !overviewContent) return null;
+
+  const exportRoot = document.createElement("div");
+  exportRoot.className = "overviewPdfExportRoot";
+
+  const clonedView = overviewView.cloneNode(true);
+  clonedView.classList.remove("hidden", "no-print");
+  clonedView.classList.add("overviewPdfExportView");
+
+  clonedView.querySelectorAll("button").forEach((buttonEl) => buttonEl.remove());
+  const clonedWrapEls = clonedView.querySelectorAll(".tableWrap, .compactTableWrap, .overviewWeekTableWrap");
+  clonedWrapEls.forEach((wrapEl) => {
+    wrapEl.style.overflow = "visible";
+    wrapEl.style.maxHeight = "none";
+    wrapEl.style.height = "auto";
+  });
+
+  exportRoot.appendChild(clonedView);
+  document.body.appendChild(exportRoot);
+  return exportRoot;
 }
 
 async function exportMepTemplatePdf() {
@@ -608,6 +640,97 @@ async function exportMepTemplatePdf() {
       btnPrintEl.disabled = false;
       updatePrintButtonLabel();
       if (!restoreView && originalButtonLabel && btnPrintEl.textContent !== originalButtonLabel) {
+        updatePrintButtonLabel();
+      }
+    }
+  }
+}
+
+async function exportOverviewPdf() {
+  const jsPdfCtor = window.jspdf?.jsPDF;
+  const captureFn = window.html2canvas;
+  if (typeof jsPdfCtor !== "function" || typeof captureFn !== "function") {
+    alert("PDF-Export ist noch nicht verfügbar. Bitte Seite neu laden und erneut versuchen.");
+    return;
+  }
+
+  let exportRoot = null;
+  const originalButtonLabel = btnPrintEl?.textContent || "Drucken / PDF";
+
+  try {
+    if (btnPrintEl) {
+      btnPrintEl.disabled = true;
+      btnPrintEl.textContent = "Übersicht wird exportiert …";
+    }
+
+    renderOverviewView();
+    await waitForAnimationFrames(2);
+
+    exportRoot = createOverviewPdfExportRoot();
+    if (!exportRoot) {
+      throw new Error("Übersicht konnte nicht für den Export vorbereitet werden.");
+    }
+
+    await waitForAnimationFrames(2);
+
+    const exportViewEl = exportRoot.querySelector(".overviewPdfExportView");
+    const exportBlocks = [
+      ...exportRoot.querySelectorAll(".overviewPdfExportView .sectionhead, .overviewPdfExportView .overviewWeekSection")
+    ];
+    if (!exportViewEl || !exportBlocks.length) {
+      throw new Error("Keine Wochenblöcke für den Export gefunden.");
+    }
+
+    const pdf = new jsPdfCtor({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true
+    });
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 8;
+    const contentWidthMm = pageWidth - margin * 2;
+    const scale = 2;
+    let currentY = margin;
+    let hasContentOnPage = false;
+
+    for (const blockEl of exportBlocks) {
+      const canvas = await captureFn(blockEl, {
+        backgroundColor: "#ffffff",
+        scale,
+        useCORS: true
+      });
+
+      const renderedHeightMm = (canvas.height * contentWidthMm) / canvas.width;
+      const remainingMm = pageHeight - margin - currentY;
+
+      if (hasContentOnPage && renderedHeightMm > remainingMm) {
+        pdf.addPage("a4", "portrait");
+        currentY = margin;
+        hasContentOnPage = false;
+      }
+
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, currentY, contentWidthMm, renderedHeightMm, undefined, "FAST");
+      currentY += renderedHeightMm + 3;
+      hasContentOnPage = true;
+    }
+
+    const blob = pdf.output("blob");
+    await shareOrDownloadPdfBlob(blob, buildOverviewPdfFilename(), {
+      shareTitle: "Monatsübersicht PDF",
+      shareText: "Übersicht als PDF"
+    });
+  } catch (error) {
+    console.error("Übersichts-Export fehlgeschlagen", error);
+    alert("Der Export der Übersicht ist fehlgeschlagen. Bitte erneut versuchen.");
+  } finally {
+    exportRoot?.remove();
+    if (btnPrintEl) {
+      btnPrintEl.disabled = false;
+      updatePrintButtonLabel();
+      if (originalButtonLabel && btnPrintEl.textContent !== originalButtonLabel) {
         updatePrintButtonLabel();
       }
     }
@@ -3546,42 +3669,17 @@ document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   renderAll();
 });
 async function printCurrentView() {
-  const currentView = uiState?.currentView || "week";
-  const shouldUseOverviewExportMode = currentView === "overview";
-
-  if (!shouldUseOverviewExportMode) {
-    window.print();
-    return;
-  }
-
-  const exportClassName = "export-overview-mode";
-  const cleanupExportMode = () => {
-    document.body.classList.remove(exportClassName);
-    window.removeEventListener("afterprint", cleanupExportMode);
-  };
-
-  document.body.classList.add(exportClassName);
-  window.addEventListener("afterprint", cleanupExportMode, { once: true });
-
-  await new Promise((resolve) => {
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        window.setTimeout(resolve, 40);
-      });
-    });
-  });
-
   window.print();
-
-  window.setTimeout(() => {
-    if (!document.body.classList.contains(exportClassName)) return;
-    cleanupExportMode();
-  }, 1200);
 }
 
 btnPrintEl?.addEventListener("click", async () => {
-  if ((uiState?.currentView || "week") === "mep") {
+  const currentView = uiState?.currentView || "week";
+  if (currentView === "mep") {
     await exportMepTemplatePdf();
+    return;
+  }
+  if (currentView === "overview") {
+    await exportOverviewPdf();
     return;
   }
 

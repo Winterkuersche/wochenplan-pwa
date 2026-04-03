@@ -940,6 +940,63 @@ select {
   opacity: 0.6;
 }
 
+.overviewPdfExportRoot {
+  position: fixed;
+  left: -200vw;
+  top: 0;
+  width: 1120px;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.overviewPdfExportView {
+  display: block !important;
+  background: #fff;
+}
+
+.overviewPdfExportView .sectionhead {
+  margin-bottom: 12px;
+}
+
+.overviewPdfExportView .monthHeader {
+  justify-content: center;
+}
+
+.overviewPdfExportView .overviewWeekSection {
+  margin-bottom: 10px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.overviewPdfExportView .overviewWeekSection:last-child {
+  margin-bottom: 0;
+}
+
+.overviewPdfExportView .overviewWeekTableWrap {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+.overviewPdfExportView .overviewPlannerTable {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.overviewPdfExportView .overviewPlannerTable th,
+.overviewPdfExportView .overviewPlannerTable td,
+.overviewPdfExportView .overviewPlannerTable thead th,
+.overviewPdfExportView .overviewPlannerTable th:first-child,
+.overviewPdfExportView .overviewPlannerTable td:first-child {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  box-shadow: none !important;
+}
+
 .monthViewHeader {
   display: flex;
   justify-content: space-between;
