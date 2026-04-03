@@ -3545,13 +3545,38 @@ document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   commitPlanChange();
   renderAll();
 });
+function printCurrentView() {
+  const currentView = uiState?.currentView || "week";
+  const shouldUseOverviewExportMode = currentView === "overview";
+
+  if (!shouldUseOverviewExportMode) {
+    window.print();
+    return;
+  }
+
+  const exportClassName = "export-overview-mode";
+  const cleanupExportMode = () => {
+    document.body.classList.remove(exportClassName);
+    window.removeEventListener("afterprint", cleanupExportMode);
+  };
+
+  document.body.classList.add(exportClassName);
+  window.addEventListener("afterprint", cleanupExportMode, { once: true });
+  window.print();
+
+  window.setTimeout(() => {
+    if (!document.body.classList.contains(exportClassName)) return;
+    cleanupExportMode();
+  }, 1200);
+}
+
 btnPrintEl?.addEventListener("click", async () => {
   if ((uiState?.currentView || "week") === "mep") {
     await exportMepTemplatePdf();
     return;
   }
 
-  window.print();
+  printCurrentView();
 });
 
 btnExportBackupEl?.addEventListener("click", () => {
