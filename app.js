@@ -2504,6 +2504,96 @@ function totalMinutesForWeek() {
   }, 0);
 }
 
+function getWeekPlannerSummaryForDays(weekDays = []) {
+  const usedMinutes = weekDays
+    .slice(0, 6)
+    .reduce((sum, day) => {
+      if (!day) return sum;
+      return sum + totalMinutesForDayIso(day.iso);
+    }, 0);
+  const targetMinutes = MAX_WEEKLY_MINUTES;
+
+  return {
+    usedMinutes,
+    targetMinutes,
+    differenceMinutes: usedMinutes - targetMinutes
+  };
+}
+
+function getOverviewWeekPlannerCellText(resolved) {
+  if (!resolved) return "";
+  const status = getResolvedStatus(resolved);
+
+  if (status === ENTRY_STATUS.WORK) {
+    const entry = resolved.sourceEntry || resolved;
+    if (entry.start && entry.end) {
+      if (entry.mode === "flex") {
+        return `${formatHMToQuarterLabel(entry.start)}-${formatHMToQuarterLabel(entry.end)}`;
+      }
+      return `${entry.start}-${entry.end}`;
+    }
+    return entry.code || resolved.label || "";
+  }
+
+  if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.EXTERNAL) {
+    return getStatusShortLabel(status);
+  }
+
+  return resolved.label || "";
+}
+
+function buildOverviewWeekPlannerTable(weekDays, employees) {
+  const visibleDays = (Array.isArray(weekDays) ? weekDays : []).slice(0, 6).filter(Boolean);
+
+  let html = `
+    <table class="overviewPlannerTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+  `;
+
+  visibleDays.forEach((day) => {
+    const classes = ["overviewPlannerDayHead"];
+    if (day.isOutsideMonth) classes.push("overviewPlannerDayHeadOutside");
+    html += `<th class="${classes.join(" ")}">${day.weekdayLabel}<br>${pad2(day.date.getDate())}.${pad2(day.date.getMonth() + 1)}</th>`;
+  });
+
+  html += `
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  (employees || []).forEach((emp) => {
+    html += `
+      <tr>
+        <td class="nameRoleCell">
+          <div class="nameRoleName">${emp.name || "—"}</div>
+          <div class="nameRoleSub">${emp.roleKey || "-"}</div>
+        </td>
+    `;
+
+    visibleDays.forEach((day) => {
+      const resolved = getResolvedEntryForEmployeeOnIso(emp, day.iso);
+      const cellText = getOverviewWeekPlannerCellText(resolved);
+      const cellClasses = [getMonthCellClass(resolved, day), "overviewPlannerDayCell"];
+      if (day.isOutsideMonth) cellClasses.push("overviewPlannerDayCellOutside");
+      html += `<td class="${cellClasses.join(" ")}">${cellText}</td>`;
+    });
+
+    html += `
+      </tr>
+    `;
+  });
+
+  html += `
+      </tbody>
+    </table>
+  `;
+
+  return html;
+}
+
 function formatIsoDateForFileName(date = new Date()) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
@@ -3126,47 +3216,75 @@ function renderSummary() {
 
 function renderOverviewView() {
   const overviewMonthContentEl = document.getElementById("overviewMonthContent");
-  const overviewWeekInfoEl = document.getElementById("overviewWeekInfo");
-  if (!overviewMonthContentEl || !overviewWeekInfoEl) return;
+  if (!overviewMonthContentEl) return;
 
-  const weekDays = getActiveWeekDays();
-  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth));
-  const plannedMinutes = activeEmployees.reduce((sum, emp) => sum + getEmployeePlannedMinutesForWeek(emp, weekDays), 0);
-  const targetMinutes = activeEmployees.reduce((sum, emp) => sum + getEmployeeTargetMinutesForWeek(emp, weekDays, state.activeMonth), 0);
-  const differenceMinutes = plannedMinutes - targetMinutes;
-  const weekRangeText = (state.weekFrom && state.weekTo)
-    ? `${state.weekFrom} bis ${state.weekTo}`
-    : "—";
-  const differenceClass = differenceMinutes === 0 ? "deltaZero" : differenceMinutes > 0 ? "deltaPos" : "deltaNeg";
-  const differenceLabel = differenceMinutes >= 0
-    ? `Über ${formatSignedMinutes(differenceMinutes).replace("+", "")}`
-    : `Rest ${minutesToHM(Math.abs(differenceMinutes))}`;
-
-  overviewWeekInfoEl.innerHTML = `
-    <div class="overviewWeekCard">
-      <div class="miniLabel">Woche vom / bis</div>
-      <strong>${weekRangeText}</strong>
-    </div>
-    <div class="overviewWeekCard">
-      <div class="miniLabel">Geplante Stunden</div>
-      <strong>${minutesToHM(plannedMinutes)}</strong>
-    </div>
-    <div class="overviewWeekCard">
-      <div class="miniLabel">Sollstunden</div>
-      <strong>${minutesToHM(targetMinutes)}</strong>
-    </div>
-    <div class="overviewWeekCard">
-      <div class="miniLabel">Rest / Über</div>
-      <strong class="${differenceClass}">${differenceLabel}</strong>
-    </div>
-  `;
-
-  if (typeof renderMonthTableInto === "function") {
-    renderMonthTableInto(overviewMonthContentEl, {
-      withHeaderTitle: false,
-      tableId: "overviewMonthTable"
-    });
+  const overviewMonthTitleEl = document.getElementById("overviewMonthTitle");
+  const activeMonthDays = getActiveMonthDays();
+  if (overviewMonthTitleEl) {
+    overviewMonthTitleEl.textContent = activeMonthDays.length ? getMonthTitleFromDays(activeMonthDays) : "Monatsübersicht";
   }
+
+  const monthWeeks = getCurrentMonthWeeks();
+  if (!monthWeeks.length || typeof buildMonthViewMarkup !== "function") {
+    overviewMonthContentEl.innerHTML = "<div class='small'>Kein Monat geladen.</div>";
+    return;
+  }
+
+  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth));
+
+  const weekBlocksHtml = monthWeeks
+    .map((weekDays, index) => {
+      const weekDaysInMonth = weekDays.filter((day) => day?.inCurrentMonth);
+      if (!weekDaysInMonth.length) return "";
+
+      const weekSummary = getWeekPlannerSummaryForDays(weekDays);
+      const calculationDays = weekDays.slice(0, 6).filter(Boolean);
+      const rangeStartIso = calculationDays[0]?.iso || "";
+      const rangeEndIso = calculationDays[calculationDays.length - 1]?.iso || "";
+      const weekRangeText = (rangeStartIso && rangeEndIso)
+        ? `${formatIsoDateForOverview(rangeStartIso)} bis ${formatIsoDateForOverview(rangeEndIso)}`
+        : "—";
+      const differenceClass = weekSummary.differenceMinutes === 0 ? "deltaZero" : weekSummary.differenceMinutes > 0 ? "deltaPos" : "deltaNeg";
+      const differenceLabel = weekSummary.differenceMinutes >= 0
+        ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
+        : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
+      const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
+
+      return `
+        <section class="overviewWeekSection">
+          <div class="overviewWeekInfo">
+            <div class="overviewWeekCard">
+              <div class="miniLabel">Woche vom / bis</div>
+              <strong>${weekRangeText}</strong>
+            </div>
+            <div class="overviewWeekCard">
+              <div class="miniLabel">Genutzte Wochenstunden</div>
+              <strong>${minutesToHM(weekSummary.usedMinutes)}</strong>
+            </div>
+            <div class="overviewWeekCard">
+              <div class="miniLabel">Sollstunden</div>
+              <strong>${minutesToHM(weekSummary.targetMinutes)}</strong>
+            </div>
+            <div class="overviewWeekCard">
+              <div class="miniLabel">Rest / Über</div>
+              <strong class="${differenceClass}">${differenceLabel}</strong>
+            </div>
+          </div>
+          <div class="overviewWeekTableWrap">
+            ${weekTableMarkup}
+          </div>
+        </section>
+      `;
+    })
+    .join("");
+
+  overviewMonthContentEl.innerHTML = weekBlocksHtml || "<div class='small'>Kein Monat geladen.</div>";
+}
+
+function formatIsoDateForOverview(isoDate) {
+  const date = fromIsoDate(isoDate);
+  if (!date) return isoDate || "—";
+  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
 function renderAllViews() {

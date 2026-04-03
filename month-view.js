@@ -75,7 +75,8 @@ function getMonthCellClass(resolved, day) {
   return classes.join(" ");
 }
 
-function buildMonthHeaderRow(days) {
+function buildMonthHeaderRow(days, options = {}) {
+  const { includeSummaryColumns = true } = options;
   let html = `
     <tr>
       <th>Name</th>
@@ -87,17 +88,23 @@ function buildMonthHeaderRow(days) {
     html += `<th${className}>${pad2(day.date.getDate())}<br>${day.weekdayLabel}</th>`;
   });
 
-  html += `
+  if (includeSummaryColumns) {
+    html += `
       <th>Monat Ist</th>
       <th>Δ Monat</th>
       <th>Gesamtminus</th>
+    `;
+  }
+
+  html += `
     </tr>
   `;
 
   return html;
 }
 
-function buildMonthEmployeeRow(emp, days) {
+function buildMonthEmployeeRow(emp, days, options = {}) {
+  const { includeSummaryColumns = true } = options;
   let html = `
     <tr>
       <td class="nameRoleCell">
@@ -144,35 +151,43 @@ if (status === ENTRY_STATUS.WORK) {
 `;
   });
 
-  const monthIsManual = isMonthActualManual(emp, state.activeMonth);
-  const manualMarker = monthIsManual
-    ? '<span class="manualMonthMarker" aria-label="Monats-Ist manuell" title="Monats-Iststunden manuell hinterlegt.">•</span>'
-    : "";
-  const monthDisplayMinutes = getEffectiveMonthActualMinutes(emp, state.activeMonth, monthMinutes);
-  const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
-  const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
-  const monthDeltaTitle = monthIsManual
-    ? "Delta des Monats. Iststunden manuell hinterlegt."
-    : "Delta des Monats.";
-  const monthActualTitle = monthIsManual
-    ? "Monats-Iststunden manuell hinterlegt."
-    : "Monats-Iststunden planbasiert berechnet.";
+  if (includeSummaryColumns) {
+    const monthIsManual = isMonthActualManual(emp, state.activeMonth);
+    const manualMarker = monthIsManual
+      ? '<span class="manualMonthMarker" aria-label="Monats-Ist manuell" title="Monats-Iststunden manuell hinterlegt.">•</span>'
+      : "";
+    const monthDisplayMinutes = getEffectiveMonthActualMinutes(emp, state.activeMonth, monthMinutes);
+    const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
+    const totalMinusMinutes = getEmployeeTotalMinusMinutes(emp);
+    const monthDeltaTitle = monthIsManual
+      ? "Delta des Monats. Iststunden manuell hinterlegt."
+      : "Delta des Monats.";
+    const monthActualTitle = monthIsManual
+      ? "Monats-Iststunden manuell hinterlegt."
+      : "Monats-Iststunden planbasiert berechnet.";
 
-  html += `
+    html += `
       <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}${manualMarker}</td>
       <td class="weekDeltaCell ${monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"}" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
       <td class="weekDeltaCell ${totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"}">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
+    `;
+  }
+
+  html += `
     </tr>
   `;
 
   return html;
 }
 function bindMonthCellActions(scopeEl = document) {
-  const table = scopeEl?.querySelector?.("table") || document.getElementById("monthTable");
-  if (!table) return;
+  const tables = scopeEl?.querySelectorAll?.("table")?.length
+    ? [...scopeEl.querySelectorAll("table")]
+    : [document.getElementById("monthTable")].filter(Boolean);
+  if (!tables.length) return;
 
-  table.querySelectorAll(".monthCellClickable").forEach((cell) => {
-    cell.addEventListener("click", () => {
+  tables.forEach((table) => {
+    table.querySelectorAll(".monthCellClickable").forEach((cell) => {
+      cell.addEventListener("click", () => {
       const empId = cell.dataset.empId;
       const isoDate = cell.dataset.iso;
 
@@ -219,6 +234,7 @@ function bindMonthCellActions(scopeEl = document) {
 
       openMonthFallbackDialog(emp, isoDate);
     });
+  });
   });
 }
 
@@ -290,6 +306,14 @@ function bindMonthNavigation() {
   document.getElementById("monthNext")?.addEventListener("click", () => {
     shiftActiveMonth(1);
   });
+
+  document.getElementById("overviewMonthPrev")?.addEventListener("click", () => {
+    shiftActiveMonth(-1);
+  });
+
+  document.getElementById("overviewMonthNext")?.addEventListener("click", () => {
+    shiftActiveMonth(1);
+  });
 }
 
 function updateMonthHeaderTitle(days) {
@@ -300,24 +324,36 @@ function updateMonthHeaderTitle(days) {
 }
 
 function buildMonthViewMarkup(days, options = {}) {
-  const { tableId = "monthTable" } = options;
+  const {
+    tableId = "monthTable",
+    tableClass = "",
+    activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth)),
+    includeSummaryColumns = true,
+    withViewHeader = true
+  } = options;
+  const tableClassAttr = tableClass ? ` class="${tableClass}"` : "";
   let html = `
+  `;
+
+  if (withViewHeader) {
+    html += `
     <div class="monthViewHeader">
       <strong>${getMonthTitleFromDays(days)}</strong>
       <span class="small">${days.length} Tage im aktuellen Monat</span>
     </div>
+    `;
+  }
 
-    <table id="${tableId}">
+  html += `
+    <table id="${tableId}"${tableClassAttr}>
       <thead>
-        ${buildMonthHeaderRow(days)}
+        ${buildMonthHeaderRow(days, { includeSummaryColumns })}
       </thead>
       <tbody>
   `;
 
-  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth));
-
   activeEmployees.forEach((emp) => {
-    html += buildMonthEmployeeRow(emp, days);
+    html += buildMonthEmployeeRow(emp, days, { includeSummaryColumns });
   });
 
   html += `
@@ -330,18 +366,32 @@ function buildMonthViewMarkup(days, options = {}) {
 
 function renderMonthTableInto(container, options = {}) {
   if (!container) return;
-  const { withHeaderTitle = true, tableId = "monthTable" } = options;
+  const {
+    withHeaderTitle = true,
+    tableId = "monthTable",
+    tableClass = "",
+    days = null,
+    activeEmployees = null,
+    includeSummaryColumns = true,
+    withViewHeader = true
+  } = options;
 
   container.innerHTML = "";
 
-  const days = getActiveMonthDays();
-  if (!days.length) {
+  const tableDays = Array.isArray(days) ? days : getActiveMonthDays();
+  if (!tableDays.length) {
     container.innerHTML = "<div class='small'>Kein Monat geladen.</div>";
     return;
   }
 
-  if (withHeaderTitle) updateMonthHeaderTitle(days);
-  container.innerHTML = buildMonthViewMarkup(days, { tableId });
+  if (withHeaderTitle) updateMonthHeaderTitle(tableDays);
+  container.innerHTML = buildMonthViewMarkup(tableDays, {
+    tableId,
+    tableClass,
+    activeEmployees: Array.isArray(activeEmployees) ? activeEmployees : undefined,
+    includeSummaryColumns,
+    withViewHeader
+  });
 
   bindMonthCellActions(container);
 }

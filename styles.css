@@ -791,13 +791,14 @@ select {
 }
 
 #overviewMonthContent {
-  position: relative;
-  overflow: auto;
-  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 #monthTable,
-#overviewMonthTable {
+#overviewMonthTable,
+.overviewWeekTable {
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
@@ -808,7 +809,9 @@ select {
 #monthTable th,
 #monthTable td,
 #overviewMonthTable th,
-#overviewMonthTable td {
+#overviewMonthTable td,
+.overviewWeekTable th,
+.overviewWeekTable td {
   padding: 6px 8px;
   border: 1px solid #d9d9d9;
   text-align: center;
@@ -817,7 +820,8 @@ select {
 }
 
 #monthTable thead th,
-#overviewMonthTable thead th {
+#overviewMonthTable thead th,
+.overviewWeekTable thead th {
   position: sticky;
   top: 0;
   z-index: 3;
@@ -829,7 +833,9 @@ select {
 #monthTable td:first-child,
 #monthTable th:first-child,
 #overviewMonthTable td:first-child,
-#overviewMonthTable th:first-child {
+#overviewMonthTable th:first-child,
+.overviewWeekTable td:first-child,
+.overviewWeekTable th:first-child {
   position: sticky;
   left: 0;
   z-index: 2;
@@ -840,7 +846,8 @@ select {
 }
 
 #monthTable th:first-child,
-#overviewMonthTable th:first-child {
+#overviewMonthTable th:first-child,
+.overviewWeekTable th:first-child {
   z-index: 4;
   background: #f7f7f7;
 }
@@ -848,13 +855,16 @@ select {
 #monthTable td:last-child,
 #monthTable th:last-child,
 #overviewMonthTable td:last-child,
-#overviewMonthTable th:last-child {
+#overviewMonthTable th:last-child,
+.overviewWeekTable td:last-child,
+.overviewWeekTable th:last-child {
   min-width: 72px;
   font-weight: 600;
 }
 
 #monthTable .nameRoleCell,
-#overviewMonthTable .nameRoleCell {
+#overviewMonthTable .nameRoleCell,
+.overviewWeekTable .nameRoleCell {
   min-width: 140px;
 }
 
@@ -870,6 +880,64 @@ select {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
+}
+
+.overviewWeekSection {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.overviewWeekTableWrap {
+  position: relative;
+  overflow: auto;
+  max-height: 48vh;
+}
+
+.overviewPlannerTable {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.overviewPlannerTable th,
+.overviewPlannerTable td {
+  padding: 7px 8px;
+  border: 1px solid #d9d9d9;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.overviewPlannerTable th:first-child,
+.overviewPlannerTable td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 140px;
+  background: #fff;
+  text-align: left;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+}
+
+.overviewPlannerTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #f7f7f7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.overviewPlannerTable thead th:first-child {
+  z-index: 4;
+}
+
+.overviewPlannerDayHeadOutside,
+.overviewPlannerDayCellOutside {
+  opacity: 0.6;
 }
 
 .monthViewHeader {
@@ -1973,6 +2041,7 @@ body.dark .viewBtn.active {
 
 body.dark #monthTable,
 body.dark #overviewMonthTable,
+body.dark .overviewWeekTable,
 body.dark .mepTable,
 body.dark #weekTable {
   background: #232529;
@@ -1983,6 +2052,10 @@ body.dark #monthTable th,
 body.dark #monthTable td,
 body.dark #overviewMonthTable th,
 body.dark #overviewMonthTable td,
+body.dark .overviewWeekTable th,
+body.dark .overviewWeekTable td,
+body.dark .overviewPlannerTable th,
+body.dark .overviewPlannerTable td,
 body.dark .mepTable th,
 body.dark .mepTable td,
 body.dark #weekTable th,
@@ -1993,7 +2066,9 @@ body.dark #weekTable td {
 
 body.dark #weekTable th,
 body.dark #monthTable thead th,
-body.dark #overviewMonthTable thead th {
+body.dark #overviewMonthTable thead th,
+body.dark .overviewWeekTable thead th,
+body.dark .overviewPlannerTable thead th {
   background: linear-gradient(#2f3238, #2a2c30);
 }
 
@@ -2018,7 +2093,11 @@ body.dark #weekTable td:first-child,
 body.dark #monthTable td:first-child,
 body.dark #monthTable th:first-child,
 body.dark #overviewMonthTable td:first-child,
-body.dark #overviewMonthTable th:first-child {
+body.dark #overviewMonthTable th:first-child,
+body.dark .overviewWeekTable td:first-child,
+body.dark .overviewWeekTable th:first-child,
+body.dark .overviewPlannerTable td:first-child,
+body.dark .overviewPlannerTable th:first-child {
   box-shadow: 2px 0 4px rgba(0, 0, 0, 0.35);
 }
 
