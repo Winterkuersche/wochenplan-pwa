@@ -3545,7 +3545,7 @@ document.getElementById("btnResetWeek")?.addEventListener("click", () => {
   commitPlanChange();
   renderAll();
 });
-function printCurrentView() {
+async function printCurrentView() {
   const currentView = uiState?.currentView || "week";
   const shouldUseOverviewExportMode = currentView === "overview";
 
@@ -3562,6 +3562,15 @@ function printCurrentView() {
 
   document.body.classList.add(exportClassName);
   window.addEventListener("afterprint", cleanupExportMode, { once: true });
+
+  await new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.setTimeout(resolve, 40);
+      });
+    });
+  });
+
   window.print();
 
   window.setTimeout(() => {
@@ -3576,7 +3585,7 @@ btnPrintEl?.addEventListener("click", async () => {
     return;
   }
 
-  printCurrentView();
+  await printCurrentView();
 });
 
 btnExportBackupEl?.addEventListener("click", () => {

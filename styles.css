@@ -3973,16 +3973,29 @@ body.dark .mepTable th {
     background: #fff !important;
   }
 
+  body.export-overview-mode > * {
+    visibility: hidden !important;
+  }
+
   body.export-overview-mode > *:not(#overviewView) {
-    display: none !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
   }
 
   body.export-overview-mode #overviewView {
+    visibility: visible !important;
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     background: #fff !important;
+  }
+
+  body.export-overview-mode #overviewView * {
+    visibility: visible !important;
   }
 
   body.export-overview-mode #overviewView .sectionhead {
@@ -4002,8 +4015,8 @@ body.dark .mepTable th {
 
   body.export-overview-mode .overviewWeekSection {
     margin: 0 0 8mm;
-    break-inside: avoid-page;
-    page-break-inside: avoid;
+    break-inside: auto;
+    page-break-inside: auto;
   }
 
   body.export-overview-mode .overviewWeekSection:last-child {
@@ -4013,6 +4026,16 @@ body.dark .mepTable th {
   body.export-overview-mode .overviewWeekInfo,
   body.export-overview-mode .overviewWeekTableWrap {
     break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body.export-overview-mode .overviewPlannerTable thead {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  body.export-overview-mode .overviewPlannerTable tr {
+    break-inside: avoid;
     page-break-inside: avoid;
   }
 
