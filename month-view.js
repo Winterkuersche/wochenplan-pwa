@@ -167,8 +167,8 @@ if (status === ENTRY_STATUS.WORK) {
 
   return html;
 }
-function bindMonthCellActions() {
-  const table = document.getElementById("monthTable");
+function bindMonthCellActions(scopeEl = document) {
+  const table = scopeEl?.querySelector?.("table") || document.getElementById("monthTable");
   if (!table) return;
 
   table.querySelectorAll(".monthCellClickable").forEach((cell) => {
@@ -299,27 +299,15 @@ function updateMonthHeaderTitle(days) {
   titleEl.textContent = getMonthTitleFromDays(days);
 }
 
-function renderMonthView() {
-  const container = getMonthViewContentEl();
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  const days = getActiveMonthDays();
-  if (!days.length) {
-    container.innerHTML = "<div class='small'>Kein Monat geladen.</div>";
-    return;
-  }
-
-  updateMonthHeaderTitle(days);
-
+function buildMonthViewMarkup(days, options = {}) {
+  const { tableId = "monthTable" } = options;
   let html = `
     <div class="monthViewHeader">
       <strong>${getMonthTitleFromDays(days)}</strong>
       <span class="small">${days.length} Tage im aktuellen Monat</span>
     </div>
 
-    <table id="monthTable">
+    <table id="${tableId}">
       <thead>
         ${buildMonthHeaderRow(days)}
       </thead>
@@ -337,9 +325,32 @@ function renderMonthView() {
     </table>
   `;
 
-  container.innerHTML = html;
+  return html;
+}
 
-  bindMonthCellActions();
+function renderMonthTableInto(container, options = {}) {
+  if (!container) return;
+  const { withHeaderTitle = true, tableId = "monthTable" } = options;
+
+  container.innerHTML = "";
+
+  const days = getActiveMonthDays();
+  if (!days.length) {
+    container.innerHTML = "<div class='small'>Kein Monat geladen.</div>";
+    return;
+  }
+
+  if (withHeaderTitle) updateMonthHeaderTitle(days);
+  container.innerHTML = buildMonthViewMarkup(days, { tableId });
+
+  bindMonthCellActions(container);
+}
+
+function renderMonthView() {
+  renderMonthTableInto(getMonthViewContentEl(), {
+    withHeaderTitle: true,
+    tableId: "monthTable"
+  });
 }
 
 function getMonthFallbackDialogOptions() {
