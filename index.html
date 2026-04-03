@@ -26,7 +26,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <div>
 <h1>Wochenplan</h1>
-<div class="small">Mo-Sa · Stammdaten + 4 Ansichten</div>
+<div class="small">Mo-Sa · Stammdaten + 5 Ansichten</div>
 </div>
 
 <div class="viewSwitch" id="viewSwitch">
@@ -41,6 +41,10 @@ Wochenplan
 
 <button id="btnViewMonth" class="viewBtn">
 Monat
+</button>
+
+<button id="btnViewOverview" class="viewBtn">
+Übersicht
 </button>
 
 
@@ -314,7 +318,22 @@ L1E-L4E ohne Abrechnung
 </section>
 
 
+<section id="overviewView" class="overview hidden no-print">
 
+  <div class="sectionhead">
+    <h2>Übersicht</h2>
+    <div class="small">
+      Monatsüberblick mit kompakten Kennzahlen der aktuellen Woche
+    </div>
+  </div>
+
+  <div id="overviewWeekInfo" class="overviewWeekInfo"></div>
+
+  <div class="tableWrap compactTableWrap">
+    <div id="overviewMonthContent"></div>
+  </div>
+
+</section>
 
 
 <section id="mepTemplateView" class="overview hidden no-print">

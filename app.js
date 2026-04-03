@@ -115,7 +115,7 @@ function logResponsiveRefreshTrace(traceId, stage, payload = {}) {
 
 function sanitizeCurrentView(view) {
   if (view === "form") return "mep";
-  if (["day", "week", "month", "mep"].includes(view)) return view;
+  if (["day", "week", "month", "overview", "mep"].includes(view)) return view;
   return "week";
 }
 
@@ -1246,11 +1246,13 @@ const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
 const monthViewEl = document.getElementById("monthView");
+const overviewViewEl = document.getElementById("overviewView");
 const mepTemplateViewEl = document.getElementById("mepTemplateView");
 
 const btnViewDayEl = document.getElementById("btnViewDay");
 const btnViewWeekEl = document.getElementById("btnViewWeek");
 const btnViewMonthEl = document.getElementById("btnViewMonth");
+const btnViewOverviewEl = document.getElementById("btnViewOverview");
 const btnViewMepEl = document.getElementById("btnViewMep");
 const btnPrevWeekEl = document.getElementById("btnPrevWeek");
 const btnCurrentWeekEl = document.getElementById("btnCurrentWeek");
@@ -2828,11 +2830,13 @@ function renderView() {
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
   monthViewEl.classList.toggle("hidden", view !== "month");
+  overviewViewEl.classList.toggle("hidden", view !== "overview");
   mepTemplateViewEl.classList.toggle("hidden", view !== "mep");
 
   btnViewDayEl.classList.toggle("active", view === "day");
   btnViewWeekEl.classList.toggle("active", view === "week");
   btnViewMonthEl.classList.toggle("active", view === "month");
+  btnViewOverviewEl.classList.toggle("active", view === "overview");
   btnViewMepEl.classList.toggle("active", view === "mep");
 
   renderTopbarVisibility();
@@ -3120,12 +3124,58 @@ function renderSummary() {
   if (mepMonthYearEl) mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
 }
 
+function renderOverviewView() {
+  const overviewMonthContentEl = document.getElementById("overviewMonthContent");
+  const overviewWeekInfoEl = document.getElementById("overviewWeekInfo");
+  if (!overviewMonthContentEl || !overviewWeekInfoEl) return;
+
+  const weekDays = getActiveWeekDays();
+  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, state.activeMonth));
+  const plannedMinutes = activeEmployees.reduce((sum, emp) => sum + getEmployeePlannedMinutesForWeek(emp, weekDays), 0);
+  const targetMinutes = activeEmployees.reduce((sum, emp) => sum + getEmployeeTargetMinutesForWeek(emp, weekDays, state.activeMonth), 0);
+  const differenceMinutes = plannedMinutes - targetMinutes;
+  const weekRangeText = (state.weekFrom && state.weekTo)
+    ? `${state.weekFrom} bis ${state.weekTo}`
+    : "—";
+  const differenceClass = differenceMinutes === 0 ? "deltaZero" : differenceMinutes > 0 ? "deltaPos" : "deltaNeg";
+  const differenceLabel = differenceMinutes >= 0
+    ? `Über ${formatSignedMinutes(differenceMinutes).replace("+", "")}`
+    : `Rest ${minutesToHM(Math.abs(differenceMinutes))}`;
+
+  overviewWeekInfoEl.innerHTML = `
+    <div class="overviewWeekCard">
+      <div class="miniLabel">Woche vom / bis</div>
+      <strong>${weekRangeText}</strong>
+    </div>
+    <div class="overviewWeekCard">
+      <div class="miniLabel">Geplante Stunden</div>
+      <strong>${minutesToHM(plannedMinutes)}</strong>
+    </div>
+    <div class="overviewWeekCard">
+      <div class="miniLabel">Sollstunden</div>
+      <strong>${minutesToHM(targetMinutes)}</strong>
+    </div>
+    <div class="overviewWeekCard">
+      <div class="miniLabel">Rest / Über</div>
+      <strong class="${differenceClass}">${differenceLabel}</strong>
+    </div>
+  `;
+
+  if (typeof renderMonthTableInto === "function") {
+    renderMonthTableInto(overviewMonthContentEl, {
+      withHeaderTitle: false,
+      tableId: "overviewMonthTable"
+    });
+  }
+}
+
 function renderAllViews() {
   renderSummary();
 
   if (typeof renderDayView === "function") renderDayView();
   if (typeof renderWeekView === "function") renderWeekView();
   if (typeof renderMonthView === "function") renderMonthView();
+  renderOverviewView();
   if (typeof renderMepTemplateView === "function") renderMepTemplateView();
 }
 
@@ -3307,6 +3357,15 @@ if (btnViewMonthEl) {
 if (btnViewWeekEl) {
   btnViewWeekEl.addEventListener("click", () => {
     uiState.currentView = "week";
+    saveAppStateDebounced();
+    renderView();
+    renderAllViews();
+  });
+}
+
+if (btnViewOverviewEl) {
+  btnViewOverviewEl.addEventListener("click", () => {
+    uiState.currentView = "overview";
     saveAppStateDebounced();
     renderView();
     renderAllViews();
