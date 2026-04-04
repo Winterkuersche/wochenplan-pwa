@@ -1,3 +1,7 @@
+// Dieses Modul ist bewusst auf manuelle Monats-Iststunden begrenzt:
+// - Parsing einzelner Zeilen und Bulk-Input
+// - Validierung/Normalisierung von YYYY-MM innerhalb dieses manuellen Kontexts
+// Keine allgemeine Monatskalender-Erzeugung; dafür ist month-engine.js zuständig.
 function parseManualMonthHoursLine(line) {
   if (typeof line !== "string") return null;
   const trimmed = line.trim();

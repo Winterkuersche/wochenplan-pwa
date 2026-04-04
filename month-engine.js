@@ -89,3 +89,14 @@ function getMonthPlanFromDateString(isoDateString) {
 
   return buildMonthPlan(date.getFullYear(), date.getMonth());
 }
+
+function getMonthPlanFromYearMonth(yearMonth) {
+  if (typeof yearMonth !== "string") return null;
+  const normalized = yearMonth.trim().match(/^(\d{4})-(\d{2})$/);
+  if (!normalized) return null;
+
+  const month = Number(normalized[2]);
+  if (!Number.isFinite(month) || month < 1 || month > 12) return null;
+
+  return getMonthPlanFromDateString(`${normalized[1]}-${normalized[2]}-01`);
+}

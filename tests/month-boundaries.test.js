@@ -37,3 +37,10 @@ test('month switch keeps week boundaries stable for adjacent months', () => {
   assert.equal(aprilFirstWeek[0].iso, '2026-03-30');
   assert.equal(aprilFirstWeek[6].iso, '2026-04-05');
 });
+
+test('getMonthPlanFromYearMonth resolves strict YYYY-MM values', () => {
+  const monthPlan = ctx.getMonthPlanFromYearMonth('2026-03');
+  assert.equal(monthPlan.meta.firstOfMonthIso, '2026-03-01');
+  assert.equal(monthPlan.weeks[0][0].iso, '2026-02-23');
+  assert.equal(ctx.getMonthPlanFromYearMonth('2026-3'), null);
+});
