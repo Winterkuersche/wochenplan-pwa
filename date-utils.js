@@ -1,5 +1,27 @@
-function pad2Date(value) {
+function pad2(value) {
   return String(value).padStart(2, "0");
+}
+
+function normalizeYearMonth(value) {
+  const normalized = String(value || "").trim();
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(normalized) ? normalized : "";
+}
+
+function shiftYearMonthByMonths(yearMonth, offsetMonths = 0) {
+  const normalized = normalizeYearMonth(yearMonth);
+  if (!normalized) return "";
+
+  const [year, month] = normalized.split("-").map(Number);
+  const date = new Date(year, month - 1, 1);
+  if (Number.isNaN(date.getTime())) return "";
+
+  date.setMonth(date.getMonth() + Number(offsetMonths || 0));
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+}
+
+function getYearMonthFromIsoDate(isoDate) {
+  if (typeof isoDate !== "string" || isoDate.length < 7) return "";
+  return normalizeYearMonth(isoDate.slice(0, 7));
 }
 
 function toIsoDate(date) {
@@ -7,7 +29,7 @@ function toIsoDate(date) {
     return "";
   }
 
-  return `${date.getFullYear()}-${pad2Date(date.getMonth() + 1)}-${pad2Date(date.getDate())}`;
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
 function fromIsoDate(isoDate) {
@@ -52,7 +74,7 @@ function isSundayIsoDate(isoDate) {
 
 function formatShortDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-  return `${pad2Date(date.getDate())}.${pad2Date(date.getMonth() + 1)}`;
+  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}`;
 }
 
 function formatIsoToShortDate(isoDate) {
@@ -63,7 +85,7 @@ function formatIsoToShortDate(isoDate) {
 
 function formatMonthYearFromDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-  return `${pad2Date(date.getMonth() + 1)}.${date.getFullYear()}`;
+  return `${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
 function getYearFromIsoDate(isoDate) {

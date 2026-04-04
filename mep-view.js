@@ -1,22 +1,18 @@
 const MEP_EMPLOYEES_PER_SHEET = 9;
 const MEP_HAND_VARIANT_COUNT = 8;
 
-function mepPad2(value) {
-  return String(value).padStart(2, "0");
-}
-
 function formatMepHeaderDate(isoDate) {
   if (!isoDate) return "";
   const date = fromIsoDate(isoDate);
   if (!date) return "";
-  return `${mepPad2(date.getDate())}.${mepPad2(date.getMonth() + 1)}.`;
+  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.`;
 }
 
 function formatMepMonthYear(isoDate) {
   if (!isoDate) return "____________";
   const date = fromIsoDate(isoDate);
   if (!date) return "____________";
-  return `${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+  return `${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
 function formatMepVisibleMonthTitle(yearMonth = state.activeMonth) {
@@ -53,7 +49,7 @@ function formatMepFullDate(isoDate) {
   if (!isoDate) return "____________";
   const date = fromIsoDate(isoDate);
   if (!date) return "____________";
-  return `${mepPad2(date.getDate())}.${mepPad2(date.getMonth() + 1)}.${date.getFullYear()}`;
+  return `${pad2(date.getDate())}.${pad2(date.getMonth() + 1)}.${date.getFullYear()}`;
 }
 
 function getMepRoleLabel(employee) {
