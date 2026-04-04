@@ -827,7 +827,7 @@ function setExternalHelp(employeeId, isoDate, branch, minutes) {
 
 function setAbsence(employeeId, from, to, type, note = "", options = {}) {
   const { commit = true } = options;
-  const absence = {
+  const entryInput = {
     id: crypto.randomUUID
       ? crypto.randomUUID()
       : `abs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -837,21 +837,34 @@ function setAbsence(employeeId, from, to, type, note = "", options = {}) {
     to,
     note
   };
+  const createdAbsence = createAbsenceEntry(entryInput);
+  if (!createdAbsence) return null;
 
-  state.absences.push(absence);
-  state.absences = normalizeAbsences(state.absences);
+  state.absences = normalizeAbsences(
+    addAbsenceEntry(state.absences || [], createdAbsence)
+  );
 
   if (commit) {
     commitPlanChange();
   }
 
-  return absence;
+  return createdAbsence;
 }
 
 function removeAbsence(absenceId) {
-  state.absences = state.absences.filter((a) => a.id !== absenceId);
+  state.absences = removeAbsenceEntry(state.absences || [], absenceId);
 
   commitPlanChange();
+}
+
+function applyVacationDaysForYear(year) {
+  state.employees.forEach((emp) => {
+    if (!emp) return;
+    emp.vacationDays = calculateVacationDays(emp, year);
+  });
+
+  saveAppStateDebounced();
+  renderAllViews();
 }
 function clearDay(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;

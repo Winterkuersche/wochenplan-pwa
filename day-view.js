@@ -1,6 +1,5 @@
 function getVacationEntryById(entryId) {
-  if (!entryId) return null;
-  return (state.absences || []).find((entry) => entry?.id === entryId) || null;
+  return getVacationEntryByIdFromAbsences(state.absences || [], entryId);
 }
 
 function formatVacationRange(entry) {
@@ -48,7 +47,7 @@ function openVacationEntryDialog(emp, entry) {
 }
 
 function renderVacationRangesForEmployee(emp) {
-  const entries = getVacationEntriesForEmployee(emp.id)
+  const entries = getVacationEntriesForEmployeeFromAbsences(state.absences || [], emp.id)
     .slice()
     .sort((a, b) => a.from.localeCompare(b.from));
 
@@ -120,7 +119,11 @@ function renderDayView() {
   const year = getVacationViewYear();
 
   state.employees.forEach((emp) => {
-    const summary = getVacationSummaryForEmployee(emp, year);
+    const usedVacationDays = getUsedVacationDaysFromScheduleForEmployee(emp.id, year);
+    const summary = getVacationSummaryForEmployee(emp, year, {
+      usedVacationDays,
+      absences: state.absences || []
+    });
     const months = getVacationMonthsForEmployee(emp, year);
     const rangesHtml = renderVacationRangesForEmployee(emp);
 
@@ -183,7 +186,7 @@ function getVacationViewYear() {
 function getVacationMonthsForEmployee(emp, year) {
   const months = new Array(12).fill(false);
 
-  const entries = getVacationEntriesForEmployee(emp.id);
+  const entries = getVacationEntriesForEmployeeFromAbsences(state.absences || [], emp.id);
 
   entries.forEach((entry) => {
     const from = fromIsoDate(entry.from);

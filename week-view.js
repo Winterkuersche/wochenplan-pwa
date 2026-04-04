@@ -517,11 +517,13 @@ function clearDayRange(employeeId, fromIso, toIso, options = {}) {
 }
 
 function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
-  state.absences = (state.absences || []).flatMap((entry) => {
-    if (!entry || entry.employeeId !== employeeId) return entry ? [entry] : [];
-    if (entry.type !== type) return [entry];
-    return subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso);
-  });
+  state.absences = removeAbsenceCoverage(
+    state.absences || [],
+    employeeId,
+    removeFromIso,
+    removeToIso,
+    type
+  );
 }
 
 function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
