@@ -1,4 +1,8 @@
 const MONTH_WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const MONTH_NAMES = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember"
+];
 
 function getStartOfVisibleMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
@@ -99,4 +103,65 @@ function getMonthPlanFromYearMonth(yearMonth) {
   if (!Number.isFinite(month) || month < 1 || month > 12) return null;
 
   return getMonthPlanFromDateString(`${normalized[1]}-${normalized[2]}-01`);
+}
+
+function getMonthTitleFromDays(days = []) {
+  if (!Array.isArray(days) || !days.length) return "Monat";
+  const firstDate = days[0]?.date;
+  if (!(firstDate instanceof Date)) return "Monat";
+  return `${MONTH_NAMES[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
+}
+
+function getMonthCellClass(resolved, day) {
+  const classes = ["monthCell"];
+  const status = getResolvedStatus(resolved);
+
+  if (day?.weekdayIndex === 6) classes.push("monthCellSunday");
+  if (resolved?.type === "holiday") classes.push("monthCellHoliday");
+  if (status === ENTRY_STATUS.VACATION) classes.push("monthCellVacation");
+  if (status === ENTRY_STATUS.SICK) classes.push("monthCellSick");
+  if (status === ENTRY_STATUS.EXTERNAL) classes.push("monthCellExternalHelp");
+  if (status === ENTRY_STATUS.WORK) classes.push("monthCellShift");
+
+  return classes.join(" ");
+}
+
+function getMonthCellText(resolved, options = {}) {
+  const { formatQuarterLabel = (value) => value } = options;
+  const status = getResolvedStatus(resolved);
+  let cellText = resolved?.label || "";
+
+  if (status === ENTRY_STATUS.WORK) {
+    const entry = resolved?.sourceEntry || resolved || {};
+    if (entry.start && entry.end) {
+      if (entry.mode === "flex") {
+        cellText = `${formatQuarterLabel(entry.start)}-${formatQuarterLabel(entry.end)}`;
+      } else {
+        cellText = `${entry.start}-${entry.end}`;
+      }
+    } else if (entry.code) {
+      cellText = entry.code;
+    }
+  } else if ([ENTRY_STATUS.VACATION, ENTRY_STATUS.SICK, ENTRY_STATUS.EXTERNAL].includes(status)) {
+    cellText = getStatusShortLabel(status);
+  }
+
+  return cellText;
+}
+
+function getMonthDialogTypeForResolvedEntry(resolved) {
+  if (!resolved || typeof resolved !== "object") return null;
+  if (resolved.type === "holiday") return null;
+  if (resolved.type === "vacation") return "U";
+  if (resolved.type === "sick") return "K";
+  if (resolved.type === "external-help") return "AH";
+
+  if (resolved.type === "shift" && resolved.sourceEntry) {
+    const mode = resolved.sourceEntry.mode;
+    if (mode === "late") return "L";
+    if (mode === "full") return "G";
+    if (mode === "flex") return "FLEX";
+  }
+
+  return null;
 }

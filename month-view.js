@@ -49,32 +49,6 @@ function getActiveMonthDays() {
   return days;
 }
 
-function getMonthTitleFromDays(days) {
-  if (!days.length) return "Monat";
-
-  const firstDate = days[0].date;
-  const monthNames = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember"
-  ];
-
-  return `${monthNames[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
-}
-
-function getMonthCellClass(resolved, day) {
-  const classes = ["monthCell"];
-  const status = getResolvedStatus(resolved);
-
-  if (day.weekdayIndex === 6) classes.push("monthCellSunday");
-  if (resolved.type === "holiday") classes.push("monthCellHoliday");
-  if (status === ENTRY_STATUS.VACATION) classes.push("monthCellVacation");
-  if (status === ENTRY_STATUS.SICK) classes.push("monthCellSick");
-  if (status === ENTRY_STATUS.EXTERNAL) classes.push("monthCellExternalHelp");
-  if (status === ENTRY_STATUS.WORK) classes.push("monthCellShift");
-
-  return classes.join(" ");
-}
-
 function buildMonthHeaderRow(days, options = {}) {
   const { includeSummaryColumns = true } = options;
   let html = `
@@ -120,26 +94,11 @@ function buildMonthEmployeeRow(emp, days, options = {}) {
     const className = getMonthCellClass(resolved, day);
 
     monthMinutes += resolved.minutesForMonth || 0;
+    const cellText = getMonthCellText(resolved, {
+      formatQuarterLabel: formatHMToQuarterLabel
+    });
 
-    let cellText = resolved.label || "";
-    const status = getResolvedStatus(resolved);
-
-if (status === ENTRY_STATUS.WORK) {
-  const entry = resolved.sourceEntry || resolved;
-
-  if (entry.start && entry.end) {
-    if (entry.mode === "flex") {
-      cellText = `${formatHMToQuarterLabel(entry.start)}-${formatHMToQuarterLabel(entry.end)}`;
-    } else {
-      cellText = `${entry.start}-${entry.end}`;
-    }
-  } else if (entry.code) {
-    cellText = entry.code;
-  }
-} else if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.EXTERNAL) {
-  cellText = getStatusShortLabel(status);
-}
-   html += `
+    html += `
   <td
     class="${className} monthCellClickable"
     data-emp-id="${emp.id}"
@@ -195,41 +154,10 @@ function bindMonthCellActions(scopeEl = document) {
       if (!emp || !isoDate) return;
 
       const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
-
-      if (resolved.type === "holiday") return;
-
-      if (resolved.type === "vacation") {
-        openShiftDialog("U", { emp, isoDate, type: "U" });
+      const dialogType = getMonthDialogTypeForResolvedEntry(resolved);
+      if (dialogType) {
+        openShiftDialog(dialogType, { emp, isoDate, type: dialogType });
         return;
-      }
-
-      if (resolved.type === "sick") {
-        openShiftDialog("K", { emp, isoDate, type: "K" });
-        return;
-      }
-
-      if (resolved.type === "external-help") {
-        openShiftDialog("AH", { emp, isoDate, type: "AH" });
-        return;
-      }
-
-      if (resolved.type === "shift" && resolved.sourceEntry) {
-        const entry = resolved.sourceEntry;
-
-        if (entry.mode === "late") {
-          openShiftDialog("L", { emp, isoDate, type: "L" });
-          return;
-        }
-
-        if (entry.mode === "full") {
-          openShiftDialog("G", { emp, isoDate, type: "G" });
-          return;
-        }
-
-        if (entry.mode === "flex") {
-          openShiftDialog("FLEX", { emp, isoDate, type: "FLEX" });
-          return;
-        }
       }
 
       openMonthFallbackDialog(emp, isoDate);
