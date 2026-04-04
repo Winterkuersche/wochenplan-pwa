@@ -1,59 +1,17 @@
-function getMobileErrorPanelElements() {
-  return {
-    panel: document.getElementById("mobileErrorPanel"),
-    text: document.getElementById("mobileErrorPanelText")
-  };
+if (!window.AppOrchestration) {
+  throw new Error("AppOrchestration nicht verfügbar. Bitte Lade-Reihenfolge in index.html prüfen.");
 }
 
-function isMobileDebugPanelEnabled() {
-  try {
-    const params = new URLSearchParams(window.location.search || "");
-    return params.get("debug") === "1";
-  } catch {
-    return false;
-  }
-}
+const {
+  bindRuntimeErrorListeners,
+  createResponsiveViewController,
+  createStartupSelfTest,
+  isMobileDebugPanelEnabled,
+  sanitizeUiState,
+  showMobileRuntimeError
+} = window.AppOrchestration;
 
-function showMobileRuntimeError(details, options = {}) {
-  const { force = false } = options;
-  if (!force && !isMobileDebugPanelEnabled()) return;
-
-  const { panel, text } = getMobileErrorPanelElements();
-  if (!panel || !text) return;
-
-  const nextMessage = [
-    `Zeit: ${new Date().toISOString()}`,
-    `Fehler: ${details.message || "Unbekannter Fehler"}`,
-    `Datei: ${details.file || "-"}`,
-    `Zeile: ${details.line || "-"}`,
-    details.column ? `Spalte: ${details.column}` : ""
-  ].filter(Boolean).join("\n");
-
-  text.textContent = `${nextMessage}\n\n${text.textContent || ""}`.trim();
-  panel.classList.remove("hidden");
-}
-
-window.addEventListener("error", (event) => {
-  showMobileRuntimeError({
-    message: event.message,
-    file: event.filename,
-    line: event.lineno,
-    column: event.colno
-  });
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-  const reason = event.reason;
-  const message = typeof reason === "string"
-    ? reason
-    : reason?.message || JSON.stringify(reason);
-
-  showMobileRuntimeError({
-    message,
-    file: reason?.fileName || reason?.sourceURL || "",
-    line: reason?.line || reason?.lineNumber || ""
-  });
-});
+bindRuntimeErrorListeners();
 
 document.title = `${APP_META.name} ${APP_META.version}`;
 
@@ -98,152 +56,7 @@ let autoSaveTimerId = null;
 let saveStatusTimerId = null;
 let saveStatusMessage = "";
 let saveStatusHasError = false;
-let responsiveViewRefreshTimerIds = [];
-let lastMepFitMetricsKey = "";
-let lastResponsiveViewRefreshView = "";
-let hasTriggeredPageShowResponsiveRefresh = false;
-let responsiveRefreshTraceCounter = 0;
-
-function createResponsiveRefreshTraceId() {
-  responsiveRefreshTraceCounter += 1;
-  return `mep-refresh-${Date.now()}-${responsiveRefreshTraceCounter}`;
-}
-
-function logResponsiveRefreshTrace(traceId, stage, payload = {}) {
-  console.debug(`[responsive-mep][${traceId}] ${stage}`, payload);
-}
-
-function sanitizeCurrentView(view) {
-  if (view === "form") return "mep";
-  if (["day", "week", "month", "overview", "mep"].includes(view)) return view;
-  return "week";
-}
-
-function sanitizeUiState(rawUi) {
-  const mergedUi = { ...defaultUiState(), ...(rawUi || {}) };
-  return {
-    ...mergedUi,
-    currentView: sanitizeCurrentView(mergedUi.currentView),
-    mepAnonymized: Boolean(mergedUi.mepAnonymized)
-  };
-}
-
-function isResponsiveEmbeddedViewActive() {
-  const currentView = uiState?.currentView || "week";
-  return currentView === "mep";
-}
-
-function updateAppViewportHeightVar() {
-  const viewportHeight = window.visualViewport?.height || window.innerHeight;
-  if (!Number.isFinite(viewportHeight) || viewportHeight <= 0) return;
-
-  const onePercent = viewportHeight * 0.01;
-  document.documentElement.style.setProperty("--app-vh", `${onePercent}px`);
-  document.documentElement.style.setProperty("--app-dvh", `${viewportHeight}px`);
-}
-
-function updateEmbeddedViewMaxHeightVar(selector, cssVar) {
-  const viewportHeight = window.visualViewport?.height || window.innerHeight;
-  const targetEl = document.querySelector(selector);
-
-  if (!targetEl || !Number.isFinite(viewportHeight) || viewportHeight <= 0) {
-    document.documentElement.style.removeProperty(cssVar);
-    return;
-  }
-
-  const rect = targetEl.getBoundingClientRect();
-  const topOffset = Math.max(rect.top, 0);
-  const availableHeight = Math.max(240, Math.floor(viewportHeight - topOffset - 12));
-
-  document.documentElement.style.setProperty(cssVar, `${availableHeight}px`);
-}
-
-function updateResponsiveViewportMetrics() {
-  updateAppViewportHeightVar();
-  updateEmbeddedViewMaxHeightVar("#mepTemplateView", "--mep-template-view-max-height");
-}
-
-function getMepFitMetricsKey() {
-  const viewEl = document.getElementById("mepTemplateView");
-  const pagesEl = document.getElementById("mepTemplatePages");
-  const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || 0);
-  const viewportHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
-  const viewRect = viewEl?.getBoundingClientRect?.() || null;
-  const pagesRect = pagesEl?.getBoundingClientRect?.() || null;
-
-  return [
-    viewportWidth,
-    viewportHeight,
-    window.screen?.orientation?.type || window.orientation || "",
-    viewRect ? `${Math.round(viewRect.width)}x${Math.round(viewRect.height)}@${Math.round(viewRect.top)}` : "",
-    pagesRect ? `${Math.round(pagesRect.width)}x${Math.round(pagesRect.height)}` : "",
-    pagesEl?.childElementCount || 0
-  ].join("|");
-}
-
-function shouldRefreshMepTemplateView(options = {}) {
-  const { force = false, traceId = "no-trace" } = options;
-  if ((uiState?.currentView || "week") !== "mep") return false;
-  if (typeof renderMepTemplateView !== "function") return false;
-
-  const metricsKey = getMepFitMetricsKey();
-  const metricsChanged = metricsKey !== lastMepFitMetricsKey;
-
-  logResponsiveRefreshTrace(traceId, "metrics-check", {
-    force,
-    metricsChanged,
-    previousKey: lastMepFitMetricsKey,
-    nextKey: metricsKey
-  });
-
-  if (!force && !metricsChanged) return false;
-
-  lastMepFitMetricsKey = metricsKey;
-  return true;
-}
-
-function renderMepTemplateResponsiveView(options = {}) {
-  const { traceId = "no-trace" } = options;
-  logResponsiveRefreshTrace(traceId, "render-start", { scope: "month" });
-  renderMepTemplateView({ scope: "month" });
-  logResponsiveRefreshTrace(traceId, "render-end");
-}
-
-function runMepPostRenderSync(options = {}) {
-  const {
-    traceId = "no-trace",
-    postRenderSync = null
-  } = options;
-
-  if (typeof postRenderSync !== "function") return;
-  logResponsiveRefreshTrace(traceId, "post-render-sync-start");
-  postRenderSync();
-  logResponsiveRefreshTrace(traceId, "post-render-sync-end");
-}
-
-function refreshMepTemplateViewIfMetricsChanged(options = {}) {
-  const { traceId = "no-trace" } = options;
-  if (!shouldRefreshMepTemplateView(options)) {
-    logResponsiveRefreshTrace(traceId, "refresh-skip");
-    return false;
-  }
-
-  renderMepTemplateResponsiveView(options);
-  runMepPostRenderSync(options);
-  return true;
-}
-
-function refreshCurrentResponsiveView(options = {}) {
-  const { traceId = "no-trace" } = options;
-  const currentView = uiState?.currentView || "week";
-
-  logResponsiveRefreshTrace(traceId, "refresh-current-view", { currentView });
-  if (currentView === "mep") {
-    return refreshMepTemplateViewIfMetricsChanged(options);
-  }
-
-  return false;
-}
+let responsiveViewController = null;
 
 function waitForAnimationFrames(frameCount = 2) {
   return new Promise((resolve) => {
@@ -267,107 +80,35 @@ function updatePrintButtonLabel() {
 }
 
 
+function updateResponsiveViewportMetrics() {
+  responsiveViewController?.updateResponsiveViewportMetrics();
+}
+
 function scheduleResponsiveViewRefresh(options = {}) {
-  const {
-    delays = [120],
-    force = false,
-    postRenderSync = null,
-    traceId = createResponsiveRefreshTraceId()
-  } = options;
-
-  responsiveViewRefreshTimerIds.forEach((timerId) => window.clearTimeout(timerId));
-  responsiveViewRefreshTimerIds = [];
-  let hasRenderedInBatch = false;
-
-  logResponsiveRefreshTrace(traceId, "schedule", { delays, force });
-
-  delays.forEach((delay) => {
-    const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
-    const timerId = window.setTimeout(() => {
-      responsiveViewRefreshTimerIds = responsiveViewRefreshTimerIds.filter((id) => id !== timerId);
-      if (!isResponsiveEmbeddedViewActive()) {
-        logResponsiveRefreshTrace(traceId, "timer-skip-inactive", { delay: safeDelay });
-        return;
-      }
-
-      // Akzeptanzkriterium: Portrait/Querformat dürfen anders zoomen, aber
-      // pro Seite muss der Footer in beiden Modi stabil bleiben (kein Tabellen-Drift nach unten).
-      // Deshalb nur auf stabilen Triggern neu fitten und nur bei geänderten Containermaßen rendern.
-      const shouldForceFit = force && !hasRenderedInBatch;
-      updateResponsiveViewportMetrics();
-      const hasRendered = refreshCurrentResponsiveView({
-        force: shouldForceFit,
-        traceId,
-        postRenderSync
-      });
-      hasRenderedInBatch = hasRenderedInBatch || hasRendered;
-      logResponsiveRefreshTrace(traceId, "timer-run", {
-        delay: safeDelay,
-        force: shouldForceFit,
-        hasRendered,
-        hasRenderedInBatch
-      });
-    }, safeDelay);
-
-    responsiveViewRefreshTimerIds.push(timerId);
-  });
+  // Akzeptanzkriterium: Portrait/Querformat dürfen anders zoomen, aber
+  // pro Seite muss der Footer in beiden Modi stabil bleiben (kein Tabellen-Drift nach unten).
+  // Deshalb nur auf stabilen Triggern neu fitten und nur bei geänderten Containermaßen rendern.
+  responsiveViewController?.scheduleRefresh(options);
 }
 
 function requestActiveResponsiveViewRefresh(options = {}) {
-  const { force = false } = options;
-  const currentView = uiState?.currentView || "week";
-  const switchedToMep = currentView === "mep" && lastResponsiveViewRefreshView !== "mep";
-  lastResponsiveViewRefreshView = currentView;
-
-  if (currentView !== "mep") return;
-  if (!force && !switchedToMep) return;
-
-  scheduleResponsiveViewRefresh({ force: true });
+  responsiveViewController?.requestActiveViewRefresh(options);
 }
 
-let warnedUnknownShiftCodes = null;
-
-const startupMutableHelpers = {
-  warnedUnknownShiftCodes: null
-};
-
-function isStartupSelfTestEnabled() {
-  const isDebugFlagEnabled = isMobileDebugPanelEnabled();
-  const hostName = (window.location?.hostname || "").toLowerCase();
-  const isLocalHost = ["localhost", "127.0.0.1", "::1"].includes(hostName);
-  const isLocalFile = window.location?.protocol === "file:";
-  return isDebugFlagEnabled || isLocalHost || isLocalFile;
-}
-
-function runStartupSelfTest() {
-  if (!isStartupSelfTestEnabled()) return;
-
-  const globalChecks = [
-    ["getShiftRuleByCode", typeof getShiftRuleByCode === "function"],
-    ["normalizeShiftCode", typeof normalizeShiftCode === "function"],
-    ["warnedUnknownShiftCodes", "warnedUnknownShiftCodes" in startupMutableHelpers]
-  ];
-
-  const failedChecks = globalChecks.filter(([, ok]) => !ok);
-  if (!failedChecks.length) return;
-
-  const missingNames = failedChecks.map(([name]) => name).join(", ");
-  throw new Error(`Startup-Selbsttest fehlgeschlagen. Fehlende Globals: ${missingNames}`);
-}
-
-function getWarnedUnknownShiftCodesSet() {
-  if (!(startupMutableHelpers.warnedUnknownShiftCodes instanceof Set)) {
-    startupMutableHelpers.warnedUnknownShiftCodes = new Set();
-  }
-  warnedUnknownShiftCodes = startupMutableHelpers.warnedUnknownShiftCodes;
-  return startupMutableHelpers.warnedUnknownShiftCodes;
-}
-
-runStartupSelfTest();
+const startupSelfTest = createStartupSelfTest({ getShiftRuleByCode, normalizeShiftCode });
+const getWarnedUnknownShiftCodesSet = startupSelfTest.getWarnedUnknownShiftCodesSet;
+startupSelfTest.runStartupSelfTest();
 const loadedAppState = loadAppState();
 let uiState = loadedAppState.ui;
 let state = loadedAppState.state;
 let lastSavedAt = loadedAppState.lastSavedAt;
+responsiveViewController = createResponsiveViewController({
+  debugLogger: (...args) => console.debug(...args),
+  getCurrentView: () => uiState?.currentView || "week",
+  postRenderSync: () => waitForAnimationFrames(2),
+  renderMepTemplateView: (options) => renderMepTemplateView(options)
+});
+
 state.schedule = state.schedule || {};
 state.absences = state.absences || [];
 
@@ -1079,7 +820,7 @@ function defaultUiState() {
 
 function loadUiState() {
   const rawUi = loadJson(UI_KEY, defaultUiState());
-  const sanitizedUi = sanitizeUiState(rawUi);
+  const sanitizedUi = sanitizeUiState(rawUi, defaultUiState);
 
   if (JSON.stringify(rawUi || {}) !== JSON.stringify(sanitizedUi)) {
     saveJson(UI_KEY, sanitizedUi);
@@ -2253,7 +1994,7 @@ function importBackupFromObject(backupData) {
     schedule: validatedSchedule,
     absences: normalizeAbsences(normalizedPlanInput.absences || [])
   };
-  const normalizedUi = sanitizeUiState(storage[UI_KEY]);
+  const normalizedUi = sanitizeUiState(storage[UI_KEY], defaultUiState);
 
   const preImportSnapshot = {
     savedAt: new Date().toISOString(),
@@ -3243,8 +2984,7 @@ window.addEventListener("orientationchange", () => {
   });
 }, { passive: true });
 window.addEventListener("pageshow", () => {
-  if (hasTriggeredPageShowResponsiveRefresh) return;
-  hasTriggeredPageShowResponsiveRefresh = true;
+  if (responsiveViewController?.triggerFirstPageShowRefresh()) return;
   scheduleResponsiveViewRefresh({ force: true });
 }, { passive: true });
 window.addEventListener("beforeunload", () => {
