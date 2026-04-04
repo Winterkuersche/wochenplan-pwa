@@ -1310,71 +1310,10 @@ function buildInitialState(options = {}) {
 }
 
 
-/* ========= MONTH ENGINE FALLBACK ========= */
-function buildMonthPlanFallback(year, monthIndex) {
-  const labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-  const firstOfMonth = new Date(year, monthIndex, 1);
-  const lastOfMonth = new Date(year, monthIndex + 1, 0);
-
-  const gridStart = cloneDate(firstOfMonth);
-  gridStart.setDate(firstOfMonth.getDate() - getMondayBasedDayIndex(firstOfMonth));
-
-  const gridEnd = cloneDate(lastOfMonth);
-  gridEnd.setDate(lastOfMonth.getDate() + (6 - getMondayBasedDayIndex(lastOfMonth)));
-
-  const weeks = [];
-  let cursor = cloneDate(gridStart);
-
-  while (cursor <= gridEnd) {
-    const week = [];
-
-    for (let i = 0; i < 7; i++) {
-      week.push({
-        date: cloneDate(cursor),
-        iso: toIsoDate(cursor),
-        weekdayIndex: i,
-        weekdayLabel: labels[i],
-        inCurrentMonth: cursor.getMonth() === monthIndex,
-        isOutsideMonth: cursor.getMonth() !== monthIndex
-      });
-
-      cursor.setDate(cursor.getDate() + 1);
-    }
-
-    weeks.push(week);
-  }
-
-  return {
-    meta: {
-      year,
-      monthIndex,
-      month: monthIndex + 1
-    },
-    weeks
-  };
-}
-
-function getMonthPlanSafe(dateStr) {
-  if (!dateStr) return null;
-
-  if (typeof getMonthPlanFromDateString === "function") {
-    return getMonthPlanFromDateString(dateStr);
-  }
-
-  const d = fromIsoDate(dateStr);
-  if (!d) return null;
-
-  return buildMonthPlanFallback(d.getFullYear(), d.getMonth());
-}
-
 /* ========= ACTIVE WEEK ========= */
 function getActiveMonthPlan() {
   const activeMonth = state.activeMonth || (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
-  const [year, month] = activeMonth.split("-").map(Number);
-
-  if (!year || !month) return null;
-
-  return buildMonthPlanFallback(year, month - 1);
+  return getMonthPlanFromYearMonth(activeMonth);
 }
 
 function syncMonthPlanToState() {
@@ -1712,10 +1651,7 @@ function getWeeksForYearMonth(yearMonth) {
   const normalized = normalizeYearMonth(yearMonth);
   if (!normalized) return [];
 
-  const [year, month] = normalized.split("-").map(Number);
-  if (!year || !month) return [];
-
-  return buildMonthPlanFallback(year, month - 1).weeks || [];
+  return getMonthPlanFromYearMonth(normalized)?.weeks || [];
 }
 
 // Historische Saldo-Berechnung startet fachlich bewusst ab 2026-01.
