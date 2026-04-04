@@ -940,24 +940,6 @@ const mepWeekToEl = document.getElementById("mepWeekTo");
 const mepMonthYearEl = document.getElementById("mepMonthYear");
 
 /* ========= HELPERS ========= */
-function pad2(n) {
-  return String(n).padStart(2, "0");
-}
-
-function hmToMinutes(hm) {
-  if (!hm) return 0;
-  const [h, m] = hm.split(":").map(Number);
-  if (Number.isNaN(h) || Number.isNaN(m)) return 0;
-  return h * 60 + m;
-}
-
-function minutesToHM(min) {
-  min = Math.max(0, Math.round(min));
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${h}:${String(m).padStart(2, "0")}`;
-}
-
 function formatSignedMinutes(min) {
   if (min === 0) return "0:00";
   return `${min > 0 ? "+" : "-"}${minutesToHM(Math.abs(min))}`;
@@ -997,15 +979,6 @@ function roleToTarget(roleKey) {
 function roleToContractModel(roleKey) {
   const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
   return found?.contractModel || "";
-}
-
-function normalizeYearMonth(value) {
-  const normalized = String(value || "").trim();
-  return /^\d{4}-(0[1-9]|1[0-2])$/.test(normalized) ? normalized : "";
-}
-
-function isValidYearMonth(value) {
-  return Boolean(normalizeYearMonth(value));
 }
 
 function normalizeManualMonthActualMinutes(rawValue) {
@@ -1536,7 +1509,7 @@ function isEmployeeBlockedOnIso(emp, isoDate) {
 
 function isDayInYearMonth(day, yearMonth) {
   if (!day || typeof day.iso !== "string") return false;
-  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
   if (!normalizedYearMonth) return true;
   return getYearMonthFromIsoDate(day.iso) === normalizedYearMonth;
 }
@@ -1722,32 +1695,8 @@ function getEmployeeAccountMinutesForMonth(employee, yearMonth = state.activeMon
   return getEmployeeAccountMinutesForWeeks(employee, monthWeeks, yearMonth);
 }
 
-function normalizeYearMonthValue(value) {
-  if (typeof value !== "string") return "";
-  const trimmed = value.trim();
-  if (!isValidYearMonth(trimmed)) return "";
-  return trimmed;
-}
-
-function getYearMonthFromIsoDate(isoDate) {
-  if (typeof isoDate !== "string" || isoDate.length < 7) return "";
-  return normalizeYearMonthValue(isoDate.slice(0, 7));
-}
-
-function shiftYearMonthByMonths(yearMonth, offsetMonths = 0) {
-  const normalized = normalizeYearMonthValue(yearMonth);
-  if (!normalized) return "";
-
-  const [year, month] = normalized.split("-").map(Number);
-  const date = new Date(year, month - 1, 1);
-  if (Number.isNaN(date.getTime())) return "";
-
-  date.setMonth(date.getMonth() + Number(offsetMonths || 0));
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
 function getWeeksForYearMonth(yearMonth) {
-  const normalized = normalizeYearMonthValue(yearMonth);
+  const normalized = normalizeYearMonth(yearMonth);
   if (!normalized) return [];
 
   const [year, month] = normalized.split("-").map(Number);
@@ -1760,7 +1709,7 @@ function getWeeksForYearMonth(yearMonth) {
 const BALANCE_HISTORY_START_MONTH = "2026-01";
 
 function getRelevantYearMonthsUntilActiveMonth(employee = null) {
-  const activeYearMonth = normalizeYearMonthValue(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
+  const activeYearMonth = normalizeYearMonth(state.activeMonth || "") || getYearMonthFromIsoDate(state.weekFrom || "") || getYearMonthFromIsoDate(toIsoDate(new Date()));
   if (!activeYearMonth) return [];
 
   if (typeof collectRelevantYearMonthsUntilActiveMonthBalance === "function") {
@@ -1790,7 +1739,7 @@ function getRelevantYearMonthsUntilActiveMonth(employee = null) {
 
   if (employee?.manualMonthActualMinutes && typeof employee.manualMonthActualMinutes === "object") {
     Object.keys(employee.manualMonthActualMinutes).forEach((yearMonth) => {
-      const normalized = normalizeYearMonthValue(yearMonth);
+      const normalized = normalizeYearMonth(yearMonth);
       if (normalized && normalized >= BALANCE_HISTORY_START_MONTH && normalized <= activeYearMonth) {
         candidates.push(normalized);
       }
@@ -1873,7 +1822,7 @@ function getEmployeeMonthContingentOveruseMinutes(employee, yearMonth = state.ac
 
 function getManualMonthActualMinutes(employee, yearMonth) {
   if (!employee) return null;
-  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
   if (!normalizedYearMonth) return null;
 
   const minutes = employee.manualMonthActualMinutes?.[normalizedYearMonth];
@@ -1884,7 +1833,7 @@ function getManualMonthActualMinutes(employee, yearMonth) {
 
 function setManualMonthActualMinutes(employee, yearMonth, minutes) {
   if (!employee) return false;
-  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
   const numericMinutes = Number(minutes);
   if (!normalizedYearMonth || !Number.isFinite(numericMinutes) || numericMinutes < 0) return false;
 
@@ -1895,7 +1844,7 @@ function setManualMonthActualMinutes(employee, yearMonth, minutes) {
 
 function removeManualMonthActualMinutes(employee, yearMonth) {
   if (!employee) return false;
-  const normalizedYearMonth = normalizeYearMonthValue(yearMonth);
+  const normalizedYearMonth = normalizeYearMonth(yearMonth);
   if (!normalizedYearMonth) return false;
   if (!employee.manualMonthActualMinutes || typeof employee.manualMonthActualMinutes !== "object") {
     employee.manualMonthActualMinutes = {};
@@ -2067,7 +2016,7 @@ function collectAndValidateManualMonthDialogRows() {
     const isEmptyRow = !monthValue.trim() && !hoursValue.trim();
     if (isEmptyRow) continue;
 
-    if (!isValidYearMonth(monthValue)) {
+    if (!Boolean(normalizeYearMonth(monthValue))) {
       return { error: `Zeile ${index + 1}: Monat muss YYYY-MM sein.` };
     }
 
@@ -2132,7 +2081,7 @@ function openManualMonthDialog(employee) {
       yearMonth,
       minutes: Number(minutes)
     }))
-    .filter((entry) => isValidYearMonth(entry.yearMonth) && Number.isFinite(entry.minutes) && entry.minutes >= 0)
+    .filter((entry) => Boolean(normalizeYearMonth(entry.yearMonth)) && Number.isFinite(entry.minutes) && entry.minutes >= 0)
     .sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
 
   formatManualMonthRows(entries.length ? entries : [{ yearMonth: state.activeMonth, minutes: null }]);

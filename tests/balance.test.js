@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
 
-const ctx = loadScripts(['balance-utils.js']);
+const ctx = loadScripts(['date-utils.js', 'balance-utils.js']);
 
 test('collectRelevantYearMonthsUntilActiveMonthBalance fills month gaps', () => {
   const months = ctx.collectRelevantYearMonthsUntilActiveMonthBalance({

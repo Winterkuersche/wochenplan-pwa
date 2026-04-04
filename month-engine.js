@@ -1,9 +1,5 @@
 const MONTH_WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-function padMonthEngine(value) {
-  return String(value).padStart(2, "0");
-}
-
 function getStartOfVisibleMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
   const mondayIndex = getMondayBasedDayIndex(firstOfMonth);
@@ -70,7 +66,7 @@ function getMonthMeta(year, monthIndex) {
     year,
     monthIndex,
     month: monthIndex + 1,
-    monthLabel: `${padMonthEngine(monthIndex + 1)}.${year}`,
+    monthLabel: `${pad2(monthIndex + 1)}.${year}`,
     firstOfMonth: cloneDate(firstDay),
     lastOfMonth: cloneDate(lastDay),
     firstOfMonthIso: toIsoDate(firstDay),

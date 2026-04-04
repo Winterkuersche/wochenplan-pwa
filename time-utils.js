@@ -16,6 +16,18 @@ function hhmmToMinutes(value) {
   return hours * 60 + minutes;
 }
 
+function hmToMinutes(hm) {
+  return hhmmToMinutes(hm);
+}
+
+function minutesToHM(min) {
+  const numeric = Number(min);
+  const safeMinutes = Number.isNaN(numeric) ? 0 : Math.max(0, Math.round(numeric));
+  const hours = Math.floor(safeMinutes / 60);
+  const minutes = safeMinutes % 60;
+  return `${hours}:${String(minutes).padStart(2, "0")}`;
+}
+
 const QUARTER_HOUR_STEP_MINUTES = 15;
 const PLAN_TIME_EXCEPTIONS = new Set(["08:55", "19:10"]);
 const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([5, 10, 70]);
