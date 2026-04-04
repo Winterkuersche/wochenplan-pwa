@@ -68,21 +68,11 @@ function countVacationDaysInRangeForYear(fromIso, toIso, year) {
   return count;
 }
 
-function getVacationEntriesForEmployee(employeeId) {
-  return (state.absences || []).filter((entry) => {
-    return entry?.employeeId === employeeId && entry.type === "vacation";
-  });
-}
+function getUsedVacationDaysForEmployeeFromAbsences(absences, employeeId, year = null) {
+  if (!employeeId) return 0;
 
-function getUsedVacationDaysForEmployee(emp, year = null) {
-  if (!emp?.id) return 0;
-
-  if (typeof getUsedVacationDaysFromScheduleForEmployee === "function") {
-    const resolvedYear = year || new Date().getFullYear();
-    return getUsedVacationDaysFromScheduleForEmployee(emp.id, resolvedYear);
-  }
-
-  return getVacationEntriesForEmployee(emp.id).reduce((sum, entry) => {
+  const vacationEntries = getVacationEntriesForEmployeeFromAbsences(absences, employeeId);
+  return vacationEntries.reduce((sum, entry) => {
     return sum + countVacationDaysInRangeForYear(entry.from, entry.to, year);
   }, 0);
 }
@@ -128,19 +118,14 @@ function calculateVacationDays(emp, year) {
   return days;
 }
 
-function applyVacationDaysForYear(year) {
-  state.employees.forEach((emp) => {
-    if (!emp) return;
-    emp.vacationDays = calculateVacationDays(emp, year);
-  });
-
-  saveAppStateDebounced();
-  renderAllViews();
-}
-
-function getVacationSummaryForEmployee(emp, year = new Date().getFullYear()) {
+function getVacationSummaryForEmployee(emp, year = new Date().getFullYear(), options = {}) {
+  const {
+    usedVacationDays = null
+  } = options;
   const total = Number(emp?.totalVacationDays ?? calculateVacationDays(emp, year));
-  const used = getUsedVacationDaysForEmployee(emp, year);
+  const used = Number.isFinite(usedVacationDays)
+    ? usedVacationDays
+    : getUsedVacationDaysForEmployeeFromAbsences(options.absences || [], emp?.id, year);
 
   return {
     total,
@@ -149,6 +134,6 @@ function getVacationSummaryForEmployee(emp, year = new Date().getFullYear()) {
   };
 }
 
-function getRemainingVacationDaysForEmployee(emp, year = new Date().getFullYear()) {
-  return getVacationSummaryForEmployee(emp, year).remaining;
+function getRemainingVacationDaysForEmployee(emp, year = new Date().getFullYear(), options = {}) {
+  return getVacationSummaryForEmployee(emp, year, options).remaining;
 }

@@ -75,6 +75,30 @@ function getAbsencesForEmployee(absences, employeeId) {
   return absences.filter((entry) => entry.employeeId === employeeId);
 }
 
+function getAbsencesForEmployeeByType(absences, employeeId, type) {
+  if (!type) return getAbsencesForEmployee(absences, employeeId);
+  return getAbsencesForEmployee(absences, employeeId).filter((entry) => entry.type === type);
+}
+
+function getVacationEntriesForEmployeeFromAbsences(absences, employeeId) {
+  return getAbsencesForEmployeeByType(absences, employeeId, "vacation");
+}
+
+function getSickEntriesForEmployeeFromAbsences(absences, employeeId) {
+  return getAbsencesForEmployeeByType(absences, employeeId, "sick");
+}
+
+function getAbsenceEntryById(absences, absenceId) {
+  if (!Array.isArray(absences) || !absenceId) return null;
+  return absences.find((entry) => entry?.id === absenceId) || null;
+}
+
+function getVacationEntryByIdFromAbsences(absences, absenceId) {
+  const entry = getAbsenceEntryById(absences, absenceId);
+  if (!entry || entry.type !== "vacation") return null;
+  return entry;
+}
+
 function doesAbsenceMatchDate(absence, isoDate) {
   if (!absence || !isoDate) return false;
   return isIsoDateInRange(isoDate, absence.from, absence.to);
@@ -120,6 +144,17 @@ function addAbsenceEntry(absences, entryInput) {
 function removeAbsenceEntry(absences, absenceId) {
   if (!Array.isArray(absences) || !absenceId) return Array.isArray(absences) ? [...absences] : [];
   return absences.filter((entry) => entry.id !== absenceId);
+}
+
+function removeAbsenceCoverage(absences, employeeId, removeFromIso, removeToIso, type) {
+  if (!Array.isArray(absences)) return [];
+  if (!employeeId || !removeFromIso || !removeToIso || !type) return [...absences];
+
+  return absences.flatMap((entry) => {
+    if (!entry || entry.employeeId !== employeeId) return entry ? [entry] : [];
+    if (entry.type !== type) return [entry];
+    return subtractRangeFromAbsenceEntry(entry, removeFromIso, removeToIso);
+  });
 }
 
 function updateAbsenceEntry(absences, absenceId, updates) {
