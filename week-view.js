@@ -491,7 +491,7 @@ function shiftIsoDateByDays(isoDate, dayOffset) {
   return toIsoDate(date);
 }
 function clearDayRange(employeeId, fromIso, toIso, options = {}) {
-  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso, "direct-day");
   if (!mutationDecision.allow) return false;
 
   let current = fromIso;
@@ -509,7 +509,7 @@ function clearDayRange(employeeId, fromIso, toIso, options = {}) {
 }
 
 function replaceAbsenceCoverageForEmployee(employeeId, fromIso, toIso, replacementType = null) {
-  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso, "absence-range");
   if (!mutationDecision.allow) return false;
 
   state.absences = replaceAbsenceCoverage(
@@ -524,7 +524,7 @@ function replaceAbsenceCoverageForEmployee(employeeId, fromIso, toIso, replaceme
 }
 
 function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
-  const mutationDecision = decideMutationForIsoRange(removeFromIso, removeToIso);
+  const mutationDecision = decideMutationForIsoRange(removeFromIso, removeToIso, "absence-range");
   if (!mutationDecision.allow) return false;
 
   if (type === "vacation" || type === "sick") {
@@ -657,7 +657,7 @@ function minutesToHHMMInput(minutes) {
 }
 
 function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
-  const mutationDecision = decideMutationForIsoRange(isoDate);
+  const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
   const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
@@ -669,7 +669,7 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   return true;
 }
 function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
-  const mutationDecision = decideMutationForIsoRange(isoDate);
+  const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
   const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);

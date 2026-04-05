@@ -80,6 +80,134 @@ this.requestOverwriteConfirmation = requestOverwriteConfirmation;
   return context;
 }
 
+function loadMutationApiHelpers(contextOverrides = {}) {
+  const decideSrc = sliceFunctionSource(
+    appScript,
+    'function decideMutationForIsoRange',
+    '\n\nfunction resolveDayOverwriteDecision'
+  );
+  const resolveSrc = sliceFunctionSource(
+    appScript,
+    'function resolveDayOverwriteDecision',
+    '\n\nfunction removeAbsenceCoverageForRange'
+  );
+  const removeAbsenceCoverageSrc = sliceFunctionSource(
+    appScript,
+    'function removeAbsenceCoverageForRange',
+    '\n\nfunction clearShiftCoverageForRange'
+  );
+  const clearShiftCoverageSrc = sliceFunctionSource(
+    appScript,
+    'function clearShiftCoverageForRange',
+    '\n\nfunction getOverwriteConfirmationText'
+  );
+  const textSrc = sliceFunctionSource(
+    appScript,
+    'function getOverwriteConfirmationText',
+    '\n\nfunction requestOverwriteConfirmation'
+  );
+  const confirmSrc = sliceFunctionSource(
+    appScript,
+    'function requestOverwriteConfirmation',
+    '\n\nfunction updateEmployeeDay'
+  );
+  const setShiftSrc = sliceFunctionSource(
+    appScript,
+    'function setShift',
+    '\n\nfunction setExternalHelp'
+  );
+  const setAbsenceSrc = sliceFunctionSource(
+    appScript,
+    'function setAbsence',
+    '\n\nfunction removeAbsence'
+  );
+  const clearDaySrc = sliceFunctionSource(
+    appScript,
+    'function clearDay',
+    '\nfunction commitPlanChange'
+  );
+
+  assert.ok(
+    decideSrc && resolveSrc && removeAbsenceCoverageSrc && clearShiftCoverageSrc &&
+    textSrc && confirmSrc && setShiftSrc && setAbsenceSrc && clearDaySrc,
+    'mutation API helper functions should exist in app.js'
+  );
+
+  const context = vm.createContext({
+    APP_META: { stateKey: 'SH' },
+    ENTRY_STATUS: { WORK: 'work', EXTERNAL: 'external' },
+    state: { absences: [], schedule: {} },
+    eachIsoDateInRange: (fromIso, toIso = fromIso) => {
+      if (!fromIso || !toIso || fromIso > toIso) return [];
+      const out = [];
+      let current = new Date(`${fromIso}T00:00:00Z`);
+      const end = new Date(`${toIso}T00:00:00Z`);
+      while (current <= end) {
+        out.push(current.toISOString().slice(0, 10));
+        current.setUTCDate(current.getUTCDate() + 1);
+      }
+      return out;
+    },
+    getHolidayByDate: () => null,
+    getPlanEntry: () => null,
+    isShiftEntry: (entry) => entry?.type === 'shift',
+    getPriorityAbsenceForEmployeeOnDate: (absences, employeeId, isoDate) => (
+      absences.find((entry) => (
+        entry.employeeId === employeeId &&
+        isoDate >= entry.from &&
+        isoDate <= entry.to
+      )) || null
+    ),
+    replaceAbsenceCoverage: (absences, employeeId, fromIso, toIso, replacementType = null) => {
+      if (!replacementType) {
+        return (absences || []).filter((entry) => (
+          entry.employeeId !== employeeId ||
+          entry.to < fromIso ||
+          entry.from > toIso
+        ));
+      }
+
+      const remaining = (absences || []).filter((entry) => (
+        entry.employeeId !== employeeId ||
+        entry.to < fromIso ||
+        entry.from > toIso
+      ));
+
+      return [...remaining, { employeeId, from: fromIso, to: toIso, type: replacementType, note: '' }];
+    },
+    normalizeAbsences: (absences) => Array.isArray(absences) ? [...absences] : [],
+    clearPlanEntry: () => {},
+    setScheduleEntry: () => {},
+    syncVacationScheduleFromAbsences: () => {},
+    commitPlanChange: () => {},
+    requestOverwriteConfirmation: () => true,
+    normalizeShiftCode: (value) => value,
+    buildLateShiftEntry: () => ({ type: 'shift', mode: 'late' }),
+    buildFullShiftEntry: () => ({ type: 'shift', mode: 'full' }),
+    buildEarlyShiftEntry: () => ({ type: 'shift', mode: 'early' }),
+    confirm: () => true,
+    ...contextOverrides
+  });
+
+  vm.runInContext(`
+${decideSrc}
+${resolveSrc}
+${removeAbsenceCoverageSrc}
+${clearShiftCoverageSrc}
+${textSrc}
+${confirmSrc}
+${setShiftSrc}
+${setAbsenceSrc}
+${clearDaySrc}
+this.decideMutationForIsoRange = decideMutationForIsoRange;
+this.setShift = setShift;
+this.setAbsence = setAbsence;
+this.clearDay = clearDay;
+`, context, { filename: 'app.js' });
+
+  return context;
+}
+
 
 const ctx = loadScripts(['date-utils.js', 'time-utils.js', 'absences.js']);
 
@@ -322,23 +450,100 @@ test('resolveDayOverwriteDecision allows shift on existing shift without confirm
   assert.equal(decision.shiftCoverageDays, 1);
 });
 
-test('holiday remains non-overwritable for range mutations', () => {
+test('direct-day mutation remains blocked on holiday but absence-range is allowed', () => {
   const helpers = loadOverwriteDecisionHelpers({
     getHolidayByDate: (_stateKey, isoDate) => (isoDate === '2026-12-25' ? { name: '1. Weihnachtstag' } : null)
   });
 
-  const mutation = helpers.decideMutationForIsoRange('2026-12-25', '2026-12-25');
+  const mutation = helpers.decideMutationForIsoRange('2026-12-25', '2026-12-25', 'direct-day');
   assert.equal(mutation.allow, false);
   assert.equal(mutation.reason, 'holiday');
+
+  const absenceRangeMutation = helpers.decideMutationForIsoRange('2026-12-24', '2026-12-26', 'absence-range');
+  assert.equal(absenceRangeMutation.allow, true);
 
   const decision = helpers.resolveDayOverwriteDecision({
     employeeId: 'emp_1',
     fromIso: '2026-12-25',
     nextType: 'absence',
-    nextAbsenceType: 'vacation'
+    nextAbsenceType: 'vacation',
+    mutationKind: 'direct-day'
   });
   assert.equal(decision.decision, 'deny');
   assert.equal(decision.reason, 'holiday');
+
+  const absenceRangeDecision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-12-24',
+    toIso: '2026-12-26',
+    nextType: 'absence',
+    nextAbsenceType: 'vacation',
+    mutationKind: 'absence-range'
+  });
+  assert.equal(absenceRangeDecision.decision, 'allow');
+  assert.equal(absenceRangeDecision.reason, 'ok');
+});
+
+test('decideMutationForIsoRange denies unknown mutation kinds', () => {
+  const helpers = loadOverwriteDecisionHelpers();
+  const mutation = helpers.decideMutationForIsoRange('2026-12-24', '2026-12-26', 'unexpected-kind');
+  assert.equal(mutation.allow, false);
+  assert.equal(mutation.reason, 'invalid-mutation-kind');
+});
+
+test('setAbsence vacation/sick over holiday range succeeds, while direct holiday day mutations stay blocked', () => {
+  const commits = [];
+  const removedShiftRanges = [];
+  const savedScheduleEntries = [];
+  const clearedPlanDays = [];
+  const syncCalls = [];
+  const helper = loadMutationApiHelpers({
+    getHolidayByDate: (_stateKey, isoDate) => (isoDate === '2026-12-25' ? { name: '1. Weihnachtstag' } : null),
+    clearPlanEntry: (employeeId, isoDate) => clearedPlanDays.push([employeeId, isoDate]),
+    setScheduleEntry: (employeeId, isoDate, entry) => savedScheduleEntries.push([employeeId, isoDate, entry]),
+    replaceAbsenceCoverage: (absences, employeeId, fromIso, toIso, replacementType = null) => {
+      if (replacementType === null) {
+        removedShiftRanges.push([employeeId, fromIso, toIso]);
+        return (absences || []).filter((entry) => (
+          entry.employeeId !== employeeId ||
+          entry.to < fromIso ||
+          entry.from > toIso
+        ));
+      }
+      const remaining = (absences || []).filter((entry) => (
+        entry.employeeId !== employeeId ||
+        entry.to < fromIso ||
+        entry.from > toIso
+      ));
+      return [...remaining, { id: `new-${replacementType}-${fromIso}`, employeeId, from: fromIso, to: toIso, type: replacementType, note: '' }];
+    },
+    normalizeAbsences: (absences) => Array.isArray(absences) ? [...absences] : [],
+    getPriorityAbsenceForEmployeeOnDate: (absences, employeeId, isoDate) => (
+      absences.find((entry) => entry.employeeId === employeeId && isoDate >= entry.from && isoDate <= entry.to) || null
+    ),
+    syncVacationScheduleFromAbsences: (...args) => syncCalls.push(args),
+    commitPlanChange: () => commits.push('commit')
+  });
+
+  const vacation = helper.setAbsence('emp_1', '2026-12-24', '2026-12-26', 'vacation', '', { commit: false });
+  assert.ok(vacation);
+  assert.equal(vacation.type, 'vacation');
+
+  const sick = helper.setAbsence('emp_1', '2026-12-24', '2026-12-26', 'sick', '', { commit: false });
+  assert.ok(sick);
+  assert.equal(sick.type, 'sick');
+
+  const shiftApplied = helper.setShift('emp_1', '2026-12-25', { type: 'shift', mode: 'early' });
+  assert.equal(shiftApplied, false);
+
+  const dayCleared = helper.clearDay('emp_1', '2026-12-25', { commit: false });
+  assert.equal(dayCleared, false);
+
+  assert.equal(savedScheduleEntries.length, 0);
+  assert.equal(removedShiftRanges.length, 0);
+  assert.equal(clearedPlanDays.length, 6);
+  assert.equal(syncCalls.length, 0);
+  assert.equal(commits.length, 0);
 });
 
 test('replaceAbsenceCoverage supports partial replacement in multi-day ranges and keeps untouched edges', () => {

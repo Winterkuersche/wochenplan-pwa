@@ -468,25 +468,33 @@ function hasEmployeeWorkEntry(employeeId, isoDate) {
   return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
 }
 
-function decideMutationForIsoRange(fromIso, toIso = fromIso) {
-  const isoDates = eachIsoDateInRange(fromIso, toIso);
-  if (!isoDates.length) {
-    return { allow: false, reason: "invalid-range", fromIso, toIso };
+function decideMutationForIsoRange(fromIso, toIso = fromIso, mutationKind = "direct-day") {
+  const allowedMutationKinds = new Set(["direct-day", "absence-range"]);
+  if (!allowedMutationKinds.has(mutationKind)) {
+    return { allow: false, reason: "invalid-mutation-kind", fromIso, toIso, mutationKind };
   }
 
-  for (const isoDate of isoDates) {
-    const holiday = getHolidayByDate(APP_META.stateKey, isoDate);
-    if (holiday) {
-      return {
-        allow: false,
-        reason: "holiday",
-        isoDate,
-        holidayName: holiday.name || ""
-      };
+  const isoDates = eachIsoDateInRange(fromIso, toIso);
+  if (!isoDates.length) {
+    return { allow: false, reason: "invalid-range", fromIso, toIso, mutationKind };
+  }
+
+  if (mutationKind === "direct-day") {
+    for (const isoDate of isoDates) {
+      const holiday = getHolidayByDate(APP_META.stateKey, isoDate);
+      if (holiday) {
+        return {
+          allow: false,
+          reason: "holiday",
+          isoDate,
+          holidayName: holiday.name || "",
+          mutationKind
+        };
+      }
     }
   }
 
-  return { allow: true, reason: "ok", fromIso, toIso };
+  return { allow: true, reason: "ok", fromIso, toIso, mutationKind };
 }
 
 function resolveDayOverwriteDecision({
@@ -494,9 +502,10 @@ function resolveDayOverwriteDecision({
   fromIso,
   toIso = fromIso,
   nextType,
-  nextAbsenceType = null
+  nextAbsenceType = null,
+  mutationKind = "direct-day"
 } = {}) {
-  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso, mutationKind);
   if (!mutationDecision.allow) {
     return { decision: "deny", reason: mutationDecision.reason, mutationDecision };
   }
@@ -630,7 +639,7 @@ function requestOverwriteConfirmation(decision, fromIso, toIso = fromIso) {
 
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
-  const mutationDecision = decideMutationForIsoRange(isoDate);
+  const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return null;
 
   const { commit = true } = options;
@@ -711,7 +720,8 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   const decision = resolveDayOverwriteDecision({
     employeeId,
     fromIso: isoDate,
-    nextType: "shift"
+    nextType: "shift",
+    mutationKind: "direct-day"
   });
   if (decision.decision === "deny") return false;
   if (!requestOverwriteConfirmation(decision, isoDate)) return false;
@@ -745,7 +755,8 @@ function setAbsence(employeeId, from, to, type, note = "", options = {}) {
     fromIso: from,
     toIso: to,
     nextType: "absence",
-    nextAbsenceType: type
+    nextAbsenceType: type,
+    mutationKind: "absence-range"
   });
   if (decision.decision === "deny") return null;
   if (!requestOverwriteConfirmation(decision, from, to)) return null;
@@ -791,7 +802,8 @@ function clearDay(employeeId, isoDate, options = {}) {
   const decision = resolveDayOverwriteDecision({
     employeeId,
     fromIso: isoDate,
-    nextType: "clear"
+    nextType: "clear",
+    mutationKind: "direct-day"
   });
   if (decision.decision === "deny") return false;
 
