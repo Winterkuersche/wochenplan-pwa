@@ -546,6 +546,24 @@ test('setAbsence vacation/sick over holiday range succeeds, while direct holiday
   assert.equal(commits.length, 0);
 });
 
+test('setShift on holiday is denied as direct-day mutation', () => {
+  const helper = loadMutationApiHelpers({
+    getHolidayByDate: (_stateKey, isoDate) => (isoDate === '2026-12-25' ? { name: '1. Weihnachtstag' } : null)
+  });
+
+  const shiftApplied = helper.setShift('emp_1', '2026-12-25', { type: 'shift', mode: 'early' });
+  assert.equal(shiftApplied, false);
+});
+
+test('clearDay on holiday is denied as direct-day mutation', () => {
+  const helper = loadMutationApiHelpers({
+    getHolidayByDate: (_stateKey, isoDate) => (isoDate === '2026-12-25' ? { name: '1. Weihnachtstag' } : null)
+  });
+
+  const dayCleared = helper.clearDay('emp_1', '2026-12-25', { commit: false });
+  assert.equal(dayCleared, false);
+});
+
 test('replaceAbsenceCoverage supports partial replacement in multi-day ranges and keeps untouched edges', () => {
   const result = ctx.replaceAbsenceCoverage(
     [{ employeeId: 'emp_1', type: 'vacation', from: '2026-09-01', to: '2026-09-10', note: '' }],
