@@ -36,3 +36,53 @@ test('collectRelevantYearMonthsUntilActiveMonthBalance ignores out-of-range mont
 
   assert.deepEqual(JSON.parse(JSON.stringify(months)), ['2026-03']);
 });
+
+
+test('resolved day calculation stays stable after mixed replacements (single active state, no double minutes)', () => {
+  const calcCtx = loadScripts([
+    'date-utils.js',
+    'time-utils.js',
+    'status-utils.js',
+    'shift-rules.js',
+    'shift-utils.js',
+    'absences.js',
+    'holidays.js',
+    'day-resolution.js'
+  ]);
+
+  const employee = { id: 'emp_1', target: '30:00' };
+  const schedule = {
+    '2026-03-04': {
+      emp_1: { type: 'shift', mode: 'early', code: 'FO', minutes: 300 }
+    }
+  };
+
+  let absences = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-03-02', to: '2026-03-06', note: '' }
+  ];
+  absences = calcCtx.replaceAbsenceCoverage(absences, 'emp_1', '2026-03-03', '2026-03-04', 'sick');
+  absences = calcCtx.replaceAbsenceCoverage(absences, 'emp_1', '2026-03-04', '2026-03-04', null);
+
+  const days = ['2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05', '2026-03-06'];
+
+  days.forEach((isoDate) => {
+    const absence = calcCtx.getPriorityAbsenceForEmployeeOnDate(absences, employee.id, isoDate);
+    const shift = schedule?.[isoDate]?.[employee.id] || null;
+    const activeStateCount = Number(Boolean(absence)) + Number(Boolean(shift));
+    assert.equal(activeStateCount <= 1, true, `only one active state expected on ${isoDate}`);
+  });
+
+  const totalMinutes = days.reduce((sum, isoDate) => {
+    const resolved = calcCtx.getResolvedDayEntry({
+      employee,
+      isoDate,
+      schedule,
+      absences,
+      stateKey: 'SH'
+    });
+    return sum + resolved.minutesForMonth;
+  }, 0);
+
+  const expectedDailyMinutes = calcCtx.getDailyTargetMinutesFromWeeklyHHMM(employee.target);
+  assert.equal(totalMinutes, expectedDailyMinutes * days.length);
+});
