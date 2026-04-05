@@ -427,8 +427,16 @@ shiftDialogSave.addEventListener("click", () => {
 
     const otherAbsenceType = absenceType === "vacation" ? "sick" : "vacation";
     removeAbsenceCoverageForEmployee(emp.id, fromIso, toIso, otherAbsenceType);
-    clearDayRange(emp.id, fromIso, toIso, { commit: false });
-    addOrReplaceAbsenceForEmployee(emp.id, absenceType, fromIso, toIso);
+    const clearedRange = clearDayRange(emp.id, fromIso, toIso, { commit: false });
+    if (!clearedRange) {
+      alert("Feiertage können nicht überschrieben werden.");
+      return;
+    }
+    const didApplyAbsence = addOrReplaceAbsenceForEmployee(emp.id, absenceType, fromIso, toIso);
+    if (!didApplyAbsence) {
+      alert("Feiertage können nicht überschrieben werden.");
+      return;
+    }
     closeShiftDialog();
     return;
   }
@@ -504,6 +512,9 @@ function shiftIsoDateByDays(isoDate, dayOffset) {
   return toIsoDate(date);
 }
 function clearDayRange(employeeId, fromIso, toIso, options = {}) {
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  if (!mutationDecision.allow) return false;
+
   let current = fromIso;
 
   while (current <= toIso) {
@@ -514,9 +525,14 @@ function clearDayRange(employeeId, fromIso, toIso, options = {}) {
   if (options.commit !== false) {
     commitPlanChange();
   }
+
+  return true;
 }
 
 function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
+  const mutationDecision = decideMutationForIsoRange(removeFromIso, removeToIso);
+  if (!mutationDecision.allow) return false;
+
   state.absences = removeAbsenceCoverage(
     state.absences || [],
     employeeId,
@@ -524,15 +540,23 @@ function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso
     removeToIso,
     type
   );
+
+  return true;
 }
 
 function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
-  removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso, type);
-  setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  if (!mutationDecision.allow) return false;
+
+  const removedCoverage = removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso, type);
+  if (!removedCoverage) return false;
+  const absence = setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
+  if (!absence) return false;
 
   syncVacationScheduleFromAbsences(employeeId);
 
   commitPlanChange();
+  return true;
 }
 
 function removeExternalHelpForEmployeeOnDate(employeeId, isoDate) {
@@ -642,6 +666,9 @@ function minutesToHHMMInput(minutes) {
 }
 
 function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
+  const mutationDecision = decideMutationForIsoRange(isoDate);
+  if (!mutationDecision.allow) return false;
+
   const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 
@@ -651,6 +678,9 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   return true;
 }
 function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
+  const mutationDecision = decideMutationForIsoRange(isoDate);
+  if (!mutationDecision.allow) return false;
+
   const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 

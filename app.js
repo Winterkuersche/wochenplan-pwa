@@ -468,8 +468,31 @@ function hasEmployeeWorkEntry(employeeId, isoDate) {
   return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
 }
 
+function decideMutationForIsoRange(fromIso, toIso = fromIso) {
+  const isoDates = eachIsoDateInRange(fromIso, toIso);
+  if (!isoDates.length) {
+    return { allow: false, reason: "invalid-range", fromIso, toIso };
+  }
+
+  for (const isoDate of isoDates) {
+    const holiday = getHolidayByDate(APP_META.stateKey, isoDate);
+    if (holiday) {
+      return {
+        allow: false,
+        reason: "holiday",
+        isoDate,
+        holidayName: holiday.name || ""
+      };
+    }
+  }
+
+  return { allow: true, reason: "ok", fromIso, toIso };
+}
+
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
+  const mutationDecision = decideMutationForIsoRange(isoDate);
+  if (!mutationDecision.allow) return null;
 
   const { commit = true } = options;
   const currentEntry = getPlanEntry(employeeId, isoDate);
@@ -567,6 +590,9 @@ function setExternalHelp(employeeId, isoDate, branch, minutes) {
 }
 
 function setAbsence(employeeId, from, to, type, note = "", options = {}) {
+  const mutationDecision = decideMutationForIsoRange(from, to);
+  if (!mutationDecision.allow) return null;
+
   const { commit = true } = options;
   const entryInput = {
     id: crypto.randomUUID
@@ -609,6 +635,8 @@ function applyVacationDaysForYear(year) {
 }
 function clearDay(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;
+  const mutationDecision = decideMutationForIsoRange(isoDate);
+  if (!mutationDecision.allow) return false;
 
   const { commit = true } = options;
 
@@ -622,6 +650,8 @@ function clearDay(employeeId, isoDate, options = {}) {
   if (commit) {
     commitPlanChange();
   }
+
+  return true;
 }
 function commitPlanChange() {
   refreshEmployeeVacationCounters();
