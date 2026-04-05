@@ -2,14 +2,6 @@ function getMonthViewContentEl() {
   return document.getElementById("monthViewContent");
 }
 
-const MONTH_FALLBACK_ALLOWED_CODES = ["G", "U", "K", "AH", "FLEX"];
-const MONTH_FALLBACK_DEFAULT_OPTIONS = [
-  { code: "G", label: "Ganztag (G)" },
-  { code: "U", label: "Urlaub (U)" },
-  { code: "K", label: "Krank (K)" },
-  { code: "AH", label: "Aushilfe (AH)" },
-  { code: "FLEX", label: "Flexible Schicht (FLEX)" }
-];
 const monthFallbackOverlayEl = document.getElementById("monthFallbackOverlay");
 const monthFallbackOptionsEl = document.getElementById("monthFallbackOptions");
 const monthFallbackCancelEl = document.getElementById("monthFallbackCancel");
@@ -332,21 +324,7 @@ function renderMonthView() {
 }
 
 function getMonthFallbackDialogOptions() {
-  const allowedCodeSet = new Set(MONTH_FALLBACK_ALLOWED_CODES);
-  const availableDialogOptions = typeof getShiftSelectOptions === "function"
-    ? getShiftSelectOptions()
-      .filter((option) => option?.isDialogShift)
-      .map((option) => {
-        const code = getShiftCodeForSelectValue(option.value);
-        return { code, label: `${option.label} (${code})` };
-      })
-      .filter((option) => allowedCodeSet.has(option.code))
-    : [];
-
-  const optionPool = availableDialogOptions.length ? availableDialogOptions : MONTH_FALLBACK_DEFAULT_OPTIONS;
-  return optionPool.filter((option, index, arr) => (
-    arr.findIndex((entry) => entry.code === option.code) === index
-  ));
+  return resolveMonthFallbackDialogOptions();
 }
 
 function closeMonthFallbackDialog() {

@@ -137,3 +137,42 @@ function getVacationSummaryForEmployee(emp, year = new Date().getFullYear(), opt
 function getRemainingVacationDaysForEmployee(emp, year = new Date().getFullYear(), options = {}) {
   return getVacationSummaryForEmployee(emp, year, options).remaining;
 }
+
+function formatVacationRange(entry) {
+  if (!entry?.from || !entry?.to) return "—";
+
+  const from = fromIsoDate(entry.from);
+  const to = fromIsoDate(entry.to);
+
+  if (!from || !to) {
+    return `${entry.from} – ${entry.to}`;
+  }
+
+  const fromText = `${pad2(from.getDate())}.${pad2(from.getMonth() + 1)}.${from.getFullYear()}`;
+  const toText = `${pad2(to.getDate())}.${pad2(to.getMonth() + 1)}.${to.getFullYear()}`;
+
+  return `${fromText} – ${toText}`;
+}
+
+function getVacationMonthsForEmployeeFromAbsences(absences, employeeId, year) {
+  const months = new Array(12).fill(false);
+  if (!employeeId) return months;
+
+  const entries = getVacationEntriesForEmployeeFromAbsences(absences || [], employeeId);
+
+  entries.forEach((entry) => {
+    const from = fromIsoDate(entry.from);
+    const to = fromIsoDate(entry.to);
+    if (!from || !to) return;
+
+    const cursor = new Date(from);
+    while (cursor <= to) {
+      if (cursor.getFullYear() === year) {
+        months[cursor.getMonth()] = true;
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  });
+
+  return months;
+}

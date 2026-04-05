@@ -2,22 +2,6 @@ function getVacationEntryById(entryId) {
   return getVacationEntryByIdFromAbsences(state.absences || [], entryId);
 }
 
-function formatVacationRange(entry) {
-  if (!entry?.from || !entry?.to) return "—";
-
-  const from = fromIsoDate(entry.from);
-  const to = fromIsoDate(entry.to);
-
-  if (!from || !to) {
-    return `${entry.from} – ${entry.to}`;
-  }
-
-  const fromText = `${pad2(from.getDate())}.${pad2(from.getMonth() + 1)}.${from.getFullYear()}`;
-  const toText = `${pad2(to.getDate())}.${pad2(to.getMonth() + 1)}.${to.getFullYear()}`;
-
-  return `${fromText} – ${toText}`;
-}
-
 function openVacationDialog(emp) {
   const defaultIso = state.weekFrom || toIsoDate(new Date());
 
@@ -124,7 +108,7 @@ function renderDayView() {
       usedVacationDays,
       absences: state.absences || []
     });
-    const months = getVacationMonthsForEmployee(emp, year);
+    const months = getVacationMonthsForEmployeeFromAbsences(state.absences || [], emp.id, year);
     const rangesHtml = renderVacationRangesForEmployee(emp);
 
     const tr = document.createElement("tr");
@@ -181,30 +165,4 @@ function getVacationViewYear() {
   if (weekFromMatch) return Number(weekFromMatch[1]);
 
   return new Date().getFullYear();
-}
-
-function getVacationMonthsForEmployee(emp, year) {
-  const months = new Array(12).fill(false);
-
-  const entries = getVacationEntriesForEmployeeFromAbsences(state.absences || [], emp.id);
-
-  entries.forEach((entry) => {
-    const from = fromIsoDate(entry.from);
-    const to = fromIsoDate(entry.to);
-
-    if (!from || !to) return;
-
-    const cursor = new Date(from);
-
-    while (cursor <= to) {
-      if (cursor.getFullYear() === year) {
-        const m = cursor.getMonth();
-        months[m] = true;
-      }
-
-      cursor.setDate(cursor.getDate() + 1);
-    }
-  });
-
-  return months;
 }

@@ -15,6 +15,7 @@ test('month fallback options are limited to G/U/K/AH/FLEX and include FLEX', () 
   const ctx = loadScripts([
     'time-utils.js',
     'shift-rules.js',
+    'month-engine.js',
     'month-view.js'
   ], {
     document: buildSimpleDocumentStub()
@@ -142,6 +143,7 @@ test('Escape closes month fallback dialog and restores previous focus', () => {
   const ctx = loadScripts([
     'time-utils.js',
     'shift-rules.js',
+    'month-engine.js',
     'month-view.js'
   ], {
     document: env.doc
@@ -174,6 +176,7 @@ test('month fallback dialog ignores non-focusable previous activeElement safely'
   const ctx = loadScripts([
     'time-utils.js',
     'shift-rules.js',
+    'month-engine.js',
     'month-view.js'
   ], {
     document: env.doc
