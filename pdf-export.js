@@ -9,6 +9,11 @@ let driveTokenClient = null;
 let driveAccessToken = "";
 let lastOverviewPdfCache = null;
 
+// =============================================================================
+// Lokaler PDF-Exportpfad (Capture + PDF-Erzeugung)
+// Ziel: export-ready Daten (Canvas) -> PDF-Blob, ohne Cloud-Abhängigkeit.
+// =============================================================================
+
 function buildMepPdfFilename() {
   const monthValue = state.activeMonth || (state.weekFrom || new Date().toISOString().slice(0, 10)).slice(0, 7);
   return `mep-${String(monthValue).replace(/[^0-9-]+/g, "-")}.pdf`;
@@ -150,6 +155,11 @@ Fallback jetzt öffnen?`;
 
   alert("Tipp: Wechsle zur Wochenansicht und nutze dort 'Drucken / PDF', falls der Monats-Export auf diesem Gerät zu groß ist.");
 }
+
+// =============================================================================
+// Optionale Delivery-/Integrationspfade
+// (Teilen/Download lokal + optionaler Drive-Upload bestehender Funktionalität)
+// =============================================================================
 
 async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
   const shareTitle = options.shareTitle || "PDF";
@@ -370,6 +380,10 @@ function getCachedOverviewPdf(filename) {
   return lastOverviewPdfCache;
 }
 
+// =============================================================================
+// Lokaler PDF-Exportpfad (DOM-Capture -> reine PDF-Builder)
+// =============================================================================
+
 function createOverviewPdfExportRoot() {
   const overviewView = document.getElementById("overviewView");
   const overviewContent = document.getElementById("overviewMonthContent");
@@ -418,19 +432,13 @@ async function exportMepTemplatePdf() {
 
   const runExportAttempt = async (sheetEls, scale, attemptLabel) => {
     exportState.currentScale = scale;
-    exportState.currentExportStep = `pdf:init:${attemptLabel}`;
-
-    const pdf = new jsPdfCtor({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4",
-      compress: true
-    });
+    exportState.currentExportStep = `capture:init:${attemptLabel}`;
+    const pageCanvases = [];
 
     for (let index = 0; index < sheetEls.length; index += 1) {
       const sheetEl = sheetEls[index];
       exportState.currentSheetIndex = index;
-      exportState.currentExportStep = `render:${attemptLabel}`;
+      exportState.currentExportStep = `capture:${attemptLabel}`;
 
       let canvas;
       try {
@@ -443,26 +451,15 @@ async function exportMepTemplatePdf() {
         logMepExportError(`MEP-Seite ${index + 1} konnte nicht gerendert werden`, error, exportState);
         throw new Error(`Rendern von Seite ${index + 1} fehlgeschlagen.`, { cause: error });
       }
-
-      if (index > 0) {
-        pdf.addPage("a4", "landscape");
-      }
-
-      exportState.currentExportStep = `pdf.addImage:${attemptLabel}`;
-      try {
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
-      } catch (error) {
-        logMepExportError(`pdf.addImage für Seite ${index + 1} fehlgeschlagen`, error, exportState);
-        throw new Error(`PDF-Bild für Seite ${index + 1} konnte nicht eingefügt werden.`, { cause: error });
-      }
+      pageCanvases.push(canvas);
     }
 
-    exportState.currentExportStep = `pdf.output:${attemptLabel}`;
+    exportState.currentExportStep = `pdf.build:${attemptLabel}`;
     let blob;
     try {
-      blob = pdf.output("blob");
+      blob = buildMepPdfBlobFromCanvases(pageCanvases, { jsPdfCtor });
     } catch (error) {
-      logMepExportError("pdf.output('blob') fehlgeschlagen", error, exportState);
+      logMepExportError("MEP-PDF konnte aus Canvas-Seiten nicht erzeugt werden", error, exportState);
       throw new Error("PDF-Datei konnte nicht erzeugt werden.", { cause: error });
     }
 
@@ -532,6 +529,36 @@ async function exportMepTemplatePdf() {
   }
 }
 
+function buildMepPdfBlobFromCanvases(pageCanvases, options = {}) {
+  const jsPdfCtor = options.jsPdfCtor || window.jspdf?.jsPDF;
+  if (typeof jsPdfCtor !== "function") {
+    throw new Error("PDF-Export ist noch nicht verfügbar.");
+  }
+
+  if (!Array.isArray(pageCanvases) || !pageCanvases.length) {
+    throw new Error("Keine MEP-Canvas-Seiten zum Export vorhanden.");
+  }
+
+  const pdf = new jsPdfCtor({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+    compress: true
+  });
+
+  pageCanvases.forEach((canvas, index) => {
+    if (!canvas) {
+      throw new Error(`MEP-Canvas für Seite ${index + 1} fehlt.`);
+    }
+    if (index > 0) {
+      pdf.addPage("a4", "landscape");
+    }
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
+  });
+
+  return pdf.output("blob");
+}
+
 async function exportOverviewPdf() {
   const jsPdfCtor = window.jspdf?.jsPDF;
   const captureFn = window.html2canvas;
@@ -596,20 +623,8 @@ async function buildOverviewPdfBlob(options = {}) {
       throw new Error("Keine Wochenblöcke für den Export gefunden.");
     }
 
-    const pdf = new jsPdfCtor({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-      compress: true
-    });
-
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 8;
-    const contentWidthMm = pageWidth - margin * 2;
     const scale = 2;
-    let currentY = margin;
-    let hasContentOnPage = false;
+    const blockCanvases = [];
 
     for (const blockEl of exportBlocks) {
       const canvas = await captureFn(blockEl, {
@@ -617,25 +632,58 @@ async function buildOverviewPdfBlob(options = {}) {
         scale,
         useCORS: true
       });
-
-      const renderedHeightMm = (canvas.height * contentWidthMm) / canvas.width;
-      const remainingMm = pageHeight - margin - currentY;
-
-      if (hasContentOnPage && renderedHeightMm > remainingMm) {
-        pdf.addPage("a4", "portrait");
-        currentY = margin;
-        hasContentOnPage = false;
-      }
-
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, currentY, contentWidthMm, renderedHeightMm, undefined, "FAST");
-      currentY += renderedHeightMm + 3;
-      hasContentOnPage = true;
+      blockCanvases.push(canvas);
     }
 
-    return pdf.output("blob");
+    return buildOverviewPdfBlobFromCanvases(blockCanvases, { jsPdfCtor });
   } finally {
     exportRoot?.remove();
   }
+}
+
+function buildOverviewPdfBlobFromCanvases(blockCanvases, options = {}) {
+  const jsPdfCtor = options.jsPdfCtor || window.jspdf?.jsPDF;
+  if (typeof jsPdfCtor !== "function") {
+    throw new Error("PDF-Export ist noch nicht verfügbar.");
+  }
+  if (!Array.isArray(blockCanvases) || !blockCanvases.length) {
+    throw new Error("Keine Übersichts-Blöcke zum Export gefunden.");
+  }
+
+  const pdf = new jsPdfCtor({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true
+  });
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const margin = 8;
+  const contentWidthMm = pageWidth - margin * 2;
+  let currentY = margin;
+  let hasContentOnPage = false;
+
+  blockCanvases.forEach((canvas, index) => {
+    if (!canvas || !canvas.width || !canvas.height) {
+      throw new Error(`Ungültiger Canvas-Block für Übersicht an Position ${index + 1}.`);
+    }
+
+    const renderedHeightMm = (canvas.height * contentWidthMm) / canvas.width;
+    const remainingMm = pageHeight - margin - currentY;
+
+    if (hasContentOnPage && renderedHeightMm > remainingMm) {
+      pdf.addPage("a4", "portrait");
+      currentY = margin;
+      hasContentOnPage = false;
+    }
+
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, currentY, contentWidthMm, renderedHeightMm, undefined, "FAST");
+    currentY += renderedHeightMm + 3;
+    hasContentOnPage = true;
+  });
+
+  return pdf.output("blob");
 }
 
 async function uploadOverviewPdf() {
@@ -664,3 +712,8 @@ async function uploadOverviewPdf() {
     }
   }
 }
+
+// Hinweis:
+// `uploadOverviewPdf`/Drive-Helfer sind bewusst optional und nutzen den bereits
+// erzeugten lokalen PDF-Blob. Neue Cloud-/API-Funktionalität wird hier nicht
+// eingeführt; der lokale Exportpfad bleibt unabhängig nutzbar.
