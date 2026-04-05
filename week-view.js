@@ -352,9 +352,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
+    setShift(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -363,9 +361,7 @@ shiftDialogSave.addEventListener("click", () => {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
 
-    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
+    setShift(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -380,9 +376,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
+    setShift(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -403,9 +397,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
-    clearDay(emp.id, isoDate, { commit: false });
-    setPlanEntry(emp.id, isoDate, entry);
+    setShift(emp.id, isoDate, entry);
     closeShiftDialog();
     return;
   }
@@ -421,13 +413,8 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    const clearedRange = clearDayRange(emp.id, fromIso, toIso, { commit: false });
-    if (!clearedRange) {
-      alert("Feiertage können nicht überschrieben werden.");
-      return;
-    }
-    const replacedCoverage = replaceAbsenceCoverageForEmployee(emp.id, fromIso, toIso, absenceType);
-    if (!replacedCoverage) {
+    const savedAbsence = setAbsence(emp.id, fromIso, toIso, absenceType, "", { commit: true });
+    if (!savedAbsence) {
       alert("Feiertage können nicht überschrieben werden.");
       return;
     }
@@ -439,7 +426,6 @@ shiftDialogSave.addEventListener("click", () => {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
     const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
-    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
 
     const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
@@ -848,24 +834,10 @@ function openShiftDialogForSelectValue(value, context) {
 
 function applyWeekSelection(emp, isoDate, selectedValue, previousValue) {
   const priorValue = previousValue ?? getWeekSelectValueForDay(emp, isoDate);
-  const currentBlockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
-  const selectedAbsenceType = selectedValue === "U"
-    ? "vacation"
-    : selectedValue === "K"
-      ? "sick"
-      : null;
-
-  if (currentBlockingType === "vacation" || currentBlockingType === "sick") {
-    if (selectedAbsenceType !== currentBlockingType) {
-      removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, currentBlockingType);
-    }
-  }
 
   if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
     return { openedDialog: true, previousValue: priorValue };
   }
-
-  clearDay(emp.id, isoDate, { commit: false });
 
   if (selectedValue !== "-") {
     const normalizedValue = getShiftCodeForSelectValue(selectedValue);
@@ -876,11 +848,17 @@ function applyWeekSelection(emp, isoDate, selectedValue, previousValue) {
       return { rejected: true, previousValue: priorValue };
     }
 
-    setPlanEntry(emp.id, isoDate, entry);
+    const applied = setShift(emp.id, isoDate, entry);
+    if (!applied) {
+      return { rejected: true, previousValue: priorValue };
+    }
     return { applied: true };
   }
 
-  commitPlanChange();
+  const cleared = clearDay(emp.id, isoDate);
+  if (!cleared) {
+    return { rejected: true, previousValue: priorValue };
+  }
   return { applied: true };
 }
 

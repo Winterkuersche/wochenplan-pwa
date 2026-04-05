@@ -97,6 +97,7 @@ function buildContext() {
     isClosingResolvedEntry: () => false,
     isEarlyStartEntry: () => false,
     getResolvedEntryForEmployeeOnIso: () => ({ type: 'none' }),
+    getResolvedStatus: () => null,
     getDialogTypeFromResolvedEntry: () => null,
     getShiftCodeForSelectValue: (value) => value,
     getShiftClassByKey: () => 'free',
@@ -105,6 +106,7 @@ function buildContext() {
     getBlockingTypeForEmployeeOnIso: () => null,
     decideMutationForIsoRange: () => ({ allow: true }),
     buildEarlyShiftEntry: (code) => ({ type: 'shift', code }),
+    setShift: () => true,
     setPlanEntry: () => {},
     clearDay: () => {},
     commitPlanChange: () => {},
@@ -161,34 +163,33 @@ test('vacation day can be changed directly to shift and only that day is removed
 
   ctx.getWeekSelectValueForDay = () => 'U';
   ctx.getBlockingTypeForEmployeeOnIso = () => 'vacation';
-  ctx.removeAbsenceCoverageForEmployee = (...args) => calls.push(['remove', ...args]);
-  ctx.clearDay = (...args) => calls.push(['clearDay', ...args]);
-  ctx.setPlanEntry = (...args) => calls.push(['setPlanEntry', ...args]);
+  ctx.setShift = (...args) => {
+    calls.push(['setShift', ...args]);
+    return true;
+  };
 
   const wrap = ctx.createWeekSelect({ id: 'e1' }, '2026-04-02');
   const select = wrap.children[0];
   select.value = 'FO';
   select.dispatchEvent('change');
 
-  assert.deepEqual(calls[0], ['remove', 'e1', '2026-04-02', '2026-04-02', 'vacation']);
-  assert.equal(calls.some((entry) => entry[0] === 'setPlanEntry'), true);
+  assert.deepEqual(calls[0], ['setShift', 'e1', '2026-04-02', { type: 'shift', code: 'FO' }]);
 });
 
 test('vacation day can directly switch to sick absence (other absence type)', () => {
   const ctx = buildContext();
-  const calls = [];
-
-  ctx.getWeekSelectValueForDay = () => 'U';
-  ctx.getBlockingTypeForEmployeeOnIso = () => 'vacation';
-  ctx.removeAbsenceCoverageForEmployee = (...args) => calls.push(args);
-  ctx.openShiftDialogForSelectValue = () => true;
+  let openedDialog = false;
+  ctx.openShiftDialogForSelectValue = () => {
+    openedDialog = true;
+    return true;
+  };
 
   const wrap = ctx.createWeekSelect({ id: 'e1' }, '2026-04-03');
   const select = wrap.children[0];
   select.value = 'K';
   select.dispatchEvent('change');
 
-  assert.deepEqual(calls[0], ['e1', '2026-04-03', '2026-04-03', 'vacation']);
+  assert.equal(openedDialog, true);
 });
 
 test('vacation day can be cleared with "-" and removes vacation coverage for that day', () => {
@@ -197,14 +198,14 @@ test('vacation day can be cleared with "-" and removes vacation coverage for tha
 
   ctx.getWeekSelectValueForDay = () => 'U';
   ctx.getBlockingTypeForEmployeeOnIso = () => 'vacation';
-  ctx.removeAbsenceCoverageForEmployee = (...args) => calls.push(args);
+  ctx.clearDay = (...args) => calls.push(args);
 
   const wrap = ctx.createWeekSelect({ id: 'e1' }, '2026-04-04');
   const select = wrap.children[0];
   select.value = '-';
   select.dispatchEvent('change');
 
-  assert.deepEqual(calls[0], ['e1', '2026-04-04', '2026-04-04', 'vacation']);
+  assert.deepEqual(calls[0], ['e1', '2026-04-04']);
 });
 
 test('holiday remains locked and disabled', () => {
@@ -258,8 +259,10 @@ test('mobile chip outside active month stays editable and opens week selection d
 test('mobile selection FO applies early shift directly', () => {
   const ctx = buildContext();
   const calls = [];
-  ctx.clearDay = (...args) => calls.push(['clearDay', ...args]);
-  ctx.setPlanEntry = (...args) => calls.push(['setPlanEntry', ...args]);
+  ctx.setShift = (...args) => {
+    calls.push(['setShift', ...args]);
+    return true;
+  };
   ctx.renderWeekView = () => {};
   ctx.getWeekSelectValueForDay = () => '-';
 
@@ -269,7 +272,7 @@ test('mobile selection FO applies early shift directly', () => {
   const optionButton = overlay.children[0].children[1].children[0];
   optionButton.dispatchEvent('click');
 
-  assert.equal(calls.some((entry) => entry[0] === 'setPlanEntry'), true);
+  assert.equal(calls.some((entry) => entry[0] === 'setShift'), true);
 });
 
 test('mobile selection U opens absence dialog flow', () => {

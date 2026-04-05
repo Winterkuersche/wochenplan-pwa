@@ -489,6 +489,105 @@ function decideMutationForIsoRange(fromIso, toIso = fromIso) {
   return { allow: true, reason: "ok", fromIso, toIso };
 }
 
+function resolveDayOverwriteDecision({
+  employeeId,
+  fromIso,
+  toIso = fromIso,
+  nextType
+} = {}) {
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+  if (!mutationDecision.allow) {
+    return { decision: "deny", reason: mutationDecision.reason, mutationDecision };
+  }
+
+  const isoDates = eachIsoDateInRange(fromIso, toIso);
+  let hasShiftCoverage = false;
+  let hasAbsenceCoverage = false;
+  let shiftCoverageDays = 0;
+  let absenceCoverageDays = 0;
+
+  isoDates.forEach((isoDate) => {
+    const planEntry = getPlanEntry(employeeId, isoDate);
+    if (isShiftEntry(planEntry)) {
+      hasShiftCoverage = true;
+      shiftCoverageDays += 1;
+    }
+
+    const absenceEntry = getPriorityAbsenceForEmployeeOnDate(state.absences || [], employeeId, isoDate);
+    if (absenceEntry) {
+      hasAbsenceCoverage = true;
+      absenceCoverageDays += 1;
+    }
+  });
+
+  if (nextType === "shift" && hasAbsenceCoverage) {
+    return {
+      decision: "confirm",
+      reason: "replace-absence-with-shift",
+      absenceCoverageDays
+    };
+  }
+
+  if (nextType === "absence" && hasShiftCoverage) {
+    return {
+      decision: "confirm",
+      reason: "replace-shift-with-absence",
+      shiftCoverageDays
+    };
+  }
+
+  return {
+    decision: "allow",
+    reason: "ok",
+    shiftCoverageDays,
+    absenceCoverageDays
+  };
+}
+
+function removeAbsenceCoverageForRange(employeeId, fromIso, toIso) {
+  state.absences = normalizeAbsences(
+    replaceAbsenceCoverage(
+      state.absences || [],
+      employeeId,
+      fromIso,
+      toIso,
+      null
+    )
+  );
+}
+
+function clearShiftCoverageForRange(employeeId, fromIso, toIso) {
+  eachIsoDateInRange(fromIso, toIso).forEach((isoDate) => {
+    clearPlanEntry(employeeId, isoDate, { commit: false });
+  });
+}
+
+function requestOverwriteConfirmation(decision, fromIso, toIso = fromIso) {
+  if (!decision || decision.decision !== "confirm") return true;
+  const isSingleDay = fromIso === toIso;
+  const dayCount = eachIsoDateInRange(fromIso, toIso).length;
+
+  if (decision.reason === "replace-absence-with-shift") {
+    const affectedDays = Math.max(1, Number(decision.absenceCoverageDays) || dayCount || 1);
+    return confirm(
+      isSingleDay
+        ? "Die Abwesenheit an diesem Tag wird durch eine Schicht ersetzt. Fortfahren?"
+        : `Abwesenheit an ${affectedDays} Tag(en) wird durch Schichten ersetzt. Fortfahren?`
+    );
+  }
+
+  if (decision.reason === "replace-shift-with-absence") {
+    const affectedDays = Math.max(1, Number(decision.shiftCoverageDays) || dayCount || 1);
+    return confirm(
+      isSingleDay
+        ? "Die Schicht an diesem Tag wird durch eine Abwesenheit ersetzt. Fortfahren?"
+        : `Schichten an ${affectedDays} Tag(en) werden durch eine Abwesenheit ersetzt. Fortfahren?`
+    );
+  }
+
+  return true;
+}
+
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   if (!employeeId || !isoDate || typeof updater !== "function") return null;
   const mutationDecision = decideMutationForIsoRange(isoDate);
@@ -569,7 +668,18 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   }
 
   if (!entry || entry.type !== "shift") return;
+  const decision = resolveDayOverwriteDecision({
+    employeeId,
+    fromIso: isoDate,
+    nextType: "shift"
+  });
+  if (decision.decision === "deny") return false;
+  if (!requestOverwriteConfirmation(decision, isoDate)) return false;
+
+  removeAbsenceCoverageForRange(employeeId, isoDate, isoDate);
   setScheduleEntry(employeeId, isoDate, entry);
+  syncVacationScheduleFromAbsences(employeeId);
+  return true;
 }
 
 function setExternalHelp(employeeId, isoDate, branch, minutes) {
@@ -590,26 +700,28 @@ function setExternalHelp(employeeId, isoDate, branch, minutes) {
 }
 
 function setAbsence(employeeId, from, to, type, note = "", options = {}) {
-  const mutationDecision = decideMutationForIsoRange(from, to);
-  if (!mutationDecision.allow) return null;
+  const decision = resolveDayOverwriteDecision({
+    employeeId,
+    fromIso: from,
+    toIso: to,
+    nextType: "absence"
+  });
+  if (decision.decision === "deny") return null;
+  if (!requestOverwriteConfirmation(decision, from, to)) return null;
 
   const { commit = true } = options;
-  const entryInput = {
-    id: crypto.randomUUID
-      ? crypto.randomUUID()
-      : `abs_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    employeeId,
-    type,
-    from,
-    to,
-    note
-  };
-  const createdAbsence = createAbsenceEntry(entryInput);
-  if (!createdAbsence) return null;
-
+  clearShiftCoverageForRange(employeeId, from, to);
   state.absences = normalizeAbsences(
-    addAbsenceEntry(state.absences || [], createdAbsence)
+    replaceAbsenceCoverage(
+      state.absences || [],
+      employeeId,
+      from,
+      to,
+      type
+    )
   );
+  const createdAbsence = getPriorityAbsenceForEmployeeOnDate(state.absences, employeeId, from);
+  if (!createdAbsence) return null;
 
   if (commit) {
     commitPlanChange();
@@ -635,8 +747,12 @@ function applyVacationDaysForYear(year) {
 }
 function clearDay(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;
-  const mutationDecision = decideMutationForIsoRange(isoDate);
-  if (!mutationDecision.allow) return false;
+  const decision = resolveDayOverwriteDecision({
+    employeeId,
+    fromIso: isoDate,
+    nextType: "clear"
+  });
+  if (decision.decision === "deny") return false;
 
   const { commit = true } = options;
 
@@ -644,7 +760,7 @@ function clearDay(employeeId, isoDate, options = {}) {
 
   clearPlanEntry(employeeId, isoDate, { commit: false });
 
-  removeAbsenceCoverageForEmployee(employeeId, isoDate, isoDate);
+  removeAbsenceCoverageForRange(employeeId, isoDate, isoDate);
   syncVacationScheduleFromAbsences(employeeId);
 
   if (commit) {
