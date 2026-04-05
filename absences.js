@@ -178,6 +178,87 @@ function getAbsenceDisplayLabel(absenceType) {
   return "";
 }
 
+function getDayOverwriteConfirmMessage(reasonKey) {
+  if (reasonKey === "override-sick") {
+    return "Dieser Tag ist als Krank eingetragen. Änderung wirklich überschreiben?";
+  }
+
+  if (reasonKey === "override-vacation") {
+    return "Dieser Tag ist als Urlaub eingetragen. Änderung wirklich überschreiben?";
+  }
+
+  return "";
+}
+
+function resolveDayOverwriteDecision({
+  employeeId,
+  isoDate,
+  fromIso = isoDate,
+  toIso = isoDate,
+  newKind = "empty",
+  currentResolvedState = "empty"
+} = {}) {
+  const normalizedCurrent = String(currentResolvedState || "empty").toLowerCase();
+  const normalizedNewKind = String(newKind || "empty").toLowerCase();
+
+  const priorityByKind = {
+    empty: 0,
+    shift: 1,
+    vacation: 2,
+    sick: 3,
+    holiday: 4
+  };
+
+  if (!employeeId || !fromIso || !toIso) {
+    return {
+      action: "deny",
+      reasonKey: "invalid-input",
+      confirmMessage: ""
+    };
+  }
+
+  if (normalizedCurrent === "holiday") {
+    return {
+      action: "deny",
+      reasonKey: "holiday-protected",
+      confirmMessage: ""
+    };
+  }
+
+  if (normalizedCurrent === normalizedNewKind) {
+    return {
+      action: "allow",
+      reasonKey: "same-kind",
+      confirmMessage: ""
+    };
+  }
+
+  const currentPriority = priorityByKind[normalizedCurrent] ?? priorityByKind.empty;
+  const newPriority = priorityByKind[normalizedNewKind] ?? priorityByKind.empty;
+
+  if (normalizedCurrent === "sick" && newPriority < currentPriority) {
+    return {
+      action: "confirm",
+      reasonKey: "override-sick",
+      confirmMessage: getDayOverwriteConfirmMessage("override-sick")
+    };
+  }
+
+  if (normalizedCurrent === "vacation" && newPriority < currentPriority) {
+    return {
+      action: "confirm",
+      reasonKey: "override-vacation",
+      confirmMessage: getDayOverwriteConfirmMessage("override-vacation")
+    };
+  }
+
+  return {
+    action: "allow",
+    reasonKey: "priority-allows",
+    confirmMessage: ""
+  };
+}
+
 function getAbsenceMinutesForEmployee(employee) {
   return getDailyTargetMinutesFromWeeklyHHMM(employee?.target || "00:00");
 }

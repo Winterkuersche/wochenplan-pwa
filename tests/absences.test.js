@@ -106,3 +106,41 @@ test('normalizeAbsences merges overlapping and directly adjacent ranges for same
     ['2026-04-18', '2026-04-18']
   ]);
 });
+
+test('resolveDayOverwriteDecision denies holiday overwrite attempts', () => {
+  const result = ctx.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    isoDate: '2026-12-25',
+    newKind: 'shift',
+    currentResolvedState: 'holiday'
+  });
+
+  assert.equal(result.action, 'deny');
+  assert.equal(result.reasonKey, 'holiday-protected');
+});
+
+test('resolveDayOverwriteDecision asks for confirmation when lowering priority from vacation to shift', () => {
+  const result = ctx.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    isoDate: '2026-04-06',
+    newKind: 'shift',
+    currentResolvedState: 'vacation'
+  });
+
+  assert.equal(result.action, 'confirm');
+  assert.equal(result.reasonKey, 'override-vacation');
+  assert.equal(typeof result.confirmMessage, 'string');
+  assert.equal(result.confirmMessage.length > 0, true);
+});
+
+test('resolveDayOverwriteDecision allows higher-priority overwrite from vacation to sick', () => {
+  const result = ctx.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    isoDate: '2026-04-07',
+    newKind: 'sick',
+    currentResolvedState: 'vacation'
+  });
+
+  assert.equal(result.action, 'allow');
+  assert.equal(result.reasonKey, 'priority-allows');
+});

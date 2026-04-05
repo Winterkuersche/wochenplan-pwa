@@ -841,8 +841,60 @@ function openShiftDialogForSelectValue(value, context) {
   return true;
 }
 
+function getResolvedOverwriteStateForDay(resolvedEntry) {
+  if (!resolvedEntry || typeof resolvedEntry !== "object") return "empty";
+  if (resolvedEntry.type === "holiday") return "holiday";
+  if (resolvedEntry.type === "sick") return "sick";
+  if (resolvedEntry.type === "vacation") return "vacation";
+  if (resolvedEntry.type === "shift") return "shift";
+  return "empty";
+}
+
+function resolveWeekSelectionOverwriteDecision(emp, isoDate, selectedValue) {
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+  const newKind = selectedValue === "U"
+    ? "vacation"
+    : selectedValue === "K"
+      ? "sick"
+      : selectedValue === "-"
+        ? "empty"
+        : "shift";
+  const currentResolvedState = getResolvedOverwriteStateForDay(resolved);
+
+  if (typeof resolveDayOverwriteDecision === "function") {
+    return resolveDayOverwriteDecision({
+      employeeId: emp?.id,
+      isoDate,
+      newKind,
+      currentResolvedState
+    });
+  }
+
+  if (currentResolvedState === "holiday") {
+    return { action: "deny", reasonKey: "holiday-protected", confirmMessage: "" };
+  }
+
+  return { action: "allow", reasonKey: "fallback-allow", confirmMessage: "" };
+}
+
 function applyWeekSelection(emp, isoDate, selectedValue, previousValue) {
   const priorValue = previousValue ?? getWeekSelectValueForDay(emp, isoDate);
+  const overwriteDecision = resolveWeekSelectionOverwriteDecision(emp, isoDate, selectedValue);
+
+  if (overwriteDecision.action === "deny") {
+    if (overwriteDecision.reasonKey === "holiday-protected") {
+      alert("Feiertag ist geschützt und kann nicht überschrieben werden.");
+    }
+    return { rejected: true, previousValue: priorValue };
+  }
+
+  if (overwriteDecision.action === "confirm") {
+    const confirmMessage = overwriteDecision.confirmMessage || "Änderung wirklich überschreiben?";
+    if (!confirm(confirmMessage)) {
+      return { rejected: true, previousValue: priorValue };
+    }
+  }
+
   const currentBlockingType = getBlockingTypeForEmployeeOnIso(emp, isoDate);
   const selectedAbsenceType = selectedValue === "U"
     ? "vacation"

@@ -191,6 +191,30 @@ test('vacation day can directly switch to sick absence (other absence type)', ()
   assert.deepEqual(calls[0], ['e1', '2026-04-03', '2026-04-03', 'vacation']);
 });
 
+test('change is aborted when overwrite decision requires confirmation and user cancels', () => {
+  const ctx = buildContext();
+  const calls = [];
+
+  ctx.getWeekSelectValueForDay = () => 'U';
+  ctx.getResolvedEntryForEmployeeOnIso = () => ({ type: 'vacation' });
+  ctx.resolveDayOverwriteDecision = () => ({
+    action: 'confirm',
+    reasonKey: 'override-vacation',
+    confirmMessage: 'confirm?'
+  });
+  ctx.confirm = () => false;
+  ctx.removeAbsenceCoverageForEmployee = (...args) => calls.push(['remove', ...args]);
+  ctx.clearDay = (...args) => calls.push(['clearDay', ...args]);
+
+  const wrap = ctx.createWeekSelect({ id: 'e1' }, '2026-04-05');
+  const select = wrap.children[0];
+  select.value = 'FO';
+  select.dispatchEvent('change');
+
+  assert.deepEqual(calls, []);
+  assert.equal(select.value, 'U');
+});
+
 test('vacation day can be cleared with "-" and removes vacation coverage for that day', () => {
   const ctx = buildContext();
   const calls = [];

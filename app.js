@@ -468,6 +468,63 @@ function hasEmployeeWorkEntry(employeeId, isoDate) {
   return status === ENTRY_STATUS.WORK || status === ENTRY_STATUS.EXTERNAL;
 }
 
+function getEmployeeById(employeeId) {
+  if (!employeeId) return null;
+  return state.employees.find((emp) => emp?.id === employeeId) || null;
+}
+
+function getResolvedOverwriteStateForEmployeeOnIso(employeeId, isoDate) {
+  const employee = getEmployeeById(employeeId);
+  if (!employee || !isoDate) return "empty";
+
+  const resolved = getResolvedEntryForEmployeeOnIso(employee, isoDate);
+  if (!resolved || typeof resolved !== "object") return "empty";
+  if (resolved.type === "holiday") return "holiday";
+  if (resolved.type === "sick") return "sick";
+  if (resolved.type === "vacation") return "vacation";
+  if (resolved.type === "shift" || resolved.type === "external-help") return "shift";
+  return "empty";
+}
+
+function normalizeOverwriteNewKind(nextKind) {
+  if (nextKind === "vacation") return "vacation";
+  if (nextKind === "sick") return "sick";
+  if (nextKind === "shift") return "shift";
+  if (nextKind === "external-help") return "shift";
+  return "empty";
+}
+
+function resolveOverwriteDecisionForEmployeeOnIso(employeeId, isoDate, nextKind) {
+  const currentResolvedState = getResolvedOverwriteStateForEmployeeOnIso(employeeId, isoDate);
+  const newKind = normalizeOverwriteNewKind(nextKind);
+
+  if (typeof resolveDayOverwriteDecision !== "function") {
+    if (currentResolvedState === "holiday") {
+      return { action: "deny", reasonKey: "holiday-protected", confirmMessage: "" };
+    }
+    return { action: "allow", reasonKey: "fallback-allow", confirmMessage: "" };
+  }
+
+  return resolveDayOverwriteDecision({
+    employeeId,
+    isoDate,
+    newKind,
+    currentResolvedState
+  });
+}
+
+function isOverwriteDecisionAccepted(decision, options = {}) {
+  if (!decision || decision.action === "allow") return true;
+  if (decision.action === "deny") return false;
+  if (decision.action !== "confirm") return true;
+
+  if (typeof options.confirmOverwrite === "function") {
+    return options.confirmOverwrite(decision);
+  }
+
+  return true;
+}
+
 function decideMutationForIsoRange(fromIso, toIso = fromIso) {
   const isoDates = eachIsoDateInRange(fromIso, toIso);
   if (!isoDates.length) {
@@ -497,6 +554,12 @@ function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
   const { commit = true } = options;
   const currentEntry = getPlanEntry(employeeId, isoDate);
   const nextEntry = updater(currentEntry ? { ...currentEntry } : null);
+  const overwriteDecision = resolveOverwriteDecisionForEmployeeOnIso(
+    employeeId,
+    isoDate,
+    nextEntry?.type || "empty"
+  );
+  if (!isOverwriteDecisionAccepted(overwriteDecision, options)) return null;
 
   if (nextEntry == null) {
     if (state.schedule?.[isoDate]?.[employeeId]) {
@@ -593,6 +656,16 @@ function setAbsence(employeeId, from, to, type, note = "", options = {}) {
   const mutationDecision = decideMutationForIsoRange(from, to);
   if (!mutationDecision.allow) return null;
 
+  const overwriteDates = eachIsoDateInRange(from, to);
+  if (!overwriteDates.length) return null;
+
+  for (const isoDate of overwriteDates) {
+    const overwriteDecision = resolveOverwriteDecisionForEmployeeOnIso(employeeId, isoDate, type);
+    if (!isOverwriteDecisionAccepted(overwriteDecision, options)) {
+      return null;
+    }
+  }
+
   const { commit = true } = options;
   const entryInput = {
     id: crypto.randomUUID
@@ -637,6 +710,8 @@ function clearDay(employeeId, isoDate, options = {}) {
   if (!employeeId || !isoDate) return;
   const mutationDecision = decideMutationForIsoRange(isoDate);
   if (!mutationDecision.allow) return false;
+  const overwriteDecision = resolveOverwriteDecisionForEmployeeOnIso(employeeId, isoDate, "empty");
+  if (!isOverwriteDecisionAccepted(overwriteDecision, options)) return false;
 
   const { commit = true } = options;
 
