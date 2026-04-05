@@ -2,6 +2,85 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
 
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const appScript = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+
+function sliceFunctionSource(script, startToken, endToken) {
+  const startIndex = script.indexOf(startToken);
+  const endIndex = script.indexOf(endToken, startIndex);
+  if (startIndex < 0 || endIndex < 0 || endIndex <= startIndex) return '';
+  return script.slice(startIndex, endIndex).trim();
+}
+
+function loadOverwriteDecisionHelpers(contextOverrides = {}) {
+  const decideSrc = sliceFunctionSource(
+    appScript,
+    'function decideMutationForIsoRange',
+    '\n\nfunction resolveDayOverwriteDecision'
+  );
+  const resolveSrc = sliceFunctionSource(
+    appScript,
+    'function resolveDayOverwriteDecision',
+    '\n\nfunction removeAbsenceCoverageForRange'
+  );
+  const textSrc = sliceFunctionSource(
+    appScript,
+    'function getOverwriteConfirmationText',
+    '\n\nfunction requestOverwriteConfirmation'
+  );
+  const confirmSrc = sliceFunctionSource(
+    appScript,
+    'function requestOverwriteConfirmation',
+    '\n\nfunction updateEmployeeDay'
+  );
+
+  assert.ok(decideSrc && resolveSrc && textSrc && confirmSrc, 'overwrite helper functions should exist in app.js');
+
+  const context = vm.createContext({
+    APP_META: { stateKey: 'SH' },
+    state: { absences: [] },
+    eachIsoDateInRange: (fromIso, toIso = fromIso) => {
+      if (!fromIso || !toIso || fromIso > toIso) return [];
+      const out = [];
+      let current = new Date(`${fromIso}T00:00:00Z`);
+      const end = new Date(`${toIso}T00:00:00Z`);
+      while (current <= end) {
+        out.push(current.toISOString().slice(0, 10));
+        current.setUTCDate(current.getUTCDate() + 1);
+      }
+      return out;
+    },
+    getHolidayByDate: () => null,
+    getPlanEntry: () => null,
+    isShiftEntry: (entry) => entry?.type === 'shift',
+    getPriorityAbsenceForEmployeeOnDate: (absences, employeeId, isoDate) => (
+      absences.find((entry) => (
+        entry.employeeId === employeeId &&
+        isoDate >= entry.from &&
+        isoDate <= entry.to
+      )) || null
+    ),
+    confirm: () => true,
+    ...contextOverrides
+  });
+
+  vm.runInContext(`
+${decideSrc}
+${resolveSrc}
+${textSrc}
+${confirmSrc}
+this.decideMutationForIsoRange = decideMutationForIsoRange;
+this.resolveDayOverwriteDecision = resolveDayOverwriteDecision;
+this.requestOverwriteConfirmation = requestOverwriteConfirmation;
+`, context, { filename: 'app.js' });
+
+  return context;
+}
+
+
 const ctx = loadScripts(['date-utils.js', 'time-utils.js', 'absences.js']);
 
 const baseEntry = {
@@ -145,5 +224,141 @@ test('replaceAbsenceCoverage replaces vacation with sick only in target range', 
     ['sick', '2026-05-04', '2026-05-06'],
     ['vacation', '2026-05-01', '2026-05-03'],
     ['vacation', '2026-05-07', '2026-05-10']
+  ]);
+});
+
+
+test('resolveDayOverwriteDecision requires confirmation for shift on vacation and absence split remains intact', () => {
+  const helpers = loadOverwriteDecisionHelpers({
+    state: {
+      absences: [
+        { employeeId: 'emp_1', type: 'vacation', from: '2026-06-01', to: '2026-06-05', note: '' }
+      ]
+    }
+  });
+
+  const decision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-06-03',
+    nextType: 'shift'
+  });
+
+  assert.equal(decision.decision, 'confirm');
+  assert.equal(decision.reason, 'replace-absence-with-shift');
+  assert.equal(decision.affectedDays, 1);
+
+  const splitResult = ctx.replaceAbsenceCoverage(
+    [{ employeeId: 'emp_1', type: 'vacation', from: '2026-06-01', to: '2026-06-05', note: '' }],
+    'emp_1',
+    '2026-06-03',
+    '2026-06-03',
+    null
+  );
+
+  const ranges = JSON.parse(JSON.stringify(splitResult.map((x) => [x.type, x.from, x.to])));
+  assert.deepEqual(ranges, [
+    ['vacation', '2026-06-01', '2026-06-02'],
+    ['vacation', '2026-06-04', '2026-06-05']
+  ]);
+});
+
+test('resolveDayOverwriteDecision requires confirmation for sick on vacation', () => {
+  const helpers = loadOverwriteDecisionHelpers({
+    state: {
+      absences: [
+        { employeeId: 'emp_1', type: 'vacation', from: '2026-07-10', to: '2026-07-12', note: '' }
+      ]
+    }
+  });
+
+  const decision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-07-11',
+    toIso: '2026-07-11',
+    nextType: 'absence',
+    nextAbsenceType: 'sick'
+  });
+
+  assert.equal(decision.decision, 'confirm');
+  assert.equal(decision.reason, 'replace-vacation-with-sick');
+  assert.equal(decision.affectedDays, 1);
+});
+
+test('resolveDayOverwriteDecision requires confirmation for vacation on sick', () => {
+  const helpers = loadOverwriteDecisionHelpers({
+    state: {
+      absences: [
+        { employeeId: 'emp_1', type: 'sick', from: '2026-07-10', to: '2026-07-12', note: '' }
+      ]
+    }
+  });
+
+  const decision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-07-11',
+    toIso: '2026-07-11',
+    nextType: 'absence',
+    nextAbsenceType: 'vacation'
+  });
+
+  assert.equal(decision.decision, 'confirm');
+  assert.equal(decision.reason, 'replace-sick-with-vacation');
+  assert.equal(decision.affectedDays, 1);
+});
+
+test('resolveDayOverwriteDecision allows shift on existing shift without confirmation', () => {
+  const helpers = loadOverwriteDecisionHelpers({
+    getPlanEntry: () => ({ type: 'shift', mode: 'early', minutes: 360 })
+  });
+
+  const decision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-08-03',
+    nextType: 'shift'
+  });
+
+  assert.equal(decision.decision, 'allow');
+  assert.equal(decision.reason, 'ok');
+  assert.equal(decision.shiftCoverageDays, 1);
+});
+
+test('holiday remains non-overwritable for range mutations', () => {
+  const helpers = loadOverwriteDecisionHelpers({
+    getHolidayByDate: (_stateKey, isoDate) => (isoDate === '2026-12-25' ? { name: '1. Weihnachtstag' } : null)
+  });
+
+  const mutation = helpers.decideMutationForIsoRange('2026-12-25', '2026-12-25');
+  assert.equal(mutation.allow, false);
+  assert.equal(mutation.reason, 'holiday');
+
+  const decision = helpers.resolveDayOverwriteDecision({
+    employeeId: 'emp_1',
+    fromIso: '2026-12-25',
+    nextType: 'absence',
+    nextAbsenceType: 'vacation'
+  });
+  assert.equal(decision.decision, 'deny');
+  assert.equal(decision.reason, 'holiday');
+});
+
+test('replaceAbsenceCoverage supports partial replacement in multi-day ranges and keeps untouched edges', () => {
+  const result = ctx.replaceAbsenceCoverage(
+    [{ employeeId: 'emp_1', type: 'vacation', from: '2026-09-01', to: '2026-09-10', note: '' }],
+    'emp_1',
+    '2026-09-04',
+    '2026-09-06',
+    'sick'
+  );
+
+  const normalized = JSON.parse(JSON.stringify(
+    result
+      .map((x) => [x.type, x.from, x.to])
+      .sort((a, b) => a.join('|').localeCompare(b.join('|')))
+  ));
+
+  assert.deepEqual(normalized, [
+    ['sick', '2026-09-04', '2026-09-06'],
+    ['vacation', '2026-09-01', '2026-09-03'],
+    ['vacation', '2026-09-07', '2026-09-10']
   ]);
 });
