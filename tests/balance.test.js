@@ -86,3 +86,76 @@ test('resolved day calculation stays stable after mixed replacements (single act
   const expectedDailyMinutes = calcCtx.getDailyTargetMinutesFromWeeklyHHMM(employee.target);
   assert.equal(totalMinutes, expectedDailyMinutes * days.length);
 });
+
+test('holiday is prioritized over absence range in day resolution', () => {
+  const calcCtx = loadScripts([
+    'date-utils.js',
+    'time-utils.js',
+    'status-utils.js',
+    'shift-rules.js',
+    'shift-utils.js',
+    'absences.js',
+    'holidays.js',
+    'day-resolution.js'
+  ]);
+
+  const employee = { id: 'emp_1', target: '30:00' };
+  const absences = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-12-24', to: '2026-12-26', note: '' }
+  ];
+
+  const resolved = calcCtx.getResolvedDayEntry({
+    employee,
+    isoDate: '2026-12-25',
+    schedule: {},
+    absences,
+    stateKey: 'schleswig-holstein'
+  });
+
+  assert.equal(resolved.type, 'holiday');
+  assert.equal(resolved.status, 'off');
+  assert.equal(resolved.label, 'H');
+});
+
+test('holiday inside absence range contributes minutes once (not as regular vacation/sick day)', () => {
+  const calcCtx = loadScripts([
+    'date-utils.js',
+    'time-utils.js',
+    'status-utils.js',
+    'shift-rules.js',
+    'shift-utils.js',
+    'absences.js',
+    'holidays.js',
+    'day-resolution.js'
+  ]);
+
+  const employee = { id: 'emp_1', target: '30:00' };
+  const absences = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-12-24', to: '2026-12-26', note: '' }
+  ];
+  const expectedDailyMinutes = calcCtx.getDailyTargetMinutesFromWeeklyHHMM(employee.target);
+
+  const dailyTypes = ['2026-12-24', '2026-12-25', '2026-12-26'].map((isoDate) => (
+    calcCtx.getResolvedDayEntry({
+      employee,
+      isoDate,
+      schedule: {},
+      absences,
+      stateKey: 'schleswig-holstein'
+    }).type
+  ));
+
+  const totalMinutes = ['2026-12-24', '2026-12-25', '2026-12-26'].reduce((sum, isoDate) => {
+    const resolved = calcCtx.getResolvedDayEntry({
+      employee,
+      isoDate,
+      schedule: {},
+      absences,
+      stateKey: 'schleswig-holstein'
+    });
+    return sum + resolved.minutesForMonth;
+  }, 0);
+
+  assert.deepEqual(JSON.parse(JSON.stringify(dailyTypes)), ['vacation', 'holiday', 'holiday']);
+  assert.equal(totalMinutes, expectedDailyMinutes * 3);
+});
