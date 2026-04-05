@@ -493,7 +493,8 @@ function resolveDayOverwriteDecision({
   employeeId,
   fromIso,
   toIso = fromIso,
-  nextType
+  nextType,
+  nextAbsenceType = null
 } = {}) {
   const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
   if (!mutationDecision.allow) {
@@ -505,6 +506,8 @@ function resolveDayOverwriteDecision({
   let hasAbsenceCoverage = false;
   let shiftCoverageDays = 0;
   let absenceCoverageDays = 0;
+  let vacationCoverageDays = 0;
+  let sickCoverageDays = 0;
 
   isoDates.forEach((isoDate) => {
     const planEntry = getPlanEntry(employeeId, isoDate);
@@ -517,6 +520,12 @@ function resolveDayOverwriteDecision({
     if (absenceEntry) {
       hasAbsenceCoverage = true;
       absenceCoverageDays += 1;
+
+      if (absenceEntry.type === "vacation") {
+        vacationCoverageDays += 1;
+      } else if (absenceEntry.type === "sick") {
+        sickCoverageDays += 1;
+      }
     }
   });
 
@@ -524,23 +533,43 @@ function resolveDayOverwriteDecision({
     return {
       decision: "confirm",
       reason: "replace-absence-with-shift",
-      absenceCoverageDays
+      affectedDays: absenceCoverageDays
     };
   }
 
-  if (nextType === "absence" && hasShiftCoverage) {
-    return {
-      decision: "confirm",
-      reason: "replace-shift-with-absence",
-      shiftCoverageDays
-    };
+  if (nextType === "absence") {
+    if (hasShiftCoverage) {
+      return {
+        decision: "confirm",
+        reason: "replace-shift-with-absence",
+        affectedDays: shiftCoverageDays
+      };
+    }
+
+    if (nextAbsenceType === "vacation" && sickCoverageDays > 0) {
+      return {
+        decision: "confirm",
+        reason: "replace-sick-with-vacation",
+        affectedDays: sickCoverageDays
+      };
+    }
+
+    if (nextAbsenceType === "sick" && vacationCoverageDays > 0) {
+      return {
+        decision: "confirm",
+        reason: "replace-vacation-with-sick",
+        affectedDays: vacationCoverageDays
+      };
+    }
   }
 
   return {
     decision: "allow",
     reason: "ok",
     shiftCoverageDays,
-    absenceCoverageDays
+    absenceCoverageDays,
+    vacationCoverageDays,
+    sickCoverageDays
   };
 }
 
@@ -562,30 +591,41 @@ function clearShiftCoverageForRange(employeeId, fromIso, toIso) {
   });
 }
 
+function getOverwriteConfirmationText(reason, affectedDays, isSingleDay) {
+  if (reason === "replace-absence-with-shift") {
+    return isSingleDay
+      ? "Abwesenheit wird durch Schicht ersetzt. Fortfahren?"
+      : `Abwesenheit an ${affectedDays} Tag(en) wird durch Schicht ersetzt. Fortfahren?`;
+  }
+
+  if (reason === "replace-shift-with-absence") {
+    return isSingleDay
+      ? "Schicht wird durch Abwesenheit ersetzt. Fortfahren?"
+      : `Schicht an ${affectedDays} Tag(en) wird durch Abwesenheit ersetzt. Fortfahren?`;
+  }
+
+  if (reason === "replace-sick-with-vacation") {
+    return isSingleDay
+      ? "Krank wird durch Urlaub ersetzt. Fortfahren?"
+      : `Krank an ${affectedDays} Tag(en) wird durch Urlaub ersetzt. Fortfahren?`;
+  }
+
+  if (reason === "replace-vacation-with-sick") {
+    return isSingleDay
+      ? "Urlaub wird durch Krank ersetzt. Fortfahren?"
+      : `Urlaub an ${affectedDays} Tag(en) wird durch Krank ersetzt. Fortfahren?`;
+  }
+
+  return "Änderung überschreibt bestehende Einträge. Fortfahren?";
+}
+
 function requestOverwriteConfirmation(decision, fromIso, toIso = fromIso) {
   if (!decision || decision.decision !== "confirm") return true;
   const isSingleDay = fromIso === toIso;
   const dayCount = eachIsoDateInRange(fromIso, toIso).length;
-
-  if (decision.reason === "replace-absence-with-shift") {
-    const affectedDays = Math.max(1, Number(decision.absenceCoverageDays) || dayCount || 1);
-    return confirm(
-      isSingleDay
-        ? "Die Abwesenheit an diesem Tag wird durch eine Schicht ersetzt. Fortfahren?"
-        : `Abwesenheit an ${affectedDays} Tag(en) wird durch Schichten ersetzt. Fortfahren?`
-    );
-  }
-
-  if (decision.reason === "replace-shift-with-absence") {
-    const affectedDays = Math.max(1, Number(decision.shiftCoverageDays) || dayCount || 1);
-    return confirm(
-      isSingleDay
-        ? "Die Schicht an diesem Tag wird durch eine Abwesenheit ersetzt. Fortfahren?"
-        : `Schichten an ${affectedDays} Tag(en) werden durch eine Abwesenheit ersetzt. Fortfahren?`
-    );
-  }
-
-  return true;
+  const affectedDays = Math.max(1, Number(decision.affectedDays) || dayCount || 1);
+  const message = getOverwriteConfirmationText(decision.reason, affectedDays, isSingleDay);
+  return confirm(message);
 }
 
 function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
@@ -704,7 +744,8 @@ function setAbsence(employeeId, from, to, type, note = "", options = {}) {
     employeeId,
     fromIso: from,
     toIso: to,
-    nextType: "absence"
+    nextType: "absence",
+    nextAbsenceType: type
   });
   if (decision.decision === "deny") return null;
   if (!requestOverwriteConfirmation(decision, from, to)) return null;
