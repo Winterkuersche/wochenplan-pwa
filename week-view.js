@@ -352,8 +352,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
+    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -364,8 +363,7 @@ shiftDialogSave.addEventListener("click", () => {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
 
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
+    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -382,8 +380,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
+    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -406,8 +403,7 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
+    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
     setPlanEntry(emp.id, isoDate, entry);
     closeShiftDialog();
@@ -425,15 +421,13 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    const otherAbsenceType = absenceType === "vacation" ? "sick" : "vacation";
-    removeAbsenceCoverageForEmployee(emp.id, fromIso, toIso, otherAbsenceType);
     const clearedRange = clearDayRange(emp.id, fromIso, toIso, { commit: false });
     if (!clearedRange) {
       alert("Feiertage können nicht überschrieben werden.");
       return;
     }
-    const didApplyAbsence = addOrReplaceAbsenceForEmployee(emp.id, absenceType, fromIso, toIso);
-    if (!didApplyAbsence) {
+    const replacedCoverage = replaceAbsenceCoverageForEmployee(emp.id, fromIso, toIso, absenceType);
+    if (!replacedCoverage) {
       alert("Feiertage können nicht überschrieben werden.");
       return;
     }
@@ -445,8 +439,7 @@ shiftDialogSave.addEventListener("click", () => {
     const branch = (shiftDialogExternalHelpBranch.value || "").trim();
     const start = getQuarterPickerValue(shiftDialogExternalHelpStartHour, shiftDialogExternalHelpStartMinute);
     const end = getQuarterPickerValue(shiftDialogExternalHelpEndHour, shiftDialogExternalHelpEndMinute);
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "vacation");
-    removeAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, "sick");
+    replaceAbsenceCoverageForEmployee(emp.id, isoDate, isoDate, null);
     clearDay(emp.id, isoDate, { commit: false });
 
     const ok = setExternalHelpForEmployeeOnDate(emp.id, isoDate, {
@@ -529,33 +522,45 @@ function clearDayRange(employeeId, fromIso, toIso, options = {}) {
   return true;
 }
 
-function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
-  const mutationDecision = decideMutationForIsoRange(removeFromIso, removeToIso);
+function replaceAbsenceCoverageForEmployee(employeeId, fromIso, toIso, replacementType = null) {
+  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
   if (!mutationDecision.allow) return false;
 
-  state.absences = removeAbsenceCoverage(
+  state.absences = replaceAbsenceCoverage(
     state.absences || [],
     employeeId,
-    removeFromIso,
-    removeToIso,
-    type
+    fromIso,
+    toIso,
+    replacementType
   );
 
   return true;
 }
 
-function addOrReplaceAbsenceForEmployee(employeeId, type, fromIso, toIso) {
-  const mutationDecision = decideMutationForIsoRange(fromIso, toIso);
+function removeAbsenceCoverageForEmployee(employeeId, removeFromIso, removeToIso, type) {
+  const mutationDecision = decideMutationForIsoRange(removeFromIso, removeToIso);
   if (!mutationDecision.allow) return false;
 
-  const removedCoverage = removeAbsenceCoverageForEmployee(employeeId, fromIso, toIso, type);
-  if (!removedCoverage) return false;
-  const absence = setAbsence(employeeId, fromIso, toIso, type, "", { commit: false });
-  if (!absence) return false;
+  if (type === "vacation" || type === "sick") {
+    state.absences = normalizeAbsences(
+      removeAbsenceCoverage(
+        state.absences || [],
+        employeeId,
+        removeFromIso,
+        removeToIso,
+        type
+      )
+    );
+    return true;
+  }
 
-  syncVacationScheduleFromAbsences(employeeId);
-
-  commitPlanChange();
+  state.absences = replaceAbsenceCoverage(
+    state.absences || [],
+    employeeId,
+    removeFromIso,
+    removeToIso,
+    null
+  );
   return true;
 }
 

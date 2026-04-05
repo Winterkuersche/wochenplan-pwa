@@ -106,3 +106,44 @@ test('normalizeAbsences merges overlapping and directly adjacent ranges for same
     ['2026-04-18', '2026-04-18']
   ]);
 });
+
+test('replaceAbsenceCoverage clears both absence types for a shift override range and preserves remaining segments', () => {
+  const input = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-04-10', to: '2026-04-15', note: '' },
+    { employeeId: 'emp_1', type: 'sick', from: '2026-04-12', to: '2026-04-14', note: '' },
+    { employeeId: 'emp_2', type: 'vacation', from: '2026-04-12', to: '2026-04-12', note: '' }
+  ];
+
+  const result = ctx.replaceAbsenceCoverage(input, 'emp_1', '2026-04-12', '2026-04-13', null);
+  const normalized = JSON.parse(JSON.stringify(
+    result
+      .map((x) => [x.employeeId, x.type, x.from, x.to])
+      .sort((a, b) => a.join('|').localeCompare(b.join('|')))
+  ));
+
+  assert.deepEqual(normalized, [
+    ['emp_1', 'sick', '2026-04-14', '2026-04-14'],
+    ['emp_1', 'vacation', '2026-04-10', '2026-04-11'],
+    ['emp_1', 'vacation', '2026-04-14', '2026-04-15'],
+    ['emp_2', 'vacation', '2026-04-12', '2026-04-12']
+  ]);
+});
+
+test('replaceAbsenceCoverage replaces vacation with sick only in target range', () => {
+  const input = [
+    { employeeId: 'emp_1', type: 'vacation', from: '2026-05-01', to: '2026-05-10', note: '' }
+  ];
+
+  const result = ctx.replaceAbsenceCoverage(input, 'emp_1', '2026-05-04', '2026-05-06', 'sick');
+  const normalized = JSON.parse(JSON.stringify(
+    result
+      .map((x) => [x.type, x.from, x.to])
+      .sort((a, b) => a.join('|').localeCompare(b.join('|')))
+  ));
+
+  assert.deepEqual(normalized, [
+    ['sick', '2026-05-04', '2026-05-06'],
+    ['vacation', '2026-05-01', '2026-05-03'],
+    ['vacation', '2026-05-07', '2026-05-10']
+  ]);
+});

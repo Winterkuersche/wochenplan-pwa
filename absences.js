@@ -157,6 +157,42 @@ function removeAbsenceCoverage(absences, employeeId, removeFromIso, removeToIso,
   });
 }
 
+function replaceAbsenceCoverage(absences, employeeId, fromIso, toIso, replacementType = null) {
+  if (!Array.isArray(absences)) return [];
+  if (!employeeId || !fromIso || !toIso) return [...absences];
+  if (!fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) return [...absences];
+
+  const normalizedReplacementType =
+    replacementType === "vacation" || replacementType === "sick" ? replacementType : null;
+  const typesToClear = normalizedReplacementType
+    ? [normalizedReplacementType === "vacation" ? "sick" : "vacation"]
+    : ["vacation", "sick"];
+
+  let nextAbsences = [...absences];
+
+  typesToClear.forEach((typeToClear) => {
+    nextAbsences = removeAbsenceCoverage(
+      nextAbsences,
+      employeeId,
+      fromIso,
+      toIso,
+      typeToClear
+    );
+  });
+
+  if (normalizedReplacementType) {
+    nextAbsences = addAbsenceEntry(nextAbsences, {
+      employeeId,
+      type: normalizedReplacementType,
+      from: fromIso,
+      to: toIso,
+      note: ""
+    });
+  }
+
+  return normalizeAbsences(nextAbsences);
+}
+
 function updateAbsenceEntry(absences, absenceId, updates) {
   if (!Array.isArray(absences) || !absenceId) return Array.isArray(absences) ? [...absences] : [];
 
