@@ -103,6 +103,7 @@ function buildContext() {
     isDialogShift: () => false,
     openShiftDialog: () => {},
     getBlockingTypeForEmployeeOnIso: () => null,
+    decideMutationForIsoRange: () => ({ allow: true }),
     buildEarlyShiftEntry: (code) => ({ type: 'shift', code }),
     setPlanEntry: () => {},
     clearDay: () => {},
@@ -139,6 +140,20 @@ function buildContext() {
     pad2: (value) => String(value).padStart(2, '0')
   });
 }
+
+test('clearDayRange aborts entirely when mutation decision denies the range', () => {
+  const ctx = buildContext();
+  const calls = [];
+
+  ctx.decideMutationForIsoRange = () => ({ allow: false, reason: 'holiday' });
+  ctx.clearDay = (...args) => calls.push(['clearDay', ...args]);
+  ctx.commitPlanChange = () => calls.push(['commit']);
+
+  const result = ctx.clearDayRange('e1', '2026-12-24', '2026-12-26', { commit: false });
+
+  assert.equal(result, false);
+  assert.deepEqual(calls, []);
+});
 
 test('vacation day can be changed directly to shift and only that day is removed from absence coverage', () => {
   const ctx = buildContext();
