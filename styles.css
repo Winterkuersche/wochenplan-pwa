@@ -589,18 +589,25 @@ select {
   font-weight: 800;
 }
 
-.deltaPos,
-.deltaPositive {
-  color: #167a2f;
+
+:is(#weekView, #monthView, #overviewView) .deltaPos,
+:is(#weekView, #monthView, #overviewView) .deltaPositive {
+  color: #9a4d00;
+  background: #fff4e5;
+  box-shadow: inset 0 0 0 1px #f3c58a;
 }
 
-.deltaNeg,
-.deltaNegative {
+:is(#weekView, #monthView, #overviewView) .deltaNeg,
+:is(#weekView, #monthView, #overviewView) .deltaNegative {
   color: #b42318;
+  background: #fde8e8;
+  box-shadow: inset 0 0 0 1px #f3b3ad;
 }
 
-.deltaZero {
-  color: #444;
+:is(#weekView, #monthView, #overviewView) .deltaZero {
+  color: #1f7a1f;
+  background: #eaf7ee;
+  box-shadow: inset 0 0 0 1px #b9dfc0;
 }
 
 .weekDayHours {
