@@ -589,11 +589,13 @@ select {
   font-weight: 800;
 }
 
-.deltaPos {
+.deltaPos,
+.deltaPositive {
   color: #167a2f;
 }
 
-.deltaNeg {
+.deltaNeg,
+.deltaNegative {
   color: #b42318;
 }
 

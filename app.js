@@ -2736,7 +2736,7 @@ function renderOverviewView() {
       const weekRangeText = (rangeStartIso && rangeEndIso)
         ? `${formatIsoDateForOverview(rangeStartIso)} bis ${formatIsoDateForOverview(rangeEndIso)}`
         : "—";
-      const differenceClass = weekSummary.differenceMinutes === 0 ? "deltaZero" : weekSummary.differenceMinutes > 0 ? "deltaPos" : "deltaNeg";
+      const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
       const differenceLabel = weekSummary.differenceMinutes >= 0
         ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
         : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
