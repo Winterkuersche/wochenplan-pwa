@@ -1253,8 +1253,8 @@ function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
       ? `GfB: Kontingentnutzung im aktuellen Monat.${manualSuffix}`
       : `Delta des Monats.${manualSuffix}`,
     totalMinusClass: isGfb
-      ? getDeltaVisualState(overuseMinutes > 0 ? -1 : 1)
-      : getDeltaVisualState(totalMinusMinutes > 0 ? -1 : 0),
+      ? getRestOverVisualState(overuseMinutes)
+      : getRestOverVisualState(totalMinusMinutes),
     totalMinusText: isGfb
       ? (overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`)
       : (totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"),

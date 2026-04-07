@@ -2736,15 +2736,15 @@ function renderOverviewView() {
       const weekRangeText = (rangeStartIso && rangeEndIso)
         ? `${formatIsoDateForOverview(rangeStartIso)} bis ${formatIsoDateForOverview(rangeEndIso)}`
         : "—";
-      const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
+      const differenceClass = getRestOverVisualState(weekSummary.differenceMinutes);
       const differenceLabel = weekSummary.differenceMinutes >= 0
         ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
         : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
 
       return `
-        <section class="overviewWeekSection">
-          <div class="overviewWeekInfo">
+        <section class="overviewWeekSection ${differenceClass}">
+          <div class="overviewWeekInfo ${differenceClass}">
             <div class="overviewWeekCard">
               <div class="miniLabel">Woche vom / bis</div>
               <strong>${weekRangeText}</strong>
