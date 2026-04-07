@@ -119,8 +119,8 @@ function buildMonthEmployeeRow(emp, days, options = {}) {
 
     html += `
       <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}${manualMarker}</td>
-      <td class="weekDeltaCell ${getDeltaVisualState(monthDifferenceMinutes)}" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
-      <td class="weekDeltaCell ${getDeltaVisualState(totalMinusMinutes > 0 ? -1 : 0)}">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
+      <td class="weekDeltaCell" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
+      <td class="weekDeltaCell">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
     `;
   }
 

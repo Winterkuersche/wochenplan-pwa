@@ -590,21 +590,31 @@ select {
 }
 
 
-:is(#weekView, #monthView, #overviewView) .deltaPos,
-:is(#weekView, #monthView, #overviewView) .deltaPositive {
+#weeklyHoursActual.deltaPos,
+#weeklyHoursActual.deltaPositive,
+#weeklyHoursRemaining.deltaPos,
+#weeklyHoursRemaining.deltaPositive,
+.overviewWeekCard strong.deltaPos,
+.overviewWeekCard strong.deltaPositive {
   color: #9a4d00;
   background: #fff4e5;
   box-shadow: inset 0 0 0 1px #f3c58a;
 }
 
-:is(#weekView, #monthView, #overviewView) .deltaNeg,
-:is(#weekView, #monthView, #overviewView) .deltaNegative {
+#weeklyHoursActual.deltaNeg,
+#weeklyHoursActual.deltaNegative,
+#weeklyHoursRemaining.deltaNeg,
+#weeklyHoursRemaining.deltaNegative,
+.overviewWeekCard strong.deltaNeg,
+.overviewWeekCard strong.deltaNegative {
   color: #b42318;
   background: #fde8e8;
   box-shadow: inset 0 0 0 1px #f3b3ad;
 }
 
-:is(#weekView, #monthView, #overviewView) .deltaZero {
+#weeklyHoursActual.deltaZero,
+#weeklyHoursRemaining.deltaZero,
+.overviewWeekCard strong.deltaZero {
   color: #1f7a1f;
   background: #eaf7ee;
   box-shadow: inset 0 0 0 1px #b9dfc0;
