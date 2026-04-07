@@ -1240,21 +1240,21 @@ function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
     lastShift,
     actualText: minutesToHM(plannedMinutes),
     accountText: minutesToHM(accountMinutes),
-    weekDeltaClass: isGfb ? (weekDifferenceMinutes > 0 ? "deltaPos" : "deltaZero")
-      : (weekDifferenceMinutes < 0 ? "deltaNeg" : weekDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"),
+    weekDeltaClass: isGfb ? getDeltaVisualState(Math.max(weekDifferenceMinutes, 0)) : getDeltaVisualState(weekDifferenceMinutes),
     weekDeltaText: isGfb ? `${minutesToHM(weekDifferenceMinutes)} genutzt` : formatSignedMinutes(weekDifferenceMinutes),
     weekDeltaTitle: isGfb
       ? "GfB: Kontingentnutzung in der aktuellen Woche, berechnet nur für Tage im aktiven Monat."
       : "Delta der Woche, berechnet nur für Tage im aktiven Monat.",
-    monthDeltaClass: isGfb ? (monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero")
-      : (monthDifferenceMinutes < 0 ? "deltaNeg" : monthDifferenceMinutes > 0 ? "deltaPos" : "deltaZero"),
+    monthDeltaClass: isGfb ? getDeltaVisualState(Math.max(monthDifferenceMinutes, 0)) : getDeltaVisualState(monthDifferenceMinutes),
     monthDeltaText: isGfb
       ? `${minutesToHM(monthDifferenceMinutes)} genutzt${manualMarker}`
       : `${formatSignedMinutes(monthDifferenceMinutes)}${manualMarker}`,
     monthDeltaTitle: isGfb
       ? `GfB: Kontingentnutzung im aktuellen Monat.${manualSuffix}`
       : `Delta des Monats.${manualSuffix}`,
-    totalMinusClass: isGfb ? (overuseMinutes > 0 ? "deltaNeg" : "deltaPos") : (totalMinusMinutes > 0 ? "deltaNeg" : "deltaZero"),
+    totalMinusClass: isGfb
+      ? getDeltaVisualState(overuseMinutes > 0 ? -1 : 1)
+      : getDeltaVisualState(totalMinusMinutes > 0 ? -1 : 0),
     totalMinusText: isGfb
       ? (overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`)
       : (totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"),

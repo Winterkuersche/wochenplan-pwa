@@ -79,3 +79,9 @@ function getStatusShortLabel(status) {
   if (normalized === ENTRY_STATUS.OFF) return "-";
   return "";
 }
+
+function getDeltaVisualState(minutes) {
+  if (minutes < 0) return "deltaNegative";
+  if (minutes > 0) return "deltaPositive";
+  return "deltaZero";
+}
