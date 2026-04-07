@@ -85,3 +85,7 @@ function getDeltaVisualState(minutes) {
   if (minutes > 0) return "deltaPositive";
   return "deltaZero";
 }
+
+function getRestOverVisualState(differenceMinutes) {
+  return getDeltaVisualState(-Number(differenceMinutes || 0));
+}
