@@ -2757,7 +2757,7 @@ function renderOverviewView() {
               <div class="miniLabel">Sollstunden</div>
               <strong>${minutesToHM(weekSummary.targetMinutes)}</strong>
             </div>
-            <div class="overviewWeekCard">
+            <div class="overviewWeekCard ${differenceClass}">
               <div class="miniLabel">Rest / Über</div>
               <strong class="${differenceClass}">${differenceLabel}</strong>
             </div>
