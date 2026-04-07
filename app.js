@@ -2694,12 +2694,15 @@ function removeEmployee(employeeId, options = {}) {
   renderTeamSetup();
 }
 function renderSummary() {
-  const totalWeek = totalMinutesForWeek();
-  const rest = MAX_WEEKLY_MINUTES - totalWeek;
+  const weekDays = getActiveWeekDays();
+  const weekSummary = getWeekPlannerSummaryForDays(weekDays);
+  const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
 
-  weeklyHoursActualEl.textContent = minutesToHM(totalWeek);
-  weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(rest));
-  weeklyHoursStatusEl.textContent = rest >= 0 ? "Noch frei" : "Überplant";
+  weeklyHoursActualEl.textContent = minutesToHM(weekSummary.usedMinutes);
+  weeklyHoursActualEl.className = differenceClass;
+  weeklyHoursRemainingEl.textContent = minutesToHM(Math.abs(weekSummary.differenceMinutes));
+  weeklyHoursRemainingEl.className = differenceClass;
+  weeklyHoursStatusEl.textContent = weekSummary.differenceMinutes <= 0 ? "Noch frei" : "Überplant";
 
   if (mepWeekFromEl) mepWeekFromEl.textContent = state.weekFrom || "____________";
   if (mepWeekToEl) mepWeekToEl.textContent = state.weekTo || "____________";
@@ -2736,28 +2739,28 @@ function renderOverviewView() {
       const weekRangeText = (rangeStartIso && rangeEndIso)
         ? `${formatIsoDateForOverview(rangeStartIso)} bis ${formatIsoDateForOverview(rangeEndIso)}`
         : "—";
-      const differenceClass = getRestOverVisualState(weekSummary.differenceMinutes);
+      const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
       const differenceLabel = weekSummary.differenceMinutes >= 0
         ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
         : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
 
       return `
-        <section class="overviewWeekSection ${differenceClass}">
-          <div class="overviewWeekInfo ${differenceClass}">
+        <section class="overviewWeekSection">
+          <div class="overviewWeekInfo">
             <div class="overviewWeekCard">
               <div class="miniLabel">Woche vom / bis</div>
               <strong>${weekRangeText}</strong>
             </div>
             <div class="overviewWeekCard">
               <div class="miniLabel">Genutzte Wochenstunden</div>
-              <strong>${minutesToHM(weekSummary.usedMinutes)}</strong>
+              <strong class="${differenceClass}">${minutesToHM(weekSummary.usedMinutes)}</strong>
             </div>
             <div class="overviewWeekCard">
               <div class="miniLabel">Sollstunden</div>
               <strong>${minutesToHM(weekSummary.targetMinutes)}</strong>
             </div>
-            <div class="overviewWeekCard ${differenceClass}">
+            <div class="overviewWeekCard">
               <div class="miniLabel">Rest / Über</div>
               <strong class="${differenceClass}">${differenceLabel}</strong>
             </div>
