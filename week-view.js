@@ -1187,19 +1187,19 @@ function renderWeekTable() {
     tr.appendChild(tdAccount);
 
     const tdDelta = document.createElement("td");
-    tdDelta.className = `weekDeltaCell weekSummaryCol ${metrics.weekDeltaClass}`;
+    tdDelta.className = "weekDeltaCell weekSummaryCol";
     tdDelta.textContent = metrics.weekDeltaText;
     tdDelta.title = metrics.weekDeltaTitle;
     tr.appendChild(tdDelta);
 
     const tdMonthDelta = document.createElement("td");
-    tdMonthDelta.className = `weekDeltaCell weekSummaryCol ${metrics.monthDeltaClass}`;
+    tdMonthDelta.className = "weekDeltaCell weekSummaryCol";
     tdMonthDelta.textContent = metrics.monthDeltaText;
     tdMonthDelta.title = metrics.monthDeltaTitle;
     tr.appendChild(tdMonthDelta);
 
     const tdTotalMinus = document.createElement("td");
-    tdTotalMinus.className = `weekDeltaCell weekSummaryCol ${metrics.totalMinusClass}`;
+    tdTotalMinus.className = "weekDeltaCell weekSummaryCol";
     tdTotalMinus.textContent = metrics.totalMinusText;
     tdTotalMinus.title = metrics.totalMinusTitle;
     tr.appendChild(tdTotalMinus);
@@ -1333,9 +1333,9 @@ function renderWeekMobileCards() {
     [
       ["Ist", metrics.actualText, "weekHoursCell"],
       ["Konto", metrics.accountText, "weekHoursCell"],
-      ["Δ Woche", metrics.weekDeltaText, metrics.weekDeltaClass],
-      ["Δ Monat", metrics.monthDeltaText, metrics.monthDeltaClass],
-      ["Gesamtminus", metrics.totalMinusText, metrics.totalMinusClass],
+      ["Δ Woche", metrics.weekDeltaText, "weekDeltaCell"],
+      ["Δ Monat", metrics.monthDeltaText, "weekDeltaCell"],
+      ["Gesamtminus", metrics.totalMinusText, "weekDeltaCell"],
       ["Soll", metrics.targetText, "weekTargetCell"]
     ].forEach(([label, value, className]) => {
       const item = document.createElement("div");
