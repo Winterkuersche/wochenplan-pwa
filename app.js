@@ -873,6 +873,10 @@ const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnOverviewUploadEl = document.getElementById("btnOverviewUpload");
+const overviewSalesDateEl = document.getElementById("overviewSalesDate");
+const overviewSalesAmountEl = document.getElementById("overviewSalesAmount");
+const btnOverviewSalesSaveEl = document.getElementById("btnOverviewSalesSave");
+const btnOverviewSalesDeleteEl = document.getElementById("btnOverviewSalesDelete");
 const btnMepModeNormalEl = document.getElementById("btnMepModeNormal");
 const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
 const btnMoreActionsEl = document.getElementById("btnMoreActions");
@@ -1104,7 +1108,8 @@ function savePlanData() {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
     schedule: state.schedule || {},
-    absences: state.absences || []
+    absences: state.absences || [],
+    salesByDate: state.salesByDate || {}
   });
 }
 
@@ -1216,7 +1221,8 @@ function defaultPlanState() {
     weekFrom: "",
     weekTo: "",
     schedule: {},
-    absences: []
+    absences: [],
+    salesByDate: {}
   };
 }
 function buildInitialState(options = {}) {
@@ -1238,6 +1244,15 @@ function buildInitialState(options = {}) {
     ? normalizeAbsences(plan.absences)
     : [];
 
+  const salesByDate = Object.entries(plan.salesByDate || {})
+    .reduce((acc, [isoDate, value]) => {
+      const normalizedIso = normalizeIsoDate(isoDate);
+      const numericValue = Number(value);
+      if (!normalizedIso || !Number.isFinite(numericValue)) return acc;
+      acc[normalizedIso] = numericValue;
+      return acc;
+    }, {});
+
     return {
     weekFrom: plan.weekFrom || "",
     weekTo: plan.weekTo || "",
@@ -1245,7 +1260,8 @@ function buildInitialState(options = {}) {
     activeMonth: (plan.weekFrom || toIsoDate(new Date())).slice(0, 7),
     employees,
     schedule,
-    absences
+    absences,
+    salesByDate
   };
 }
 
@@ -1988,6 +2004,45 @@ function totalMinutesForDayIso(iso) {
   }, 0);
 }
 
+function getProductivityMinuteBucketsForResolvedEntry(resolvedEntry) {
+  const status = getResolvedStatus(resolvedEntry);
+  const minutes = Math.max(0, Number(resolvedEntry?.minutesForBranch) || 0);
+
+  if (status === ENTRY_STATUS.WORK) {
+    return {
+      productivityRelevantMinutes: minutes,
+      specialCaseMinutes: 0
+    };
+  }
+
+  if (status === ENTRY_STATUS.EXTERNAL) {
+    return {
+      productivityRelevantMinutes: 0,
+      specialCaseMinutes: minutes
+    };
+  }
+
+  return {
+    productivityRelevantMinutes: 0,
+    specialCaseMinutes: 0
+  };
+}
+
+function getProductivityMinuteBucketsForDayIso(iso) {
+  return state.employees.reduce((acc, emp) => {
+    const resolved = getResolvedEntryForEmployeeOnIso(emp, iso);
+    const buckets = getProductivityMinuteBucketsForResolvedEntry(resolved);
+
+    acc.productivityRelevantMinutes += buckets.productivityRelevantMinutes;
+    acc.specialCaseMinutes += buckets.specialCaseMinutes;
+    return acc;
+  }, { productivityRelevantMinutes: 0, specialCaseMinutes: 0 });
+}
+
+function getWorkedMinutesForDayIso(iso) {
+  return getProductivityMinuteBucketsForDayIso(iso).productivityRelevantMinutes;
+}
+
 function totalMinutesForWeek() {
   const week = getActiveWeekDays();
   return week.reduce((sum, day) => {
@@ -2010,6 +2065,37 @@ function getWeekPlannerSummaryForDays(weekDays = []) {
     targetMinutes,
     differenceMinutes: usedMinutes - targetMinutes
   };
+}
+
+function getWeekSalesSummaryForDays(weekDays = []) {
+  const calculationDays = (Array.isArray(weekDays) ? weekDays : []).slice(0, 6).filter(Boolean);
+  const workedMinutes = calculationDays.reduce((sum, day) => sum + getWorkedMinutesForDayIso(day.iso), 0);
+  const totalSales = calculationDays.reduce((sum, day) => {
+    return sum + (Number(state.salesByDate?.[day.iso]) || 0);
+  }, 0);
+  const euroPerHour = workedMinutes > 0 ? totalSales / (workedMinutes / 60) : null;
+
+  return {
+    workedMinutes,
+    totalSales,
+    euroPerHour
+  };
+}
+
+function formatEuroAmount(value) {
+  const numericValue = Number(value) || 0;
+  return `${numericValue.toLocaleString("de-DE", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })} €`;
+}
+
+function formatEuroPerHour(value) {
+  if (!Number.isFinite(value)) return "—";
+  return `${value.toLocaleString("de-DE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })} €/h`;
 }
 
 function getOverviewWeekPlannerCellText(resolved) {
@@ -2117,6 +2203,11 @@ function updateBackupInfoLabel() {
 }
 
 function collectFullBackupSnapshot() {
+  const planData = loadJson(PLAN_KEY, defaultPlanState());
+  if (planData && typeof planData === "object") {
+    delete planData.salesByDate;
+  }
+
   return {
     backupVersion: 1,
     app: {
@@ -2126,7 +2217,7 @@ function collectFullBackupSnapshot() {
     createdAt: new Date().toISOString(),
     storage: {
       [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
-      [PLAN_KEY]: loadJson(PLAN_KEY, defaultPlanState()),
+      [PLAN_KEY]: planData,
       [UI_KEY]: loadUiState(),
       ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
       [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
@@ -2193,6 +2284,7 @@ function importBackupFromObject(backupData) {
     schedule: validatedSchedule,
     absences: normalizeAbsences(normalizedPlanInput.absences || [])
   };
+  delete normalizedPlan.salesByDate;
   const normalizedUi = sanitizeUiState(storage[UI_KEY], defaultUiState);
 
   const preImportSnapshot = {
@@ -2200,7 +2292,13 @@ function importBackupFromObject(backupData) {
     source: "pre-import",
     storage: {
       [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
-      [PLAN_KEY]: loadJson(PLAN_KEY, defaultPlanState()),
+      [PLAN_KEY]: (() => {
+        const planData = loadJson(PLAN_KEY, defaultPlanState());
+        if (planData && typeof planData === "object") {
+          delete planData.salesByDate;
+        }
+        return planData;
+      })(),
       [UI_KEY]: loadUiState(),
       ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
       [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
@@ -2709,12 +2807,36 @@ function renderSummary() {
   if (mepMonthYearEl) mepMonthYearEl.textContent = formatMonthYear(state.weekFrom);
 }
 
+function getDefaultOverviewSalesDateIso() {
+  const activeMonthDays = getActiveMonthDays();
+  return activeMonthDays[0]?.iso || state.weekFrom || toIsoDate(new Date());
+}
+
+function getSalesAmountInputValue() {
+  const rawValue = String(overviewSalesAmountEl?.value || "").trim().replace(",", ".");
+  const numericValue = Number(rawValue);
+  if (!rawValue || !Number.isFinite(numericValue) || numericValue < 0) return null;
+  return Math.round(numericValue * 100) / 100;
+}
+
+function renderOverviewSalesEditor() {
+  if (!overviewSalesDateEl || !overviewSalesAmountEl) return;
+
+  const normalizedIso = normalizeIsoDate(overviewSalesDateEl.value);
+  const selectedIso = normalizedIso || getDefaultOverviewSalesDateIso();
+  overviewSalesDateEl.value = selectedIso;
+
+  const existingValue = Number(state.salesByDate?.[selectedIso]);
+  overviewSalesAmountEl.value = Number.isFinite(existingValue) ? String(existingValue) : "";
+}
+
 function renderOverviewView() {
   const overviewMonthContentEl = document.getElementById("overviewMonthContent");
   if (!overviewMonthContentEl) return;
 
   const overviewMonthTitleEl = document.getElementById("overviewMonthTitle");
   const activeMonthDays = getActiveMonthDays();
+  renderOverviewSalesEditor();
   if (overviewMonthTitleEl) {
     overviewMonthTitleEl.textContent = activeMonthDays.length ? getMonthTitleFromDays(activeMonthDays) : "Monatsübersicht";
   }
@@ -2744,6 +2866,7 @@ function renderOverviewView() {
         ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
         : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
+      const weekSalesSummary = getWeekSalesSummaryForDays(weekDays);
 
       return `
         <section class="overviewWeekSection">
@@ -2763,6 +2886,20 @@ function renderOverviewView() {
             <div class="overviewWeekCard">
               <div class="miniLabel">Rest / Über</div>
               <strong class="${differenceClass}">${differenceLabel}</strong>
+            </div>
+          </div>
+          <div class="overviewInternalMetrics internalOnly" aria-label="Interne Wochenkennzahl">
+            <div class="overviewInternalMetricsItem">
+              <span class="miniLabel">Umsatz</span>
+              <strong>${formatEuroAmount(weekSalesSummary.totalSales)}</strong>
+            </div>
+            <div class="overviewInternalMetricsItem">
+              <span class="miniLabel">Stunden</span>
+              <strong>${minutesToHM(weekSalesSummary.workedMinutes)}</strong>
+            </div>
+            <div class="overviewInternalMetricsItem">
+              <span class="miniLabel">€/h</span>
+              <strong>${formatEuroPerHour(weekSalesSummary.euroPerHour)}</strong>
             </div>
           </div>
           <div class="overviewWeekTableWrap">
@@ -2993,6 +3130,46 @@ if (btnViewMepEl) {
     renderAllViews();
   });
 }
+
+overviewSalesDateEl?.addEventListener("change", () => {
+  renderOverviewSalesEditor();
+});
+
+btnOverviewSalesSaveEl?.addEventListener("click", () => {
+  const selectedIso = normalizeIsoDate(overviewSalesDateEl?.value || "");
+  const salesAmount = getSalesAmountInputValue();
+
+  if (!selectedIso) {
+    alert("Bitte ein gültiges Datum wählen.");
+    return;
+  }
+
+  if (salesAmount === null) {
+    alert("Bitte einen gültigen Umsatzwert (>= 0) eingeben.");
+    return;
+  }
+
+  state.salesByDate[selectedIso] = salesAmount;
+  commitPlanChange();
+  renderOverviewSalesEditor();
+});
+
+btnOverviewSalesDeleteEl?.addEventListener("click", () => {
+  const selectedIso = normalizeIsoDate(overviewSalesDateEl?.value || "");
+  if (!selectedIso) {
+    alert("Bitte ein gültiges Datum wählen.");
+    return;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(state.salesByDate || {}, selectedIso)) {
+    overviewSalesAmountEl.value = "";
+    return;
+  }
+
+  delete state.salesByDate[selectedIso];
+  commitPlanChange();
+  renderOverviewSalesEditor();
+});
 
 btnMepModeNormalEl?.addEventListener("click", () => {
   if (!uiState.mepAnonymized) return;

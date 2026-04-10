@@ -894,6 +894,19 @@ select {
   margin-bottom: 12px;
 }
 
+.overviewSalesEditor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 2px;
+}
+
+.overviewSalesEditor input[type="date"],
+.overviewSalesEditor input[type="number"] {
+  min-height: 34px;
+}
+
 .overviewWeekCard {
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -912,6 +925,29 @@ select {
   position: relative;
   overflow: auto;
   max-height: 48vh;
+}
+
+.overviewInternalMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -2px 0 10px;
+}
+
+.overviewInternalMetricsItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 12px;
+}
+
+.overviewInternalMetricsItem strong {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .overviewPlannerTable {
@@ -3947,6 +3983,7 @@ body.dark .mepTable th {
 
 @media print {
   .no-print,
+  .internalOnly,
   .hidden {
     display: none !important;
   }
@@ -4103,6 +4140,10 @@ body.dark .mepTable th {
   body.export-overview-mode .overviewWeekTableWrap {
     break-inside: avoid-page;
     page-break-inside: avoid;
+  }
+
+  body.export-overview-mode .internalOnly {
+    display: none !important;
   }
 
   body.export-overview-mode .overviewPlannerTable thead {
