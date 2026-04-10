@@ -329,6 +329,13 @@ L1E-L4E ohne Abrechnung
     <div class="toolbarRow">
       <button id="btnOverviewUpload" type="button">Übersicht hochladen</button>
     </div>
+    <div class="overviewSalesEditor internalOnly">
+      <span class="miniLabel">Interner Tagesumsatz</span>
+      <input id="overviewSalesDate" type="date" aria-label="Datum für internen Umsatz">
+      <input id="overviewSalesAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Umsatz in €" aria-label="Umsatz in Euro">
+      <button id="btnOverviewSalesSave" type="button">Speichern</button>
+      <button id="btnOverviewSalesDelete" type="button" class="btnGhost">Löschen</button>
+    </div>
     <div class="small">
       Monatsüberblick in Wochenabschnitten mit Wochenkennzahlen (Mo-Sa)
     </div>

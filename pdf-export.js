@@ -397,6 +397,7 @@ function createOverviewPdfExportRoot() {
   clonedView.classList.add("overviewPdfExportView");
 
   clonedView.querySelectorAll("button").forEach((buttonEl) => buttonEl.remove());
+  clonedView.querySelectorAll(".internalOnly, .noExport").forEach((el) => el.remove());
   const clonedWrapEls = clonedView.querySelectorAll(".tableWrap, .compactTableWrap, .overviewWeekTableWrap");
   clonedWrapEls.forEach((wrapEl) => {
     wrapEl.style.overflow = "visible";
