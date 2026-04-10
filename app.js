@@ -928,6 +928,14 @@ function formatMonthYear(dateStr) {
   return `${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
+function normalizeIsoDate(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  const date = fromIsoDate(trimmed);
+  if (!date) return "";
+  return toIsoDate(date);
+}
+
 function roleToTarget(roleKey) {
   const found = ROLE_OPTIONS.find((r) => r.key === roleKey);
   return found?.target || "";
