@@ -2878,20 +2878,20 @@ function renderOverviewView() {
 
       return `
         <section class="overviewWeekSection">
-          <div class="overviewWeekInfo">
-            <div class="overviewWeekCard">
+          <div class="overviewWeekInfo week-summary-grid">
+            <div class="overviewWeekCard summary-card summary-card--muted">
               <div class="miniLabel">Woche vom / bis</div>
               <strong>${weekRangeText}</strong>
             </div>
-            <div class="overviewWeekCard">
+            <div class="overviewWeekCard summary-card summary-card--primary">
               <div class="miniLabel">Genutzte Wochenstunden</div>
               <strong class="${differenceClass}">${minutesToHM(weekSummary.usedMinutes)}</strong>
             </div>
-            <div class="overviewWeekCard">
+            <div class="overviewWeekCard summary-card summary-card--muted">
               <div class="miniLabel">Sollstunden</div>
               <strong>${minutesToHM(weekSummary.targetMinutes)}</strong>
             </div>
-            <div class="overviewWeekCard">
+            <div class="overviewWeekCard summary-card summary-card--success">
               <div class="miniLabel">Rest / Über</div>
               <strong class="${differenceClass}">${differenceLabel}</strong>
             </div>
