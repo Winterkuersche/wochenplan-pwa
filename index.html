@@ -320,21 +320,35 @@ L1E-L4E ohne Abrechnung
 
 <section id="overviewView" class="overview hidden no-print">
 
-  <div class="sectionhead">
-    <div class="monthHeader">
-      <button id="overviewMonthPrev" type="button" aria-label="Vorheriger Monat">◀</button>
-      <h2 id="overviewMonthTitle">Monatsübersicht</h2>
-      <button id="overviewMonthNext" type="button" aria-label="Nächster Monat">▶</button>
+  <div class="sectionhead month-overview-panel">
+    <div class="month-overview-header">
+      <div class="month-overview-title-row">
+        <button id="overviewMonthPrev" class="month-nav-btn" type="button" aria-label="Vorheriger Monat">◀</button>
+        <h2 id="overviewMonthTitle">Monatsübersicht</h2>
+        <button id="overviewMonthNext" class="month-nav-btn" type="button" aria-label="Nächster Monat">▶</button>
+      </div>
     </div>
-    <div class="toolbarRow">
-      <button id="btnOverviewUpload" type="button">Übersicht hochladen</button>
-    </div>
-    <div class="overviewSalesEditor internalOnly">
-      <span class="miniLabel">Interner Tagesumsatz</span>
-      <input id="overviewSalesDate" type="date" aria-label="Datum für internen Umsatz">
-      <input id="overviewSalesAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Umsatz in €" aria-label="Umsatz in Euro">
-      <button id="btnOverviewSalesSave" type="button">Speichern</button>
-      <button id="btnOverviewSalesDelete" type="button" class="btnGhost">Löschen</button>
+    <div class="month-overview-actions">
+      <div class="toolbarRow">
+        <button id="btnOverviewUpload" type="button" class="btnSecondary">Übersicht hochladen</button>
+      </div>
+      <div class="revenue-editor internalOnly">
+        <label class="revenue-editor-label" for="overviewSalesDate">Interner Tagesumsatz</label>
+        <div class="revenue-editor-row">
+          <div class="revenue-editor-field">
+            <label for="overviewSalesDate">Datum</label>
+            <input id="overviewSalesDate" type="date" aria-label="Datum für internen Umsatz">
+          </div>
+          <div class="revenue-editor-field">
+            <label for="overviewSalesAmount">Umsatz in €</label>
+            <input id="overviewSalesAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Umsatz in €" aria-label="Umsatz in Euro">
+          </div>
+        </div>
+        <div class="revenue-editor-buttons">
+          <button id="btnOverviewSalesSave" type="button" class="btnPrimary">Speichern</button>
+          <button id="btnOverviewSalesDelete" type="button" class="btnGhost">Löschen</button>
+        </div>
+      </div>
     </div>
     <div class="small">
       Monatsüberblick in Wochenabschnitten mit Wochenkennzahlen (Mo-Sa)

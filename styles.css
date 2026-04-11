@@ -812,7 +812,120 @@ select {
 #overviewMonthContent {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.month-overview-panel {
+  gap: 12px;
+}
+
+.month-overview-header,
+.month-overview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.month-overview-title-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-overview-title-row h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 5.2vw, 1.9rem);
+  font-weight: 750;
+  text-align: center;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.month-nav-btn {
+  min-height: 40px;
+  min-width: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+.revenue-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dadada;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.revenue-editor-label {
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.revenue-editor-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.revenue-editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.revenue-editor-field label {
+  font-size: 0.88rem;
+  color: var(--subtext);
+}
+
+.revenue-editor-field input {
+  width: 100%;
+  min-height: 42px;
+}
+
+.revenue-editor-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.revenue-editor-buttons button {
+  min-height: 40px;
+}
+
+.btnPrimary {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.btnPrimary:hover {
+  background: #1e1e1e;
+}
+
+.btnSecondary {
+  background: #f8f8f8;
+  border-color: #d7d7d7;
+  color: #555;
+  font-weight: 500;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: #d4d4d4;
+  color: #555;
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 #monthTable,
@@ -890,32 +1003,56 @@ select {
 .overviewWeekInfo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.overviewSalesEditor {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0 2px;
-}
-
-.overviewSalesEditor input[type="date"],
-.overviewSalesEditor input[type="number"] {
-  min-height: 34px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .overviewWeekCard {
-  padding: 10px 12px;
+  padding: 12px 13px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--bg);
 }
 
+.week-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 10px;
+}
+
+.summary-card .miniLabel {
+  margin-bottom: 5px;
+}
+
+.summary-card strong {
+  font-size: 1.08rem;
+}
+
+.summary-card--primary strong,
+.summary-card--success strong {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.summary-card--success {
+  border-color: #b9d8c0;
+}
+
+.summary-card--muted {
+  background: #fafafa;
+  border-color: #e3e3e3;
+}
+
+.summary-card--muted .miniLabel {
+  color: #7a7a7a;
+}
+
+.summary-card--muted strong {
+  color: #3e3e3e;
+}
+
 .overviewWeekSection {
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel);
@@ -925,6 +1062,7 @@ select {
   position: relative;
   overflow: auto;
   max-height: 48vh;
+  margin-top: 10px;
 }
 
 .overviewInternalMetrics {
@@ -948,6 +1086,16 @@ select {
 .overviewInternalMetricsItem strong {
   font-size: 12px;
   font-weight: 600;
+}
+
+@media (min-width: 720px) {
+  .month-overview-actions {
+    gap: 12px;
+  }
+
+  .revenue-editor-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .overviewPlannerTable {
@@ -1135,6 +1283,13 @@ select {
 
 .monthHeader button:hover {
   background: #eee;
+}
+
+#overviewView button:focus-visible,
+#overviewView input:focus-visible,
+#overviewView select:focus-visible {
+  outline: 2px solid #0a58ff;
+  outline-offset: 2px;
 }
 
 .monthCellClickable {
@@ -2222,6 +2377,35 @@ body.dark .manualMonthTable tr.manualMonthRow,
 body.dark .mobileMoreMenu {
   background: #232529;
   color: #f1f1f1;
+}
+
+body.dark .revenue-editor,
+body.dark .overviewWeekCard,
+body.dark .overviewInternalMetricsItem {
+  background: #232529;
+  border-color: #444851;
+}
+
+body.dark .btnSecondary {
+  background: #2f3238;
+  border-color: #4a4d55;
+  color: #c7cbd3;
+}
+
+body.dark .btnGhost {
+  background: transparent;
+  border-color: #4a4d55;
+  color: #b9bec8;
+}
+
+body.dark .btnPrimary {
+  background: #111318;
+  border-color: #111318;
+}
+
+body.dark .summary-card--success {
+  border-color: #3f6b4e;
+  background: #243229;
 }
 
 body.dark .dialogFields select,
