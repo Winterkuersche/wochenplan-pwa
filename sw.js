@@ -2,28 +2,59 @@ importScripts("./version.js");
 
 const CACHE_NAME = APP_META.cacheName;
 
+// Nur same-origin Startup-Dateien precachen.
+// Externe CDN-Assets (z. B. html2canvas/jsPDF/GSI) bleiben bewusst draußen,
+// damit addAll nicht an CORS/offline-Problemen scheitert.
 const APP_FILES = [
   "./",
   "./index.html",
+  "./manifest.webmanifest",
   "./styles.css",
   "./version.js",
-  "./app.js",
+  "./holidays.js",
+  "./time-utils.js",
+  "./shift-rules.js",
+  "./date-utils.js",
+  "./shift-utils.js",
+  "./status-utils.js",
+  "./contract-models.js",
+  "./absences.js",
+  "./vacation-utils.js",
+  "./day-resolution.js",
   "./month-engine.js",
-  "./balance-utils.js",
-  "./backup-utils.js",
-  "./manual-month-utils.js",
   "./day-view.js",
   "./week-view.js",
   "./mep-view.js",
-  "./manifest.webmanifest"
+  "./month-view.js",
+  "./balance-utils.js",
+  "./backup-utils.js",
+  "./manual-month-utils.js",
+  "./pdf-export.js",
+  "./app-orchestration.js",
+  "./app.js"
+];
+
+// Optionale Assets (z. B. Manifest-Icons):
+// werden versucht, dürfen die SW-Installation aber nicht abbrechen.
+const OPTIONAL_APP_FILES = [
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting();
-
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_FILES);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await cache.addAll(APP_FILES);
+
+      const optionalResults = await Promise.allSettled(
+        OPTIONAL_APP_FILES.map((file) => cache.add(file))
+      );
+
+      optionalResults.forEach((result, index) => {
+        if (result.status === "rejected") {
+          console.warn("Optionales Precache-Asset nicht verfügbar:", OPTIONAL_APP_FILES[index]);
+        }
+      });
     })
   );
 });
@@ -52,6 +83,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
+        // Fremde Origins (CDN) bewusst nicht im App-Cache persistieren.
         if (!isSameOrigin) return networkResponse;
 
         const responseClone = networkResponse.clone();
