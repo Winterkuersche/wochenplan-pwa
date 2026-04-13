@@ -705,6 +705,40 @@ function clearPlanEntry(employeeId, isoDate, options = {}) {
   return updateEmployeeDay(employeeId, isoDate, () => null, options);
 }
 
+function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
+  if (!isoDate) return null;
+
+  const { commit = true } = options;
+  const prevIso = shiftIsoDateByDays(isoDate, -1);
+  const yearMonth = String(isoDate).slice(0, 7);
+  const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, yearMonth));
+  const lateCheckoutEmployees = activeEmployees.filter((emp) => {
+    const prevEntry = getPlanEntry(emp.id, prevIso);
+    return prevEntry?.type === "shift" && prevEntry.end === "19:10";
+  });
+
+  if (!lateCheckoutEmployees.length) return null;
+
+  const selectedEmployee = lateCheckoutEmployees[0];
+  const selectedEntry = getPlanEntry(selectedEmployee.id, isoDate);
+  if (!selectedEntry || selectedEntry.type !== "shift") return null;
+
+  activeEmployees.forEach((emp) => {
+    if (emp.id === selectedEmployee.id) return;
+    const entry = getPlanEntry(emp.id, isoDate);
+    if (!entry || entry.type !== "shift" || entry.start !== "08:55") return;
+    updateEmployeeDay(emp.id, isoDate, () => ({ ...entry, start: "09:00" }), { commit: false });
+  });
+
+  updateEmployeeDay(selectedEmployee.id, isoDate, () => ({ ...selectedEntry, start: "08:55" }), { commit: false });
+
+  if (commit) {
+    commitPlanChange();
+  }
+
+  return selectedEmployee.id;
+}
+
 function setShift(employeeId, isoDate, entryOrShiftKey) {
   let entry = entryOrShiftKey;
 
@@ -730,8 +764,10 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   if (!requestOverwriteConfirmation(decision, isoDate)) return false;
 
   removeAbsenceCoverageForRange(employeeId, isoDate, isoDate);
-  setScheduleEntry(employeeId, isoDate, entry);
+  updateEmployeeDay(employeeId, isoDate, () => ({ ...entry }), { commit: false });
+  applyMepEarlyStartCarryoverRule(isoDate, { commit: false });
   syncVacationScheduleFromAbsences(employeeId);
+  commitPlanChange();
   return true;
 }
 
