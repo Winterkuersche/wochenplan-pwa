@@ -889,6 +889,40 @@ select {
   min-height: 42px;
 }
 
+.revenue-week-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.revenue-week-picker label {
+  font-size: 0.88rem;
+  color: var(--subtext);
+}
+
+.revenue-week-select {
+  min-height: 40px;
+}
+
+.revenue-day-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.revenue-day-chip {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.revenue-day-chip.isActive {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
 .revenue-editor-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -897,6 +931,24 @@ select {
 
 .revenue-editor-buttons button {
   min-height: 40px;
+}
+
+.revenue-save-status {
+  min-height: 1.2rem;
+  font-size: 0.82rem;
+  color: var(--subtext);
+}
+
+.revenue-save-status.isSaving {
+  color: #6b7280;
+}
+
+.revenue-save-status.isSuccess {
+  color: #1f7a3d;
+}
+
+.revenue-save-status.isError {
+  color: #b42318;
 }
 
 #overviewView .btnPrimary {
@@ -2401,6 +2453,12 @@ body.dark #overviewView .btnGhost {
 body.dark #overviewView .btnPrimary {
   background: #111318;
   border-color: #111318;
+}
+
+body.dark .revenue-day-chip.isActive {
+  border-color: #5c8dff;
+  background: #1b2b53;
+  color: #e8eeff;
 }
 
 body.dark .summary-card--success {

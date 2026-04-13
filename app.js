@@ -54,6 +54,9 @@ const MAX_WEEKLY_MINUTES = 159 * 60;
 let currentDayIndex = 0;
 let autoSaveTimerId = null;
 let saveStatusTimerId = null;
+let overviewRevenueSaveStatusTimerId = null;
+let overviewRevenueDebounceTimerId = null;
+let lastOverviewRevenueEditorDateIso = "";
 let saveStatusMessage = "";
 let saveStatusHasError = false;
 let responsiveViewController = null;
@@ -873,10 +876,13 @@ const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnOverviewUploadEl = document.getElementById("btnOverviewUpload");
+const overviewSalesWeekSelectEl = document.getElementById("overviewSalesWeekSelect");
+const overviewSalesDayChipListEl = document.getElementById("overviewSalesDayChipList");
 const overviewSalesDateEl = document.getElementById("overviewSalesDate");
 const overviewSalesAmountEl = document.getElementById("overviewSalesAmount");
 const btnOverviewSalesSaveEl = document.getElementById("btnOverviewSalesSave");
 const btnOverviewSalesDeleteEl = document.getElementById("btnOverviewSalesDelete");
+const overviewSalesSaveStatusEl = document.getElementById("overviewSalesSaveStatus");
 const btnMepModeNormalEl = document.getElementById("btnMepModeNormal");
 const btnMepModeAnonymEl = document.getElementById("btnMepModeAnonym");
 const btnMoreActionsEl = document.getElementById("btnMoreActions");
@@ -2827,6 +2833,222 @@ function getSalesAmountInputValue() {
   return Math.round(numericValue * 100) / 100;
 }
 
+function getOverviewRevenueWeeks() {
+  const monthWeeks = getCurrentMonthWeeks();
+  return monthWeeks
+    .map((weekDays, index) => {
+      const days = weekDays.slice(0, 6).filter((day) => day?.inCurrentMonth && normalizeIsoDate(day?.iso));
+      if (!days.length) return null;
+
+      const startIso = days[0].iso;
+      const endIso = days[days.length - 1].iso;
+      return {
+        key: startIso,
+        days,
+        label: `Abschnitt ${index + 1} · ${formatIsoDateForOverview(startIso).slice(0, 5)}–${formatIsoDateForOverview(endIso).slice(0, 5)}`
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildOverviewRevenueSnapshot(isoDate, salesAmount) {
+  const normalizedIso = normalizeIsoDate(isoDate);
+  const numericValue = Number(salesAmount);
+  if (!normalizedIso || !Number.isFinite(numericValue) || numericValue < 0) return "";
+  return `${normalizedIso}|${numericValue.toFixed(2)}`;
+}
+
+function getOverviewRevenuePersistedSnapshot(isoDate) {
+  const normalizedIso = normalizeIsoDate(isoDate);
+  if (!normalizedIso) return "";
+  const persistedValue = Number(state.salesByDate?.[normalizedIso]);
+  if (!Number.isFinite(persistedValue) || persistedValue < 0) return "";
+  return buildOverviewRevenueSnapshot(normalizedIso, persistedValue);
+}
+
+function clearOverviewRevenueSaveStatusTimer() {
+  if (!overviewRevenueSaveStatusTimerId) return;
+  clearTimeout(overviewRevenueSaveStatusTimerId);
+  overviewRevenueSaveStatusTimerId = null;
+}
+
+function setOverviewRevenueSaveStatus(status, options = {}) {
+  if (!overviewSalesSaveStatusEl) return;
+  const { persist = false } = options;
+
+  clearOverviewRevenueSaveStatusTimer();
+  overviewSalesSaveStatusEl.classList.remove("isSaving", "isSuccess", "isError");
+
+  if (status === "saving") {
+    overviewSalesSaveStatusEl.textContent = "Speichert …";
+    overviewSalesSaveStatusEl.classList.add("isSaving");
+    return;
+  }
+
+  if (status === "success") {
+    overviewSalesSaveStatusEl.textContent = "Gespeichert";
+    overviewSalesSaveStatusEl.classList.add("isSuccess");
+    if (!persist) {
+      overviewRevenueSaveStatusTimerId = setTimeout(() => {
+        overviewSalesSaveStatusEl.textContent = "";
+        overviewSalesSaveStatusEl.classList.remove("isSuccess");
+      }, 1400);
+    }
+    return;
+  }
+
+  if (status === "error") {
+    overviewSalesSaveStatusEl.textContent = "Speichern fehlgeschlagen";
+    overviewSalesSaveStatusEl.classList.add("isError");
+    if (!persist) {
+      overviewRevenueSaveStatusTimerId = setTimeout(() => {
+        overviewSalesSaveStatusEl.textContent = "";
+        overviewSalesSaveStatusEl.classList.remove("isError");
+      }, 2200);
+    }
+    return;
+  }
+
+  if (status === "unchanged") {
+    overviewSalesSaveStatusEl.textContent = "Keine Änderung";
+    if (!persist) {
+      overviewRevenueSaveStatusTimerId = setTimeout(() => {
+        overviewSalesSaveStatusEl.textContent = "";
+      }, 1200);
+    }
+    return;
+  }
+
+  if (status === "deleted") {
+    overviewSalesSaveStatusEl.textContent = "Gelöscht";
+    overviewSalesSaveStatusEl.classList.add("isSuccess");
+    if (!persist) {
+      overviewRevenueSaveStatusTimerId = setTimeout(() => {
+        overviewSalesSaveStatusEl.textContent = "";
+        overviewSalesSaveStatusEl.classList.remove("isSuccess");
+      }, 1400);
+    }
+    return;
+  }
+
+  if (status === "idle") {
+    overviewSalesSaveStatusEl.textContent = "";
+    return;
+  }
+
+  overviewSalesSaveStatusEl.textContent = "";
+}
+
+function clearOverviewRevenueDebounceTimer() {
+  if (!overviewRevenueDebounceTimerId) return;
+  clearTimeout(overviewRevenueDebounceTimerId);
+  overviewRevenueDebounceTimerId = null;
+}
+
+function syncOverviewRevenueWeekUi(selectedIso) {
+  if (!overviewSalesWeekSelectEl || !overviewSalesDayChipListEl) return;
+  const weekEntries = getOverviewRevenueWeeks();
+  if (!weekEntries.length) {
+    overviewSalesWeekSelectEl.innerHTML = "";
+    overviewSalesDayChipListEl.innerHTML = "";
+    return;
+  }
+
+  const matchingWeek = weekEntries.find((entry) => entry.days.some((day) => day.iso === selectedIso)) || weekEntries[0];
+  overviewSalesWeekSelectEl.innerHTML = weekEntries
+    .map((entry) => `<option value="${entry.key}"${entry.key === matchingWeek.key ? " selected" : ""}>${entry.label}</option>`)
+    .join("");
+
+  const weekdayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  overviewSalesDayChipListEl.innerHTML = matchingWeek.days
+    .map((day, dayIndex) => {
+      const dayLabel = `${weekdayLabels[dayIndex] || "Tag"} ${formatIsoDateForOverview(day.iso).slice(0, 5)}`;
+      const activeClass = day.iso === selectedIso ? " isActive" : "";
+      return `<button type="button" class="revenue-day-chip${activeClass}" data-overview-sales-day="${day.iso}">${dayLabel}</button>`;
+    })
+    .join("");
+}
+
+function readOverviewRevenueEditorState() {
+  const selectedIso = normalizeIsoDate(overviewSalesDateEl?.value || "");
+  const salesAmount = getSalesAmountInputValue();
+  return {
+    selectedIso,
+    salesAmount,
+    hasValidDate: Boolean(selectedIso),
+    hasValidAmount: Number.isFinite(salesAmount)
+  };
+}
+
+function saveOverviewRevenueDraftForIso(targetIso, options = {}) {
+  const { source = "manual", showValidationErrors = false } = options;
+  const normalizedIso = normalizeIsoDate(targetIso);
+  const salesAmount = getSalesAmountInputValue();
+
+  if (!normalizedIso) {
+    if (showValidationErrors) setOverviewRevenueSaveStatus("error");
+    return false;
+  }
+
+  if (!Number.isFinite(salesAmount)) {
+    if (showValidationErrors) setOverviewRevenueSaveStatus("error");
+    return false;
+  }
+
+  const targetSnapshot = buildOverviewRevenueSnapshot(normalizedIso, salesAmount);
+  const persistedSnapshot = getOverviewRevenuePersistedSnapshot(normalizedIso);
+
+  if (!targetSnapshot || targetSnapshot === persistedSnapshot) {
+    if (source === "manual") setOverviewRevenueSaveStatus("unchanged");
+    return false;
+  }
+
+  setOverviewRevenueSaveStatus("saving");
+  try {
+    state.salesByDate[normalizedIso] = salesAmount;
+    commitPlanChange();
+    setOverviewRevenueSaveStatus("success");
+    return true;
+  } catch {
+    setOverviewRevenueSaveStatus("error");
+    return false;
+  }
+}
+
+function maybeSaveOverviewRevenueBeforeDateSwitch() {
+  const sourceIso = normalizeIsoDate(lastOverviewRevenueEditorDateIso || overviewSalesDateEl?.value || "");
+  if (!sourceIso) return false;
+  return saveOverviewRevenueDraftForIso(sourceIso, { source: "switch", showValidationErrors: false });
+}
+
+function saveOverviewRevenueFromEditor(options = {}) {
+  const { source = "manual", showValidationErrors = false } = options;
+  const isAutoSaveSource = source === "blur" || source === "debounce";
+  if (isAutoSaveSource && uiState?.currentView !== "overview") return false;
+  const { selectedIso, hasValidDate, hasValidAmount } = readOverviewRevenueEditorState();
+
+  clearOverviewRevenueDebounceTimer();
+
+  if (!hasValidDate) {
+    if (showValidationErrors) setOverviewRevenueSaveStatus("error");
+    return false;
+  }
+
+  if (!hasValidAmount) {
+    if (showValidationErrors) setOverviewRevenueSaveStatus("error");
+    return false;
+  }
+
+  return saveOverviewRevenueDraftForIso(selectedIso, { source, showValidationErrors });
+}
+
+function queueOverviewRevenueAutoSave(delayMs = 800) {
+  clearOverviewRevenueDebounceTimer();
+  overviewRevenueDebounceTimerId = setTimeout(() => {
+    saveOverviewRevenueFromEditor({ source: "debounce", showValidationErrors: false });
+  }, delayMs);
+}
+
 function renderOverviewSalesEditor() {
   if (!overviewSalesDateEl || !overviewSalesAmountEl) return;
 
@@ -2836,6 +3058,9 @@ function renderOverviewSalesEditor() {
 
   const existingValue = Number(state.salesByDate?.[selectedIso]);
   overviewSalesAmountEl.value = Number.isFinite(existingValue) ? String(existingValue) : "";
+  lastOverviewRevenueEditorDateIso = selectedIso;
+  syncOverviewRevenueWeekUi(selectedIso);
+  setOverviewRevenueSaveStatus("idle");
 }
 
 function renderOverviewView() {
@@ -3140,43 +3365,66 @@ if (btnViewMepEl) {
 }
 
 overviewSalesDateEl?.addEventListener("change", () => {
+  clearOverviewRevenueDebounceTimer();
+  maybeSaveOverviewRevenueBeforeDateSwitch();
   renderOverviewSalesEditor();
 });
 
-btnOverviewSalesSaveEl?.addEventListener("click", () => {
-  const selectedIso = normalizeIsoDate(overviewSalesDateEl?.value || "");
-  const salesAmount = getSalesAmountInputValue();
+overviewSalesWeekSelectEl?.addEventListener("change", () => {
+  const weekStartIso = normalizeIsoDate(overviewSalesWeekSelectEl.value);
+  if (!weekStartIso || !overviewSalesDateEl) return;
+  maybeSaveOverviewRevenueBeforeDateSwitch();
 
-  if (!selectedIso) {
-    alert("Bitte ein gültiges Datum wählen.");
-    return;
-  }
-
-  if (salesAmount === null) {
-    alert("Bitte einen gültigen Umsatzwert (>= 0) eingeben.");
-    return;
-  }
-
-  state.salesByDate[selectedIso] = salesAmount;
-  commitPlanChange();
+  const matchingWeek = getOverviewRevenueWeeks().find((entry) => entry.key === weekStartIso);
+  const nextIso = matchingWeek?.days[0]?.iso || weekStartIso;
+  overviewSalesDateEl.value = nextIso;
   renderOverviewSalesEditor();
+});
+
+overviewSalesDayChipListEl?.addEventListener("click", (event) => {
+  const trigger = event.target?.closest?.("[data-overview-sales-day]");
+  const selectedIso = normalizeIsoDate(trigger?.dataset?.overviewSalesDay || "");
+  if (!selectedIso || !overviewSalesDateEl) return;
+  maybeSaveOverviewRevenueBeforeDateSwitch();
+  overviewSalesDateEl.value = selectedIso;
+  renderOverviewSalesEditor();
+});
+
+overviewSalesDateEl?.addEventListener("blur", () => {
+  saveOverviewRevenueFromEditor({ source: "blur", showValidationErrors: false });
+});
+
+overviewSalesAmountEl?.addEventListener("blur", () => {
+  saveOverviewRevenueFromEditor({ source: "blur", showValidationErrors: false });
+});
+
+overviewSalesAmountEl?.addEventListener("input", () => {
+  if (uiState?.currentView !== "overview") return;
+  queueOverviewRevenueAutoSave(800);
+});
+
+btnOverviewSalesSaveEl?.addEventListener("click", () => {
+  saveOverviewRevenueFromEditor({ source: "manual", showValidationErrors: true });
 });
 
 btnOverviewSalesDeleteEl?.addEventListener("click", () => {
   const selectedIso = normalizeIsoDate(overviewSalesDateEl?.value || "");
   if (!selectedIso) {
-    alert("Bitte ein gültiges Datum wählen.");
+    setOverviewRevenueSaveStatus("error");
     return;
   }
 
   if (!Object.prototype.hasOwnProperty.call(state.salesByDate || {}, selectedIso)) {
     overviewSalesAmountEl.value = "";
+    setOverviewRevenueSaveStatus("idle");
     return;
   }
 
+  clearOverviewRevenueDebounceTimer();
   delete state.salesByDate[selectedIso];
   commitPlanChange();
   renderOverviewSalesEditor();
+  setOverviewRevenueSaveStatus("deleted");
 });
 
 btnMepModeNormalEl?.addEventListener("click", () => {

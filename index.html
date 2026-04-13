@@ -334,6 +334,11 @@ L1E-L4E ohne Abrechnung
       </div>
       <div class="revenue-editor internalOnly">
         <label class="revenue-editor-label" for="overviewSalesDate">Interner Tagesumsatz</label>
+        <div class="revenue-week-picker">
+          <label for="overviewSalesWeekSelect">Wochenabschnitt</label>
+          <select id="overviewSalesWeekSelect" class="revenue-week-select" aria-label="Wochenabschnitt wählen"></select>
+          <div id="overviewSalesDayChipList" class="revenue-day-chip-list" role="group" aria-label="Tag auswählen"></div>
+        </div>
         <div class="revenue-editor-row">
           <div class="revenue-editor-field">
             <label for="overviewSalesDate">Datum</label>
@@ -348,6 +353,7 @@ L1E-L4E ohne Abrechnung
           <button id="btnOverviewSalesSave" type="button" class="btnPrimary">Speichern</button>
           <button id="btnOverviewSalesDelete" type="button" class="btnGhost">Löschen</button>
         </div>
+        <div id="overviewSalesSaveStatus" class="revenue-save-status" aria-live="polite"></div>
       </div>
     </div>
     <div class="small">
