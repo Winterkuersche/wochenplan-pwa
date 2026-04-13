@@ -30,6 +30,13 @@ Beispiel: Precache-Inhalte/Cache-Schema haben sich geändert oder Alt-Cache muss
 
 - In `version.js` `APP_META.cacheName` auf neuen Wert setzen (z. B. `wochenplan-cache-v46`).
 
+## npm Scripts
+
+- `npm run check:all` führt alle relevanten lokalen/CI-Prüfungen in einem Befehl aus.
+- `npm run sync:asset-version` synchronisiert die `?v=`-Parameter in `index.html` anhand von `APP_META.assetVersion`.
+
+Diese Scripts orchestrieren ausschließlich lokale/CI-Checks bzw. Wartungsschritte und ändern keine Browser-Laufzeitlogik.
+
 ## Inventar: Stellen mit Versionsbezug
 
 - Sichtbare Version: `version.js` (`APP_META.version`) und Nutzung in `app.js` (`document.title`).
