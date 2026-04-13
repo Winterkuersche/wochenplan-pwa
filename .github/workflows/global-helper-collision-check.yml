@@ -19,4 +19,4 @@ jobs:
           node-version: '20'
 
       - name: Check duplicate global helper names
-        run: node tools/check-global-helper-collisions.js
+        run: npm run check:globals
