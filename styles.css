@@ -899,24 +899,24 @@ select {
   min-height: 40px;
 }
 
-.btnPrimary {
+#overviewView .btnPrimary {
   border-color: #111;
   background: #111;
   color: #fff;
 }
 
-.btnPrimary:hover {
+#overviewView .btnPrimary:hover {
   background: #1e1e1e;
 }
 
-.btnSecondary {
+#overviewView .btnSecondary {
   background: #f8f8f8;
   border-color: #d7d7d7;
   color: #555;
   font-weight: 500;
 }
 
-.btnGhost {
+#overviewView .btnGhost {
   background: transparent;
   border-color: #d4d4d4;
   color: #555;
@@ -2386,19 +2386,19 @@ body.dark .overviewInternalMetricsItem {
   border-color: #444851;
 }
 
-body.dark .btnSecondary {
+body.dark #overviewView .btnSecondary {
   background: #2f3238;
   border-color: #4a4d55;
   color: #c7cbd3;
 }
 
-body.dark .btnGhost {
+body.dark #overviewView .btnGhost {
   background: transparent;
   border-color: #4a4d55;
   color: #b9bec8;
 }
 
-body.dark .btnPrimary {
+body.dark #overviewView .btnPrimary {
   background: #111318;
   border-color: #111318;
 }
