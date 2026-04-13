@@ -19,4 +19,4 @@ jobs:
           node-version: '20'
 
       - name: Check sw.js APP_FILES coverage
-        run: node tools/check-sw-precache-assets.js
+        run: npm run check:sw
