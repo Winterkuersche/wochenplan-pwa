@@ -708,35 +708,104 @@ function clearPlanEntry(employeeId, isoDate, options = {}) {
 function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
   if (!isoDate) return null;
 
-  const { commit = true } = options;
+  const { commit = true, returnMeta = false } = options;
   const prevIso = shiftIsoDateByDays(isoDate, -1);
   const yearMonth = String(isoDate).slice(0, 7);
   const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, yearMonth));
-  const lateCheckoutEmployees = activeEmployees.filter((emp) => {
-    const prevEntry = getPlanEntry(emp.id, prevIso);
-    return prevEntry?.type === "shift" && prevEntry.end === "19:10";
-  });
+  const hasShiftOnDay = (emp) => {
+    const entry = getPlanEntry(emp.id, isoDate);
+    return entry?.type === "shift";
+  };
+  const getRoleTokens = (emp) => {
+    const rawValues = [emp?.roleKey, emp?.functionKey, emp?.role, emp?.funktion]
+      .map((value) => String(value || "").trim().toUpperCase())
+      .filter(Boolean);
+    return rawValues
+      .flatMap((value) => value.split(/[^A-Z0-9]+/))
+      .filter(Boolean);
+  };
+  const hasPriorityRole = (emp, role) => {
+    const tokens = getRoleTokens(emp);
+    if (role === "TL") return tokens.includes("TL");
+    if (role === "SV") return tokens.includes("SV") || tokens.includes("STV");
+    return false;
+  };
 
-  if (!lateCheckoutEmployees.length) return null;
+  let selectedEmployee = activeEmployees.find((emp) => hasPriorityRole(emp, "TL") && hasShiftOnDay(emp));
+  if (!selectedEmployee) {
+    selectedEmployee = activeEmployees.find((emp) => hasPriorityRole(emp, "SV") && hasShiftOnDay(emp));
+  }
+  if (!selectedEmployee) {
+    selectedEmployee = activeEmployees.find((emp) => {
+      if (!hasShiftOnDay(emp)) return false;
+      const prevEntry = getPlanEntry(emp.id, prevIso);
+      return prevEntry?.type === "shift" && prevEntry.end === "19:10";
+    });
+  }
+  if (!selectedEmployee) return null;
 
-  const selectedEmployee = lateCheckoutEmployees[0];
   const selectedEntry = getPlanEntry(selectedEmployee.id, isoDate);
   if (!selectedEntry || selectedEntry.type !== "shift") return null;
+  let hasChanges = false;
 
   activeEmployees.forEach((emp) => {
     if (emp.id === selectedEmployee.id) return;
     const entry = getPlanEntry(emp.id, isoDate);
     if (!entry || entry.type !== "shift" || entry.start !== "08:55") return;
+    hasChanges = true;
     updateEmployeeDay(emp.id, isoDate, () => ({ ...entry, start: "09:00" }), { commit: false });
   });
 
-  updateEmployeeDay(selectedEmployee.id, isoDate, () => ({ ...selectedEntry, start: "08:55" }), { commit: false });
+  if (selectedEntry.start !== "08:55") {
+    hasChanges = true;
+    updateEmployeeDay(selectedEmployee.id, isoDate, () => ({ ...selectedEntry, start: "08:55" }), { commit: false });
+  }
 
-  if (commit) {
+  if (commit && hasChanges) {
     commitPlanChange();
   }
 
+  if (returnMeta) {
+    return { selectedEmployeeId: selectedEmployee.id, changed: hasChanges };
+  }
+
   return selectedEmployee.id;
+}
+
+function applyMepEarlyStartRuleForRange(fromIso, toIso, options = {}) {
+  if (!fromIso || !toIso) return { changed: false, changedDays: 0, processedDays: 0 };
+
+  const { commit = true } = options;
+  let cursorIso = fromIso <= toIso ? fromIso : toIso;
+  const endIso = fromIso <= toIso ? toIso : fromIso;
+  let changedDays = 0;
+  let processedDays = 0;
+
+  while (cursorIso <= endIso) {
+    const result = applyMepEarlyStartCarryoverRule(cursorIso, { commit: false, returnMeta: true });
+    if (result?.changed) changedDays += 1;
+    processedDays += 1;
+    cursorIso = shiftIsoDateByDays(cursorIso, 1);
+  }
+
+  if (commit && changedDays > 0) {
+    commitPlanChange();
+  }
+
+  return {
+    changed: changedDays > 0,
+    changedDays,
+    processedDays
+  };
+}
+
+function reconcileMepEarlyStartForActiveMonth(options = {}) {
+  const yearMonth = normalizeYearMonth(state.activeMonth || (state.weekFrom || toIsoDate(new Date())).slice(0, 7));
+  if (!yearMonth) return { changed: false, changedDays: 0, processedDays: 0 };
+  const [year, month] = yearMonth.split("-").map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+
+  return applyMepEarlyStartRuleForRange(`${yearMonth}-01`, `${yearMonth}-${pad2(lastDay)}`, options);
 }
 
 function setShift(employeeId, isoDate, entryOrShiftKey) {
@@ -908,6 +977,7 @@ const btnResetWeekEl = document.getElementById("btnResetWeek");
 const btnExportBackupEl = document.getElementById("btnExportBackup");
 const btnImportBackupEl = document.getElementById("btnImportBackup");
 const backupFileInputEl = document.getElementById("backupFileInput");
+let isReconcilingMepEarlyStartForActiveMonth = false;
 const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
@@ -3189,6 +3259,16 @@ function formatIsoDateForOverview(isoDate) {
 }
 
 function renderAllViews() {
+  if (!isReconcilingMepEarlyStartForActiveMonth) {
+    isReconcilingMepEarlyStartForActiveMonth = true;
+    const reconciliation = reconcileMepEarlyStartForActiveMonth({ commit: false });
+    isReconcilingMepEarlyStartForActiveMonth = false;
+    if (reconciliation.changed) {
+      refreshEmployeeVacationCounters();
+      saveAppStateDebounced();
+    }
+  }
+
   renderSummary();
 
   if (typeof renderDayView === "function") renderDayView();
