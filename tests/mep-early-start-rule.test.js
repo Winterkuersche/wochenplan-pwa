@@ -292,6 +292,28 @@ test('prioritizes within eligible candidates as TL > SV > others', () => {
   assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '09:00');
 });
 
+test('does not select TL with previous-day 19:10 when today starts at 13:00', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'tl', roleKey: 'TL' }, { id: 'e1' }],
+    schedule: {
+      '2026-04-10': {
+        tl: { type: 'shift', end: '19:10' },
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-11': {
+        tl: { type: 'shift', start: '13:00', end: '21:00' },
+        e1: { type: 'shift', start: '09:00', end: '17:00' }
+      }
+    }
+  });
+
+  const selectedId = ctx.applyRule('2026-04-11');
+
+  assert.equal(selectedId, 'e1');
+  assert.equal(ctx.state.schedule['2026-04-11'].tl.start, '13:00');
+  assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '08:55');
+});
+
 test('resets additional 08:55 starts on same day to 09:00', () => {
   const ctx = buildContext({
     employees: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }],
