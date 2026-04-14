@@ -710,6 +710,7 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
 
   const { commit = true, returnMeta = false } = options;
   const prevIso = shiftIsoDateByDays(isoDate, -1);
+  const QUALIFYING_PREV_SHIFT_END = "19:10";
   const yearMonth = String(isoDate).slice(0, 7);
   const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, yearMonth));
   const hasShiftOnDay = (emp) => {
@@ -731,16 +732,18 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
     return false;
   };
 
-  let selectedEmployee = activeEmployees.find((emp) => hasPriorityRole(emp, "TL") && hasShiftOnDay(emp));
+  const eligibleCandidates = activeEmployees.filter((emp) => {
+    if (!hasShiftOnDay(emp)) return false;
+    const prevEntry = getPlanEntry(emp.id, prevIso);
+    return prevEntry?.type === "shift" && prevEntry.end === QUALIFYING_PREV_SHIFT_END;
+  });
+
+  let selectedEmployee = eligibleCandidates.find((emp) => hasPriorityRole(emp, "TL"));
   if (!selectedEmployee) {
-    selectedEmployee = activeEmployees.find((emp) => hasPriorityRole(emp, "SV") && hasShiftOnDay(emp));
+    selectedEmployee = eligibleCandidates.find((emp) => hasPriorityRole(emp, "SV"));
   }
   if (!selectedEmployee) {
-    selectedEmployee = activeEmployees.find((emp) => {
-      if (!hasShiftOnDay(emp)) return false;
-      const prevEntry = getPlanEntry(emp.id, prevIso);
-      return prevEntry?.type === "shift" && prevEntry.end === "19:10";
-    });
+    selectedEmployee = eligibleCandidates[0];
   }
   if (!selectedEmployee) return null;
 
