@@ -717,6 +717,28 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
     const entry = getPlanEntry(emp.id, isoDate);
     return entry?.type === "shift";
   };
+  const normalizeStartForEligibility = (value) => {
+    if (typeof normalizePlanTime === "function") {
+      return normalizePlanTime(value);
+    }
+    if (typeof value !== "string") return "";
+    const trimmed = value.trim();
+    if (!/^\d{1,2}:\d{2}$/.test(trimmed)) return "";
+    const [hoursRaw, minutesRaw] = trimmed.split(":");
+    const hours = Number(hoursRaw);
+    const minutes = Number(minutesRaw);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
+  const isEligibleEarlyStartShift = (entry) => {
+    if (entry?.type !== "shift") return false;
+    const normalizedStart = normalizeStartForEligibility(entry.start);
+    if (!normalizedStart) return false;
+    if (["13:00", "14:00", "15:00", "16:00"].includes(normalizedStart)) return false;
+    if (normalizedStart >= "13:00") return false;
+    return normalizedStart >= "08:55" && normalizedStart <= "12:00";
+  };
   const getRoleTokens = (emp) => {
     const rawValues = [emp?.roleKey, emp?.functionKey, emp?.role, emp?.funktion]
       .map((value) => String(value || "").trim().toUpperCase())
@@ -734,6 +756,8 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
 
   const eligibleCandidates = activeEmployees.filter((emp) => {
     if (!hasShiftOnDay(emp)) return false;
+    const entry = getPlanEntry(emp.id, isoDate);
+    if (!isEligibleEarlyStartShift(entry)) return false;
     const prevEntry = getPlanEntry(emp.id, prevIso);
     return prevEntry?.type === "shift" && prevEntry.end === QUALIFYING_PREV_SHIFT_END;
   });
