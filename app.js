@@ -733,6 +733,9 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
   };
   const isEligibleEarlyStartShift = (entry) => {
     if (entry?.type !== "shift") return false;
+    const normalizedMode = String(entry.mode || "").trim().toLowerCase();
+    const normalizedCode = String(entry.code || "").trim().toUpperCase();
+    if (normalizedMode === "late" || normalizedCode === "L") return false;
     const normalizedStart = normalizeStartForEligibility(entry.start);
     if (!normalizedStart) return false;
     if (["13:00", "14:00", "15:00", "16:00"].includes(normalizedStart)) return false;
