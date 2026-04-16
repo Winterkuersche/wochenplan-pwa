@@ -314,6 +314,46 @@ test('does not select TL with previous-day 19:10 when today starts at 13:00', ()
   assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '08:55');
 });
 
+test('does not set 08:55 when only candidate has late shift start 13:00', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }],
+    schedule: {
+      '2026-04-10': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-11': {
+        e1: { type: 'shift', mode: 'late', code: 'L', start: '13:00', end: '19:10' }
+      }
+    }
+  });
+
+  const selectedId = ctx.applyRule('2026-04-11');
+
+  assert.equal(selectedId, null);
+  assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '13:00');
+  assert.equal(ctx.getCommitCount(), 0);
+});
+
+test('keeps early/day shifts eligible for 08:55 carryover', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }],
+    schedule: {
+      '2026-04-10': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-11': {
+        e1: { type: 'shift', mode: 'full', code: 'G', start: '09:00', end: '17:00' }
+      }
+    }
+  });
+
+  const selectedId = ctx.applyRule('2026-04-11');
+
+  assert.equal(selectedId, 'e1');
+  assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '08:55');
+  assert.equal(ctx.getCommitCount(), 1);
+});
+
 test('resets additional 08:55 starts on same day to 09:00', () => {
   const ctx = buildContext({
     employees: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }],
