@@ -705,39 +705,50 @@ function clearPlanEntry(employeeId, isoDate, options = {}) {
   return updateEmployeeDay(employeeId, isoDate, () => null, options);
 }
 
+function getPreviousRelevantWorkdayIso(isoDate) {
+  if (!isoDate) return "";
+  const date = new Date(`${isoDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  const dayOfWeek = date.getUTCDay();
+  const dayOffset = dayOfWeek === 1 ? -2 : -1;
+  return shiftIsoDateByDays(isoDate, dayOffset);
+}
+
+function normalizeShiftStartForCarryoverEligibility(value) {
+  if (typeof normalizePlanTime === "function") {
+    return normalizePlanTime(value);
+  }
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!/^\d{1,2}:\d{2}$/.test(trimmed)) return "";
+  const [hoursRaw, minutesRaw] = trimmed.split(":");
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function isCarryoverMorningEligibleShift(entry) {
+  if (entry?.type !== "shift") return false;
+  const normalizedStart = normalizeShiftStartForCarryoverEligibility(entry.start);
+  if (!normalizedStart) return false;
+  if (["13:00", "14:00", "15:00", "16:00"].includes(normalizedStart)) return false;
+  if (normalizedStart >= "13:00") return false;
+  return normalizedStart >= "08:55" && normalizedStart <= "12:00";
+}
+
 function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
   if (!isoDate) return null;
 
   const { commit = true, returnMeta = false } = options;
-  const prevIso = shiftIsoDateByDays(isoDate, -1);
+  const prevIso = getPreviousRelevantWorkdayIso(isoDate);
   const QUALIFYING_PREV_SHIFT_END = "19:10";
   const yearMonth = String(isoDate).slice(0, 7);
   const activeEmployees = state.employees.filter((emp) => isEmployeeActiveInMonth(emp, yearMonth));
   const hasShiftOnDay = (emp) => {
     const entry = getPlanEntry(emp.id, isoDate);
     return entry?.type === "shift";
-  };
-  const normalizeStartForEligibility = (value) => {
-    if (typeof normalizePlanTime === "function") {
-      return normalizePlanTime(value);
-    }
-    if (typeof value !== "string") return "";
-    const trimmed = value.trim();
-    if (!/^\d{1,2}:\d{2}$/.test(trimmed)) return "";
-    const [hoursRaw, minutesRaw] = trimmed.split(":");
-    const hours = Number(hoursRaw);
-    const minutes = Number(minutesRaw);
-    if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
-    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-  };
-  const isEligibleEarlyStartShift = (entry) => {
-    if (entry?.type !== "shift") return false;
-    const normalizedStart = normalizeStartForEligibility(entry.start);
-    if (!normalizedStart) return false;
-    if (["13:00", "14:00", "15:00", "16:00"].includes(normalizedStart)) return false;
-    if (normalizedStart >= "13:00") return false;
-    return normalizedStart >= "08:55" && normalizedStart <= "12:00";
   };
   const getRoleTokens = (emp) => {
     const rawValues = [emp?.roleKey, emp?.functionKey, emp?.role, emp?.funktion]
@@ -757,7 +768,7 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
   const eligibleCandidates = activeEmployees.filter((emp) => {
     if (!hasShiftOnDay(emp)) return false;
     const entry = getPlanEntry(emp.id, isoDate);
-    if (!isEligibleEarlyStartShift(entry)) return false;
+    if (!isCarryoverMorningEligibleShift(entry)) return false;
     const prevEntry = getPlanEntry(emp.id, prevIso);
     return prevEntry?.type === "shift" && prevEntry.end === QUALIFYING_PREV_SHIFT_END;
   });
@@ -2528,6 +2539,27 @@ function getClosingWorkersForIso(iso) {
   });
 }
 
+function hasMissingCarryoverCoverageForIso(iso) {
+  if (!iso || isSundayIsoDate(iso)) return false;
+
+  const prevIso = getPreviousRelevantWorkdayIso(iso);
+  if (!prevIso) return false;
+
+  const yearMonth = String(iso).slice(0, 7);
+  const previousDayClosers = state.employees.filter((emp) => {
+    if (!isEmployeeActiveInMonth(emp, yearMonth)) return false;
+    const previousEntry = getScheduleEntry(emp.id, prevIso);
+    return previousEntry?.type === "shift" && previousEntry.end === "19:10";
+  });
+
+  if (previousDayClosers.length === 0) return false;
+
+  return !previousDayClosers.some((emp) => {
+    const currentEntry = getScheduleEntry(emp.id, iso);
+    return isCarryoverMorningEligibleShift(currentEntry);
+  });
+}
+
 function getDayWarningsByIndex(index) {
   const week = getActiveWeekDays();
   const day = week[index];
@@ -2538,6 +2570,10 @@ function getDayWarningsByIndex(index) {
 
   if (closers.length > 2) {
     warnings.push(`⚠ ${day.weekdayLabel}: ${closers.length} Personen bis 19:10. Maximal 2 erlaubt.`);
+  }
+
+  if (hasMissingCarryoverCoverageForIso(day.iso)) {
+    warnings.push(`⚠ ${day.weekdayLabel}: Keine Anschlussbesetzung aus dem vorherigen 19:10-Team.`);
   }
 
   return warnings;

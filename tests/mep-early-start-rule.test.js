@@ -5,9 +5,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const appScript = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+const previousWorkdayMatch = appScript.match(/function getPreviousRelevantWorkdayIso\(isoDate\) \{[\s\S]*?\n\}/);
+const normalizeCarryoverStartMatch = appScript.match(/function normalizeShiftStartForCarryoverEligibility\(value\) \{[\s\S]*?\n\}/);
+const carryoverEligibilityMatch = appScript.match(/function isCarryoverMorningEligibleShift\(entry\) \{[\s\S]*?\n\}/);
 const applyRuleMatch = appScript.match(/function applyMepEarlyStartCarryoverRule\(isoDate, options = \{\}\) \{[\s\S]*?\n\}/);
 const applyRangeRuleMatch = appScript.match(/function applyMepEarlyStartRuleForRange\(fromIso, toIso, options = \{\}\) \{[\s\S]*?\n\}/);
 
+assert.ok(previousWorkdayMatch, 'getPreviousRelevantWorkdayIso should exist in app.js');
+assert.ok(normalizeCarryoverStartMatch, 'normalizeShiftStartForCarryoverEligibility should exist in app.js');
+assert.ok(carryoverEligibilityMatch, 'isCarryoverMorningEligibleShift should exist in app.js');
 assert.ok(applyRuleMatch, 'applyMepEarlyStartCarryoverRule should exist in app.js');
 assert.ok(applyRangeRuleMatch, 'applyMepEarlyStartRuleForRange should exist in app.js');
 
@@ -50,7 +56,7 @@ function buildContext({ employees, schedule }) {
   });
 
   vm.runInContext(
-    `${applyRuleMatch[0]}; ${applyRangeRuleMatch[0]}; this.applyMepEarlyStartCarryoverRule = applyMepEarlyStartCarryoverRule; this.applyMepEarlyStartRuleForRange = applyMepEarlyStartRuleForRange;`,
+    `${previousWorkdayMatch[0]}; ${normalizeCarryoverStartMatch[0]}; ${carryoverEligibilityMatch[0]}; ${applyRuleMatch[0]}; ${applyRangeRuleMatch[0]}; this.applyMepEarlyStartCarryoverRule = applyMepEarlyStartCarryoverRule; this.applyMepEarlyStartRuleForRange = applyMepEarlyStartRuleForRange;`,
     context,
     { filename: 'app.js' }
   );
@@ -394,4 +400,25 @@ test('does not commit when range reconciliation makes no changes', () => {
   assert.equal(result.changed, false);
   assert.equal(result.changedDays, 0);
   assert.equal(ctx.getCommitCount(), 0);
+});
+
+test('uses previous relevant workday for monday so saturday 19:10 enables 08:55 on monday', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }, { id: 'e2' }],
+    schedule: {
+      '2026-04-11': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-13': {
+        e1: { type: 'shift', start: '09:00', end: '17:00' },
+        e2: { type: 'shift', start: '09:15', end: '17:15' }
+      }
+    }
+  });
+
+  const selectedId = ctx.applyRule('2026-04-13');
+
+  assert.equal(selectedId, 'e1');
+  assert.equal(ctx.state.schedule['2026-04-13'].e1.start, '08:55');
+  assert.equal(ctx.state.schedule['2026-04-13'].e2.start, '09:15');
 });
