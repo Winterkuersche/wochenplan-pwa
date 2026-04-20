@@ -108,7 +108,7 @@ test('warns when saturday 19:10 worker is only in late shift (13:00) on monday',
   assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-13'), true);
 });
 
-test('does not warn when saturday 19:10 worker is in morning/day shift on monday', () => {
+test('does not warn when saturday 19:10 worker starts exactly at 09:00 on monday', () => {
   const ctx = buildContext({
     employees: [{ id: 'e1' }, { id: 'e2' }],
     schedule: {
@@ -142,7 +142,7 @@ test('warns in weekday sequence when previous-day 19:10 worker has only late shi
   assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-15'), true);
 });
 
-test('does not warn in weekday sequence when previous-day 19:10 worker has early/day shift next day', () => {
+test('does not warn in weekday sequence when previous-day 19:10 worker starts exactly at 09:00 next day', () => {
   const ctx = buildContext({
     employees: [{ id: 'e1' }, { id: 'e2' }],
     schedule: {
@@ -157,4 +157,52 @@ test('does not warn in weekday sequence when previous-day 19:10 worker has early
   });
 
   assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-15'), false);
+});
+
+test('warns when saturday 19:10 worker starts at 09:15 on monday', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }],
+    schedule: {
+      '2026-04-11': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-13': {
+        e1: { type: 'shift', start: '09:15', end: '17:15' }
+      }
+    }
+  });
+
+  assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-13'), true);
+});
+
+test('warns when saturday 19:10 worker starts at 09:30 on monday', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }],
+    schedule: {
+      '2026-04-11': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-13': {
+        e1: { type: 'shift', start: '09:30', end: '17:30' }
+      }
+    }
+  });
+
+  assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-13'), true);
+});
+
+test('warns when saturday 19:10 worker starts at 10:00 on monday', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'e1' }],
+    schedule: {
+      '2026-04-11': {
+        e1: { type: 'shift', end: '19:10' }
+      },
+      '2026-04-13': {
+        e1: { type: 'shift', start: '10:00', end: '16:00' }
+      }
+    }
+  });
+
+  assert.equal(ctx.hasMissingCarryoverCoverageForIso('2026-04-13'), true);
 });
