@@ -732,10 +732,7 @@ function normalizeShiftStartForCarryoverEligibility(value) {
 function isCarryoverMorningEligibleShift(entry) {
   if (entry?.type !== "shift") return false;
   const normalizedStart = normalizeShiftStartForCarryoverEligibility(entry.start);
-  if (!normalizedStart) return false;
-  if (["13:00", "14:00", "15:00", "16:00"].includes(normalizedStart)) return false;
-  if (normalizedStart >= "13:00") return false;
-  return normalizedStart >= "08:55" && normalizedStart <= "12:00";
+  return normalizedStart === "09:00";
 }
 
 function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
