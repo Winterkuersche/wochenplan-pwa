@@ -1237,8 +1237,8 @@ function getEmployeeWeekMetrics(emp, visibleDays) {
   const isGfb = isGfbEmployee(emp);
   const lastShift = getEmployeeLastShiftLabel(emp);
   const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
-  const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDays, state.activeMonth);
-  const weekDifferenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays, state.activeMonth);
+  const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDays, null);
+  const weekDifferenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays, null);
   const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
   const monthIsManual = isMonthActualManual(emp, state.activeMonth);
   const manualSuffix = monthIsManual ? " Iststunden manuell hinterlegt." : "";
@@ -1270,7 +1270,7 @@ function getEmployeeWeekMetrics(emp, visibleDays) {
       ? (overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`)
       : (totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"),
     totalMinusTitle: isGfb ? "GfB: Restkontingent bzw. Übernutzung im aktuellen Monat" : "Gesamtminus.",
-    targetText: minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDays, state.activeMonth))
+    targetText: minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDays, null))
   };
 }
 
