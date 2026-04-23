@@ -137,6 +137,17 @@ function buildContext() {
     formatQuarterHourTime: () => '00:00',
     hhmmToMinutes: () => 0,
     minutesToHM: () => '0:00',
+    isGfbEmployee: () => false,
+    getEmployeeLastShiftLabel: () => '',
+    getEmployeePlannedMinutesForWeek: () => 0,
+    getEmployeeWeekDifferenceMinutes: () => 0,
+    getEmployeeMonthDifferenceMinutes: () => 0,
+    isMonthActualManual: () => false,
+    getEmployeeTotalMinusMinutes: () => 0,
+    getEmployeeMonthContingentRemainingMinutes: () => 0,
+    getEmployeeMonthContingentOveruseMinutes: () => 0,
+    getDeltaVisualState: () => 'deltaZero',
+    getRestOverVisualState: () => 'deltaZero',
     getEmployeeTargetMinutesForWeek: () => 0,
     formatSignedMinutes: () => '0:00',
     getAbsenceTypeMeta: () => ({ invalidRangeMessage: 'x', confirmDeleteMessage: 'x', title: 'x' }),
@@ -273,6 +284,84 @@ test('mobile chip outside active month stays editable and opens week selection d
   chip.dispatchEvent('click');
 
   assert.equal(opened, 1);
+});
+
+test('week metrics across month boundary include all six visible days and bypass month filter', () => {
+  const ctx = buildContext();
+  const employee = { id: 'e1', name: 'Max' };
+  const visibleDays = [
+    { iso: '2026-04-27' }, // Mo
+    { iso: '2026-04-28' }, // Di
+    { iso: '2026-04-29' }, // Mi
+    { iso: '2026-04-30' }, // Do
+    { iso: '2026-05-01' }, // Fr
+    { iso: '2026-05-02' }  // Sa
+  ];
+  const accountCalls = [];
+  const targetCalls = [];
+
+  ctx.getEmployeePlannedMinutesForWeek = () => 0;
+  ctx.getEmployeeAccountMinutesForWeek = (...args) => {
+    accountCalls.push(args);
+    return 0;
+  };
+  ctx.getEmployeeWeekDifferenceMinutes = () => 0;
+  ctx.getEmployeeMonthDifferenceMinutes = () => 0;
+  ctx.isMonthActualManual = () => false;
+  ctx.getEmployeeTotalMinusMinutes = () => 0;
+  ctx.getEmployeeMonthContingentRemainingMinutes = () => 0;
+  ctx.getEmployeeMonthContingentOveruseMinutes = () => 0;
+  ctx.getEmployeeTargetMinutesForWeek = (...args) => {
+    targetCalls.push(args);
+    return 0;
+  };
+
+  ctx.getEmployeeWeekMetrics(employee, visibleDays);
+
+  assert.equal(accountCalls.length, 1);
+  assert.equal(targetCalls.length, 1);
+  assert.deepEqual(accountCalls[0][1].map((day) => day.iso), visibleDays.map((day) => day.iso));
+  assert.deepEqual(targetCalls[0][1].map((day) => day.iso), visibleDays.map((day) => day.iso));
+  assert.equal(accountCalls[0][2], null);
+  assert.equal(targetCalls[0][2], null);
+});
+
+test('week header branch summary hours include all six visible days across month boundary', () => {
+  const ctx = buildContext();
+  const calls = [];
+  const weekTable = new MockElement('table');
+  const weekThead = new MockElement('thead');
+  weekTable.querySelector = (selector) => (selector === 'thead' ? weekThead : null);
+
+  ctx.document.getElementById = (id) => {
+    if (id === 'weekTable') return weekTable;
+    return new MockElement('div');
+  };
+  ctx.getActiveWeekDays = () => ([
+    { iso: '2026-04-27', weekdayLabel: 'Mo', date: new Date('2026-04-27T00:00:00Z'), isOutsideMonth: false },
+    { iso: '2026-04-28', weekdayLabel: 'Di', date: new Date('2026-04-28T00:00:00Z'), isOutsideMonth: false },
+    { iso: '2026-04-29', weekdayLabel: 'Mi', date: new Date('2026-04-29T00:00:00Z'), isOutsideMonth: false },
+    { iso: '2026-04-30', weekdayLabel: 'Do', date: new Date('2026-04-30T00:00:00Z'), isOutsideMonth: false },
+    { iso: '2026-05-01', weekdayLabel: 'Fr', date: new Date('2026-05-01T00:00:00Z'), isOutsideMonth: true },
+    { iso: '2026-05-02', weekdayLabel: 'Sa', date: new Date('2026-05-02T00:00:00Z'), isOutsideMonth: true },
+    { iso: '2026-05-03', weekdayLabel: 'So', date: new Date('2026-05-03T00:00:00Z'), isOutsideMonth: true }
+  ]);
+  ctx.totalMinutesForDayIso = (iso) => {
+    calls.push(iso);
+    return 0;
+  };
+  ctx.getWeekDayHeaderMeta = () => ({ closersState: 'ok', closersText: '19:10 2/2', handoverState: 'none', handoverText: '' });
+
+  ctx.renderWeekHeader();
+
+  assert.deepEqual(calls, [
+    '2026-04-27',
+    '2026-04-28',
+    '2026-04-29',
+    '2026-04-30',
+    '2026-05-01',
+    '2026-05-02'
+  ]);
 });
 
 test('mobile selection FO applies early shift directly', () => {

@@ -36,6 +36,8 @@ test('month switch keeps week boundaries stable for adjacent months', () => {
   assert.equal(marchLastWeek[6].iso, '2026-04-05');
   assert.equal(aprilFirstWeek[0].iso, '2026-03-30');
   assert.equal(aprilFirstWeek[6].iso, '2026-04-05');
+  assert.equal(marchLastWeek.filter((day) => day.inCurrentMonth).length, 2);
+  assert.equal(aprilFirstWeek.filter((day) => day.inCurrentMonth).length, 5);
 });
 
 test('getMonthPlanFromYearMonth resolves strict YYYY-MM values', () => {
