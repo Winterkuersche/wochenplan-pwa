@@ -151,6 +151,18 @@ function getResolvedDayEntry({
     });
   }
 
+  if (getEntryStatus(plannedEntry) === ENTRY_STATUS.OFF) {
+    return createResolvedDayEntry({
+      type: "off",
+      status: ENTRY_STATUS.OFF,
+      label: plannedEntry?.label || "FR",
+      minutesForMonth: 0,
+      minutesForBranch: 0,
+      isSunday: sunday,
+      sourceEntry: plannedEntry
+    });
+  }
+
   return createResolvedDayEntry({
     type: "off",
     status: ENTRY_STATUS.EMPTY,

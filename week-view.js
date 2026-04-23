@@ -619,11 +619,15 @@ function getWeekSelectValueForDay(emp, isoDate) {
     if (entry.mode === "flex") return "FLEX";
   }
 
+  if (resolved.type === "off" && resolved.sourceEntry && getEntryStatus(resolved.sourceEntry) === ENTRY_STATUS.OFF) {
+    return "FR";
+  }
+
   return "-";
 }
 
 function buildWeekSelectClass(value) {
-  if (value === "U" || value === "K" || value === "AH") {
+  if (value === "U" || value === "K" || value === "AH" || value === "FR") {
     return `weekSelect ${value === "U" ? "vacation" : "free"}`;
   }
 
@@ -837,6 +841,14 @@ function applyWeekSelection(emp, isoDate, selectedValue, previousValue) {
 
   if (openShiftDialogForSelectValue(selectedValue, { emp, isoDate })) {
     return { openedDialog: true, previousValue: priorValue };
+  }
+
+  if (selectedValue === "FR") {
+    const applied = setOffDay(emp.id, isoDate);
+    if (!applied) {
+      return { rejected: true, previousValue: priorValue };
+    }
+    return { applied: true };
   }
 
   if (selectedValue !== "-") {
