@@ -1154,12 +1154,11 @@ function renderWeekTable() {
   if (!weekDays.length) return;
 
   const visibleDays = weekDays.slice(0, 6);
-  const visibleDaysInActiveMonth = visibleDays.filter((day) => day && !day.isOutsideMonth);
   const visibleEmployees = getWeekVisibleEmployees(visibleDays);
 
   visibleEmployees.forEach((emp) => {
     const tr = document.createElement("tr");
-    const metrics = getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth);
+    const metrics = getEmployeeWeekMetrics(emp, visibleDays);
     const lastShift = metrics.lastShift;
 
     const tdNameRole = document.createElement("td");
@@ -1189,13 +1188,13 @@ function renderWeekTable() {
     const tdActual = document.createElement("td");
     tdActual.className = "weekHoursCell weekSummaryCol weekSummaryStart";
     tdActual.textContent = metrics.actualText;
-    tdActual.title = "Ist nur für Tage im aktiven Monat berechnet.";
+    tdActual.title = "Ist der aktuellen Woche (Mo–Sa).";
     tr.appendChild(tdActual);
 
     const tdAccount = document.createElement("td");
     tdAccount.className = "weekHoursCell weekSummaryCol";
     tdAccount.textContent = metrics.accountText;
-    tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag) – berechnet nur für Tage im aktiven Monat.";
+    tdAccount.title = "Arbeitszeit plus konto-relevante Abwesenheiten (Urlaub, Krank, Feiertag) der aktuellen Woche (Mo–Sa).";
     tr.appendChild(tdAccount);
 
     const tdDelta = document.createElement("td");
@@ -1219,7 +1218,7 @@ function renderWeekTable() {
     const tdTarget = document.createElement("td");
     tdTarget.className = "weekTargetCell weekSummaryCol";
     tdTarget.textContent = metrics.targetText;
-    tdTarget.title = "Sollzeit der Woche, berechnet nur für Tage im aktiven Monat (ohne Sonntage).";
+    tdTarget.title = "Sollzeit der aktuellen Woche (Mo–Sa).";
     tr.appendChild(tdTarget);
 
     weekTableBodyEl.appendChild(tr);
@@ -1234,12 +1233,12 @@ function getWeekVisibleEmployees(visibleDays) {
   });
 }
 
-function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
+function getEmployeeWeekMetrics(emp, visibleDays) {
   const isGfb = isGfbEmployee(emp);
   const lastShift = getEmployeeLastShiftLabel(emp);
-  const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDaysInActiveMonth);
-  const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth);
-  const weekDifferenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDaysInActiveMonth, state.activeMonth);
+  const plannedMinutes = getEmployeePlannedMinutesForWeek(emp, visibleDays);
+  const accountMinutes = getEmployeeAccountMinutesForWeek(emp, visibleDays, state.activeMonth);
+  const weekDifferenceMinutes = getEmployeeWeekDifferenceMinutes(emp, visibleDays, state.activeMonth);
   const monthDifferenceMinutes = getEmployeeMonthDifferenceMinutes(emp);
   const monthIsManual = isMonthActualManual(emp, state.activeMonth);
   const manualSuffix = monthIsManual ? " Iststunden manuell hinterlegt." : "";
@@ -1255,8 +1254,8 @@ function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
     weekDeltaClass: isGfb ? getDeltaVisualState(Math.max(weekDifferenceMinutes, 0)) : getDeltaVisualState(weekDifferenceMinutes),
     weekDeltaText: isGfb ? `${minutesToHM(weekDifferenceMinutes)} genutzt` : formatSignedMinutes(weekDifferenceMinutes),
     weekDeltaTitle: isGfb
-      ? "GfB: Kontingentnutzung in der aktuellen Woche, berechnet nur für Tage im aktiven Monat."
-      : "Delta der Woche, berechnet nur für Tage im aktiven Monat.",
+      ? "GfB: Kontingentnutzung in der aktuellen Woche (Mo–Sa)."
+      : "Delta der aktuellen Woche (Mo–Sa).",
     monthDeltaClass: isGfb ? getDeltaVisualState(Math.max(monthDifferenceMinutes, 0)) : getDeltaVisualState(monthDifferenceMinutes),
     monthDeltaText: isGfb
       ? `${minutesToHM(monthDifferenceMinutes)} genutzt${manualMarker}`
@@ -1271,7 +1270,7 @@ function getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth) {
       ? (overuseMinutes > 0 ? `Über ${minutesToHM(overuseMinutes)}` : `Rest ${minutesToHM(remainingContingentMinutes)}`)
       : (totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"),
     totalMinusTitle: isGfb ? "GfB: Restkontingent bzw. Übernutzung im aktuellen Monat" : "Gesamtminus.",
-    targetText: minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDaysInActiveMonth, state.activeMonth))
+    targetText: minutesToHM(getEmployeeTargetMinutesForWeek(emp, visibleDays, state.activeMonth))
   };
 }
 
@@ -1297,11 +1296,10 @@ function renderWeekMobileCards() {
   if (!weekDays.length) return;
 
   const visibleDays = weekDays.slice(0, 6);
-  const visibleDaysInActiveMonth = visibleDays.filter((day) => day && !day.isOutsideMonth);
   const visibleEmployees = getWeekVisibleEmployees(visibleDays);
 
   visibleEmployees.forEach((emp) => {
-    const metrics = getEmployeeWeekMetrics(emp, visibleDaysInActiveMonth);
+    const metrics = getEmployeeWeekMetrics(emp, visibleDays);
     const card = document.createElement("article");
     card.className = "weekMobileCard";
 
