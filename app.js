@@ -575,6 +575,14 @@ function resolveDayOverwriteDecision({
     }
   }
 
+  if (nextType === "off" && (hasShiftCoverage || hasAbsenceCoverage)) {
+    return {
+      decision: "confirm",
+      reason: "replace-entry-with-off",
+      affectedDays: Math.max(shiftCoverageDays, absenceCoverageDays)
+    };
+  }
+
   return {
     decision: "allow",
     reason: "ok",
@@ -626,6 +634,12 @@ function getOverwriteConfirmationText(reason, affectedDays, isSingleDay) {
     return isSingleDay
       ? "Urlaub wird durch Krank ersetzt. Fortfahren?"
       : `Urlaub an ${affectedDays} Tag(en) wird durch Krank ersetzt. Fortfahren?`;
+  }
+
+  if (reason === "replace-entry-with-off") {
+    return isSingleDay
+      ? "Bestehender Eintrag wird durch Frei ersetzt. Fortfahren?"
+      : `Bestehende Einträge an ${affectedDays} Tag(en) werden durch Frei ersetzt. Fortfahren?`;
   }
 
   return "Änderung überschreibt bestehende Einträge. Fortfahren?";
@@ -872,6 +886,36 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   applyMepEarlyStartCarryoverRule(isoDate, { commit: false });
   syncVacationScheduleFromAbsences(employeeId);
   commitPlanChange();
+  return true;
+}
+
+function setOffDay(employeeId, isoDate, options = {}) {
+  if (!employeeId || !isoDate) return false;
+
+  const decision = resolveDayOverwriteDecision({
+    employeeId,
+    fromIso: isoDate,
+    nextType: "off",
+    mutationKind: "direct-day"
+  });
+  if (decision.decision === "deny") return false;
+  if (!requestOverwriteConfirmation(decision, isoDate)) return false;
+
+  const { commit = true } = options;
+
+  removeAbsenceCoverageForRange(employeeId, isoDate, isoDate);
+  updateEmployeeDay(employeeId, isoDate, () => ({
+    type: "off",
+    status: ENTRY_STATUS.OFF,
+    label: "FR",
+    minutes: 0
+  }), { commit: false });
+  syncVacationScheduleFromAbsences(employeeId);
+
+  if (commit) {
+    commitPlanChange();
+  }
+
   return true;
 }
 

@@ -107,6 +107,7 @@ function buildContext() {
     decideMutationForIsoRange: () => ({ allow: true }),
     buildEarlyShiftEntry: (code) => ({ type: 'shift', code }),
     setShift: () => true,
+    setOffDay: () => true,
     setPlanEntry: () => {},
     clearDay: () => {},
     commitPlanChange: () => {},
@@ -124,7 +125,8 @@ function buildContext() {
     getExternalHelpWorkedMinutes: () => 60,
     normalizePlanTime: (v) => v,
     isAllowedPlanTime: () => true,
-    ENTRY_STATUS: { EXTERNAL: 'external' },
+    ENTRY_STATUS: { EXTERNAL: 'external', OFF: 'off' },
+    getEntryStatus: (entry) => entry?.status || 'empty',
     getShiftRuleByCode: () => ({ entryType: 'shift' }),
     buildLateShiftEntry: () => ({ type: 'shift' }),
     buildFullShiftEntry: () => ({ type: 'shift' }),
@@ -206,6 +208,23 @@ test('vacation day can be cleared with "-" and removes vacation coverage for tha
   select.dispatchEvent('change');
 
   assert.deepEqual(calls[0], ['e1', '2026-04-04']);
+});
+
+test('day can be set directly to Frei (FR)', () => {
+  const ctx = buildContext();
+  const calls = [];
+
+  ctx.setOffDay = (...args) => {
+    calls.push(['setOffDay', ...args]);
+    return true;
+  };
+
+  const wrap = ctx.createWeekSelect({ id: 'e1' }, '2026-04-05');
+  const select = wrap.children[0];
+  select.value = 'FR';
+  select.dispatchEvent('change');
+
+  assert.deepEqual(calls[0], ['setOffDay', 'e1', '2026-04-05']);
 });
 
 test('holiday remains locked and disabled', () => {

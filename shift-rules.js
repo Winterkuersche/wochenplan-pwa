@@ -171,6 +171,7 @@ function isDialogShift(code) {
 function getShiftSelectOptions() {
   return [
     { value: "-", label: "-", group: "Schichten", entryType: "off", isDialogShift: false },
+    { value: "FR", label: "FR", group: "Abwesenheit / Sonstiges", entryType: "off", isDialogShift: false },
     ...SHIFT_RULES.map((rule) => ({
       value: rule.code === "FO" ? "FÖ" : rule.code,
       label: rule.label,
