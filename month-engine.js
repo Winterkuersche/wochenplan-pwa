@@ -150,11 +150,40 @@ function getMonthCellText(resolved, options = {}) {
     } else if (entry.code) {
       cellText = entry.code;
     }
-  } else if ([ENTRY_STATUS.VACATION, ENTRY_STATUS.SICK, ENTRY_STATUS.EXTERNAL].includes(status)) {
+  } else if (status === ENTRY_STATUS.EXTERNAL) {
+    cellText = getExternalHelpCompactDisplay(resolved);
+  } else if ([ENTRY_STATUS.VACATION, ENTRY_STATUS.SICK].includes(status)) {
     cellText = getStatusShortLabel(status);
   }
 
   return cellText;
+}
+
+function getExternalHelpCompactDisplay(resolvedOrEntry) {
+  const resolved = resolvedOrEntry && typeof resolvedOrEntry === "object"
+    ? resolvedOrEntry
+    : null;
+  const entry = resolved?.sourceEntry || resolved;
+  const baseLabel = "AH";
+
+  if (!entry || typeof entry !== "object") return baseLabel;
+
+  const branch = typeof entry.branch === "string"
+    ? entry.branch.trim()
+    : "";
+
+  let minutes = null;
+  if (typeof entry.minutes === "number" && Number.isFinite(entry.minutes) && entry.minutes >= 0) {
+    minutes = entry.minutes;
+  } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
+    minutes = hhmmToMinutes(entry.minutes);
+  }
+
+  const details = [];
+  if (branch) details.push(branch);
+  if (minutes !== null) details.push(minutesToHM(minutes));
+
+  return details.length ? `${baseLabel}<br>${details.join(" · ")}` : baseLabel;
 }
 
 function getMonthDialogTypeForResolvedEntry(resolved) {
