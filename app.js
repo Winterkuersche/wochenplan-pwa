@@ -2315,7 +2315,11 @@ function getOverviewWeekPlannerCellText(resolved) {
     return entry.code || resolved.label || "";
   }
 
-  if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK || status === ENTRY_STATUS.EXTERNAL) {
+  if (status === ENTRY_STATUS.EXTERNAL) {
+    return getExternalHelpCompactDisplay(resolved);
+  }
+
+  if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK) {
     return getStatusShortLabel(status);
   }
 
