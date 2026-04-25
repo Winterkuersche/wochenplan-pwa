@@ -2199,7 +2199,10 @@ function openManualMonthDialog(employee) {
 
 function totalMinutesForDayIso(iso) {
   return state.employees.reduce((sum, emp) => {
-    return sum + getResolvedEntryForEmployeeOnIso(emp, iso).minutesForBranch;
+    const resolvedEntry = getResolvedEntryForEmployeeOnIso(emp, iso);
+    const status = getResolvedStatus(resolvedEntry);
+    if (status !== ENTRY_STATUS.WORK) return sum;
+    return sum + (Number(resolvedEntry?.minutesForBranch) || 0);
   }, 0);
 }
 
