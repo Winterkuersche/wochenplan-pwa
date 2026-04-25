@@ -1052,6 +1052,52 @@ select {
   min-width: 140px;
 }
 
+.ahCellContent {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+
+.ahCellMain {
+  display: block;
+}
+
+.ahCellSubrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.84em;
+  line-height: 1.05;
+  color: #4f5765;
+}
+
+.ahCellBranch {
+  display: inline-block;
+  flex: 1 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.ahCellDuration {
+  flex: 0 0 auto;
+}
+
+.ahCellSeparator {
+  flex: 0 0 auto;
+  opacity: 0.78;
+}
+
 .overviewWeekInfo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -2389,6 +2435,10 @@ body.dark #overviewMonthTable thead th,
 body.dark .overviewWeekTable thead th,
 body.dark .overviewPlannerTable thead th {
   background: linear-gradient(#2f3238, #2a2c30);
+}
+
+body.dark .ahCellSubrow {
+  color: #c2c8d4;
 }
 
 body.dark #weekTable thead th,

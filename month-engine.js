@@ -12,6 +12,15 @@ const MONTH_FALLBACK_DEFAULT_OPTIONS = [
   { code: "FLEX", label: "Flexible Schicht (FLEX)" }
 ];
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function getStartOfVisibleMonthGrid(year, monthIndex) {
   const firstOfMonth = new Date(year, monthIndex, 1);
   const mondayIndex = getMondayBasedDayIndex(firstOfMonth);
@@ -179,11 +188,23 @@ function getExternalHelpCompactDisplay(resolvedOrEntry) {
     minutes = hhmmToMinutes(entry.minutes);
   }
 
-  const details = [];
-  if (branch) details.push(branch);
-  if (minutes !== null) details.push(minutesToHM(minutes));
+  if (!branch && minutes === null) return baseLabel;
 
-  return details.length ? `${baseLabel}<br>${details.join(" · ")}` : baseLabel;
+  const parts = [];
+  if (branch) {
+    const safeBranch = escapeHtml(branch);
+    parts.push(`<span class="ahCellBranch" title="${safeBranch}">${safeBranch}</span>`);
+  }
+  if (minutes !== null) {
+    parts.push(`<span class="ahCellDuration">${minutesToHM(minutes)}</span>`);
+  }
+
+  return [
+    `<span class="ahCellContent">`,
+    `  <span class="ahCellMain">${baseLabel}</span>`,
+    `  <span class="ahCellSubrow">${parts.join('<span class="ahCellSeparator" aria-hidden="true"> · </span>')}</span>`,
+    `</span>`
+  ].join("");
 }
 
 function getMonthDialogTypeForResolvedEntry(resolved) {
