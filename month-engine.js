@@ -185,7 +185,10 @@ function getExternalHelpCompactDisplay(resolvedOrEntry) {
   if (typeof entry.minutes === "number" && Number.isFinite(entry.minutes) && entry.minutes >= 0) {
     minutes = entry.minutes;
   } else if (typeof entry.minutes === "string" && isValidHHMM(entry.minutes)) {
-    minutes = hhmmToMinutes(entry.minutes);
+    const parseMinutes = typeof parseTimeToMinutes === "function"
+      ? parseTimeToMinutes
+      : hhmmToMinutes;
+    minutes = parseMinutes(entry.minutes);
   }
 
   if (!branch && minutes === null) return baseLabel;
