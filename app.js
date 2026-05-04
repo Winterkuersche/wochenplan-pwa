@@ -2316,7 +2316,10 @@ function getOverviewWeekPlannerCellText(resolved) {
   }
 
   if (status === ENTRY_STATUS.EXTERNAL) {
-    return getExternalHelpCompactDisplay(resolved);
+    const externalHelpRenderer = typeof getExternalHelpCompactDisplay === "function"
+      ? getExternalHelpCompactDisplay
+      : null;
+    return externalHelpRenderer ? externalHelpRenderer(resolved) : "AH";
   }
 
   if (status === ENTRY_STATUS.VACATION || status === ENTRY_STATUS.SICK) {
