@@ -1056,26 +1056,33 @@ select {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
   max-width: 100%;
   min-width: 0;
-  white-space: normal;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .ahCellMain {
   display: block;
+  max-width: 100%;
+  font-weight: 600;
+  line-height: 1.05;
 }
 
 .ahCellSubrow {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 2px;
   max-width: 100%;
   min-width: 0;
-  font-size: 0.84em;
-  line-height: 1.05;
-  color: #4f5765;
+  overflow: hidden;
+  font-size: 0.74em;
+  line-height: 0.98;
+  color: var(--subtext);
 }
 
 .ahCellBranch {
@@ -1096,6 +1103,10 @@ select {
 .ahCellSeparator {
   flex: 0 0 auto;
   opacity: 0.78;
+}
+
+body.dark .ahCellSubrow {
+  color: #b8bfcc;
 }
 
 .overviewWeekInfo {
