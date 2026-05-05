@@ -137,8 +137,10 @@ function getMepResolvedDayContent(employee, isoDate) {
     };
   }
 
-  const pauseLabel = getMepPauseLabel(sourceEntry);
-  const pauseTooltip = getMepPauseTooltip(sourceEntry);
+  const sourceEntryStatus = getEntryStatus(sourceEntry);
+  const isExternalEntry = sourceEntryStatus === ENTRY_STATUS.EXTERNAL;
+  const pauseLabel = isExternalEntry ? sourceEntry.branch?.trim() || "" : getMepPauseLabel(sourceEntry);
+  const pauseTooltip = isExternalEntry ? "" : getMepPauseTooltip(sourceEntry);
 
   return {
     start: sourceEntry.start || "",
