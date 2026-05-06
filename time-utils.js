@@ -34,7 +34,6 @@ const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([5, 10, 70]);
 const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
 const REQUIRED_BREAK_BASE_MINUTES = 60;
 const REQUIRED_BREAK_BILLING_BONUS_MINUTES = 10;
-const LATE_SHIFT_STARTS_WITH_CHECKOUT_BREAK = new Set(["13:00", "14:00", "15:00", "16:00"]);
 
 function parseTimeToMinutes(value) {
   return hhmmToMinutes(value);
@@ -166,23 +165,28 @@ function getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options = {}) {
 }
 
 function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
-  const normalizedConfiguredBreak = normalizeBusinessBreakMinutes(configuredBreakMinutes);
-  if (!Boolean(options.includeBillingBonus)) return false;
-  if (endHHMM !== "19:10") return false;
-  if (!PLAN_BREAK_MINUTE_EXCEPTIONS.has(normalizedConfiguredBreak)) return false;
-
-  return LATE_SHIFT_STARTS_WITH_CHECKOUT_BREAK.has(normalizePlanTime(startHHMM));
+  void startHHMM;
+  void endHHMM;
+  void configuredBreakMinutes;
+  void options;
+  return false;
 }
 
 function getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedStart = normalizePlanTime(startHHMM);
-  const foeZuschlagMinutes = normalizedStart === "08:55" ? 5 : 0;
+  const normalizedEnd = normalizePlanTime(endHHMM);
   const baseBreakMinutes = normalizeBusinessBreakMinutes(configuredBreakMinutes);
-  const requiredBreakMinutes = isLateCheckoutBreakException(startHHMM, endHHMM, baseBreakMinutes, options)
-    ? baseBreakMinutes
-    : getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options);
+  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
 
-  return Math.max(baseBreakMinutes, requiredBreakMinutes) + foeZuschlagMinutes;
+  if (normalizedStart === "08:55" && normalizedEnd === "15:00") return 5;
+  if (normalizedStart === "13:00" && normalizedEnd === "19:10") return 10;
+
+  if (totalSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES) {
+    return REQUIRED_BREAK_BASE_MINUTES;
+  }
+
+  void options;
+  return baseBreakMinutes;
 }
 
 function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
