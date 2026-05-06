@@ -94,7 +94,7 @@ const SHIFT_RULES = Object.freeze([
       withCheckout: "19:10",
       withoutCheckout: "19:00"
     },
-    breakPolicy: { type: "checkout-dependent", withCheckout: 70, withoutCheckout: 60 },
+    breakPolicy: { type: "checkout-dependent", withCheckout: 60, withoutCheckout: 60 },
     uiPolicy: { isDialogShift: true, group: "Schichten" }
   },
   {
