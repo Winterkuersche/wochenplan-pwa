@@ -172,6 +172,9 @@ function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes
   return false;
 }
 
+// Zentrale fachliche Entscheidung für Pausenminuten.
+// configuredBreakMinutes (z. B. aus breakPolicy) ist nur ein Vorschlags-/Fallbackwert
+// für Fälle <= 6h ohne Sonderregel.
 function getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedStart = normalizePlanTime(startHHMM);
   const normalizedEnd = normalizePlanTime(endHHMM);
