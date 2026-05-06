@@ -36,6 +36,8 @@ test('business required break minutes applies deterministic base and surcharges'
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 65);
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 60);
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('12:45', '19:10'), 65);
+  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '15:00'), 65);
+  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('13:00', '19:10'), 70);
 });
 
 test('MEP pause minutes use same business break values for edge ranges', () => {
@@ -48,7 +50,32 @@ test('MEP pause minutes use same business break values for edge ranges', () => {
     10
   );
   assert.equal(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '08:55', end: '15:15', pause: 0 }),
+    65
+  );
+  assert.equal(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '12:45', end: '19:10', pause: 0 }),
+    70
+  );
+  assert.equal(
     ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '09:00', end: '19:10', pause: 0 }),
+    70
+  );
+  assert.equal(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '08:55', end: '19:10', pause: 0 }),
+    75
+  );
+  assert.equal(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '09:00', end: '15:00', pause: 0 }),
+    0
+  );
+
+  assert.notEqual(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '08:55', end: '15:00', pause: 0 }),
+    65
+  );
+  assert.notEqual(
+    ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '13:00', end: '19:10', pause: 0 }),
     70
   );
   assert.notEqual(
