@@ -248,22 +248,29 @@ function getPauseMinutesForMepDisplay(entry) {
   const spanMinutes = diffMinutesBetweenHHMM(entry.start, entry.end);
   if (spanMinutes <= 0) return 0;
 
+  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
+  const businessBreakMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
+    includeBillingBonus: entry.end === "19:10"
+  });
+
+  // Schichten sollen dieselbe fachliche Pausenentscheidung nutzen wie Konto-/Berechnungslogik.
+  if (getEntryStatus(entry) === ENTRY_STATUS.WORK) {
+    return businessBreakMinutes;
+  }
+
   const parsedEntryMinutes = typeof entry.minutes === "number"
     ? entry.minutes
     : typeof entry.minutes === "string" && isValidHHMM(entry.minutes)
       ? parseTimeToMinutes(entry.minutes)
       : null;
 
-  // Anzeige basiert auf derselben Tagesgrundlage wie Stundenkonto.
+  // Für nicht-Schichtfälle darf minutes als bereits berechnete Tagesgrundlage dienen.
   if (parsedEntryMinutes !== null) {
     const workedMinutes = normalizeMinutesToQuarterHour(parsedEntryMinutes);
     return Math.max(0, spanMinutes - workedMinutes);
   }
 
-  const configuredBreak = Number(entry.pause ?? entry.breakMinutes ?? 0);
-  return getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
-    includeBillingBonus: entry.end === "19:10"
-  });
+  return businessBreakMinutes;
 }
 
 function getPauseRangeForMep(entry) {
