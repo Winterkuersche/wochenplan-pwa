@@ -254,10 +254,11 @@ function getPauseMinutesForMepDisplay(entry) {
   const businessBreakMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
     includeBillingBonus: entry.end === "19:10"
   });
+  const normalizedBusinessBreakMinutes = Math.max(0, Math.round(businessBreakMinutes));
 
   // Schichten sollen dieselbe fachliche Pausenentscheidung nutzen wie Konto-/Berechnungslogik.
   if (getEntryStatus(entry) === ENTRY_STATUS.WORK) {
-    return businessBreakMinutes;
+    return normalizedBusinessBreakMinutes;
   }
 
   const parsedEntryMinutes = typeof entry.minutes === "number"
@@ -266,13 +267,16 @@ function getPauseMinutesForMepDisplay(entry) {
       ? parseTimeToMinutes(entry.minutes)
       : null;
 
-  // Für nicht-Schichtfälle darf minutes als bereits berechnete Tagesgrundlage dienen.
+  // Fallback für gemischte Alt-/Neudaten:
+  // - Nicht-Schicht-Einträge konnten historisch nur über minutes die Pause implizit tragen.
+  // - Bei fehlenden neuen Pausenfeldern berechnen wir daher weiterhin span - minutes.
+  // - Schichten nutzen IMMER die finale Business-Logik (oben), damit keine Altwerte sichtbar werden.
   if (parsedEntryMinutes !== null) {
     const workedMinutes = normalizeMinutesToQuarterHour(parsedEntryMinutes);
     return Math.max(0, spanMinutes - workedMinutes);
   }
 
-  return businessBreakMinutes;
+  return normalizedBusinessBreakMinutes;
 }
 
 function getPauseRangeForMep(entry) {
