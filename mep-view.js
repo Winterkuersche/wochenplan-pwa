@@ -71,6 +71,8 @@ function getMepWeekTargetLabel(employee, weekDays = [], activeMonth = state.acti
 
 function getMepPauseLabel(entry) {
   if (!entry) return "";
+  // AH-Sonderdarstellung bleibt in getMepResolvedDayContent:
+  // Bei EXTERNAL wird weiterhin die Filiale statt eines Pausenbereichs gezeigt.
   return getPauseRangeForMep(entry);
 }
 
@@ -83,7 +85,7 @@ function getMepPauseTooltip(entry) {
   const pauseMinutes = getPauseMinutesForMepDisplay(entry);
   if (pauseMinutes <= 0) return "";
 
-  return `Pause gesamt: ${pauseMinutes} Minuten (darstellungstechnisch im Raster platziert)`;
+  return `Pause gesamt: ${pauseMinutes} Minuten (darstellungstechnisch im Raster platziert, Fallback für Altdaten aktiv)`;
 }
 
 function getMepResolvedDayContent(employee, isoDate) {
