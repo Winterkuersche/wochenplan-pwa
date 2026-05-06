@@ -48,6 +48,9 @@ function buildShiftEntryFromRule(rule, userInput = {}, context = {}) {
   const spanMinutes = diffMinutesBetweenHHMM(startHHMM, endHHMM);
   if (spanMinutes <= 0) return null;
 
+  // breakPolicy liefert nur den konfigurierten Rohwert (Legacy/Fallback).
+  // Die finale, additive Fachpause wird ausschließlich in
+  // getBusinessRequiredBreakMinutes berechnet (Single Source of Truth).
   let configuredBreakMinutes = Number(rule.breakPolicy?.baseMinutes || 0);
   if (rule.breakPolicy?.type === "checkout-dependent") {
     configuredBreakMinutes = withCheckout

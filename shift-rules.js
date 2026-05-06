@@ -20,6 +20,9 @@ const SHIFT_RULES = Object.freeze([
         return options;
       })()
     },
+    // Legacy-Konfiguration: baseMinutes bleibt für Rückwärtskompatibilität erhalten,
+    // die finale Fachpause wird aber ausschließlich zentral über
+    // getBusinessRequiredBreakMinutes(start, end, configuredBreakMinutes) bestimmt.
     breakPolicy: { type: "configured-minimum", baseMinutes: 5 },
     uiPolicy: { isDialogShift: true, group: "Schichten" }
   },
@@ -79,6 +82,8 @@ const SHIFT_RULES = Object.freeze([
       withCheckout: "19:10",
       withoutCheckout: "19:00"
     },
+    // Legacy-Konfiguration: Checkout-Werte dienen nur noch als konfigurierter Input;
+    // additive Zuschläge (z. B. 19:10) kommen nur aus getBusinessRequiredBreakMinutes.
     breakPolicy: { type: "checkout-dependent", withCheckout: 10, withoutCheckout: 0 },
     uiPolicy: { isDialogShift: true, group: "Schichten" }
   },
@@ -94,6 +99,8 @@ const SHIFT_RULES = Object.freeze([
       withCheckout: "19:10",
       withoutCheckout: "19:00"
     },
+    // Legacy-Konfiguration: Der historische 60er-Wert bleibt als Input erhalten,
+    // keine harte 70-Logik hier – final entscheidet die Kernfunktion.
     breakPolicy: { type: "checkout-dependent", withCheckout: 60, withoutCheckout: 60 },
     uiPolicy: { isDialogShift: true, group: "Schichten" }
   },

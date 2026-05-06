@@ -164,6 +164,9 @@ function normalizePlanEntry(entry) {
   const spanMinutes = start && end ? diffMinutesBetweenHHMM(start, end) : 0;
   const hasValidSpan = spanMinutes > 0;
 
+  // rawPause ist nur ein konfigurierter Input aus Regel/Manuelleingabe.
+  // Die finale Pause inkl. 08:55-/19:10-Additionen kommt zentral aus
+  // getBusinessRequiredBreakMinutes, um Doppel-Additionen zu vermeiden.
   let rawPause = manualRawPause;
   if (isKnownRuleBasedShift) {
     if (rule.breakPolicy?.type === "checkout-dependent") {
@@ -1571,6 +1574,8 @@ function appliedPauseMinutes(shiftKey) {
   if (!rule || rule.entryType !== "shift") return 0;
 
   if (rule.breakPolicy?.type === "configured") {
+    // Legacy: nur statischer Basiswert für einfache Fixschichten.
+    // Keine 70-/Sonderlogik außerhalb getBusinessRequiredBreakMinutes.
     return Number(rule.breakPolicy.baseMinutes || 0);
   }
 
