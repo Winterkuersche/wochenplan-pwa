@@ -33,7 +33,6 @@ const PLAN_TIME_EXCEPTIONS = new Set(["08:55", "19:10"]);
 const PLAN_BREAK_MINUTE_EXCEPTIONS = new Set([5, 10, 70]);
 const REQUIRED_BREAK_THRESHOLD_MINUTES = 6 * 60;
 const REQUIRED_BREAK_BASE_MINUTES = 60;
-const REQUIRED_BREAK_BILLING_BONUS_MINUTES = 10;
 
 function parseTimeToMinutes(value) {
   return hhmmToMinutes(value);
@@ -165,6 +164,7 @@ function getRequiredBreakMinutesForSpan(startHHMM, endHHMM, options = {}) {
 }
 
 function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
+  // Legacy compatibility shim: Fachlogik liegt vollständig in getBusinessRequiredBreakMinutes.
   void startHHMM;
   void endHHMM;
   void configuredBreakMinutes;
@@ -178,18 +178,20 @@ function isLateCheckoutBreakException(startHHMM, endHHMM, configuredBreakMinutes
 function getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {
   const normalizedStart = normalizePlanTime(startHHMM);
   const normalizedEnd = normalizePlanTime(endHHMM);
-  const baseBreakMinutes = normalizeBusinessBreakMinutes(configuredBreakMinutes);
-  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
 
+  // Deterministische Kurzschicht-Overrides zuerst.
   if (normalizedStart === "08:55" && normalizedEnd === "15:00") return 5;
   if (normalizedStart === "13:00" && normalizedEnd === "19:10") return 10;
 
-  if (totalSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES) {
-    return REQUIRED_BREAK_BASE_MINUTES;
-  }
+  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
+  let requiredBreakMinutes = totalSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES ? REQUIRED_BREAK_BASE_MINUTES : 0;
 
+  if (normalizedStart === "08:55") requiredBreakMinutes += 5;
+  if (normalizedEnd === "19:10") requiredBreakMinutes += 10;
+
+  void configuredBreakMinutes;
   void options;
-  return baseBreakMinutes;
+  return requiredBreakMinutes;
 }
 
 function getEffectiveBreakMinutes(startHHMM, endHHMM, configuredBreakMinutes = 0, options = {}) {

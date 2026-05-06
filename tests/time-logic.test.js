@@ -23,18 +23,18 @@ test('required break after > 6h span', () => {
 });
 
 
-test('business required break minutes handles 08:55/19:10 edge cases without additive pause', () => {
+test('business required break minutes applies deterministic base and surcharges', () => {
   assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '15:00'), 5);
-  assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '15:15'), 60);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '15:15'), 65);
   assert.equal(ctx.getBusinessRequiredBreakMinutes('09:00', '15:00'), 0);
   assert.equal(ctx.getBusinessRequiredBreakMinutes('13:00', '19:10'), 10);
-  assert.equal(ctx.getBusinessRequiredBreakMinutes('12:45', '19:10'), 60);
-  assert.equal(ctx.getBusinessRequiredBreakMinutes('09:00', '19:10'), 60);
-  assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 60);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('12:45', '19:10'), 70);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('09:00', '19:10'), 70);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 75);
 
-  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('09:00', '19:10'), 70);
+  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('09:00', '19:10'), 60);
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 65);
-  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 75);
+  assert.notEqual(ctx.getBusinessRequiredBreakMinutes('08:55', '19:10'), 60);
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('12:45', '19:10'), 65);
 });
 
@@ -49,10 +49,10 @@ test('MEP pause minutes use same business break values for edge ranges', () => {
   );
   assert.equal(
     ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '09:00', end: '19:10', pause: 0 }),
-    60
+    70
   );
   assert.notEqual(
     ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '09:00', end: '19:10', pause: 0 }),
-    70
+    60
   );
 });
