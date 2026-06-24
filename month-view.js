@@ -83,7 +83,8 @@ function buildMonthEmployeeRow(emp, days, options = {}) {
 
   days.forEach((day) => {
     const resolved = getResolvedEntryForEmployeeOnIso(emp, day.iso);
-    const className = getMonthCellClass(resolved, day);
+    const selectValue = getWeekSelectValueForDay(emp, day.iso);
+    const className = getMonthCellClass(resolved, day, selectValue);
 
     monthMinutes += resolved.minutesForMonth || 0;
     const cellText = getMonthCellText(resolved, {
@@ -139,22 +140,23 @@ function bindMonthCellActions(scopeEl = document) {
   tables.forEach((table) => {
     table.querySelectorAll(".monthCellClickable").forEach((cell) => {
       cell.addEventListener("click", () => {
-      const empId = cell.dataset.empId;
-      const isoDate = cell.dataset.iso;
+        const empId = cell.dataset.empId;
+        const isoDate = cell.dataset.iso;
 
-      const emp = state.employees.find((e) => e.id === empId);
-      if (!emp || !isoDate) return;
+        const emp = state.employees.find((e) => e.id === empId);
+        if (!emp || !isoDate) return;
 
-      const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
-      const dialogType = getMonthDialogTypeForResolvedEntry(resolved);
-      if (dialogType) {
-        openShiftDialog(dialogType, { emp, isoDate, type: dialogType });
-        return;
-      }
+        const currentValue = getWeekSelectValueForDay(emp, isoDate);
+        if (currentValue === "H") return;
 
-      openMonthFallbackDialog(emp, isoDate);
+        const dialogType = getShiftCodeForSelectValue(currentValue);
+        if (dialogType) {
+          if (openShiftDialogForSelectValue(dialogType, { emp, isoDate })) return;
+        }
+
+        openMonthFallbackDialog(emp, isoDate);
+      });
     });
-  });
   });
 }
 
@@ -186,9 +188,9 @@ function openMonthFallbackDialog(emp, isoDate) {
     button.className = "monthFallbackOptionBtn";
     button.textContent = option.label;
     button.setAttribute("aria-label", `${option.label} auswählen`);
-    button.dataset.code = option.code;
+    button.dataset.value = option.value;
     button.addEventListener("click", () => {
-      selectMonthFallbackOption(option.code);
+      selectMonthFallbackOption(option.value);
     });
     monthFallbackOptionsEl.appendChild(button);
   });
@@ -349,15 +351,15 @@ function getMonthFallbackFocusableElements() {
   return [...optionButtons, monthFallbackCancelEl].filter(Boolean);
 }
 
-function selectMonthFallbackOption(code) {
+function selectMonthFallbackOption(value) {
   if (!monthFallbackDialogState) return;
-  const selectedCode = getShiftCodeForSelectValue(code);
-  const selectedOption = monthFallbackDialogState.options.find((option) => option.code === selectedCode);
+  const selectedOption = monthFallbackDialogState.options.find((option) => option.value === value);
   if (!selectedOption) return;
 
   const { emp, isoDate } = monthFallbackDialogState;
   closeMonthFallbackDialog();
-  openShiftDialog(selectedOption.code, { emp, isoDate, type: selectedOption.code });
+  const result = applyWeekSelection(emp, isoDate, selectedOption.value);
+  if (result?.applied) renderAllViews();
 }
 
 function handleMonthFallbackDialogKeydown(event) {

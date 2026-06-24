@@ -550,31 +550,37 @@ select {
   font-weight: 700;
 }
 
-.weekSelect.free {
+.weekSelect.free,
+.monthCell.free {
   background: #f0f0f0;
 }
 
-.weekSelect.early {
+.weekSelect.early,
+.monthCell.early {
   background: #dff1ff;
   border-color: #9ecfff;
 }
 
-.weekSelect.full {
+.weekSelect.full,
+.monthCell.full {
   background: #ffe9bf;
   border-color: #f1cb74;
 }
 
-.weekSelect.late {
+.weekSelect.late,
+.monthCell.late {
   background: #ffdede;
   border-color: #f1a6a6;
 }
 
-.weekSelect.lateNo {
+.weekSelect.lateNo,
+.monthCell.lateNo {
   background: #eedfff;
   border-color: #c8a6ee;
 }
 
-.weekSelect.vacation {
+.weekSelect.vacation,
+.monthCell.vacation {
   background: #fff5cc;
   border-color: #e9cf72;
 }

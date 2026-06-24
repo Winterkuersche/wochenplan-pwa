@@ -3,14 +3,6 @@ const MONTH_NAMES = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"
 ];
-const MONTH_FALLBACK_ALLOWED_CODES = ["G", "U", "K", "AH", "FLEX"];
-const MONTH_FALLBACK_DEFAULT_OPTIONS = [
-  { code: "G", label: "Ganztag (G)" },
-  { code: "U", label: "Urlaub (U)" },
-  { code: "K", label: "Krank (K)" },
-  { code: "AH", label: "Aushilfe (AH)" },
-  { code: "FLEX", label: "Flexible Schicht (FLEX)" }
-];
 
 function escapeHtml(value) {
   return String(value)
@@ -129,16 +121,17 @@ function getMonthTitleFromDays(days = []) {
   return `${MONTH_NAMES[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
 }
 
-function getMonthCellClass(resolved, day) {
+function getMonthCellClass(resolved, day, selectValue = "") {
   const classes = ["monthCell"];
-  const status = getResolvedStatus(resolved);
 
   if (day?.weekdayIndex === 6) classes.push("monthCellSunday");
   if (resolved?.type === "holiday") classes.push("monthCellHoliday");
-  if (status === ENTRY_STATUS.VACATION) classes.push("monthCellVacation");
-  if (status === ENTRY_STATUS.SICK) classes.push("monthCellSick");
-  if (status === ENTRY_STATUS.EXTERNAL) classes.push("monthCellExternalHelp");
-  if (status === ENTRY_STATUS.WORK) classes.push("monthCellShift");
+
+  if (typeof buildWeekSelectClass === "function") {
+    classes.push(...buildWeekSelectClass(selectValue)
+      .split(/\s+/)
+      .filter((className) => className && className !== "weekSelect"));
+  }
 
   return classes.join(" ");
 }
@@ -210,37 +203,6 @@ function getExternalHelpCompactDisplay(resolvedOrEntry) {
   ].join("");
 }
 
-function getMonthDialogTypeForResolvedEntry(resolved) {
-  if (!resolved || typeof resolved !== "object") return null;
-  if (resolved.type === "holiday") return null;
-  if (resolved.type === "vacation") return "U";
-  if (resolved.type === "sick") return "K";
-  if (resolved.type === "external-help") return "AH";
-
-  if (resolved.type === "shift" && resolved.sourceEntry) {
-    const mode = resolved.sourceEntry.mode;
-    if (mode === "late") return "L";
-    if (mode === "full") return "G";
-    if (mode === "flex") return "FLEX";
-  }
-
-  return null;
-}
-
 function resolveMonthFallbackDialogOptions() {
-  const allowedCodeSet = new Set(MONTH_FALLBACK_ALLOWED_CODES);
-  const availableDialogOptions = typeof getShiftSelectOptions === "function"
-    ? getShiftSelectOptions()
-      .filter((option) => option?.isDialogShift)
-      .map((option) => {
-        const code = getShiftCodeForSelectValue(option.value);
-        return { code, label: `${option.label} (${code})` };
-      })
-      .filter((option) => allowedCodeSet.has(option.code))
-    : [];
-
-  const optionPool = availableDialogOptions.length ? availableDialogOptions : MONTH_FALLBACK_DEFAULT_OPTIONS;
-  return optionPool.filter((option, index, arr) => (
-    arr.findIndex((entry) => entry.code === option.code) === index
-  ));
+  return typeof getShiftSelectOptions === "function" ? getShiftSelectOptions() : [];
 }
