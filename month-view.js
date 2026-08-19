@@ -45,7 +45,7 @@ function buildMonthWeekSummaryRow(days, employees, options = {}) {
   const { includeSummaryColumns = true } = options;
   const weekSummaries = getMonthWeekSummaries(days, employees, {
     getActualMinutes: (employee, weekDays) => (
-      getEmployeeAccountMinutesForWeek(employee, weekDays, state.activeMonth)
+      getEmployeeBranchMinutesForWeek(employee, weekDays, state.activeMonth)
     ),
     getTargetMinutes: (employee, weekDays) => (
       getEmployeeTargetMinutesForWeek(employee, weekDays, state.activeMonth)
@@ -58,7 +58,12 @@ function buildMonthWeekSummaryRow(days, employees, options = {}) {
   `;
 
   weekSummaries.forEach((summary) => {
-    const summaryLabel = `KW ${summary.week} · ${formatMinutesAsDecimalHours(summary.actualMinutes)} / ${formatMinutesAsDecimalHours(summary.targetMinutes)} h`;
+    const summaryLabel = [
+      `KW ${summary.week}`,
+      `Einsatz ${formatMinutesAsDecimalHours(summary.actualMinutes)} h`,
+      `MA-Soll ${formatMinutesAsDecimalHours(summary.targetMinutes)} h`,
+      `Filial-Soll ${formatMinutesAsDecimalHours(summary.branchTargetMinutes)} h`
+    ].join(" · ");
     html += `
       <th class="monthWeekSummaryCell" colspan="${summary.days.length}" title="${summaryLabel}">
         ${summaryLabel}

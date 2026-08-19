@@ -29,7 +29,7 @@ function createSummaryOptions(schedule, absences) {
         schedule,
         absences,
         stateKey: 'SH'
-      }).minutesForMonth, 0);
+      }).minutesForBranch, 0);
     },
     getTargetMinutes(employee, days) {
       const dailyTarget = ctx.getAbsenceMinutesForEmployee(employee);
@@ -69,8 +69,9 @@ test('groups a complete visible Monday-to-Sunday week and aggregates multiple em
     '2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06',
     '2026-08-07', '2026-08-08', '2026-08-09'
   ]);
-  assert.equal(fullWeek.actualMinutes, 420 + 300 + 200);
+  assert.equal(fullWeek.actualMinutes, 420);
   assert.equal(fullWeek.targetMinutes, (300 + 200) * 6);
+  assert.equal(fullWeek.branchTargetMinutes, 159 * 60);
 });
 
 test('counts only visible month days in a calendar week cut at the month start', () => {
@@ -89,6 +90,7 @@ test('counts only visible month days in a calendar week cut at the month start',
   assert.deepEqual(JSON.parse(JSON.stringify(firstWeek.days.map((day) => day.iso))), ['2026-08-01', '2026-08-02']);
   assert.equal(firstWeek.actualMinutes, 240);
   assert.equal(firstWeek.targetMinutes, 300 + 200);
+  assert.equal(firstWeek.branchTargetMinutes, (159 * 60) / 6);
 });
 
 test('counts only visible month days in a calendar week cut at the month end', () => {
@@ -106,10 +108,31 @@ test('counts only visible month days in a calendar week cut at the month end', (
 
   assert.equal(lastWeek.week, 36);
   assert.deepEqual(JSON.parse(JSON.stringify(lastWeek.days.map((day) => day.iso))), ['2026-08-31']);
-  assert.equal(lastWeek.actualMinutes, 300);
+  assert.equal(lastWeek.actualMinutes, 0);
   assert.equal(lastWeek.targetMinutes, 300 + 200);
-  assert.equal(ctx.formatMinutesAsDecimalHours(lastWeek.actualMinutes), '5');
+  assert.equal(lastWeek.branchTargetMinutes, (159 * 60) / 6);
+  assert.equal(ctx.formatMinutesAsDecimalHours(lastWeek.actualMinutes), '0');
+  assert.equal(ctx.formatMinutesAsDecimalHours(300), '5');
   assert.equal(ctx.formatMinutesAsDecimalHours(90), '1,5');
+});
+
+test('counts branch shifts but excludes external-help hours from the weekly total', () => {
+  const employees = [{ id: 'e1', target: '30:00' }];
+  const schedule = {
+    '2026-08-03': { e1: ctx.buildFlexibleShiftEntry('09:00', '17:00') },
+    '2026-08-04': {
+      e1: { type: 'external-help', status: 'external', label: 'AH', branch: 'Kiel', minutes: 480 }
+    },
+    '2026-08-05': { e1: ctx.buildFlexibleShiftEntry('09:00', '13:00') }
+  };
+
+  const fullWeek = ctx.getMonthWeekSummaries(
+    currentMonthDays('2026-08'),
+    employees,
+    createSummaryOptions(schedule, [])
+  ).find((summary) => summary.week === 32);
+
+  assert.equal(fullWeek.actualMinutes, 420 + 240);
 });
 
 test('ISO calendar-week logic handles week-year boundaries', () => {

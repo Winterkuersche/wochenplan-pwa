@@ -1,4 +1,6 @@
 const MONTH_WEEKDAY_LABELS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+const MAX_WEEKLY_MINUTES = 159 * 60;
+const PLANNING_DAYS_PER_WEEK = 6;
 const MONTH_NAMES = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
   "Juli", "August", "September", "Oktober", "November", "Dezember"
@@ -146,6 +148,16 @@ function groupVisibleMonthDaysByCalendarWeek(days = []) {
   }, []);
 }
 
+function getBranchTargetMinutesForVisibleWeek(days = []) {
+  if (!Array.isArray(days)) return 0;
+
+  const visiblePlanningDays = days.reduce((count, day) => (
+    day?.iso && !isSundayIsoDate(day.iso) ? count + 1 : count
+  ), 0);
+
+  return Math.round((MAX_WEEKLY_MINUTES * visiblePlanningDays) / PLANNING_DAYS_PER_WEEK);
+}
+
 function getMonthWeekSummaries(days = [], employees = [], options = {}) {
   const safeEmployees = Array.isArray(employees) ? employees : [];
   const getActualMinutes = typeof options.getActualMinutes === "function"
@@ -161,7 +173,11 @@ function getMonthWeekSummaries(days = [], employees = [], options = {}) {
       targetMinutes: summary.targetMinutes + Math.max(0, Number(getTargetMinutes(employee, weekGroup.days)) || 0)
     }), { actualMinutes: 0, targetMinutes: 0 });
 
-    return { ...weekGroup, ...totals };
+    return {
+      ...weekGroup,
+      ...totals,
+      branchTargetMinutes: getBranchTargetMinutesForVisibleWeek(weekGroup.days)
+    };
   });
 }
 
