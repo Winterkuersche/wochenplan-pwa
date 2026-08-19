@@ -121,6 +121,56 @@ function getMonthTitleFromDays(days = []) {
   return `${MONTH_NAMES[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
 }
 
+function groupVisibleMonthDaysByCalendarWeek(days = []) {
+  if (!Array.isArray(days)) return [];
+
+  return days.reduce((groups, day) => {
+    const date = day?.date instanceof Date ? day.date : fromIsoDate(day?.iso);
+    const calendarWeek = getIsoCalendarWeek(date);
+    if (!calendarWeek) return groups;
+
+    const key = `${calendarWeek.year}-W${pad2(calendarWeek.week)}`;
+    const currentGroup = groups[groups.length - 1];
+    if (currentGroup?.key === key) {
+      currentGroup.days.push(day);
+      return groups;
+    }
+
+    groups.push({
+      key,
+      year: calendarWeek.year,
+      week: calendarWeek.week,
+      days: [day]
+    });
+    return groups;
+  }, []);
+}
+
+function getMonthWeekSummaries(days = [], employees = [], options = {}) {
+  const safeEmployees = Array.isArray(employees) ? employees : [];
+  const getActualMinutes = typeof options.getActualMinutes === "function"
+    ? options.getActualMinutes
+    : () => 0;
+  const getTargetMinutes = typeof options.getTargetMinutes === "function"
+    ? options.getTargetMinutes
+    : () => 0;
+
+  return groupVisibleMonthDaysByCalendarWeek(days).map((weekGroup) => {
+    const totals = safeEmployees.reduce((summary, employee) => ({
+      actualMinutes: summary.actualMinutes + Math.max(0, Number(getActualMinutes(employee, weekGroup.days)) || 0),
+      targetMinutes: summary.targetMinutes + Math.max(0, Number(getTargetMinutes(employee, weekGroup.days)) || 0)
+    }), { actualMinutes: 0, targetMinutes: 0 });
+
+    return { ...weekGroup, ...totals };
+  });
+}
+
+function formatMinutesAsDecimalHours(minutes) {
+  const safeMinutes = Math.max(0, Number(minutes) || 0);
+  const hours = Math.round((safeMinutes / 60) * 100) / 100;
+  return String(hours).replace(".", ",");
+}
+
 function getMonthCellClass(resolved, day, selectValue = "") {
   const classes = ["monthCell"];
 
@@ -204,5 +254,10 @@ function getExternalHelpCompactDisplay(resolvedOrEntry) {
 }
 
 function resolveMonthFallbackDialogOptions() {
-  return typeof getShiftSelectOptions === "function" ? getShiftSelectOptions() : [];
+  if (typeof getShiftSelectOptions !== "function") return [];
+
+  const allowedCodes = new Set(["G", "U", "K", "AH", "FLEX"]);
+  return getShiftSelectOptions()
+    .map((option) => ({ ...option, code: option.code || option.value }))
+    .filter((option) => allowedCodes.has(option.code));
 }

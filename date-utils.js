@@ -62,6 +62,25 @@ function getMondayBasedDayIndex(date) {
   return (date.getDay() + 6) % 7;
 }
 
+// ISO 8601 calendar week: weeks start on Monday and week 1 contains January 4.
+// Returning the week-year as well avoids merging adjacent years at month boundaries.
+function getIsoCalendarWeek(date) {
+  const normalizedDate = cloneDate(date);
+  if (!normalizedDate) return null;
+
+  const thursday = cloneDate(normalizedDate);
+  thursday.setDate(normalizedDate.getDate() + 3 - getMondayBasedDayIndex(normalizedDate));
+
+  const weekYear = thursday.getFullYear();
+  const firstThursday = new Date(weekYear, 0, 4);
+  firstThursday.setDate(firstThursday.getDate() + 3 - getMondayBasedDayIndex(firstThursday));
+
+  return {
+    year: weekYear,
+    week: 1 + Math.round((thursday - firstThursday) / (7 * 24 * 60 * 60 * 1000))
+  };
+}
+
 function isSundayDate(date) {
   return getMondayBasedDayIndex(date) === 6;
 }

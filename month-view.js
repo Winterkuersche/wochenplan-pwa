@@ -41,10 +41,46 @@ function getActiveMonthDays() {
   return days;
 }
 
+function buildMonthWeekSummaryRow(days, employees, options = {}) {
+  const { includeSummaryColumns = true } = options;
+  const weekSummaries = getMonthWeekSummaries(days, employees, {
+    getActualMinutes: (employee, weekDays) => (
+      getEmployeeAccountMinutesForWeek(employee, weekDays, state.activeMonth)
+    ),
+    getTargetMinutes: (employee, weekDays) => (
+      getEmployeeTargetMinutesForWeek(employee, weekDays, state.activeMonth)
+    )
+  });
+
+  let html = `
+    <tr class="monthWeekSummaryRow">
+      <th class="monthWeekSummaryLead" aria-label="Wochenübersicht">KW</th>
+  `;
+
+  weekSummaries.forEach((summary) => {
+    const summaryLabel = `KW ${summary.week} · ${formatMinutesAsDecimalHours(summary.actualMinutes)} / ${formatMinutesAsDecimalHours(summary.targetMinutes)} h`;
+    html += `
+      <th class="monthWeekSummaryCell" colspan="${summary.days.length}" title="${summaryLabel}">
+        ${summaryLabel}
+      </th>
+    `;
+  });
+
+  if (includeSummaryColumns) {
+    html += `
+      <th class="monthWeekSummarySpacer" aria-hidden="true"></th>
+      <th class="monthWeekSummarySpacer" aria-hidden="true"></th>
+      <th class="monthWeekSummarySpacer" aria-hidden="true"></th>
+    `;
+  }
+
+  return `${html}</tr>`;
+}
+
 function buildMonthHeaderRow(days, options = {}) {
   const { includeSummaryColumns = true } = options;
   let html = `
-    <tr>
+    <tr class="monthDateHeaderRow">
       <th>Name</th>
   `;
 
@@ -269,6 +305,7 @@ function buildMonthViewMarkup(days, options = {}) {
   html += `
     <table id="${tableId}"${tableClassAttr}>
       <thead>
+        ${buildMonthWeekSummaryRow(days, activeEmployees, { includeSummaryColumns })}
         ${buildMonthHeaderRow(days, { includeSummaryColumns })}
       </thead>
       <tbody>
