@@ -49,8 +49,6 @@ const BACKUP_META_KEY = "wochenplan_backup_meta_v1";
 const BACKUP_MEP_CALIBRATION_KEY = "mep-calibration";
 const LAST_SAVED_AT_KEY = "wochenplan_last_saved_at_v1";
 const AUTOSAVE_DELAY_MS = 600;
-const MAX_WEEKLY_MINUTES = 159 * 60;
-
 let currentDayIndex = 0;
 let autoSaveTimerId = null;
 let saveStatusTimerId = null;
@@ -1706,6 +1704,19 @@ function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays
     if (!isCreditableResolvedWorkEntry(resolved)) return sum;
 
     return sum + Math.max(0, resolved.minutesForMonth || 0);
+  }, 0);
+}
+
+function getEmployeeBranchMinutesForWeek(employee, weekDays = getActiveWeekDays(), yearMonth = state.activeMonth) {
+  if (!employee || !Array.isArray(weekDays)) return 0;
+
+  const eligibleWeekDays = getDaysInYearMonth(weekDays, yearMonth);
+
+  return eligibleWeekDays.reduce((sum, day) => {
+    if (!day) return sum;
+
+    const resolved = getResolvedEntryForEmployeeOnIso(employee, day.iso);
+    return sum + Math.max(0, resolved.minutesForBranch || 0);
   }, 0);
 }
 
