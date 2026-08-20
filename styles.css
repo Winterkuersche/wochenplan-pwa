@@ -2055,12 +2055,17 @@ body.dark .ahCellSubrow {
 
 .monthFallbackSheet {
   position: fixed;
-  width: min(360px, calc(100vw - 24px));
-  max-height: min(520px, calc(100dvh - 24px));
+  width: min(330px, calc(100vw - 24px));
+  max-height: min(440px, calc(100dvh - 24px));
   overflow: auto;
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 10px;
   touch-action: manipulation;
+}
+
+.monthFallbackSheet h3 {
+  margin: 2px 0 8px;
+  font-size: 17px;
 }
 
 .monthFallbackOverlay {
@@ -2076,33 +2081,24 @@ body.dark .ahCellSubrow {
 
 .monthFallbackOptions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.monthFallbackMoreOptions {
-  display: grid;
+.monthFallbackOptionsMore .monthFallbackBackBtn {
   grid-column: 1 / -1;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.monthFallbackMoreOptions.hidden {
-  display: none;
 }
 
 .monthFallbackOptionBtn {
   width: 100%;
-  min-height: 52px;
+  min-height: 44px;
   border: 1px solid #cfcfcf;
-  border-radius: 10px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  padding: 7px 6px;
   background: #fff;
   text-align: left;
   font: inherit;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -2116,6 +2112,91 @@ body.dark .ahCellSubrow {
   outline: none;
   border-color: #2b6cb0;
   box-shadow: 0 0 0 2px rgba(43, 108, 176, 0.2);
+}
+
+.monthFallbackBackBtn,
+.monthFallbackCancel,
+.monthFallbackIndividualActions button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.monthFallbackCancel {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.monthFallbackIndividual {
+  display: grid;
+  gap: 6px;
+}
+
+.monthFallbackIndividual label,
+.monthFallbackEndRow {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.monthFallbackIndividual .monthFallbackCheckoutLabel {
+  display: flex;
+  grid-template-columns: none;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.monthFallbackCheckoutLabel input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.monthFallbackIndividual select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.monthFallbackEndRow strong {
+  padding-left: 9px;
+}
+
+.monthFallbackValidation {
+  min-height: 16px;
+  margin: 0;
+  color: #a12622;
+  font-size: 12px;
+}
+
+.monthFallbackIndividualActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.monthFallbackIndividualActions button:last-child {
+  padding-inline: 12px;
+  border-radius: 8px;
+  background: #2b6cb0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.monthFallbackIndividualActions button:disabled {
+  opacity: 0.5;
 }
 
 /* =============================
@@ -2189,8 +2270,15 @@ body.dark .ahCellSubrow {
   }
 
   .monthFallbackOptionBtn {
-    min-height: 56px;
-    font-size: 17px;
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .dialogOverlay:not(.dialogOverlayBottomSheet) .monthFallbackSheet {
+    width: min(330px, calc(100vw - 24px));
+    max-width: min(330px, calc(100vw - 24px));
+    height: auto;
+    max-height: calc(100dvh - max(24px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
   }
 
   .dialogOverlay:not(.dialogOverlayBottomSheet) {
@@ -2603,6 +2691,7 @@ body.dark .summary-card--success {
 }
 
 body.dark .dialogFields select,
+body.dark .monthFallbackIndividual select,
 body.dark .dialogFields input[type="time"],
 body.dark .dialogFields input[type="text"],
 body.dark .dialogFields input[type="month"],

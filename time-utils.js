@@ -254,7 +254,12 @@ function getPauseMinutesForMepDisplay(entry) {
   const businessBreakMinutes = getBusinessRequiredBreakMinutes(entry.start, entry.end, configuredBreak, {
     includeBillingBonus: entry.end === "19:10"
   });
-  const normalizedBusinessBreakMinutes = Math.max(0, Math.round(businessBreakMinutes));
+  const isFlexibleShift = entry.code === "FLEX" || entry.shiftKey === "FLEX" || entry.mode === "flex";
+  const normalizedBusinessBreakMinutes = Math.max(
+    0,
+    Math.round(businessBreakMinutes),
+    isFlexibleShift ? normalizeBusinessBreakMinutes(configuredBreak) : 0
+  );
 
   // Schichten sollen dieselbe fachliche Pausenentscheidung nutzen wie Konto-/Berechnungslogik.
   if (getEntryStatus(entry) === ENTRY_STATUS.WORK) {
