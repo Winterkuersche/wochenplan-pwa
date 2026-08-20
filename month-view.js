@@ -293,9 +293,8 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   monthFallbackOptionsEl.className = "monthFallbackIndividual";
   setMonthFallbackTitle("Individuelle Schicht");
   const fields = [
-    { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: 11 * 60 },
-    { key: "work", label: "Arbeit", min: 180, max: 12 * 60, value: 360 },
-    { key: "pause", label: "Pause", min: 0, max: 120, value: 60 }
+    { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: 9 * 60 },
+    { key: "pause", label: "Pause", min: 0, max: 120, value: 0 }
   ];
   const selects = {};
   fields.forEach((field) => {
@@ -314,6 +313,34 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
     monthFallbackOptionsEl.appendChild(label);
     selects[field.key] = select;
   });
+  const workLabel = document.createElement("label");
+  workLabel.textContent = "Arbeit";
+  const workSelects = document.createElement("span");
+  workSelects.className = "monthFallbackWorkSelects";
+  const workHours = document.createElement("select");
+  workHours.dataset.field = "workHours";
+  workHours.setAttribute("aria-label", "Arbeitsstunden");
+  for (let hours = 3; hours <= 12; hours += 1) {
+    const option = document.createElement("option");
+    option.value = String(hours);
+    option.textContent = `${hours} h`;
+    option.selected = hours === 6;
+    workHours.appendChild(option);
+  }
+  const workMinutes = document.createElement("select");
+  workMinutes.dataset.field = "workMinutes";
+  workMinutes.setAttribute("aria-label", "Arbeitsminuten");
+  for (const minutes of [0, 15, 30, 45]) {
+    const option = document.createElement("option");
+    option.value = String(minutes);
+    option.textContent = `${minutes} min`;
+    workMinutes.appendChild(option);
+  }
+  workSelects.append(workHours, workMinutes);
+  workLabel.appendChild(workSelects);
+  monthFallbackOptionsEl.insertBefore(workLabel, selects.pause.parentElement);
+  selects.workHours = workHours;
+  selects.workMinutes = workMinutes;
   const checkoutLabel = document.createElement("label");
   checkoutLabel.className = "monthFallbackCheckoutLabel";
   const checkout = document.createElement("input");
@@ -324,7 +351,7 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   monthFallbackOptionsEl.appendChild(checkoutLabel);
   const endRow = document.createElement("div");
   endRow.className = "monthFallbackEndRow";
-  endRow.innerHTML = "<span>Ende</span><strong>18:00</strong>";
+  endRow.innerHTML = "<span>Ende</span><strong>15:00</strong>";
   monthFallbackOptionsEl.appendChild(endRow);
   const validation = document.createElement("p");
   validation.className = "monthFallbackValidation";
@@ -338,30 +365,44 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   const apply = document.createElement("button");
   apply.type = "button";
   apply.textContent = "Übernehmen";
-  const setSelectMinutes = (select, minutes, suffix = " h") => {
+  const setSelectMinutes = (select, minutes) => {
     const value = String(minutes);
     if (![...select.options].some((option) => option.value === value)) {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = `${minutesToHM(minutes)}${suffix}`;
+      option.textContent = `${minutesToHM(minutes)} h`;
       select.appendChild(option);
     }
     select.value = value;
   };
+  const getSelectedWorkMinutes = () => Number(selects.workHours.value) * 60 + Number(selects.workMinutes.value);
+  const setSelectedWorkMinutes = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    if (![...selects.workHours.options].some((option) => option.value === String(hours))) {
+      const option = document.createElement("option");
+      option.value = String(hours);
+      option.textContent = `${hours} h`;
+      selects.workHours.appendChild(option);
+    }
+    selects.workHours.value = String(hours);
+    selects.workMinutes.value = String(minutes % 60);
+  };
   const update = () => {
     const start = minutesToHHMM(Number(selects.start.value));
+    const selectedWorkMinutes = getSelectedWorkMinutes();
     const entry = checkout.checked
       ? buildIndividualCheckoutShiftEntry(start)
-      : buildIndividualShiftEntry(start, Number(selects.work.value), Number(selects.pause.value));
+      : buildIndividualShiftEntry(start, selectedWorkMinutes, Number(selects.pause.value));
     if (checkout.checked && entry) {
-      setSelectMinutes(selects.work, entry.minutes);
+      setSelectedWorkMinutes(entry.minutes);
       setSelectMinutes(selects.pause, entry.pause);
     }
-    selects.work.disabled = checkout.checked;
+    selects.workHours.disabled = checkout.checked;
+    selects.workMinutes.disabled = checkout.checked;
     selects.pause.disabled = checkout.checked;
     endRow.querySelector("strong").textContent = checkout.checked
       ? "19:10"
-      : addMinutesToHHMM(start, Number(selects.work.value) + Number(selects.pause.value));
+      : addMinutesToHHMM(start, selectedWorkMinutes + Number(selects.pause.value));
     validation.textContent = entry ? "" : "Pause oder Dauer entspricht nicht den Schichtregeln.";
     apply.disabled = !entry;
     scheduleMonthFallbackPosition(anchorEl);
@@ -370,9 +411,14 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   Object.values(selects).forEach((select) => select.addEventListener("change", update));
   checkout.addEventListener("change", () => {
     if (checkout.checked) {
-      valuesBeforeCheckout = { work: selects.work.value, pause: selects.pause.value };
+      valuesBeforeCheckout = {
+        workHours: selects.workHours.value,
+        workMinutes: selects.workMinutes.value,
+        pause: selects.pause.value
+      };
     } else if (valuesBeforeCheckout) {
-      selects.work.value = valuesBeforeCheckout.work;
+      selects.workHours.value = valuesBeforeCheckout.workHours;
+      selects.workMinutes.value = valuesBeforeCheckout.workMinutes;
       selects.pause.value = valuesBeforeCheckout.pause;
       valuesBeforeCheckout = null;
     }

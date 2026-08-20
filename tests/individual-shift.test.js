@@ -86,6 +86,31 @@ test('individual UI start choices stay on quarters and do not expose automatic 0
   assert.doesNotMatch(individualRenderer, /openerOption|8 \* 60 \+ 55|"08:55"/);
 });
 
+test('individual UI defaults to 09:00, six work hours, zero work minutes and no break', () => {
+  const source = fs.readFileSync('month-view.js', 'utf8');
+  const individualRenderer = source.match(/function renderMonthFallbackIndividualLevel[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(individualRenderer, /key: "start"[^\n]+value: 9 \* 60/);
+  assert.match(individualRenderer, /key: "pause"[^\n]+value: 0/);
+  assert.match(individualRenderer, /option\.selected = hours === 6/);
+  assert.match(individualRenderer, /for \(const minutes of \[0, 15, 30, 45\]\)/);
+  assert.match(individualRenderer, /<strong>15:00<\/strong>/);
+});
+
+test('individual UI composes hour and minute selections for the central shift builder', () => {
+  const source = fs.readFileSync('month-view.js', 'utf8');
+  const individualRenderer = source.match(/function renderMonthFallbackIndividualLevel[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(
+    individualRenderer,
+    /Number\(selects\.workHours\.value\) \* 60 \+ Number\(selects\.workMinutes\.value\)/
+  );
+  assert.match(
+    individualRenderer,
+    /buildIndividualShiftEntry\(start, selectedWorkMinutes, Number\(selects\.pause\.value\)\)/
+  );
+});
+
 test('existing fixed, late, full and FLEX builders keep their established break values', () => {
   const ctx = buildContext();
 

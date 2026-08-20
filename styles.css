@@ -2170,6 +2170,12 @@ body.dark .ahCellSubrow {
   font: inherit;
 }
 
+.monthFallbackWorkSelects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
 .monthFallbackEndRow strong {
   padding-left: 9px;
 }
