@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadScripts } = require('./test-helpers');
 
 const appScript = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
 const previousWorkdayMatch = appScript.match(/function getPreviousRelevantWorkdayIso\(isoDate\) \{[\s\S]*?\n\}/);
@@ -91,6 +92,32 @@ test('sets exactly one 08:55 when a worker had 19:10 on previous day', () => {
   assert.equal(ctx.state.schedule['2026-04-11'].e1.end, '17:00');
   assert.equal(ctx.state.schedule['2026-04-11'].e2.start, '09:30');
   assert.equal(ctx.getCommitCount(), 1);
+});
+
+test('individual previous-day FLEX shift triggers unchanged opener priority', () => {
+  const shifts = loadScripts(['time-utils.js', 'shift-rules.js', 'shift-utils.js']);
+  const individualLate = shifts.buildIndividualCheckoutShiftEntry('13:00');
+  assert.equal(individualLate.end, '19:10');
+  const ctx = buildContext({
+    employees: [{ id: 'regular' }, { id: 'sv', roleKey: 'SV' }, { id: 'tl', roleKey: 'TL' }],
+    schedule: {
+      '2026-04-10': {
+        regular: structuredClone(individualLate),
+        sv: structuredClone(individualLate),
+        tl: structuredClone(individualLate)
+      },
+      '2026-04-11': {
+        regular: { type: 'shift', start: '09:00', end: '15:00' },
+        sv: { type: 'shift', start: '09:00', end: '15:00' },
+        tl: { type: 'shift', start: '09:00', end: '15:00' }
+      }
+    }
+  });
+
+  assert.equal(ctx.applyRule('2026-04-11'), 'tl');
+  assert.equal(ctx.state.schedule['2026-04-11'].tl.start, '08:55');
+  assert.equal(ctx.state.schedule['2026-04-11'].sv.start, '09:00');
+  assert.equal(ctx.state.schedule['2026-04-11'].regular.start, '09:00');
 });
 
 test('when multiple workers had 19:10, only the first is selected', () => {

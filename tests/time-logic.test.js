@@ -40,6 +40,19 @@ test('business required break minutes applies deterministic base and surcharges'
   assert.notEqual(ctx.getBusinessRequiredBreakMinutes('13:00', '19:10'), 70);
 });
 
+test('configured breaks do not alter the established central business rules', () => {
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('11:00', '18:00', 90), 60);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('09:00', '15:00', 60), 0);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('08:55', '15:00', 60), 5);
+  assert.equal(ctx.getBusinessRequiredBreakMinutes('13:00', '19:10', 60), 10);
+  assert.equal(ctx.getWorkedMinutesFromRange('11:00', '18:00', 60), 360);
+});
+
+test('MEP preserves explicit pauses only for flexible shifts', () => {
+  assert.equal(ctx.getPauseMinutesForMepDisplay({ type: 'shift', code: 'FLEX', mode: 'flex', start: '11:00', end: '18:00', pause: 60 }), 60);
+  assert.equal(ctx.getPauseMinutesForMepDisplay({ type: 'shift', code: 'FO', start: '09:00', end: '15:00', pause: 60 }), 0);
+});
+
 test('MEP pause minutes use same business break values for edge ranges', () => {
   assert.equal(
     ctx.getPauseMinutesForMepDisplay({ type: 'shift', start: '08:55', end: '15:00', pause: 0 }),

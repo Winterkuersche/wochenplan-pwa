@@ -6,6 +6,7 @@ const monthFallbackOverlayEl = document.getElementById("monthFallbackOverlay");
 const monthFallbackOptionsEl = document.getElementById("monthFallbackOptions");
 const monthFallbackCancelEl = document.getElementById("monthFallbackCancel");
 const monthFallbackSheetEl = document.getElementById("monthFallbackSheet");
+const monthFallbackTitleEl = document.getElementById("monthFallbackTitle");
 let monthFallbackDialogState = null;
 
 function setMonthFallbackBodyScrollLock(isLocked) {
@@ -207,18 +208,189 @@ function positionMonthFallbackSheet(anchorEl) {
   if (!monthFallbackSheetEl || !anchorEl?.getBoundingClientRect || typeof window === "undefined") return;
   const anchor = anchorEl.getBoundingClientRect();
   const sheet = monthFallbackSheetEl.getBoundingClientRect();
+  if (!sheet.width || !sheet.height) return;
   const margin = 12;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewport = window.visualViewport;
+  const viewportLeft = viewport?.offsetLeft || 0;
+  const viewportTop = viewport?.offsetTop || 0;
+  const viewportWidth = viewport?.width || window.innerWidth;
+  const viewportHeight = viewport?.height || window.innerHeight;
   const preferredLeft = anchor.left + (anchor.width - sheet.width) / 2;
-  const left = Math.max(margin, Math.min(preferredLeft, viewportWidth - sheet.width - margin));
+  const left = Math.max(viewportLeft + margin, Math.min(preferredLeft, viewportLeft + viewportWidth - sheet.width - margin));
   const below = anchor.bottom + 8;
-  const top = below + sheet.height <= viewportHeight - margin
+  const top = below + sheet.height <= viewportTop + viewportHeight - margin
     ? below
-    : Math.max(margin, anchor.top - sheet.height - 8);
+    : Math.max(viewportTop + margin, anchor.top - sheet.height - 8);
 
   monthFallbackSheetEl.style.left = `${Math.round(left)}px`;
   monthFallbackSheetEl.style.top = `${Math.round(top)}px`;
+}
+
+function scheduleMonthFallbackPosition(anchorEl) {
+  const position = () => positionMonthFallbackSheet(anchorEl);
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(position);
+  else setTimeout(position, 0);
+}
+
+function setMonthFallbackTitle(title) {
+  if (monthFallbackTitleEl) monthFallbackTitleEl.textContent = title;
+}
+
+function renderMonthFallbackMainLevel(anchorEl) {
+  if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
+  const { options } = monthFallbackDialogState;
+  monthFallbackOptionsEl.innerHTML = "";
+  monthFallbackOptionsEl.className = "monthFallbackOptions";
+  setMonthFallbackTitle("Schicht wählen");
+
+  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
+  const primaryLabels = { FO: "Früh", L: "Spät", G: "Lang", FLEX: "Flex", FR: "Frei", U: "Urlaub" };
+  const createButton = (label, handler, className = "monthFallbackOptionBtn monthFallbackOptionPrimary") => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.textContent = label;
+    button.addEventListener("click", handler);
+    monthFallbackOptionsEl.appendChild(button);
+    return button;
+  };
+
+  options.filter((option) => primaryCodes.has(option.code)).forEach((option) => {
+    createButton(primaryLabels[option.code] || option.label, () => selectMonthFallbackOption(option.value));
+  });
+  createButton("Individuell", () => renderMonthFallbackIndividualLevel(anchorEl));
+  createButton("Mehr", () => renderMonthFallbackMoreLevel(anchorEl));
+  scheduleMonthFallbackPosition(anchorEl);
+}
+
+function renderMonthFallbackMoreLevel(anchorEl) {
+  if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
+  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
+  monthFallbackOptionsEl.innerHTML = "";
+  monthFallbackOptionsEl.className = "monthFallbackOptions monthFallbackOptionsMore";
+  setMonthFallbackTitle("Weitere");
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "monthFallbackBackBtn";
+  back.textContent = "← Zurück";
+  back.addEventListener("click", () => renderMonthFallbackMainLevel(anchorEl));
+  monthFallbackOptionsEl.appendChild(back);
+  monthFallbackDialogState.options.filter((option) => !primaryCodes.has(option.code)).forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "monthFallbackOptionBtn";
+    button.textContent = option.label;
+    button.addEventListener("click", () => selectMonthFallbackOption(option.value));
+    monthFallbackOptionsEl.appendChild(button);
+  });
+  scheduleMonthFallbackPosition(anchorEl);
+  back.focus();
+}
+
+function renderMonthFallbackIndividualLevel(anchorEl) {
+  if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
+  monthFallbackOptionsEl.innerHTML = "";
+  monthFallbackOptionsEl.className = "monthFallbackIndividual";
+  setMonthFallbackTitle("Individuelle Schicht");
+  const fields = [
+    { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: 11 * 60 },
+    { key: "work", label: "Arbeit", min: 180, max: 12 * 60, value: 360 },
+    { key: "pause", label: "Pause", min: 0, max: 120, value: 60 }
+  ];
+  const selects = {};
+  fields.forEach((field) => {
+    const label = document.createElement("label");
+    label.textContent = field.label;
+    const select = document.createElement("select");
+    select.dataset.field = field.key;
+    for (let minutes = field.min; minutes <= field.max; minutes += 15) {
+      const option = document.createElement("option");
+      option.value = String(minutes);
+      option.textContent = field.key === "start" ? minutesToHHMM(minutes) : `${minutesToHM(minutes)} h`;
+      option.selected = minutes === field.value;
+      select.appendChild(option);
+    }
+    label.appendChild(select);
+    monthFallbackOptionsEl.appendChild(label);
+    selects[field.key] = select;
+  });
+  const checkoutLabel = document.createElement("label");
+  checkoutLabel.className = "monthFallbackCheckoutLabel";
+  const checkout = document.createElement("input");
+  checkout.type = "checkbox";
+  let valuesBeforeCheckout = null;
+  checkoutLabel.appendChild(checkout);
+  checkoutLabel.appendChild(document.createTextNode("Bis Kassenschluss 19:10"));
+  monthFallbackOptionsEl.appendChild(checkoutLabel);
+  const endRow = document.createElement("div");
+  endRow.className = "monthFallbackEndRow";
+  endRow.innerHTML = "<span>Ende</span><strong>18:00</strong>";
+  monthFallbackOptionsEl.appendChild(endRow);
+  const validation = document.createElement("p");
+  validation.className = "monthFallbackValidation";
+  monthFallbackOptionsEl.appendChild(validation);
+  const actions = document.createElement("div");
+  actions.className = "monthFallbackIndividualActions";
+  const back = document.createElement("button");
+  back.type = "button";
+  back.textContent = "← Zurück";
+  back.addEventListener("click", () => renderMonthFallbackMainLevel(anchorEl));
+  const apply = document.createElement("button");
+  apply.type = "button";
+  apply.textContent = "Übernehmen";
+  const setSelectMinutes = (select, minutes, suffix = " h") => {
+    const value = String(minutes);
+    if (![...select.options].some((option) => option.value === value)) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = `${minutesToHM(minutes)}${suffix}`;
+      select.appendChild(option);
+    }
+    select.value = value;
+  };
+  const update = () => {
+    const start = minutesToHHMM(Number(selects.start.value));
+    const entry = checkout.checked
+      ? buildIndividualCheckoutShiftEntry(start)
+      : buildIndividualShiftEntry(start, Number(selects.work.value), Number(selects.pause.value));
+    if (checkout.checked && entry) {
+      setSelectMinutes(selects.work, entry.minutes);
+      setSelectMinutes(selects.pause, entry.pause);
+    }
+    selects.work.disabled = checkout.checked;
+    selects.pause.disabled = checkout.checked;
+    endRow.querySelector("strong").textContent = checkout.checked
+      ? "19:10"
+      : addMinutesToHHMM(start, Number(selects.work.value) + Number(selects.pause.value));
+    validation.textContent = entry ? "" : "Pause oder Dauer entspricht nicht den Schichtregeln.";
+    apply.disabled = !entry;
+    scheduleMonthFallbackPosition(anchorEl);
+    return entry;
+  };
+  Object.values(selects).forEach((select) => select.addEventListener("change", update));
+  checkout.addEventListener("change", () => {
+    if (checkout.checked) {
+      valuesBeforeCheckout = { work: selects.work.value, pause: selects.pause.value };
+    } else if (valuesBeforeCheckout) {
+      selects.work.value = valuesBeforeCheckout.work;
+      selects.pause.value = valuesBeforeCheckout.pause;
+      valuesBeforeCheckout = null;
+    }
+    update();
+  });
+  apply.addEventListener("click", () => {
+    const entry = update();
+    if (!entry || !monthFallbackDialogState) return;
+    const { emp, isoDate } = monthFallbackDialogState;
+    closeMonthFallbackDialog();
+    updateEmployeeDay(emp.id, isoDate, () => entry);
+    renderAllViews();
+  });
+  actions.appendChild(back);
+  actions.appendChild(apply);
+  monthFallbackOptionsEl.appendChild(actions);
+  update();
+  back.focus();
 }
 
 function openMonthFallbackDialog(emp, isoDate, anchorEl = null) {
@@ -241,51 +413,10 @@ function openMonthFallbackDialog(emp, isoDate, anchorEl = null) {
     previousFocusEl: canRestoreFocus ? activeElement : null
   };
 
-  monthFallbackOptionsEl.innerHTML = "";
-
-  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
-  const primaryLabels = { FO: "Früh", L: "Spät", G: "Lang", FLEX: "Flex", FR: "Frei", U: "Urlaub" };
-  const createOptionButton = (option, container, isPrimary = false) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `monthFallbackOptionBtn${isPrimary ? " monthFallbackOptionPrimary" : ""}`;
-    button.textContent = primaryLabels[option.code] || option.label;
-    button.setAttribute("aria-label", `${button.textContent} auswählen`);
-    button.dataset.value = option.value;
-    button.addEventListener("click", () => {
-      selectMonthFallbackOption(option.value);
-    });
-    container.appendChild(button);
-  };
-
-  options.filter((option) => primaryCodes.has(option.code))
-    .forEach((option) => createOptionButton(option, monthFallbackOptionsEl, true));
-
-  const secondaryOptions = options.filter((option) => !primaryCodes.has(option.code));
-  if (secondaryOptions.length) {
-    const moreButton = document.createElement("button");
-    moreButton.type = "button";
-    moreButton.className = "monthFallbackOptionBtn monthFallbackOptionPrimary";
-    moreButton.textContent = "Mehr";
-    moreButton.setAttribute("aria-expanded", "false");
-    const moreOptions = document.createElement("div");
-    moreOptions.className = "monthFallbackMoreOptions hidden";
-    secondaryOptions.forEach((option) => createOptionButton(option, moreOptions));
-    moreButton.addEventListener("click", () => {
-      const isHidden = moreOptions.classList.contains("hidden");
-      moreOptions.classList.toggle("hidden", !isHidden);
-      moreButton.setAttribute("aria-expanded", String(isHidden));
-      positionMonthFallbackSheet(anchorEl);
-      if (isHidden) moreOptions.querySelector("button")?.focus();
-    });
-    monthFallbackOptionsEl.appendChild(moreButton);
-    monthFallbackOptionsEl.appendChild(moreOptions);
-  }
-
   monthFallbackOverlayEl.classList.remove("hidden");
   monthFallbackOverlayEl.setAttribute("aria-hidden", "false");
   setMonthFallbackBodyScrollLock(true);
-  positionMonthFallbackSheet(anchorEl);
+  renderMonthFallbackMainLevel(anchorEl);
   monthFallbackOptionsEl.querySelector("button")?.focus();
 }
 
@@ -434,10 +565,10 @@ function closeMonthFallbackDialog() {
 }
 
 function getMonthFallbackFocusableElements() {
-  const optionButtons = monthFallbackOptionsEl
-    ? [...monthFallbackOptionsEl.querySelectorAll("button")]
+  const optionControls = monthFallbackOptionsEl
+    ? [...monthFallbackOptionsEl.querySelectorAll("button, select")]
     : [];
-  return [...optionButtons, monthFallbackCancelEl].filter(Boolean);
+  return [...optionControls, monthFallbackCancelEl].filter((element) => element && !element.disabled);
 }
 
 function selectMonthFallbackOption(value) {

@@ -113,6 +113,57 @@ function buildFlexibleShiftEntry(startHHMM, endHHMM) {
   return buildShiftEntryFromRule(rule, { start: startHHMM, end: endHHMM });
 }
 
+function buildIndividualShiftEntry(startHHMM, workedMinutes, breakMinutes = 0) {
+  const start = normalizePlanTime(startHHMM);
+  const normalizedWorkedMinutes = normalizeMinutesToQuarterHour(workedMinutes);
+  const normalizedBreakMinutes = normalizePlanBreakMinutes(breakMinutes);
+  if (!start || normalizedWorkedMinutes < MIN_WORK_MINUTES) return null;
+
+  const end = addMinutesToHHMM(start, normalizedWorkedMinutes + normalizedBreakMinutes);
+  if (!isAllowedPlanTime(end) || diffMinutesBetweenHHMM(start, end) <= 0) return null;
+
+  const requiredBreakMinutes = getBusinessRequiredBreakMinutes(start, end, 0, {
+    includeBillingBonus: end === "19:10"
+  });
+  if (normalizedBreakMinutes < requiredBreakMinutes) return null;
+
+  const entry = buildShiftEntryFromRule(getShiftRuleByCode("FLEX"), { start, end }, {
+    source: "individual-shift"
+  });
+  if (!entry) return null;
+
+  return {
+    ...entry,
+    pause: normalizedBreakMinutes,
+    breakMinutes: normalizedBreakMinutes,
+    minutes: normalizedWorkedMinutes
+  };
+}
+
+function buildIndividualCheckoutShiftEntry(startHHMM) {
+  const start = normalizePlanTime(startHHMM);
+  const end = "19:10";
+  if (!start || !isQuarterHourTime(start) || diffMinutesBetweenHHMM(start, end) <= 0) return null;
+
+  const breakMinutes = getBusinessRequiredBreakMinutes(start, end, 0, {
+    includeBillingBonus: true
+  });
+  const workedMinutes = getWorkedMinutesFromRange(start, end, breakMinutes);
+  if (workedMinutes < MIN_WORK_MINUTES || workedMinutes % QUARTER_HOUR_STEP_MINUTES !== 0) return null;
+
+  const entry = buildShiftEntryFromRule(getShiftRuleByCode("FLEX"), { start, end }, {
+    source: "individual-checkout-shift"
+  });
+  if (!entry) return null;
+
+  return {
+    ...entry,
+    pause: breakMinutes,
+    breakMinutes,
+    minutes: workedMinutes
+  };
+}
+
 function buildFoShiftEntry(endHHMM) {
   const rule = getShiftRuleByCode("FO");
   return buildShiftEntryFromRule(rule, { end: endHHMM, withCheckout: endHHMM === "19:10" });
