@@ -5,6 +5,7 @@ function getMonthViewContentEl() {
 const monthFallbackOverlayEl = document.getElementById("monthFallbackOverlay");
 const monthFallbackOptionsEl = document.getElementById("monthFallbackOptions");
 const monthFallbackCancelEl = document.getElementById("monthFallbackCancel");
+const monthFallbackSheetEl = document.getElementById("monthFallbackSheet");
 let monthFallbackDialogState = null;
 
 function setMonthFallbackBodyScrollLock(isLocked) {
@@ -65,8 +66,9 @@ function buildMonthWeekSummaryRow(days, employees, options = {}) {
       `Filial-Soll ${formatMinutesAsDecimalHours(summary.branchTargetMinutes)} h`
     ].join(" · ");
     html += `
-      <th class="monthWeekSummaryCell" colspan="${summary.days.length}" title="${summaryLabel}">
-        ${summaryLabel}
+      <th class="monthWeekSummaryCell${summary.days.length <= 2 ? " monthWeekSummaryCellCompact" : ""}" colspan="${summary.days.length}" title="${summaryLabel}" aria-label="${summaryLabel}">
+        <span class="monthWeekSummaryFull">${summaryLabel}</span>
+        <span class="monthWeekSummaryCompact">KW ${summary.week} · ${formatMinutesAsDecimalHours(summary.actualMinutes)} h</span>
       </th>
     `;
   });
@@ -195,13 +197,31 @@ function bindMonthCellActions(scopeEl = document) {
           if (openShiftDialogForSelectValue(dialogType, { emp, isoDate })) return;
         }
 
-        openMonthFallbackDialog(emp, isoDate);
+        openMonthFallbackDialog(emp, isoDate, cell);
       });
     });
   });
 }
 
-function openMonthFallbackDialog(emp, isoDate) {
+function positionMonthFallbackSheet(anchorEl) {
+  if (!monthFallbackSheetEl || !anchorEl?.getBoundingClientRect || typeof window === "undefined") return;
+  const anchor = anchorEl.getBoundingClientRect();
+  const sheet = monthFallbackSheetEl.getBoundingClientRect();
+  const margin = 12;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const preferredLeft = anchor.left + (anchor.width - sheet.width) / 2;
+  const left = Math.max(margin, Math.min(preferredLeft, viewportWidth - sheet.width - margin));
+  const below = anchor.bottom + 8;
+  const top = below + sheet.height <= viewportHeight - margin
+    ? below
+    : Math.max(margin, anchor.top - sheet.height - 8);
+
+  monthFallbackSheetEl.style.left = `${Math.round(left)}px`;
+  monthFallbackSheetEl.style.top = `${Math.round(top)}px`;
+}
+
+function openMonthFallbackDialog(emp, isoDate, anchorEl = null) {
   if (!monthFallbackOverlayEl || !monthFallbackOptionsEl) return;
   if (monthFallbackDialogState) closeMonthFallbackDialog();
 
@@ -223,22 +243,49 @@ function openMonthFallbackDialog(emp, isoDate) {
 
   monthFallbackOptionsEl.innerHTML = "";
 
-  options.forEach((option) => {
+  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
+  const primaryLabels = { FO: "Früh", L: "Spät", G: "Lang", FLEX: "Flex", FR: "Frei", U: "Urlaub" };
+  const createOptionButton = (option, container, isPrimary = false) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "monthFallbackOptionBtn";
-    button.textContent = option.label;
-    button.setAttribute("aria-label", `${option.label} auswählen`);
+    button.className = `monthFallbackOptionBtn${isPrimary ? " monthFallbackOptionPrimary" : ""}`;
+    button.textContent = primaryLabels[option.code] || option.label;
+    button.setAttribute("aria-label", `${button.textContent} auswählen`);
     button.dataset.value = option.value;
     button.addEventListener("click", () => {
       selectMonthFallbackOption(option.value);
     });
-    monthFallbackOptionsEl.appendChild(button);
-  });
+    container.appendChild(button);
+  };
+
+  options.filter((option) => primaryCodes.has(option.code))
+    .forEach((option) => createOptionButton(option, monthFallbackOptionsEl, true));
+
+  const secondaryOptions = options.filter((option) => !primaryCodes.has(option.code));
+  if (secondaryOptions.length) {
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.className = "monthFallbackOptionBtn monthFallbackOptionPrimary";
+    moreButton.textContent = "Mehr";
+    moreButton.setAttribute("aria-expanded", "false");
+    const moreOptions = document.createElement("div");
+    moreOptions.className = "monthFallbackMoreOptions hidden";
+    secondaryOptions.forEach((option) => createOptionButton(option, moreOptions));
+    moreButton.addEventListener("click", () => {
+      const isHidden = moreOptions.classList.contains("hidden");
+      moreOptions.classList.toggle("hidden", !isHidden);
+      moreButton.setAttribute("aria-expanded", String(isHidden));
+      positionMonthFallbackSheet(anchorEl);
+      if (isHidden) moreOptions.querySelector("button")?.focus();
+    });
+    monthFallbackOptionsEl.appendChild(moreButton);
+    monthFallbackOptionsEl.appendChild(moreOptions);
+  }
 
   monthFallbackOverlayEl.classList.remove("hidden");
   monthFallbackOverlayEl.setAttribute("aria-hidden", "false");
   setMonthFallbackBodyScrollLock(true);
+  positionMonthFallbackSheet(anchorEl);
   monthFallbackOptionsEl.querySelector("button")?.focus();
 }
 

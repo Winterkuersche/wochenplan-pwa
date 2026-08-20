@@ -14,6 +14,30 @@ const ctx = loadScripts([
   'month-engine.js'
 ]);
 
+test('short week summaries expose compact visible text and complete accessible details', () => {
+  const viewCtx = loadScripts([
+    'date-utils.js',
+    'time-utils.js',
+    'month-engine.js',
+    'month-view.js'
+  ], {
+    document: {
+      getElementById: () => null,
+      addEventListener: () => {},
+      body: { style: {}, dataset: {} }
+    },
+    state: { activeMonth: '2026-08' },
+    getEmployeeBranchMinutesForWeek: () => 360,
+    getEmployeeTargetMinutesForWeek: () => 480
+  });
+  const days = currentMonthDays('2026-08');
+  const html = viewCtx.buildMonthWeekSummaryRow(days, [{ id: 'e1' }], { includeSummaryColumns: false });
+
+  assert.match(html, /monthWeekSummaryCellCompact[^>]*colspan="2"/);
+  assert.match(html, /<span class="monthWeekSummaryCompact">KW 31 · 6 h<\/span>/);
+  assert.match(html, /title="KW 31 · Einsatz 6 h · MA-Soll 8 h · Filial-Soll/);
+});
+
 function currentMonthDays(yearMonth) {
   return ctx.getMonthPlanFromYearMonth(yearMonth).weeks
     .flat()
