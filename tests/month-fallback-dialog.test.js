@@ -11,7 +11,7 @@ function buildSimpleDocumentStub() {
   };
 }
 
-test('month fallback options are limited to G/U/K/AH/FLEX and include FLEX', () => {
+test('month fallback options use the complete central week selection source', () => {
   const ctx = loadScripts([
     'time-utils.js',
     'shift-rules.js',
@@ -29,8 +29,11 @@ test('month fallback options are limited to G/U/K/AH/FLEX and include FLEX', () 
   assert.ok(codes.includes('K'));
   assert.ok(codes.includes('AH'));
   assert.ok(codes.includes('FLEX'));
-  assert.ok(!codes.includes('L'));
-  assert.ok(!codes.includes('FO'));
+  assert.ok(codes.includes('L'));
+  assert.ok(codes.includes('FO'));
+  assert.ok(codes.includes('F3'));
+  assert.ok(codes.includes('FR'));
+  assert.deepEqual(codes, ctx.getShiftSelectOptions().map((option) => ctx.getShiftCodeForSelectValue(option.value)));
 });
 
 function buildInteractiveDocumentStub() {
@@ -55,6 +58,13 @@ function buildInteractiveDocumentStub() {
       attributes: {},
       children: [],
       listeners: {},
+      appendChild(child) {
+        this.children.push(child);
+      },
+      querySelector(selector) {
+        if (selector === 'button') return this.children.find((child) => child.tagName === 'button') || null;
+        return null;
+      },
       addEventListener(type, handler) {
         this.listeners[type] = handler;
       },

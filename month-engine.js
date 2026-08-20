@@ -272,8 +272,14 @@ function getExternalHelpCompactDisplay(resolvedOrEntry) {
 function resolveMonthFallbackDialogOptions() {
   if (typeof getShiftSelectOptions !== "function") return [];
 
-  const allowedCodes = new Set(["G", "U", "K", "AH", "FLEX"]);
   return getShiftSelectOptions()
-    .map((option) => ({ ...option, code: option.code || option.value }))
-    .filter((option) => allowedCodes.has(option.code));
+    .map((option) => ({
+      ...option,
+      code: option.code || (
+        typeof getShiftCodeForSelectValue === "function"
+          ? getShiftCodeForSelectValue(option.value)
+          : option.value
+      )
+    }))
+    .filter((option) => option.code !== "H");
 }
