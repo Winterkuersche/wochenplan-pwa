@@ -111,11 +111,23 @@ test('automatic 08:55 pause restores its previous value without replacing a manu
   assert.match(flexRenderer, /if \(automaticallyAppliedOpenerPause\)/);
 });
 
-test('central Flex UI defaults to 09:00, six work hours, zero work minutes and no break', () => {
+test('central Flex UI defaults its start based on the entry context', () => {
+  const source = fs.readFileSync('month-view.js', 'utf8');
+  const defaultStartHelper = source.match(/function getMonthFallbackFlexDefaultStartMinutes\(context\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(defaultStartHelper);
+  const ctx = vm.createContext({});
+  vm.runInContext(`${defaultStartHelper}; this.getDefaultStart = getMonthFallbackFlexDefaultStartMinutes;`, ctx);
+
+  assert.equal(ctx.getDefaultStart('early'), 9 * 60);
+  assert.equal(ctx.getDefaultStart('late'), 13 * 60);
+  assert.equal(ctx.getDefaultStart('main'), 9 * 60);
+});
+
+test('central Flex UI defaults to six work hours, zero work minutes and no break', () => {
   const source = fs.readFileSync('month-view.js', 'utf8');
   const individualRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
-  assert.match(individualRenderer, /key: "start"[^\n]+value: 9 \* 60/);
+  assert.match(individualRenderer, /key: "start"[^\n]+value: getMonthFallbackFlexDefaultStartMinutes\(context\)/);
   assert.match(individualRenderer, /key: "pause"[^\n]+value: 0/);
   assert.match(individualRenderer, /option\.selected = hours === 6/);
   assert.match(individualRenderer, /for \(const minutes of \[0, 15, 30, 45\]\)/);

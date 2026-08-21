@@ -335,13 +335,17 @@ function renderMonthFallbackMoreLevel(anchorEl) {
   back.focus();
 }
 
+function getMonthFallbackFlexDefaultStartMinutes(context) {
+  return context === "late" ? 13 * 60 : 9 * 60;
+}
+
 function renderMonthFallbackFlexEditor(anchorEl, context = "main") {
   if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
   monthFallbackOptionsEl.innerHTML = "";
   monthFallbackOptionsEl.className = "monthFallbackIndividual";
   setMonthFallbackTitle("Flexible Schicht");
   const fields = [
-    { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: 9 * 60 },
+    { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: getMonthFallbackFlexDefaultStartMinutes(context) },
     { key: "pause", label: "Pause", min: 0, max: 120, value: 0 }
   ];
   const selects = {};
