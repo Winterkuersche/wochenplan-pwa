@@ -38,6 +38,18 @@ test('individual shift converts net work and optional break into the calculated 
   }
 });
 
+test('manual 08:55 opener remains a normal FLEX entry with net hours preserved', () => {
+  const ctx = buildContext();
+  const entry = ctx.buildIndividualShiftEntry('08:55', 360, 5);
+
+  assert.ok(entry);
+  assert.equal(entry.code, 'FLEX');
+  assert.equal(entry.start, '08:55');
+  assert.equal(entry.end, '15:00');
+  assert.equal(entry.minutes, 360);
+  assert.equal(entry.pause, 5);
+});
+
 test('individual shift uses central FLEX break and quarter-hour constraints', () => {
   const ctx = buildContext();
 
@@ -79,16 +91,29 @@ test('individual checkout entry survives the normal save normalization path', ()
   assert.equal(entry.minutes, 360);
 });
 
-test('individual UI start choices stay on quarters and do not expose automatic 08:55 opener time', () => {
+test('central Flex UI exposes 08:55 only for the manual early context', () => {
   const source = fs.readFileSync('month-view.js', 'utf8');
-  const individualRenderer = source.match(/function renderMonthFallbackIndividualLevel[\s\S]*?\n\}/)?.[0] || '';
+  const flexRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
-  assert.doesNotMatch(individualRenderer, /openerOption|8 \* 60 \+ 55|"08:55"/);
+  assert.match(flexRenderer, /context === "early"/);
+  assert.match(flexRenderer, /openerOption\.value = String\(8 \* 60 \+ 55\)/);
+  assert.match(flexRenderer, /start === "08:55"/);
 });
 
-test('individual UI defaults to 09:00, six work hours, zero work minutes and no break', () => {
+test('automatic 08:55 pause restores its previous value without replacing a manual pause', () => {
   const source = fs.readFileSync('month-view.js', 'utf8');
-  const individualRenderer = source.match(/function renderMonthFallbackIndividualLevel[\s\S]*?\n\}/)?.[0] || '';
+  const flexRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(flexRenderer, /pauseBeforeAutomaticOpener = selects\.pause\.value/);
+  assert.match(flexRenderer, /automaticallyAppliedOpenerPause = true/);
+  assert.match(flexRenderer, /selects\.pause\.value = pauseBeforeAutomaticOpener/);
+  assert.match(flexRenderer, /openerPauseManuallyOverridden = true/);
+  assert.match(flexRenderer, /if \(automaticallyAppliedOpenerPause\)/);
+});
+
+test('central Flex UI defaults to 09:00, six work hours, zero work minutes and no break', () => {
+  const source = fs.readFileSync('month-view.js', 'utf8');
+  const individualRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(individualRenderer, /key: "start"[^\n]+value: 9 \* 60/);
   assert.match(individualRenderer, /key: "pause"[^\n]+value: 0/);
@@ -97,9 +122,9 @@ test('individual UI defaults to 09:00, six work hours, zero work minutes and no 
   assert.match(individualRenderer, /<strong>15:00<\/strong>/);
 });
 
-test('individual UI composes hour and minute selections for the central shift builder', () => {
+test('central Flex UI composes hour and minute selections for the central shift builder', () => {
   const source = fs.readFileSync('month-view.js', 'utf8');
-  const individualRenderer = source.match(/function renderMonthFallbackIndividualLevel[\s\S]*?\n\}/)?.[0] || '';
+  const individualRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(
     individualRenderer,

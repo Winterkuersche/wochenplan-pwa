@@ -243,8 +243,7 @@ function renderMonthFallbackMainLevel(anchorEl) {
   monthFallbackOptionsEl.className = "monthFallbackOptions";
   setMonthFallbackTitle("Schicht wählen");
 
-  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
-  const primaryLabels = { FO: "Früh", L: "Spät", G: "Lang", FLEX: "Flex", FR: "Frei", U: "Urlaub" };
+  const primaryLabels = { G: "Lang", FR: "Frei", U: "Urlaub" };
   const createButton = (label, handler, className = "monthFallbackOptionBtn monthFallbackOptionPrimary") => {
     const button = document.createElement("button");
     button.type = "button";
@@ -255,17 +254,66 @@ function renderMonthFallbackMainLevel(anchorEl) {
     return button;
   };
 
-  options.filter((option) => primaryCodes.has(option.code)).forEach((option) => {
-    createButton(primaryLabels[option.code] || option.label, () => selectMonthFallbackOption(option.value));
+  createButton("Früh", () => renderMonthFallbackEarlyLevel(anchorEl));
+  createButton("Spät", () => renderMonthFallbackLateLevel(anchorEl));
+  ["G", "FLEX", "FR", "U"].forEach((code) => {
+    const option = options.find((candidate) => candidate.code === code);
+    if (!option) return;
+    createButton(primaryLabels[code] || option.label, code === "FLEX"
+      ? () => renderMonthFallbackFlexEditor(anchorEl)
+      : () => selectMonthFallbackOption(option.value));
   });
-  createButton("Individuell", () => renderMonthFallbackIndividualLevel(anchorEl));
   createButton("Mehr", () => renderMonthFallbackMoreLevel(anchorEl));
   scheduleMonthFallbackPosition(anchorEl);
 }
 
+function renderMonthFallbackSubmenu(title, codes, anchorEl, { includeFlex = false, flexContext = "main" } = {}) {
+  if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
+  monthFallbackOptionsEl.innerHTML = "";
+  monthFallbackOptionsEl.className = "monthFallbackOptions monthFallbackOptionsMore";
+  setMonthFallbackTitle(title);
+  codes.forEach((code) => {
+    const option = monthFallbackDialogState.options.find((candidate) => candidate.code === code);
+    if (!option) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "monthFallbackOptionBtn";
+    button.textContent = option.label;
+    button.addEventListener("click", () => selectMonthFallbackOption(option.value));
+    monthFallbackOptionsEl.appendChild(button);
+  });
+  if (includeFlex) {
+    const flex = document.createElement("button");
+    flex.type = "button";
+    flex.className = "monthFallbackOptionBtn";
+    flex.textContent = "Flex";
+    flex.addEventListener("click", () => renderMonthFallbackFlexEditor(anchorEl, flexContext));
+    monthFallbackOptionsEl.appendChild(flex);
+  }
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "monthFallbackBackBtn";
+  back.textContent = "← Zurück";
+  back.addEventListener("click", () => renderMonthFallbackMainLevel(anchorEl));
+  monthFallbackOptionsEl.appendChild(back);
+  scheduleMonthFallbackPosition(anchorEl);
+  monthFallbackOptionsEl.querySelector("button")?.focus();
+}
+
+function renderMonthFallbackEarlyLevel(anchorEl) {
+  renderMonthFallbackSubmenu("Früh", ["F3", "F4", "F5", "F6", "FO"], anchorEl, {
+    includeFlex: true,
+    flexContext: "early"
+  });
+}
+
+function renderMonthFallbackLateLevel(anchorEl) {
+  renderMonthFallbackSubmenu("Spät", ["L"], anchorEl, { includeFlex: true, flexContext: "late" });
+}
+
 function renderMonthFallbackMoreLevel(anchorEl) {
   if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
-  const primaryCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U"]);
+  const groupedCodes = new Set(["FO", "L", "G", "FLEX", "FR", "U", "F3", "F4", "F5", "F6"]);
   monthFallbackOptionsEl.innerHTML = "";
   monthFallbackOptionsEl.className = "monthFallbackOptions monthFallbackOptionsMore";
   setMonthFallbackTitle("Weitere");
@@ -275,7 +323,7 @@ function renderMonthFallbackMoreLevel(anchorEl) {
   back.textContent = "← Zurück";
   back.addEventListener("click", () => renderMonthFallbackMainLevel(anchorEl));
   monthFallbackOptionsEl.appendChild(back);
-  monthFallbackDialogState.options.filter((option) => !primaryCodes.has(option.code)).forEach((option) => {
+  monthFallbackDialogState.options.filter((option) => !groupedCodes.has(option.code)).forEach((option) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "monthFallbackOptionBtn";
@@ -287,11 +335,11 @@ function renderMonthFallbackMoreLevel(anchorEl) {
   back.focus();
 }
 
-function renderMonthFallbackIndividualLevel(anchorEl) {
+function renderMonthFallbackFlexEditor(anchorEl, context = "main") {
   if (!monthFallbackDialogState || !monthFallbackOptionsEl) return;
   monthFallbackOptionsEl.innerHTML = "";
   monthFallbackOptionsEl.className = "monthFallbackIndividual";
-  setMonthFallbackTitle("Individuelle Schicht");
+  setMonthFallbackTitle("Flexible Schicht");
   const fields = [
     { key: "start", label: "Start", min: 0, max: 23 * 60 + 45, value: 9 * 60 },
     { key: "pause", label: "Pause", min: 0, max: 120, value: 0 }
@@ -308,6 +356,12 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
       option.textContent = field.key === "start" ? minutesToHHMM(minutes) : `${minutesToHM(minutes)} h`;
       option.selected = minutes === field.value;
       select.appendChild(option);
+    }
+    if (field.key === "start" && context === "early") {
+      const openerOption = document.createElement("option");
+      openerOption.value = String(8 * 60 + 55);
+      openerOption.textContent = "08:55";
+      select.appendChild(openerOption);
     }
     label.appendChild(select);
     monthFallbackOptionsEl.appendChild(label);
@@ -346,6 +400,9 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   const checkout = document.createElement("input");
   checkout.type = "checkbox";
   let valuesBeforeCheckout = null;
+  let pauseBeforeAutomaticOpener = "0";
+  let automaticallyAppliedOpenerPause = false;
+  let openerPauseManuallyOverridden = false;
   checkoutLabel.appendChild(checkout);
   checkoutLabel.appendChild(document.createTextNode("Bis Kassenschluss 19:10"));
   monthFallbackOptionsEl.appendChild(checkoutLabel);
@@ -361,7 +418,11 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   const back = document.createElement("button");
   back.type = "button";
   back.textContent = "← Zurück";
-  back.addEventListener("click", () => renderMonthFallbackMainLevel(anchorEl));
+  back.addEventListener("click", () => {
+    if (context === "early") renderMonthFallbackEarlyLevel(anchorEl);
+    else if (context === "late") renderMonthFallbackLateLevel(anchorEl);
+    else renderMonthFallbackMainLevel(anchorEl);
+  });
   const apply = document.createElement("button");
   apply.type = "button";
   apply.textContent = "Übernehmen";
@@ -389,6 +450,22 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
   };
   const update = () => {
     const start = minutesToHHMM(Number(selects.start.value));
+    // The established opener exception starts five minutes before the quarter.
+    // Its five-minute offset remains a pause, so net work and the resulting
+    // quarter-hour end continue to use the central FLEX builder unchanged.
+    if (start === "08:55") {
+      if (!automaticallyAppliedOpenerPause && !openerPauseManuallyOverridden && Number(selects.pause.value) === 0) {
+        pauseBeforeAutomaticOpener = selects.pause.value;
+        setSelectMinutes(selects.pause, 5);
+        automaticallyAppliedOpenerPause = true;
+      }
+    } else {
+      if (automaticallyAppliedOpenerPause) {
+        selects.pause.value = pauseBeforeAutomaticOpener;
+      }
+      automaticallyAppliedOpenerPause = false;
+      openerPauseManuallyOverridden = false;
+    }
     const selectedWorkMinutes = getSelectedWorkMinutes();
     const entry = checkout.checked
       ? buildIndividualCheckoutShiftEntry(start)
@@ -408,7 +485,17 @@ function renderMonthFallbackIndividualLevel(anchorEl) {
     scheduleMonthFallbackPosition(anchorEl);
     return entry;
   };
-  Object.values(selects).forEach((select) => select.addEventListener("change", update));
+  Object.entries(selects).forEach(([key, select]) => {
+    if (key === "pause") return;
+    select.addEventListener("change", update);
+  });
+  selects.pause.addEventListener("change", () => {
+    if (minutesToHHMM(Number(selects.start.value)) === "08:55") {
+      automaticallyAppliedOpenerPause = false;
+      openerPauseManuallyOverridden = true;
+    }
+    update();
+  });
   checkout.addEventListener("change", () => {
     if (checkout.checked) {
       valuesBeforeCheckout = {

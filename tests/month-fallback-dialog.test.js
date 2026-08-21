@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
+const fs = require('node:fs');
 
 function buildSimpleDocumentStub() {
   return {
@@ -34,6 +35,26 @@ test('month fallback options use the complete central week selection source', ()
   assert.ok(codes.includes('F3'));
   assert.ok(codes.includes('FR'));
   assert.deepEqual(codes, ctx.getShiftSelectOptions().map((option) => ctx.getShiftCodeForSelectValue(option.value)));
+});
+
+test('month planning menu groups early and late shifts around one Flex editor', () => {
+  const source = fs.readFileSync('month-view.js', 'utf8');
+  const main = source.match(/function renderMonthFallbackMainLevel[\s\S]*?\n\}/)?.[0] || '';
+  const early = source.match(/function renderMonthFallbackEarlyLevel[\s\S]*?\n\}/)?.[0] || '';
+  const late = source.match(/function renderMonthFallbackLateLevel[\s\S]*?\n\}/)?.[0] || '';
+  const more = source.match(/function renderMonthFallbackMoreLevel[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(main, /createButton\("Früh"/);
+  assert.match(main, /createButton\("Spät"/);
+  assert.match(main, /"G", "FLEX", "FR", "U"/);
+  assert.doesNotMatch(main, /Individuell/);
+  assert.match(early, /\["F3", "F4", "F5", "F6", "FO"\]/);
+  assert.match(early, /renderMonthFallbackSubmenu/);
+  assert.match(late, /\["L"\]/);
+  assert.match(late, /renderMonthFallbackSubmenu/);
+  assert.match(more, /"F3", "F4", "F5", "F6"/);
+  assert.match(more, /!groupedCodes\.has/);
+  assert.equal((source.match(/function renderMonthFallbackFlexEditor/g) || []).length, 1);
 });
 
 function buildInteractiveDocumentStub() {
