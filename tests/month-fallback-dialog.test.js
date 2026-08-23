@@ -173,6 +173,248 @@ test('last-shift quick action is rendered only after a valid work shift was reme
   assert.equal(env.optionsContainer.children.find((button) => button.textContent.startsWith('↻'))?.textContent, '↻ F4');
 });
 
+test('month multi planning deeply clones one work template and applies it repeatedly through setShift', () => {
+  const env = buildInteractiveDocumentStub();
+  const setShiftCalls = [];
+  let renders = 0;
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    renderAllViews: () => { renders += 1; },
+    getResolvedEntryForEmployeeOnIso: () => ({ type: 'off', status: 'empty', sourceEntry: null }),
+    setShift(employeeId, isoDate, entry) {
+      setShiftCalls.push({ employeeId, isoDate, entry });
+      return true;
+    }
+  });
+  const template = {
+    type: 'shift', status: 'work', code: 'F4', mode: 'early',
+    start: '09:00', end: '15:00', meta: { ruleCode: 'F4' }
+  };
+  const emp = { id: 'emp-multi', name: 'Multi' };
+
+  ctx.rememberLastMonthWorkShift(template);
+  ctx.openMonthFallbackDialog(emp, '2026-03-18');
+  assert.equal(ctx.startMonthMultiPlan(), true);
+  assert.equal(env.overlay.classList.contains('hidden'), true);
+
+  template.meta.ruleCode = 'changed outside';
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-20'), true);
+  setShiftCalls[0].entry.meta.ruleCode = 'changed first copy';
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-21'), true);
+
+  assert.deepEqual(setShiftCalls.map(({ employeeId, isoDate }) => ({ employeeId, isoDate })), [
+    { employeeId: 'emp-multi', isoDate: '2026-03-20' },
+    { employeeId: 'emp-multi', isoDate: '2026-03-21' }
+  ]);
+  assert.notEqual(setShiftCalls[0].entry, setShiftCalls[1].entry);
+  assert.notEqual(setShiftCalls[0].entry.meta, setShiftCalls[1].entry.meta);
+  assert.equal(setShiftCalls[1].entry.meta.ruleCode, 'F4');
+  assert.equal(renders, 3, 'activation and both successful cell writes render while mode stays active');
+
+  assert.equal(ctx.stopMonthMultiPlan(), true);
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-22'), false);
+  assert.equal(setShiftCalls.length, 2);
+});
+
+test('month multi planning skips every occupied resolved status and remains active', () => {
+  const env = buildInteractiveDocumentStub();
+  const resolvedByDate = new Map();
+  const setShiftCalls = [];
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    renderAllViews: () => {},
+    getResolvedEntryForEmployeeOnIso: (emp, isoDate) => resolvedByDate.get(isoDate),
+    setShift: (...args) => { setShiftCalls.push(args); return true; }
+  });
+  const emp = { id: 'emp-occupied', name: 'Occupied' };
+  ctx.rememberLastMonthWorkShift({ type: 'shift', status: 'work', code: 'F4', meta: { original: true } });
+  ctx.openMonthFallbackDialog(emp, '2026-03-01');
+  assert.equal(ctx.startMonthMultiPlan(), true);
+
+  const occupied = [
+    { type: 'shift', status: 'work', sourceEntry: { type: 'shift' } },
+    { type: 'vacation', status: 'vacation', sourceEntry: { type: 'vacation' } },
+    { type: 'sick', status: 'sick', sourceEntry: { type: 'sick' } },
+    { type: 'off', status: 'off', sourceEntry: { type: 'off' } },
+    { type: 'external-help', status: 'external', sourceEntry: { type: 'external-help' } },
+    { type: 'holiday', status: 'off', sourceEntry: {}, isHoliday: true },
+    { type: 'other', status: 'empty', sourceEntry: { type: 'other' } }
+  ];
+  occupied.forEach((resolved, index) => {
+    const isoDate = `2026-03-${String(index + 2).padStart(2, '0')}`;
+    resolvedByDate.set(isoDate, resolved);
+    assert.equal(ctx.applyMonthMultiPlanShift(emp, isoDate), false);
+  });
+
+  assert.equal(setShiftCalls.length, 0);
+  resolvedByDate.set('2026-03-20', { type: 'off', status: 'empty', sourceEntry: null });
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-20'), true, 'mode remains active after skipped cells');
+  assert.equal(setShiftCalls.length, 1);
+});
+
+test('month multi planning keeps its template after setShift failure', () => {
+  const env = buildInteractiveDocumentStub();
+  const saved = [];
+  let shouldSucceed = false;
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    renderAllViews: () => {},
+    getResolvedEntryForEmployeeOnIso: () => ({ type: 'off', status: 'empty', sourceEntry: null }),
+    setShift(employeeId, isoDate, entry) {
+      if (!shouldSucceed) return false;
+      saved.push(entry);
+      return true;
+    }
+  });
+  const emp = { id: 'emp-failure', name: 'Failure' };
+  ctx.rememberLastMonthWorkShift({ type: 'shift', status: 'work', code: 'F5', meta: { stable: true } });
+  ctx.openMonthFallbackDialog(emp, '2026-03-01');
+  ctx.startMonthMultiPlan();
+
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-10'), false);
+  shouldSucceed = true;
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-11'), true);
+  assert.equal(saved[0].meta.stable, true);
+});
+
+test('stopping month multi planning restores the established normal cell click flow', () => {
+  const env = buildInteractiveDocumentStub();
+  const emp = { id: 'emp-normal-again', name: 'Normal' };
+  const cell = {
+    dataset: { empId: emp.id, iso: '2026-03-12' },
+    listeners: {},
+    addEventListener(type, handler) { this.listeners[type] = handler; }
+  };
+  const table = { querySelectorAll: () => [cell] };
+  const scope = { querySelectorAll: (selector) => selector === 'table' ? [table] : [] };
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    state: { employees: [emp] },
+    renderAllViews: () => {},
+    getWeekSelectValueForDay: () => '-',
+    getShiftCodeForSelectValue: () => '',
+    openShiftDialogForSelectValue: () => false,
+    getResolvedEntryForEmployeeOnIso: () => ({ type: 'off', status: 'empty', sourceEntry: null })
+  });
+  ctx.rememberLastMonthWorkShift({ type: 'shift', status: 'work', code: 'F4' });
+  ctx.openMonthFallbackDialog(emp, '2026-03-01');
+  ctx.startMonthMultiPlan();
+  ctx.stopMonthMultiPlan();
+  ctx.bindMonthCellActions(scope);
+
+  cell.listeners.click();
+  assert.equal(env.overlay.classList.contains('hidden'), false, 'normal month selection menu opens again');
+});
+
+test('successful month multi planning restores horizontal and vertical month scroll', () => {
+  const env = buildInteractiveDocumentStub();
+  const scrollEl = { scrollLeft: 640, scrollTop: 175 };
+  const content = { closest: () => scrollEl };
+  const originalGetElementById = env.doc.getElementById.bind(env.doc);
+  env.doc.getElementById = (id) => id === 'monthViewContent' ? content : originalGetElementById(id);
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    requestAnimationFrame: (callback) => callback(),
+    getResolvedEntryForEmployeeOnIso: () => ({ type: 'off', status: 'empty', sourceEntry: null }),
+    setShift: () => true,
+    renderAllViews() {
+      scrollEl.scrollLeft = 0;
+      scrollEl.scrollTop = 0;
+    }
+  });
+  const emp = { id: 'emp-scroll', name: 'Scroll' };
+  ctx.rememberLastMonthWorkShift({ type: 'shift', status: 'work', code: 'F4' });
+  ctx.openMonthFallbackDialog(emp, '2026-03-01');
+  ctx.startMonthMultiPlan();
+  // Activation rendering happened before the position under test was chosen.
+  scrollEl.scrollLeft = 640;
+  scrollEl.scrollTop = 175;
+
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-25'), true);
+  assert.equal(scrollEl.scrollLeft, 640);
+  assert.equal(scrollEl.scrollTop, 175);
+});
+
+test('month multi planning restores scroll on a replacement container after rendering', () => {
+  const env = buildInteractiveDocumentStub();
+  let currentScrollEl = {
+    scrollLeft: 640,
+    scrollTop: 175,
+    classList: { contains: (name) => name === 'tableWrap' }
+  };
+  let currentContent = {
+    id: 'monthViewContent',
+    closest: (selector) => selector.includes('tableWrap') ? currentScrollEl : null
+  };
+  const originalGetElementById = env.doc.getElementById.bind(env.doc);
+  env.doc.getElementById = (id) => id === 'monthViewContent' ? currentContent : originalGetElementById(id);
+  const firstScrollEl = currentScrollEl;
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], {
+    document: env.doc,
+    requestAnimationFrame: (callback) => callback(),
+    getResolvedEntryForEmployeeOnIso: () => ({ type: 'off', status: 'empty', sourceEntry: null }),
+    setShift: () => true,
+    renderAllViews() {
+      currentScrollEl = {
+        scrollLeft: 0,
+        scrollTop: 0,
+        classList: { contains: (name) => name === 'tableWrap' }
+      };
+      currentContent = {
+        id: 'monthViewContent',
+        closest: (selector) => selector.includes('tableWrap') ? currentScrollEl : null
+      };
+    }
+  });
+  const emp = { id: 'emp-replaced-scroll', name: 'Replaced Scroll' };
+  ctx.rememberLastMonthWorkShift({ type: 'shift', status: 'work', code: 'F4' });
+  ctx.openMonthFallbackDialog(emp, '2026-03-01');
+  ctx.startMonthMultiPlan();
+  // Activation also renders, so establish the container and position used by the cell action.
+  currentScrollEl.scrollLeft = 640;
+  currentScrollEl.scrollTop = 175;
+  const scrollElBeforeCellRender = currentScrollEl;
+
+  assert.equal(ctx.applyMonthMultiPlanShift(emp, '2026-03-25'), true);
+  assert.notEqual(currentScrollEl, scrollElBeforeCellRender);
+  assert.notEqual(currentScrollEl, firstScrollEl);
+  assert.equal(currentScrollEl.scrollLeft, 640);
+  assert.equal(currentScrollEl.scrollTop, 175);
+});
+
+test('month multi planning cannot activate absences, external help, or an invalid template', () => {
+  const env = buildInteractiveDocumentStub();
+  const ctx = loadScripts([
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+  ], { document: env.doc, renderAllViews: () => {} });
+  const emp = { id: 'emp-invalid', name: 'Invalid' };
+
+  for (const entry of [
+    { type: 'vacation', status: 'vacation', code: 'U' },
+    { type: 'sick', status: 'sick', code: 'K' },
+    { type: 'off', status: 'off', code: 'FR' },
+    { type: 'external-help', status: 'external', code: 'AH', externalHelp: true }
+  ]) {
+    assert.equal(ctx.rememberLastMonthWorkShift(entry), false);
+    ctx.openMonthFallbackDialog(emp, '2026-03-18');
+    assert.equal(ctx.startMonthMultiPlan(), false);
+    assert.equal(env.optionsContainer.children.some((button) => button.textContent.includes('Mehrfach')), false);
+    ctx.closeMonthFallbackDialog();
+  }
+});
+
 function buildInteractiveDocumentStub() {
   const listeners = {};
   let buttonId = 0;
