@@ -8,6 +8,51 @@ const monthFallbackCancelEl = document.getElementById("monthFallbackCancel");
 const monthFallbackSheetEl = document.getElementById("monthFallbackSheet");
 const monthFallbackTitleEl = document.getElementById("monthFallbackTitle");
 let monthFallbackDialogState = null;
+let lastMonthWorkShift = null;
+
+function cloneMonthWorkShift(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  if (typeof structuredClone === "function") return structuredClone(entry);
+  return JSON.parse(JSON.stringify(entry));
+}
+
+function isValidLastMonthWorkShift(entry) {
+  return Boolean(entry)
+    && getEntryStatus(entry) === ENTRY_STATUS.WORK
+    && entry.type === "shift"
+    && !entry.externalHelp;
+}
+
+function rememberLastMonthWorkShift(entry) {
+  if (!isValidLastMonthWorkShift(entry)) return false;
+  lastMonthWorkShift = cloneMonthWorkShift(entry);
+  return true;
+}
+
+function getLastMonthWorkShift() {
+  return cloneMonthWorkShift(lastMonthWorkShift);
+}
+
+function getLastMonthWorkShiftLabel(entry = lastMonthWorkShift) {
+  if (!isValidLastMonthWorkShift(entry)) return "";
+  if (entry.mode === "flex" && entry.start && entry.end) {
+    return `Flex ${entry.start}–${entry.end}`;
+  }
+  return entry.code || entry.shiftKey || (entry.start && entry.end ? `${entry.start}–${entry.end}` : "");
+}
+
+function applyLastMonthWorkShift() {
+  if (!monthFallbackDialogState || !isValidLastMonthWorkShift(lastMonthWorkShift)) return false;
+  const { emp, isoDate } = monthFallbackDialogState;
+  const entryCopy = cloneMonthWorkShift(lastMonthWorkShift);
+  closeMonthFallbackDialog();
+  const applied = setShift(emp.id, isoDate, entryCopy);
+  if (applied) {
+    rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    renderAllViews();
+  }
+  return Boolean(applied);
+}
 
 function setMonthFallbackBodyScrollLock(isLocked) {
   const body = document.body;
@@ -195,7 +240,7 @@ function bindMonthCellActions(scopeEl = document) {
 
         const dialogType = getShiftCodeForSelectValue(currentValue);
         if (dialogType) {
-          if (openShiftDialogForSelectValue(dialogType, { emp, isoDate })) return;
+          if (openShiftDialogForSelectValue(dialogType, { emp, isoDate, source: "month" })) return;
         }
 
         openMonthFallbackDialog(emp, isoDate, cell);
@@ -253,6 +298,11 @@ function renderMonthFallbackMainLevel(anchorEl) {
     monthFallbackOptionsEl.appendChild(button);
     return button;
   };
+
+  const lastShiftLabel = getLastMonthWorkShiftLabel();
+  if (lastShiftLabel) {
+    createButton(`↻ ${lastShiftLabel}`, applyLastMonthWorkShift, "monthFallbackOptionBtn monthFallbackLastShiftBtn");
+  }
 
   createButton("Früh", () => renderMonthFallbackEarlyLevel(anchorEl));
   createButton("Spät", () => renderMonthFallbackLateLevel(anchorEl));
@@ -520,8 +570,11 @@ function renderMonthFallbackFlexEditor(anchorEl, context = "main") {
     if (!entry || !monthFallbackDialogState) return;
     const { emp, isoDate } = monthFallbackDialogState;
     closeMonthFallbackDialog();
-    updateEmployeeDay(emp.id, isoDate, () => entry);
-    renderAllViews();
+    const applied = setShift(emp.id, isoDate, cloneMonthWorkShift(entry));
+    if (applied) {
+      rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+      renderAllViews();
+    }
   });
   actions.appendChild(back);
   actions.appendChild(apply);
@@ -714,9 +767,17 @@ function selectMonthFallbackOption(value) {
   if (!selectedOption) return;
 
   const { emp, isoDate } = monthFallbackDialogState;
+  const dialogType = selectedOption.code || getShiftCodeForSelectValue(selectedOption.value);
+  if (openShiftDialogForSelectValue(dialogType, { emp, isoDate, source: "month" })) {
+    closeMonthFallbackDialog();
+    return;
+  }
   closeMonthFallbackDialog();
   const result = applyWeekSelection(emp, isoDate, selectedOption.value);
-  if (result?.applied) renderAllViews();
+  if (result?.applied) {
+    rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    renderAllViews();
+  }
 }
 
 function handleMonthFallbackDialogKeydown(event) {
