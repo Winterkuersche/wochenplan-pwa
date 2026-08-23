@@ -9,6 +9,10 @@ const monthFallbackSheetEl = document.getElementById("monthFallbackSheet");
 const monthFallbackTitleEl = document.getElementById("monthFallbackTitle");
 let monthFallbackDialogState = null;
 let lastMonthWorkShift = null;
+// Deliberately transient: this is a UI mode, not part of the persisted plan state.
+let monthMultiPlanShift = null;
+let monthMultiPlanFeedback = "";
+let monthMultiPlanFeedbackTimer = null;
 
 function cloneMonthWorkShift(entry) {
   if (!entry || typeof entry !== "object") return null;
@@ -41,6 +45,12 @@ function getLastMonthWorkShiftLabel(entry = lastMonthWorkShift) {
   return entry.code || entry.shiftKey || (entry.start && entry.end ? `${entry.start}–${entry.end}` : "");
 }
 
+function getMonthMultiPlanShiftLabel(entry = monthMultiPlanShift) {
+  const label = getLastMonthWorkShiftLabel(entry);
+  if (!label || entry?.mode !== "flex" || !Number.isFinite(Number(entry.minutes))) return label;
+  return `${label} · ${formatMinutesAsDecimalHours(Number(entry.minutes))} h`;
+}
+
 function applyLastMonthWorkShift() {
   if (!monthFallbackDialogState || !isValidLastMonthWorkShift(lastMonthWorkShift)) return false;
   const { emp, isoDate } = monthFallbackDialogState;
@@ -50,6 +60,117 @@ function applyLastMonthWorkShift() {
   if (applied) {
     rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
     renderAllViews();
+  }
+  return Boolean(applied);
+}
+
+function startMonthMultiPlan() {
+  if (!monthFallbackDialogState || !isValidLastMonthWorkShift(lastMonthWorkShift)) return false;
+  monthMultiPlanShift = cloneMonthWorkShift(lastMonthWorkShift);
+  monthMultiPlanFeedback = "";
+  closeMonthFallbackDialog();
+  renderAllViews();
+  return true;
+}
+
+function stopMonthMultiPlan() {
+  if (!monthMultiPlanShift) return false;
+  monthMultiPlanShift = null;
+  monthMultiPlanFeedback = "";
+  if (monthMultiPlanFeedbackTimer) clearTimeout(monthMultiPlanFeedbackTimer);
+  monthMultiPlanFeedbackTimer = null;
+  renderAllViews();
+  return true;
+}
+
+function isMonthMultiPlanCellEmpty(emp, isoDate) {
+  if (!emp || !isoDate || typeof getResolvedEntryForEmployeeOnIso !== "function") return false;
+  const resolved = getResolvedEntryForEmployeeOnIso(emp, isoDate);
+  return Boolean(resolved)
+    && normalizeStatusValue(resolved.status) === ENTRY_STATUS.EMPTY
+    && !resolved.sourceEntry
+    && !resolved.isHoliday
+    && !resolved.isSunday;
+}
+
+function setMonthMultiPlanFeedback(message, cell = null, kind = "skipped") {
+  monthMultiPlanFeedback = message;
+  if (monthMultiPlanFeedbackTimer) clearTimeout(monthMultiPlanFeedbackTimer);
+  const bar = document.querySelector?.(".monthMultiPlanFeedback");
+  if (bar) bar.textContent = message;
+  if (cell?.classList) {
+    cell.classList.remove("monthMultiPlanJustSet", "monthMultiPlanSkipped");
+    cell.classList.add(kind === "success" ? "monthMultiPlanJustSet" : "monthMultiPlanSkipped");
+  }
+  monthMultiPlanFeedbackTimer = setTimeout(() => {
+    monthMultiPlanFeedback = "";
+    if (bar) bar.textContent = "";
+    cell?.classList?.remove("monthMultiPlanJustSet", "monthMultiPlanSkipped");
+    monthMultiPlanFeedbackTimer = null;
+  }, 1600);
+  monthMultiPlanFeedbackTimer?.unref?.();
+}
+
+function captureMonthMultiPlanScroll(cell = null) {
+  const content = getMonthViewContentEl();
+  const scrollEl = cell?.closest?.(".tableWrap, .compactTableWrap")
+    || content?.closest?.(".tableWrap, .compactTableWrap")
+    || content?.parentElement;
+  if (!scrollEl) return null;
+
+  const sectionId = cell?.closest?.("section[id]")?.id || content?.closest?.("section[id]")?.id || "";
+  const containerClass = scrollEl.classList?.contains?.("tableWrap") ? "tableWrap" : "compactTableWrap";
+  return {
+    scrollEl,
+    sectionId,
+    contentId: content?.id || "monthViewContent",
+    containerClass,
+    left: scrollEl.scrollLeft,
+    top: scrollEl.scrollTop
+  };
+}
+
+function findCurrentMonthMultiPlanScrollEl(snapshot) {
+  if (!snapshot) return null;
+  if (snapshot.sectionId) {
+    const section = document.getElementById?.(snapshot.sectionId);
+    const sectionScrollEl = section?.querySelector?.(`.${snapshot.containerClass}`);
+    if (sectionScrollEl) return sectionScrollEl;
+  }
+  const currentContent = document.getElementById?.(snapshot.contentId);
+  return currentContent?.closest?.(`.${snapshot.containerClass}`)
+    || currentContent?.parentElement
+    || snapshot.scrollEl;
+}
+
+function restoreMonthMultiPlanScroll(snapshot, empId, isoDate) {
+  const restore = () => {
+    const currentScrollEl = findCurrentMonthMultiPlanScrollEl(snapshot);
+    if (currentScrollEl) {
+      currentScrollEl.scrollLeft = snapshot.left;
+      currentScrollEl.scrollTop = snapshot.top;
+    }
+    const cell = document.querySelector?.(`.monthCellClickable[data-emp-id="${empId}"][data-iso="${isoDate}"]`);
+    setMonthMultiPlanFeedback("Schicht eingetragen", cell, "success");
+  };
+  restore();
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(restore);
+}
+
+function applyMonthMultiPlanShift(emp, isoDate, cell = null) {
+  if (!emp || !isoDate || !isValidLastMonthWorkShift(monthMultiPlanShift)) return false;
+  if (!isMonthMultiPlanCellEmpty(emp, isoDate)) {
+    setMonthMultiPlanFeedback("Bereits belegt – nicht überschrieben", cell);
+    return false;
+  }
+  const scrollSnapshot = captureMonthMultiPlanScroll(cell);
+  const applied = setShift(emp.id, isoDate, cloneMonthWorkShift(monthMultiPlanShift));
+  if (applied) {
+    monthMultiPlanFeedback = "Schicht eingetragen";
+    renderAllViews();
+    restoreMonthMultiPlanScroll(scrollSnapshot, emp.id, isoDate);
+  } else {
+    setMonthMultiPlanFeedback("Eintragen nicht möglich", cell);
   }
   return Boolean(applied);
 }
@@ -236,6 +357,10 @@ function bindMonthCellActions(scopeEl = document) {
         if (!emp || !isoDate) return;
 
         const currentValue = getWeekSelectValueForDay(emp, isoDate);
+        if (monthMultiPlanShift) {
+          applyMonthMultiPlanShift(emp, isoDate, cell);
+          return;
+        }
         if (currentValue === "H") return;
 
         const dialogType = getShiftCodeForSelectValue(currentValue);
@@ -302,6 +427,7 @@ function renderMonthFallbackMainLevel(anchorEl) {
   const lastShiftLabel = getLastMonthWorkShiftLabel();
   if (lastShiftLabel) {
     createButton(`↻ ${lastShiftLabel}`, applyLastMonthWorkShift, "monthFallbackOptionBtn monthFallbackLastShiftBtn");
+    createButton("⊕ Mehrfach eintragen", startMonthMultiPlan, "monthFallbackOptionBtn monthFallbackMultiPlanBtn");
   }
 
   createButton("Früh", () => renderMonthFallbackEarlyLevel(anchorEl));
@@ -662,7 +788,8 @@ function buildMonthViewMarkup(days, options = {}) {
     includeSummaryColumns = true,
     withViewHeader = true
   } = options;
-  const tableClassAttr = tableClass ? ` class="${tableClass}"` : "";
+  const effectiveTableClass = [tableClass, monthMultiPlanShift ? "monthMultiPlanActive" : ""].filter(Boolean).join(" ");
+  const tableClassAttr = effectiveTableClass ? ` class="${effectiveTableClass}"` : "";
   let html = `
   `;
 
@@ -672,6 +799,16 @@ function buildMonthViewMarkup(days, options = {}) {
       <strong>${getMonthTitleFromDays(days)}</strong>
       <span class="small">${days.length} Tage im aktuellen Monat</span>
     </div>
+    `;
+  }
+
+  if (monthMultiPlanShift) {
+    html += `
+      <div class="monthMultiPlanBar" role="status">
+        <strong>Mehrfach: ${getMonthMultiPlanShiftLabel(monthMultiPlanShift)}</strong>
+        <span class="monthMultiPlanFeedback" aria-live="polite">${monthMultiPlanFeedback}</span>
+        <button type="button" class="monthMultiPlanStopBtn">Beenden</button>
+      </div>
     `;
   }
 
@@ -726,6 +863,7 @@ function renderMonthTableInto(container, options = {}) {
   });
 
   bindMonthCellActions(container);
+  container.querySelector?.(".monthMultiPlanStopBtn")?.addEventListener("click", stopMonthMultiPlan);
 }
 
 function renderMonthView() {
@@ -781,6 +919,11 @@ function selectMonthFallbackOption(value) {
 }
 
 function handleMonthFallbackDialogKeydown(event) {
+  if (event.key === "Escape" && monthMultiPlanShift) {
+    event.preventDefault();
+    stopMonthMultiPlan();
+    return;
+  }
   if (monthFallbackOverlayEl?.classList.contains("hidden")) return;
 
   if (event.key === "Escape") {

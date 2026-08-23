@@ -1365,6 +1365,71 @@ body.dark .ahCellSubrow {
   margin-bottom: 10px;
 }
 
+.monthMultiPlanBar {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 2px solid #0a58ff;
+  border-radius: 8px;
+  background: #eaf1ff;
+  color: #073b9a;
+}
+
+.monthMultiPlanStopBtn {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #0a58ff;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.monthMultiPlanFeedback {
+  flex: 1;
+  min-height: 1.2em;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.monthMultiPlanActive .monthCellClickable {
+  cursor: cell;
+}
+
+.monthMultiPlanActive .monthCellClickable:hover {
+  outline-color: rgba(10, 88, 255, 0.55);
+  background-image: linear-gradient(rgba(10, 88, 255, 0.035), rgba(10, 88, 255, 0.035));
+}
+
+.monthCellClickable.monthMultiPlanSkipped {
+  animation: monthMultiPlanSkipped 0.3s ease-in-out 2 alternate;
+}
+
+.monthCellClickable.monthMultiPlanJustSet {
+  outline: 3px solid #198754;
+  outline-offset: -3px;
+}
+
+@keyframes monthMultiPlanSkipped {
+  to { outline: 3px solid #c77700; outline-offset: -3px; }
+}
+
+@media (max-width: 700px) {
+  .monthMultiPlanBar { flex-wrap: wrap; }
+  .monthMultiPlanFeedback { order: 3; flex-basis: 100%; text-align: left; }
+}
+
+body.dark .monthMultiPlanBar {
+  background: #152b52;
+  color: #dce8ff;
+}
+
 .monthHeadSunday {
   background: #eee !important;
   color: #666;
