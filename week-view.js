@@ -352,7 +352,10 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    setShift(emp.id, isoDate, entry);
+    const applied = setShift(emp.id, isoDate, entry);
+    if (applied && shiftDialogContext.source === "month" && typeof rememberLastMonthWorkShift === "function") {
+      rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    }
     closeShiftDialog();
     return;
   }
@@ -361,7 +364,10 @@ shiftDialogSave.addEventListener("click", () => {
     const checkout = shiftDialogFullCheckout.value === "yes";
     const entry = buildFullShiftEntry(checkout);
 
-    setShift(emp.id, isoDate, entry);
+    const applied = setShift(emp.id, isoDate, entry);
+    if (applied && shiftDialogContext.source === "month" && typeof rememberLastMonthWorkShift === "function") {
+      rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    }
     closeShiftDialog();
     return;
   }
@@ -376,7 +382,10 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    setShift(emp.id, isoDate, entry);
+    const applied = setShift(emp.id, isoDate, entry);
+    if (applied && shiftDialogContext.source === "month" && typeof rememberLastMonthWorkShift === "function") {
+      rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    }
     closeShiftDialog();
     return;
   }
@@ -397,7 +406,10 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    setShift(emp.id, isoDate, entry);
+    const applied = setShift(emp.id, isoDate, entry);
+    if (applied && shiftDialogContext.source === "month" && typeof rememberLastMonthWorkShift === "function") {
+      rememberLastMonthWorkShift(getPlanEntry(emp.id, isoDate));
+    }
     closeShiftDialog();
     return;
   }

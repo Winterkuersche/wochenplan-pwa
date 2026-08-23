@@ -2107,6 +2107,15 @@ body.dark .ahCellSubrow {
   text-align: center;
 }
 
+.monthFallbackLastShiftBtn {
+  grid-column: 1 / -1;
+  min-height: 36px;
+  padding: 5px 8px;
+  border-color: #9bbda6;
+  background: #f2f8f4;
+  text-align: center;
+}
+
 .monthFallbackOptionBtn:focus-visible,
 .monthFallbackOptionBtn:hover {
   outline: none;
