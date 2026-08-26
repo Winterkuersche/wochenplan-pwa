@@ -20,8 +20,8 @@ jobs:
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
             const sha = pr.head.sha;
-            const previewUrl = `https://raw.githack.com/${owner}/${repo}/${sha}/index.html`;
-            const body = `${marker}\n### 📱 PR Preview\n\n[Preview auf dem iPhone öffnen](${previewUrl})\n\nStand: \`${sha.slice(0, 7)}\`\n\n> Diese Preview lädt exakt den aktuellen PR-Commit. Sie ist für UI- und Funktionsprüfungen gedacht; GitHub-Pages-/Service-Worker-Verhalten kann sich von der Live-Seite unterscheiden.`;
+            const previewUrl = `https://winterkuersche.github.io/wochenplan-pwa-preview/pr-${pr.number}/`;
+            const body = `${marker}\n### 📱 PR Preview\n\n[Preview auf dem iPhone öffnen](${previewUrl})\n\nStand: \`${sha.slice(0, 7)}\`\n\n> Die Preview wird über das separate GitHub-Pages-Repository bereitgestellt. Nach einem neuen PR-Commit kann es einige Minuten dauern, bis der Teststand aktualisiert ist.`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
