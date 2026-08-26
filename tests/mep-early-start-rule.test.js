@@ -120,28 +120,82 @@ test('individual previous-day FLEX shift triggers unchanged opener priority', ()
   assert.equal(ctx.state.schedule['2026-04-11'].regular.start, '09:00');
 });
 
-test('when multiple workers had 19:10, only the first is selected', () => {
+test('stronger MA responsibility continuity wins even from lower employee-list position', () => {
   const ctx = buildContext({
     employees: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }],
     schedule: {
       '2026-04-10': {
-        e1: { type: 'shift', end: '19:10' },
-        e2: { type: 'shift', end: '19:10' },
+        e1: { type: 'shift', start: '13:00', end: '19:10' },
+        e2: { type: 'shift', start: '09:00', end: '19:10' },
         e3: { type: 'shift', end: '18:00' }
       },
       '2026-04-11': {
         e1: { type: 'shift', start: '09:00', end: '17:00' },
-        e2: { type: 'shift', start: '09:00', end: '17:00' },
+        e2: { type: 'shift', start: '09:00', end: '19:10' },
         e3: { type: 'shift', start: '09:00', end: '17:00' }
+      },
+      '2026-04-13': {
+        e2: { type: 'shift', start: '09:00', end: '19:10' }
       }
     }
   });
 
   const selectedId = ctx.applyRule('2026-04-11');
 
-  assert.equal(selectedId, 'e1');
-  assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '08:55');
-  assert.equal(ctx.state.schedule['2026-04-11'].e2.start, '09:00');
+  assert.equal(selectedId, 'e2');
+  assert.equal(ctx.state.schedule['2026-04-11'].e1.start, '09:00');
+  assert.equal(ctx.state.schedule['2026-04-11'].e2.start, '08:55');
+});
+
+test('responsibility selection is independent of employee-list order', () => {
+  const schedule = {
+    '2026-04-09': { steady: { type: 'shift', start: '09:00', end: '19:10' } },
+    '2026-04-10': {
+      brief: { type: 'shift', start: '13:00', end: '19:10' },
+      steady: { type: 'shift', start: '09:00', end: '19:10' }
+    },
+    '2026-04-11': {
+      brief: { type: 'shift', start: '09:00', end: '17:00' },
+      steady: { type: 'shift', start: '09:00', end: '17:00' }
+    }
+  };
+  const forward = buildContext({ employees: [{ id: 'brief' }, { id: 'steady' }], schedule });
+  const reversed = buildContext({ employees: [{ id: 'steady' }, { id: 'brief' }], schedule });
+
+  assert.equal(forward.applyRule('2026-04-11'), 'steady');
+  assert.equal(reversed.applyRule('2026-04-11'), 'steady');
+});
+
+test('continuous MA responsibility block wins on every shared candidate morning regardless of employee order', () => {
+  const schedule = {
+    '2026-04-06': {
+      b: { type: 'shift', start: '09:00', end: '19:10' },
+      c: { type: 'shift', start: '13:00', end: '19:10' }
+    },
+    '2026-04-07': {
+      b: { type: 'shift', start: '09:00', end: '19:10' },
+      c: { type: 'shift', start: '09:00', end: '19:10' }
+    },
+    '2026-04-08': {
+      b: { type: 'shift', start: '09:00', end: '19:10' },
+      c: { type: 'shift', start: '09:00', end: '17:00' }
+    },
+    '2026-04-09': {
+      b: { type: 'shift', start: '09:00', end: '19:10' },
+      c: { type: 'shift', start: '09:00', end: '17:00' }
+    }
+  };
+
+  for (const employees of [[{ id: 'c' }, { id: 'b' }], [{ id: 'b' }, { id: 'c' }]]) {
+    const ctx = buildContext({ employees, schedule });
+
+    assert.equal(ctx.applyRule('2026-04-07'), 'b');
+    assert.equal(ctx.state.schedule['2026-04-07'].b.start, '08:55');
+    assert.equal(ctx.state.schedule['2026-04-07'].c.start, '09:00');
+    assert.equal(ctx.applyRule('2026-04-08'), 'b');
+    assert.equal(ctx.state.schedule['2026-04-08'].b.start, '08:55');
+    assert.equal(ctx.state.schedule['2026-04-08'].c.start, '09:00');
+  }
 });
 
 test('selects TL only when TL had 19:10 on previous day', () => {
@@ -278,9 +332,9 @@ test('does not select SV variant from function fields without own previous-day 1
   assert.equal(ctx.state.schedule['2026-04-11'].e2.start, '08:55');
 });
 
-test('falls back to first previous-day 19:10 worker when neither TL nor SV can be selected', () => {
+test('uses a stable id tie-break when same-role continuity is equal', () => {
   const ctx = buildContext({
-    employees: [{ id: 'tl', roleKey: 'TL' }, { id: 'sv', roleKey: 'SV' }, { id: 'e1' }, { id: 'e2' }],
+    employees: [{ id: 'tl', roleKey: 'TL' }, { id: 'sv', roleKey: 'SV' }, { id: 'e2' }, { id: 'e1' }],
     schedule: {
       '2026-04-10': {
         e1: { type: 'shift', end: '19:10' },
@@ -544,4 +598,91 @@ test('uses previous relevant workday for monday so saturday 19:10 enables 08:55 
   assert.equal(selectedId, 'e1');
   assert.equal(ctx.state.schedule['2026-04-13'].e1.start, '08:55');
   assert.equal(ctx.state.schedule['2026-04-13'].e2.start, '09:15');
+});
+
+test('TL role beats an MA with a longer responsibility chain', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'ma' }, { id: 'tl', roleKey: 'TL' }],
+    schedule: {
+      '2026-04-09': { ma: { type: 'shift', start: '09:00', end: '19:10' } },
+      '2026-04-10': {
+        ma: { type: 'shift', start: '09:00', end: '19:10' },
+        tl: { type: 'shift', start: '13:00', end: '19:10' }
+      },
+      '2026-04-11': {
+        ma: { type: 'shift', start: '09:00', end: '19:10' },
+        tl: { type: 'shift', start: '09:00', end: '17:00' }
+      },
+      '2026-04-13': { ma: { type: 'shift', start: '09:00', end: '19:10' } }
+    }
+  });
+
+  assert.equal(ctx.applyRule('2026-04-11'), 'tl');
+  assert.equal(ctx.state.schedule['2026-04-11'].tl.start, '08:55');
+  assert.equal(ctx.state.schedule['2026-04-11'].ma.start, '09:00');
+});
+
+test('SV/STV role beats an MA when no eligible TL exists', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'ma' }, { id: 'stv', funktion: 'STV' }],
+    schedule: {
+      '2026-04-09': { ma: { type: 'shift', start: '09:00', end: '19:10' } },
+      '2026-04-10': {
+        ma: { type: 'shift', start: '09:00', end: '19:10' },
+        stv: { type: 'shift', start: '13:00', end: '19:10' }
+      },
+      '2026-04-11': {
+        ma: { type: 'shift', start: '09:00', end: '19:10' },
+        stv: { type: 'shift', start: '09:00', end: '17:00' }
+      }
+    }
+  });
+
+  assert.equal(ctx.applyRule('2026-04-11'), 'stv');
+  assert.equal(ctx.state.schedule['2026-04-11'].stv.start, '08:55');
+  assert.equal(ctx.state.schedule['2026-04-11'].ma.start, '09:00');
+});
+
+test('another eligible candidate takes over when the previous key holder is unavailable in the morning', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'holder' }, { id: 'backup' }],
+    schedule: {
+      '2026-04-10': {
+        holder: { type: 'shift', start: '09:00', end: '19:10' },
+        backup: { type: 'shift', start: '09:00', end: '19:10' }
+      },
+      '2026-04-11': {
+        holder: { type: 'absence', code: 'U' },
+        backup: { type: 'shift', start: '09:00', end: '17:00' }
+      }
+    }
+  });
+
+  assert.equal(ctx.applyRule('2026-04-11'), 'backup');
+  assert.equal(ctx.state.schedule['2026-04-11'].backup.start, '08:55');
+});
+
+test('a later 09:00-19:10 run starts a new responsibility chain after an absence', () => {
+  const ctx = buildContext({
+    employees: [{ id: 'returning' }, { id: 'other' }],
+    schedule: {
+      '2026-04-10': { returning: { type: 'absence', code: 'K' } },
+      '2026-04-11': {
+        returning: { type: 'shift', start: '09:00', end: '19:10' },
+        other: { type: 'shift', start: '09:00', end: '19:10' }
+      },
+      '2026-04-13': {
+        returning: { type: 'shift', start: '09:00', end: '19:10' },
+        other: { type: 'shift', start: '13:00', end: '19:10' }
+      },
+      '2026-04-14': {
+        returning: { type: 'shift', start: '09:00', end: '19:10' },
+        other: { type: 'shift', start: '09:00', end: '17:00' }
+      }
+    }
+  });
+
+  assert.equal(ctx.applyRule('2026-04-14'), 'returning');
+  const starts = Object.values(ctx.state.schedule['2026-04-14']).map((entry) => entry.start);
+  assert.equal(starts.filter((start) => start === '08:55').length, 1);
 });
