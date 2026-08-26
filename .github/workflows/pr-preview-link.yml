@@ -11,7 +11,47 @@ permissions:
 jobs:
   preview-link:
     runs-on: ubuntu-latest
+    concurrency:
+      group: pr-preview-deployment
+      cancel-in-progress: false
     steps:
+      - name: Checkout PR revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr-source
+
+      - name: Checkout preview repository
+        uses: actions/checkout@v4
+        with:
+          repository: Winterkuersche/wochenplan-pwa-preview
+          token: ${{ secrets.PREVIEW_REPOSITORY_TOKEN }}
+          path: preview-repository
+
+      - name: Publish PR revision
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          preview_directory="preview-repository/pr-${PR_NUMBER}"
+          mkdir -p "$preview_directory"
+          rsync --archive --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            pr-source/ "$preview_directory/"
+
+          cd preview-repository
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "pr-${PR_NUMBER}"
+
+          if git diff --cached --quiet; then
+            echo "Preview pr-${PR_NUMBER} is already up to date."
+          else
+            git commit -m "Update preview for PR #${PR_NUMBER} (${PR_SHA:0:7})"
+            git push
+          fi
+
       - name: Publish preview link comment
         uses: actions/github-script@v7
         with:
