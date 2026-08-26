@@ -781,6 +781,37 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
     if (role === "SV") return tokens.includes("SV") || tokens.includes("STV");
     return false;
   };
+  const getRolePriority = (emp) => {
+    if (hasPriorityRole(emp, "TL")) return 2;
+    if (hasPriorityRole(emp, "SV")) return 1;
+    return 0;
+  };
+  const getNextRelevantWorkdayIso = (dateIso) => {
+    const date = new Date(`${dateIso}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return "";
+    return shiftIsoDateByDays(dateIso, date.getUTCDay() === 6 ? 2 : 1);
+  };
+  const isResponsibleLongShift = (employeeId, dateIso) => {
+    const entry = getPlanEntry(employeeId, dateIso);
+    if (entry?.type !== "shift" || entry.end !== QUALIFYING_PREV_SHIFT_END) return false;
+    const start = normalizeShiftStartForCarryoverEligibility(entry.start);
+    // A previously assigned 08:55 start still represents its regular 09:00 shift.
+    return start === "09:00" || start === "08:55";
+  };
+  const getResponsibilityContinuity = (employeeId) => {
+    let score = 0;
+    let cursorIso = prevIso;
+    while (cursorIso && isResponsibleLongShift(employeeId, cursorIso)) {
+      score += 1;
+      cursorIso = getPreviousRelevantWorkdayIso(cursorIso);
+    }
+    cursorIso = isoDate;
+    while (cursorIso && isResponsibleLongShift(employeeId, cursorIso)) {
+      score += 1;
+      cursorIso = getNextRelevantWorkdayIso(cursorIso);
+    }
+    return score;
+  };
 
   const eligibleCandidates = activeEmployees.filter((emp) => {
     if (!hasShiftOnDay(emp)) return false;
@@ -790,13 +821,18 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
     return prevEntry?.type === "shift" && prevEntry.end === QUALIFYING_PREV_SHIFT_END;
   });
 
-  let selectedEmployee = eligibleCandidates.find((emp) => hasPriorityRole(emp, "TL"));
-  if (!selectedEmployee) {
-    selectedEmployee = eligibleCandidates.find((emp) => hasPriorityRole(emp, "SV"));
-  }
-  if (!selectedEmployee) {
-    selectedEmployee = eligibleCandidates[0];
-  }
+  const rankedCandidates = eligibleCandidates
+    .map((emp) => ({
+      emp,
+      rolePriority: getRolePriority(emp),
+      continuity: getResponsibilityContinuity(emp.id)
+    }))
+    .sort((left, right) => (
+      right.rolePriority - left.rolePriority
+      || right.continuity - left.continuity
+      || String(left.emp.id).localeCompare(String(right.emp.id))
+    ));
+  const selectedEmployee = rankedCandidates[0]?.emp;
   if (!selectedEmployee) return null;
 
   const selectedEntry = getPlanEntry(selectedEmployee.id, isoDate);
