@@ -1,3 +1,41 @@
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (event) => {
+    const message = event?.message || "Unbekannter JavaScript-Fehler";
+    const source = event?.filename ? `\n${event.filename}:${event.lineno || "?"}:${event.colno || "?"}` : "";
+    const show = () => {
+      let box = document.getElementById("planung2RuntimeError");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "planung2RuntimeError";
+        box.style.cssText = "margin:10px;padding:10px;border:1px solid #d92d20;border-radius:10px;background:#3b1111;color:#ffd5d2;font:12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;white-space:pre-wrap";
+        const app = document.querySelector(".app") || document.body;
+        app.prepend(box);
+      }
+      box.textContent = `Planung-2 JavaScript-Fehler:\n${message}${source}`;
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", show, { once: true });
+    else show();
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event?.reason;
+    const message = reason?.stack || reason?.message || String(reason || "Unbekannter Promise-Fehler");
+    const show = () => {
+      let box = document.getElementById("planung2RuntimeError");
+      if (!box) {
+        box = document.createElement("div");
+        box.id = "planung2RuntimeError";
+        box.style.cssText = "margin:10px;padding:10px;border:1px solid #d92d20;border-radius:10px;background:#3b1111;color:#ffd5d2;font:12px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;white-space:pre-wrap";
+        const app = document.querySelector(".app") || document.body;
+        app.prepend(box);
+      }
+      box.textContent = `Planung-2 Promise-Fehler:\n${message}`;
+    };
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", show, { once: true });
+    else show();
+  });
+}
+
 const HOLIDAYS_BY_STATE = {
   "schleswig-holstein": {
     2026: [
