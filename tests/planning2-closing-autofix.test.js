@@ -18,7 +18,8 @@ function extractFunction(name) {
 function loadRule() {
   const names = ['mins', 'shiftDayIso', 'previousRelevantWorkday', 'nextRelevantWorkday',
     'carryoverRolePriority', 'planning2ResolvedWorkShift', 'rankCarryoverCandidates', 'updatePlanning2ShiftStart',
-    'applyPlanning2EarlyStartCarryover', 'closingWorkload', 'extendClosingShift', 'applyPlanning2ClosingAutofix',
+    'applyPlanning2EarlyStartCarryover', 'closingWorkload', 'extendClosingShift', 'restoreClosingShift',
+    'alignPreviousClosingTeam', 'applyPlanning2ClosingAutofix',
     'applyPlanning2SavedDayAutofixes'];
   const context = loadScripts(['holidays.js', 'time-utils.js', 'shift-rules.js', 'date-utils.js', 'shift-utils.js', 'status-utils.js', 'absences.js', 'day-resolution.js']);
   vm.runInContext(`${names.map(extractFunction).join(';')} ;this.applyRule=applyPlanning2ClosingAutofix;this.applySavedDay=applyPlanning2SavedDayAutofixes;`, context);
@@ -51,10 +52,49 @@ test('saved F6 and Flex shifts qualify by their resolved 09:00 start', () => {
   }
 });
 
-test('saved morning stays at 09:00 without a previous 19:10 shift', () => {
+test('saving Friday G, F6, or Flex reselects the already completed Thursday closing team', () => {
+  for (const [code, end] of [['G', '19:00'], ['F6', '15:00'], ['FLEX', '16:00']]) {
+    const plan = savedFridayPlan(
+      {
+        a: { ...shift('09:00', '19:10'), planning2AutoCloser: true },
+        b: { ...shift('13:00', '19:10'), planning2AutoCloser: true },
+        c: shift('09:00', '19:00')
+      },
+      { c: shift('09:00', end, code) }
+    );
+
+    applySavedDay(plan, [employee('a'), employee('b'), employee('c')], '2026-04-10');
+
+    assert.equal(plan.schedule['2026-04-09'].c.end, '19:10', code);
+    assert.equal(plan.schedule['2026-04-09'].c.planning2AutoCloser, true, code);
+    assert.equal(Object.values(plan.schedule['2026-04-09']).filter(value => value.end === '19:10').length, 2, code);
+    assert.equal(['a', 'b'].filter(id => plan.schedule['2026-04-09'][id].end === '19:00').length, 1, code);
+    assert.equal(plan.schedule['2026-04-10'].c.start, '08:55', code);
+    assert.equal(plan.schedule['2026-04-10'].c.minutes, code === 'G' ? 540 : 360, code);
+  }
+});
+
+test('previous-day rebalance preserves a manual closer before an automatic closer', () => {
+  const plan = savedFridayPlan(
+    {
+      manual: shift('09:00', '19:10'),
+      automatic: { ...shift('13:00', '19:10'), planning2AutoCloser: true },
+      morning: shift('09:00', '19:00')
+    },
+    { morning: shift('09:00', '15:00', 'F6') }
+  );
+
+  applySavedDay(plan, [employee('manual'), employee('automatic'), employee('morning')], '2026-04-10');
+
+  assert.equal(plan.schedule['2026-04-09'].manual.end, '19:10');
+  assert.equal(plan.schedule['2026-04-09'].automatic.end, '19:00');
+});
+
+test('saved morning extends its previous 19:00 shift and receives 08:55', () => {
   const plan = savedFridayPlan({ a: shift('09:00', '19:00') }, { a: shift('09:00', '15:00', 'F6') });
   applySavedDay(plan, [employee('a')], '2026-04-10');
-  assert.equal(plan.schedule['2026-04-10'].a.start, '09:00');
+  assert.equal(plan.schedule['2026-04-09'].a.end, '19:10');
+  assert.equal(plan.schedule['2026-04-10'].a.start, '08:55');
 });
 
 test('resolved vacation or sickness cannot receive saved-day carryover', () => {
