@@ -59,7 +59,7 @@ test('coverage uses every employee resolved shift and refreshes after a changed 
   const plan = { schedule: {}, absences: [] };
   const day = new Date(2026, 7, 27);
 
-  assert.deepEqual(Array.from(coverage(employees, plan, day)), [false, '18:00–19:10 <2']);
+  assert.deepEqual(Array.from(coverage(employees, plan, day)), [false, 'Unterbesetzung am Abend · 18:00–19:10 <2']);
 
   resolved.late = shift('15:00', '19:00');
   assert.deepEqual(Array.from(coverage(employees, plan, day)), [true, '✓ Besetzung']);
@@ -147,7 +147,7 @@ test('persisted planning 2 edit is the entry used by coverage on the next render
   }));
 
   vm.runInContext('render()', context);
-  assert.deepEqual(Array.from(renderedCoverage[0]), [false, '18:00–19:10 <2']);
+  assert.deepEqual(Array.from(renderedCoverage[0]), [false, 'Unterbesetzung am Abend · 18:00–19:10 <2']);
   const legacyResolved = realResolution.getResolvedDayEntry({
     employee: employees[2],
     isoDate: dayIso,
@@ -180,7 +180,55 @@ test('coverage excludes resolved non-working states including external help', ()
 
   assert.deepEqual(
     Array.from(coverage(employees, { schedule: {}, absences: [] }, new Date(2026, 7, 27))),
-    [false, '9:00–19:10 <2']
+    [false, 'Unterbesetzung am Vormittag · 9:00–19:10 <2']
+  );
+});
+
+test('coverage prioritizes a missing 08:55 opener', () => {
+  const resolved = {
+    first: shift('09:00', '19:10'),
+    second: shift('09:00', '19:10')
+  };
+  const { coverage } = loadCoverage(resolved);
+
+  assert.deepEqual(
+    Array.from(coverage([{ id: 'first' }, { id: 'second' }], { schedule: {}, absences: [] }, new Date(2026, 7, 27))),
+    [false, '08:55 fehlt']
+  );
+});
+
+test('coverage identifies morning, afternoon, and evening understaffing', () => {
+  const cases = [
+    ['Vormittag', '09:00', '10:05', 'Unterbesetzung am Vormittag · 9:00–10:05 <2'],
+    ['Nachmittag', '13:00', '14:05', 'Unterbesetzung am Nachmittag · 13:00–14:05 <2'],
+    ['Abend', '18:00', '19:10', 'Unterbesetzung am Abend · 18:00–19:10 <2']
+  ];
+
+  for (const [section, gapStart, gapEnd, expected] of cases) {
+    const resolved = {
+      opener: shift('08:55', '19:10'),
+      beforeGap: shift('09:00', gapStart),
+      afterGap: shift(gapEnd, '19:10')
+    };
+    const { coverage } = loadCoverage(resolved);
+    assert.deepEqual(
+      Array.from(coverage(Object.keys(resolved).map((id) => ({ id })), { schedule: {}, absences: [] }, new Date(2026, 7, 27))),
+      [false, expected],
+      `${section} should be named in the warning`
+    );
+  }
+});
+
+test('coverage reports sufficient staffing for a fully covered day', () => {
+  const resolved = {
+    opener: shift('08:55', '19:10'),
+    second: shift('09:00', '19:10')
+  };
+  const { coverage } = loadCoverage(resolved);
+
+  assert.deepEqual(
+    Array.from(coverage([{ id: 'opener' }, { id: 'second' }], { schedule: {}, absences: [] }, new Date(2026, 7, 27))),
+    [true, '✓ Besetzung']
   );
 });
 
