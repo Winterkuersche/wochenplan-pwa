@@ -1,0 +1,28 @@
+name: Planung 2 Preview
+
+on:
+  push:
+    branches:
+      - planung-2-interaktiv
+  workflow_dispatch:
+
+concurrency:
+  group: planung-2-preview
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Planung 2
+        uses: actions/checkout@v4
+
+      - name: Planung-2-Dateien prüfen
+        run: |
+          test -f planung2-preview.html
+          test -f time-utils.js
+          test -f day-resolution.js
+
+      - name: Planung-2-Tests ausführen
+        run: |
+          node --test tests/planning2-preview-startup.test.js tests/planning2-preview-coverage.test.js tests/planning2-closing-autofix.test.js tests/time-logic.test.js
