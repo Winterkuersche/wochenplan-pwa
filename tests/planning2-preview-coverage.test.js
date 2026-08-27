@@ -138,6 +138,8 @@ test('persisted planning 2 edit is the entry used by coverage on the next render
     extractFunction('applyPlanning2EarlyStartCarryover'),
     extractFunction('closingWorkload'),
     extractFunction('extendClosingShift'),
+    extractFunction('restoreClosingShift'),
+    extractFunction('alignPreviousClosingTeam'),
     extractFunction('applyPlanning2ClosingAutofix'),
     extractFunction('applyPlanning2SavedDayAutofixes'),
     extractFunction('persist'),
