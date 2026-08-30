@@ -158,10 +158,10 @@ test('Stage C generates resize, reposition and removal candidates on the complet
   context.days[0].coverage={ok:false,gaps:[{kind:'understaffing',start:960,end:1140}]};
   api.setEvaluate(entries=>entries[0]?.sourceEntry?{ok:false,gaps:[{kind:'understaffing',start:960,end:1140}]}:{ok:true,gaps:[]});
   const result=api.generatePlanning2ExistingShiftMutationEvaluation(context),all=[...result.candidates,...result.rejected];
-  for(const [start,end] of [['10:00','15:00'],['09:00','14:00'],['08:55','15:00'],['09:00','19:10'],['10:00','16:00'],['12:00','18:00'],['13:10','19:10']])assert.ok(all.some(x=>x.proposedStart===start&&x.proposedEnd===end),`${start}-${end}`);
+  for(const [start,end] of [['10:00','15:00'],['09:00','14:00'],['08:55','15:00'],['09:00','19:10'],['10:00','16:00'],['12:00','18:00'],['13:15','19:10']])assert.ok(all.some(x=>x.proposedStart===start&&x.proposedEnd===end),`${start}-${end}`);
   assert.ok(all.some(x=>x.mutationType==='SHIFT_REMOVE'&&x.mutations[0].after===null));
   assert.ok(all.some(x=>x.mutationType==='SHIFT_REPOSITION'));
-  assert.ok(all.filter(x=>x.proposedStart).every(x=>['08:55','19:10'].includes(x.proposedStart)||(Number(x.proposedStart.slice(0,2))*60+Number(x.proposedStart.slice(3)))%15===0||x.proposedStart==='13:10'));
+  assert.ok(all.filter(x=>x.proposedStart).every(x=>['08:55','19:10'].includes(x.proposedStart)||(Number(x.proposedStart.slice(0,2))*60+Number(x.proposedStart.slice(3)))%15===0));
   assert.ok(result.rejected.some(x=>x.constraintResults.violations.some(v=>v.rule==='MIN_SHIFT_DURATION')));
 });
 
@@ -173,11 +173,23 @@ test('Stage C mutation facts preserve work deltas and do not mutate their contex
   assert.ok(shorter.gfbMonthAdditionalMinutes<0);assert.equal(remove.workMinutesAfter,0);assert.equal(remove.createsRealFreeDay,true);assert.equal(remove.mutations[0].after,null);assert.equal(JSON.stringify(context),stable);assert.notEqual(snapshot,stable);
 });
 
+test('Stage C treats an existing shift as gap-independent plan material',()=>{
+  const api=loadApi(),context=api.buildPlanning2OptimizationContext([{id:'a',roleKey:'TZ'}],[day],[[shift('09:00','15:00',360)]]);context.days[0].coverage={ok:true,gaps:[]};api.setEvaluate(()=>({ok:true,gaps:[]}));
+  const result=api.generatePlanning2ExistingShiftMutationEvaluation(context),all=[...result.candidates,...result.rejected],candidate=all.find(x=>x.proposedStart==='13:15'&&x.proposedEnd==='19:10');
+  assert.ok(candidate);assert.equal(candidate.problemId,'2026-08-24|existing-shift|a');assert.equal(JSON.stringify(candidate.problemContext),JSON.stringify({type:'EXISTING_SHIFT_MUTATION',isoDate:'2026-08-24',employeeId:'a'}));assert.equal(candidate.understaffingWindow,null);
+});
+
+test('Stage C never generates arbitrary non-grid boundaries',()=>{
+  const api=loadApi(),context=api.buildPlanning2OptimizationContext([{id:'a',roleKey:'TZ'}],[day],[[shift('09:00','15:00',360)]]);context.days[0].coverage={ok:true,gaps:[]};api.setEvaluate(()=>({ok:true,gaps:[]}));
+  const all=[...api.generatePlanning2ExistingShiftMutationEvaluation(context).candidates,...api.generatePlanning2ExistingShiftMutationEvaluation(context).rejected],times=all.flatMap(x=>[x.proposedStart,x.proposedEnd]).filter(Boolean);
+  for(const forbidden of ['13:10','14:05','17:20'])assert.ok(!times.includes(forbidden),forbidden);assert.ok(times.every(time=>['08:55','19:10'].includes(time)||(Number(time.slice(0,2))*60+Number(time.slice(3)))%15===0));
+});
+
 test('Stage C applies central availability boundaries and maximum duration without the full-day opt-in',()=>{
   const employee={id:'a',roleKey:'TZ',planning2FullDayCandidate:false,availability:{general:{earliestStart:'10:00',latestEnd:'19:10',maxShiftMinutes:360}}},api=loadApi(),context=api.buildPlanning2OptimizationContext([employee],[day],[[shift('09:00','15:00',360)]]);
   context.days[0].coverage={ok:false,gaps:[{kind:'understaffing',start:960,end:1150}]};api.setEvaluate(()=>({ok:true,gaps:[]}));
-  const result=api.generatePlanning2ExistingShiftMutationEvaluation(context),all=[...result.candidates,...result.rejected],full=all.find(x=>x.proposedStart==='08:55'&&x.proposedEnd==='19:10'),valid=all.find(x=>x.proposedStart==='13:00'&&x.proposedEnd==='19:00'),special=all.find(x=>x.proposedStart==='13:10'&&x.proposedEnd==='19:10');
+  const result=api.generatePlanning2ExistingShiftMutationEvaluation(context),all=[...result.candidates,...result.rejected],full=all.find(x=>x.proposedStart==='08:55'&&x.proposedEnd==='19:10'),valid=all.find(x=>x.proposedStart==='13:00'&&x.proposedEnd==='19:00');
   assert.ok(full.constraintResults.violations.some(v=>v.rule==='EMPLOYEE_AVAILABILITY'&&v.code==='BEFORE_AVAILABILITY'));
   assert.ok(full.constraintResults.violations.some(v=>v.rule==='EMPLOYEE_AVAILABILITY'&&v.code==='MAX_SHIFT_DURATION'));
-  assert.equal(valid.availabilityResult.valid,true);assert.ok(!valid.constraintResults.violations.some(v=>v.rule==='FULL_DAY_NOT_ALLOWED'));assert.equal(special.availabilityResult.valid,false);
+  assert.equal(valid.availabilityResult.valid,true);assert.ok(!valid.constraintResults.violations.some(v=>v.rule==='FULL_DAY_NOT_ALLOWED'));
 });
