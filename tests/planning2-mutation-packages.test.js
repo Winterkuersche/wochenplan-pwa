@@ -1,9 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
-const central = loadScripts(['time-utils.js']);
+const central = loadScripts(['time-utils.js','employee-availability.js']);
 global.getBusinessRequiredBreakMinutes = central.getBusinessRequiredBreakMinutes;
 global.getWorkedMinutesFromRange = central.getWorkedMinutesFromRange;
+global.isPlanning2AllowedPlanTime = central.isPlanning2AllowedPlanTime;
+global.validateShiftAgainstEmployeeAvailability = central.validateShiftAgainstEmployeeAvailability;
 const packages = require('../planning2-mutation-packages.js');
 
 const shift = (start, end) => ({ type: 'shift', status: 'work', start, end, minutes: central.getWorkedMinutesFromRange(start, end, central.getBusinessRequiredBreakMinutes(start, end)) });
@@ -53,7 +55,7 @@ test('conflicting cell mutations reject while exact duplicates deduplicate and I
 
 test('time constraints accept only the regular grid plus exact 08:55 and 19:10 boundaries',()=>{
   const c=context();
-  for(const [start,end,valid] of [['08:55','12:00',true],['16:00','19:10',true],['13:10','16:10',false],['14:05','17:05',false],['09:00','11:45',false]]){
+  for(const [start,end,valid] of [['08:55','12:00',true],['16:00','19:10',true],['07:00','10:00',false],['18:00','20:00',false],['13:10','16:10',false],['14:05','17:05',false],['09:00','11:45',false]]){
     const result=packages.simulatePlanning2MutationPackage(c,{mutations:[mutation('2026-09-07','a',{start:'09:00',end:'15:00'},{start,end})]});
     assert.equal(result.constraintResults.violations.some(v=>['INVALID_TIME_GRID','MINIMUM_SHIFT_DURATION'].includes(v.rule)),!valid,`${start}-${end}`);
   }
@@ -70,8 +72,22 @@ test('generation is side-effect free, creates compensation packages, and exposes
 
 test('atomic apply rejects stale before state without changing source and applies/undo-ready copies otherwise',()=>{
   const c=context(), source=structuredClone(c.sourcePlan), packageSuggestion={mutations:[mutation('2026-09-07','a',{start:'09:00',end:'15:00'},null),mutation('2026-09-08','a',null,{start:'09:00',end:'12:00'})]};
-  const prepared=packages.preparePlanning2MutationPackageApply(source,packageSuggestion);
+  const prepared=packages.preparePlanning2MutationPackageApply(source,packageSuggestion,{validationContext:c});
   assert.equal(prepared.valid,true); assert.equal(source.schedule['2026-09-07'].a.start,'09:00'); assert.equal(prepared.plan.schedule['2026-09-07'].a,undefined);
-  const stale=packages.preparePlanning2MutationPackageApply({...source,schedule:{...source.schedule,'2026-09-07':{a:shift('10:00','15:00')}}},packageSuggestion);
+  const stale=packages.preparePlanning2MutationPackageApply({...source,schedule:{...source.schedule,'2026-09-07':{a:shift('10:00','15:00')}}},packageSuggestion,{validationContext:c});
   assert.equal(stale.valid,false); assert.equal(stale.plan,null);
+});
+
+test('apply fully revalidates a package against fresh availability and leaves the source untouched',()=>{
+  const original=context(), source=structuredClone(original.sourcePlan), packageSuggestion={mutations:[mutation('2026-09-07','a',{start:'09:00',end:'15:00'},{start:'09:00',end:'14:00'}),mutation('2026-09-08','a',null,{start:'09:00',end:'12:00'})]};
+  const fresh=context({plan:source,people:[{employeeId:'a',sourceEmployee:{availability:{dates:{'2026-09-08':{earliestStart:'13:00'}}}},evaluation:{weeklyActualMinutes:900},gfbMonthActualMinutes:900,gfbMonthLimitMinutes:2580}]});
+  const before=JSON.stringify(source), result=packages.preparePlanning2MutationPackageApply(source,packageSuggestion,{buildFreshContext:()=>fresh});
+  assert.equal(result.valid,false); assert.ok(result.violations.some(v=>v.rule==='EMPLOYEE_AVAILABILITY')); assert.equal(result.plan,null); assert.equal(JSON.stringify(source),before);
+});
+
+test('generator prunes large unrelated candidate sets before package simulation',()=>{
+  const candidates=[];
+  for(let problem=0;problem<40;problem++)for(let option=0;option<20;option++){const date=new Date('2026-09-07T00:00:00Z');date.setUTCDate(date.getUTCDate()+problem*7);candidates.push({candidateId:`${problem}-${option}`,problemId:`p${problem}`,employeeId:`e${problem%5}`,mutationType:'SHIFT_RESIZE',actualChangeMinutes:option%2?15:-15,mutations:[mutation(date.toISOString().slice(0,10),`e${problem%5}`,{start:'09:00',end:'15:00'},{start:'09:00',end:option%2?'15:15':'14:45'})]})}
+  const result=packages.generatePlanning2MutationPackages(context(),candidates);
+  assert.equal(result.generationFacts.inputCandidateCount,800); assert.ok(result.generationFacts.preselectedCandidateCount<=40*8); assert.equal(result.generationFacts.simulatedPairCount,0); assert.ok(result.generationFacts.consideredPairCount<800*799/2);
 });

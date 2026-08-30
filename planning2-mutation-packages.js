@@ -31,9 +31,10 @@ function planning2PackageMinutes(entry) {
   return typeof getWorkedMinutesFromRange === "function" ? getWorkedMinutesFromRange(entry.start, entry.end, pause) : Math.max(0, toMinutes(entry.end) - toMinutes(entry.start) - pause);
 }
 function planning2PackageValidBoundary(value) {
+  if (typeof isPlanning2AllowedPlanTime === "function") return isPlanning2AllowedPlanTime(value);
   if (!/^\d\d:\d\d$/.test(String(value || ""))) return false;
-  if (value === "08:55" || value === "19:10") return true;
-  return Number(value.slice(3)) % 15 === 0;
+  const minutes = Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
+  return minutes === 535 || minutes === 1150 || minutes >= 540 && minutes <= 1140 && minutes % 15 === 0;
 }
 function applyPlanning2MutationsToPlan(sourcePlan, mutations) {
   const plan = planning2PackageClone(sourcePlan || { schedule: {} });
@@ -107,13 +108,12 @@ function simulatePlanning2MutationPackage(context, input) {
     const delta = employeeMutations.reduce((sum, m) => sum + planning2PackageMinutes(m.after) - planning2PackageMinutes(m.before), 0);
     const before = Number(person?.evaluation?.weeklyActualMinutes || 0), monthBefore = Number(person?.gfbMonthActualMinutes || 0);
     hoursByEmployee[employeeId] = { minutesBefore: before, minutesAfter: before + delta, deltaMinutes: delta, monthMinutesBefore: monthBefore, monthMinutesAfter: monthBefore + delta };
-    const relevantDays = (context.days || []).filter(day => { const weekday = new Date(`${day.isoDate}T00:00:00Z`).getUTCDay(); return weekday >= 1 && weekday <= 6; });
-    const freeDates = relevantDays.filter(day => {
-      const mutation = employeeMutations.find(m => m.isoDate === day.isoDate); if (mutation) return mutation.after === null;
-      const index = employees.indexOf(person), entry = day.resolvedEntries?.[index]; return !entry || entry.type === "empty" || entry.type === "off" || entry.status === "off";
-    }).map(day => day.isoDate);
-    const freeFact = { employeeId, freeDatesAfter: freeDates, hasRealFreeDay: freeDates.length > 0 }; freeDayFacts.push(freeFact);
-    if (relevantDays.length && !freeFact.hasRealFreeDay) violations.push({ rule: "REAL_FREE_DAY_REQUIRED", employeeId });
+    const mondayOf = isoDate => { const date = new Date(`${isoDate}T00:00:00Z`), weekday = date.getUTCDay() || 7; date.setUTCDate(date.getUTCDate() + 1 - weekday); return date.toISOString().slice(0, 10); };
+    const relevantDays = (context.days || []).filter(day => { const weekday = new Date(`${day.isoDate}T00:00:00Z`).getUTCDay(); return weekday >= 1 && weekday <= 6; }), weeks = new Map();
+    relevantDays.forEach(day => { const monday = mondayOf(day.isoDate); if (!weeks.has(monday)) weeks.set(monday, []); weeks.get(monday).push(day); });
+    const weekFacts = [...weeks].map(([weekMonday, days]) => { const freeDates = days.filter(day => { const mutation = employeeMutations.find(m => m.isoDate === day.isoDate); if (mutation) return mutation.after === null; const index = employees.indexOf(person), entry = day.resolvedEntries?.[index]; return !entry || entry.type === "empty" || entry.type === "off" || entry.status === "off"; }).map(day => day.isoDate); return { weekMonday, freeDatesAfter: freeDates, hasRealFreeDay: freeDates.length > 0 }; });
+    const freeFact = { employeeId, weeks: weekFacts, freeDatesAfter: weekFacts.flatMap(week => week.freeDatesAfter), hasRealFreeDay: weekFacts.every(week => week.hasRealFreeDay) }; freeDayFacts.push(freeFact);
+    weekFacts.filter(week => !week.hasRealFreeDay).forEach(week => violations.push({ rule: "REAL_FREE_DAY_REQUIRED", employeeId, weekMonday: week.weekMonday }));
     if (person?.evaluation?.isGfb) {
       const limit = Number(person.gfbMonthLimitMinutes), projected = monthBefore + delta;
       if (Number.isFinite(limit) && projected > limit) violations.push({ rule: "GFB_MONTH_LIMIT", employeeId, projectedMinutes: projected, limitMinutes: limit });
@@ -138,18 +138,31 @@ function planning2PackageWithFollowUps(context, candidate, packageType) {
   result.constraintResults.violations.push({ rule: "INCOMPLETE_FOLLOW_UP_CHAIN" }); result.constraintResults.allowed = result.valid = false; return result;
 }
 function generatePlanning2MutationPackages(context, candidates) {
-  const packages = [], rejected = [], source = candidates || [];
+  const packages = [], rejected = [], raw = candidates || [], topK = Math.max(1, Number(context?.packageTopK) || 8), signature = candidate => JSON.stringify((candidate.mutations || []).map(planning2PackageCanonicalMutation));
+  const partitions = new Map();
+  raw.forEach(candidate => { const key = [candidate.problemId || "no-problem", candidate.mutationType || "mutation", candidate.employeeId].join("|"); if (!partitions.has(key)) partitions.set(key, new Map()); const unique = partitions.get(key); if (!unique.has(signature(candidate)) && unique.size < topK) unique.set(signature(candidate), candidate); });
+  const source = [...partitions.values()].flatMap(unique => [...unique.values()]), pairKeys = new Set(); let consideredPairCount = 0, simulatedPairCount = 0;
   source.filter(candidate => (candidate.requiredFollowUpMutations || []).length).forEach(candidate => { const value = planning2PackageWithFollowUps(context, candidate, "CARRYOVER_FOLLOW_UP"); (value.valid ? packages : rejected).push(value); });
-  for (let left = 0; left < source.length; left++) for (let right = left + 1; right < source.length; right++) {
-    const a = source[left], b = source[right], compensation = a.requiresCompensatingPackage && b.mutationType === "SHIFT_REMOVE" && String(a.employeeId) === String(b.employeeId) || b.requiresCompensatingPackage && a.mutationType === "SHIFT_REMOVE" && String(a.employeeId) === String(b.employeeId);
-    const redistribution = String(a.employeeId) !== String(b.employeeId) && ((a.actualChangeMinutes || 0) * (b.actualChangeMinutes || 0) < 0 || [a.mutationType, b.mutationType].includes("SHIFT_REMOVE"));
-    if (!compensation && !redistribution) continue;
-    const packageType = compensation ? "FREE_DAY_COMPENSATION" : "HOURS_REDISTRIBUTION", mutations = [...(a.mutations || []), ...(b.mutations || []), ...(a.requiredFollowUpMutations || []), ...(b.requiredFollowUpMutations || [])];
+  const mondayOf = isoDate => { const date = new Date(`${isoDate}T00:00:00Z`), weekday = date.getUTCDay() || 7; date.setUTCDate(date.getUTCDate() + 1 - weekday); return date.toISOString().slice(0, 10); };
+  const affectedDates = candidate => [...new Set((candidate.mutations || []).map(mutation => mutation.isoDate))];
+  const eligiblePairs = [], addPair = (a, b, packageType) => { if (a === b || (a.requiredFollowUpMutations || []).length || (b.requiredFollowUpMutations || []).length) return; consideredPairCount++; const key = [a.candidateId || signature(a), b.candidateId || signature(b)].sort().join("||"); if (pairKeys.has(key)) return; pairKeys.add(key); eligiblePairs.push({ a, b, packageType }); };
+  const removalsByEmployeeWeek = new Map();
+  source.filter(candidate => candidate.mutationType === "SHIFT_REMOVE").forEach(candidate => affectedDates(candidate).forEach(date => { const key = `${candidate.employeeId}|${mondayOf(date)}`; if (!removalsByEmployeeWeek.has(key)) removalsByEmployeeWeek.set(key, []); removalsByEmployeeWeek.get(key).push(candidate); }));
+  source.filter(candidate => candidate.requiresCompensatingPackage).forEach(candidate => affectedDates(candidate).forEach(date => (removalsByEmployeeWeek.get(`${candidate.employeeId}|${mondayOf(date)}`) || []).slice(0, topK).forEach(remove => addPair(candidate, remove, "FREE_DAY_COMPENSATION"))));
+  const redistributionBuckets = new Map(), addToBucket = (key, candidate) => { if (!redistributionBuckets.has(key)) redistributionBuckets.set(key, []); const bucket = redistributionBuckets.get(key); if (bucket.length < topK * 4) bucket.push(candidate); };
+  source.filter(candidate => !(candidate.requiredFollowUpMutations || []).length).forEach(candidate => { affectedDates(candidate).forEach(date => addToBucket(`date:${date}`, candidate)); if (candidate.problemId) addToBucket(`problem:${candidate.problemId}`, candidate); });
+  redistributionBuckets.forEach(bucket => { for (let left = 0; left < bucket.length; left++) for (let right = left + 1; right < bucket.length; right++) {
+    const a = bucket[left], b = bucket[right];
+    const deltaA = Number(a.actualChangeMinutes ?? a.workMinutesDifference ?? 0), deltaB = Number(b.actualChangeMinutes ?? b.workMinutesDifference ?? 0);
+    if (String(a.employeeId) !== String(b.employeeId) && deltaA * deltaB < 0) addPair(a, b, "HOURS_REDISTRIBUTION");
+  }});
+  eligiblePairs.slice(0, Math.max(32, topK * topK * 4)).forEach(({ a, b, packageType }) => {
+    const mutations = [...(a.mutations || []), ...(b.mutations || []), ...(a.requiredFollowUpMutations || []), ...(b.requiredFollowUpMutations || [])]; simulatedPairCount++;
     const value = simulatePlanning2MutationPackage(context, { packageType, problemIds: [a.problemId, b.problemId].filter(Boolean), sourceCandidateIds: [a.candidateId, b.candidateId].filter(Boolean), mutations });
     (value.valid ? packages : rejected).push(value);
-  }
+  });
   const unique = values => [...new Map(values.map(value => [value.packageId, value])).values()];
-  return { packages: unique(packages), rejected: unique(rejected) };
+  return { packages: unique(packages), rejected: unique(rejected), generationFacts: { inputCandidateCount: raw.length, preselectedCandidateCount: source.length, consideredPairCount, simulatedPairCount, topK } };
 }
 function rankPlanning2MutationPackages(packages) { return [...(packages || [])].sort((a, b) => b.coverageFacts.improvedMinutes - a.coverageFacts.improvedMinutes || a.disruptionFacts.mutationCount - b.disruptionFacts.mutationCount || a.packageId.localeCompare(b.packageId)); }
 function preparePlanning2MutationPackageApply(sourcePlan, packageSuggestion, context = {}) {
@@ -160,13 +173,10 @@ function preparePlanning2MutationPackageApply(sourcePlan, packageSuggestion, con
     if (JSON.stringify(currentShape) !== JSON.stringify(mutation.before)) violations.push({ rule: "STALE_MUTATION_BEFORE", isoDate: mutation.isoDate, employeeId: mutation.employeeId });
   });
   if (violations.length) return { valid: false, violations, plan: null };
-  const plan = applyPlanning2MutationsToPlan(sourcePlan, normalized.mutations);
-  if (typeof context.validatePackagePlan === "function") violations.push(...(context.validatePackagePlan(plan, normalized.mutations) || []));
-  if (typeof evaluatePlanning2CandidateFollowUpRules === "function" && context.sourceEmployees) {
-    const followUp = evaluatePlanning2CandidateFollowUpRules({ mutations: normalized.mutations }, { ...context, sourcePlan });
-    if (!followUp.valid || followUp.requiredFollowUpMutations?.length) violations.push(...(followUp.violations || []), ...(followUp.requiredFollowUpMutations || []).map(mutation => ({ rule: "MISSING_VISIBLE_FOLLOW_UP_MUTATION", mutation })));
-  }
-  return { valid: violations.length === 0, violations, plan: violations.length ? null : plan };
+  const validationContext = typeof context.buildFreshContext === "function" ? context.buildFreshContext(sourcePlan, normalized.mutations) : context.validationContext;
+  if (!validationContext) return { valid: false, violations: [{ rule: "PACKAGE_VALIDATION_CONTEXT_REQUIRED" }], plan: null };
+  const simulation = simulatePlanning2MutationPackage({ ...validationContext, sourcePlan }, { ...packageSuggestion, mutations: normalized.mutations });
+  return { valid: simulation.valid, violations: simulation.constraintResults.violations, plan: simulation.valid ? simulation.simulatedPlan : null, simulation };
 }
 
 if (typeof module !== "undefined") module.exports = { normalizePlanning2PackageMutations, planning2PackageId, applyPlanning2MutationsToPlan, preparePlanning2MutationPackageApply, simulatePlanning2MutationPackage, generatePlanning2MutationPackages, rankPlanning2MutationPackages };
