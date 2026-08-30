@@ -30,13 +30,22 @@ function planning2CarryoverRolePriority(employee) {
   return tokens.includes("TL") ? 2 : tokens.includes("SV") || tokens.includes("STV") ? 1 : 0;
 }
 
+function isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso) {
+  const morning = getShift(employee, morningIso);
+  return morning?.start === "08:55"
+    && morning.planning2AutoOpener !== true
+    && (["FO", "FLEX"].includes(morning.code) || morning.shiftKey === "FO" || morning.mode === "early" || morning.shiftType === "early");
+}
+
 function rankPlanning2CarryoverCandidates(employees, getShift, closingIso, morningIso, allowedEnds = ["19:10"]) {
-  return (employees || []).map((employee, index) => ({ employee, index }))
+  const eligible = (employees || []).map((employee, index) => ({ employee, index }))
     .filter(({ employee }) => {
       const closing = getShift(employee, closingIso);
       const morning = getShift(employee, morningIso);
       return closing && allowedEnds.includes(closing.end) && ["08:55", "09:00"].includes(morning?.start);
-    })
+    });
+  const explicit = eligible.filter(({ employee }) => isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso));
+  return (explicit.length ? explicit : eligible)
     .sort((left, right) => planning2CarryoverRolePriority(right.employee) - planning2CarryoverRolePriority(left.employee) || left.index - right.index)
     .map(item => item.employee);
 }
@@ -67,31 +76,66 @@ function planning2CarryoverProblem(evaluation) {
   return { problemId: `${evaluation.morningIso}|carryover-opener`, type: "carryover-opener", closingIso: evaluation.closingIso, morningIso: evaluation.morningIso, isoDate: evaluation.morningIso, expectedEmployeeId: evaluation.expectedOpenerEmployeeId, actualEmployeeIds: [...evaluation.actualOpenerEmployeeIds], eligibleEmployeeIds: [...evaluation.eligibleEmployeeIds], violations: evaluation.violations.map(item => ({ ...item })) };
 }
 
+function planning2CarryoverViolationFacts(evaluation) {
+  return (evaluation?.violations || []).map(item => ({
+    rule: "CARRYOVER_OPENER_RULE",
+    morningIso: evaluation.morningIso,
+    closingIso: evaluation.closingIso,
+    expectedEmployeeId: evaluation.expectedOpenerEmployeeId,
+    actualEmployeeIds: [...evaluation.actualOpenerEmployeeIds],
+    reason: item.code
+  }));
+}
+
+function planning2CarryoverViolationKey(violation) {
+  return JSON.stringify([violation.morningIso, violation.closingIso, violation.reason, violation.expectedEmployeeId, violation.actualEmployeeIds]);
+}
+
 function evaluatePlanning2CandidateFollowUpRules(candidate, context) {
   const plan = context?.sourcePlan;
   const employees = context?.sourceEmployees || [];
-  if (!plan) return { rules: [], requiredFollowUpMutations: [], touchesCarryoverRule: false, valid: true, violations: [] };
+  if (!plan) return { rules: [], carryoverBefore: [], carryoverAfter: [], introducedViolations: [], preExistingViolations: [], requiredFollowUpMutations: [], touchesCarryoverRule: false, valid: true, violations: [] };
   const simulated = JSON.parse(JSON.stringify(plan));
   (candidate?.mutations || []).forEach(mutation => {
     const entry = simulated.schedule?.[mutation.isoDate]?.[mutation.employeeId];
     if (entry?.type === "shift") simulated.schedule[mutation.isoDate][mutation.employeeId] = { ...entry, ...mutation.after };
   });
   const dates = [...new Set((candidate?.mutations || []).flatMap(mutation => [mutation.isoDate, nextPlanning2RelevantWorkday(mutation.isoDate, simulated)]))];
-  const getShift = (employee, isoDate) => simulated.schedule?.[isoDate]?.[employee.id]?.type === "shift" ? simulated.schedule[isoDate][employee.id] : null;
-  const rules = dates.map(morningIso => evaluatePlanning2CarryoverRule({ plan: simulated, employees, morningIso, getShift }));
+  const resolveShift = (workingPlan, employee, isoDate) => {
+    if (typeof context?.resolveWorkShift === "function") return context.resolveWorkShift(workingPlan, employee, isoDate);
+    if (typeof getResolvedDayEntry === "function") {
+      const resolved = getResolvedDayEntry({ employee, isoDate, schedule: workingPlan.schedule, absences: workingPlan.absences, stateKey: workingPlan.stateKey || "schleswig-holstein" });
+      return resolved?.type === "shift" && resolved.sourceEntry?.type === "shift" ? resolved.sourceEntry : null;
+    }
+    return null;
+  };
+  const evaluate = (workingPlan, morningIso) => evaluatePlanning2CarryoverRule({
+    plan: workingPlan,
+    employees,
+    morningIso,
+    getShift: (employee, isoDate) => resolveShift(workingPlan, employee, isoDate)
+  });
+  const carryoverBefore = dates.map(morningIso => evaluate(plan, morningIso));
+  const carryoverAfter = dates.map(morningIso => evaluate(simulated, morningIso));
+  const preExistingViolations = carryoverBefore.flatMap(planning2CarryoverViolationFacts);
+  const beforeKeys = new Set(preExistingViolations.map(planning2CarryoverViolationKey));
+  const introducedViolations = carryoverAfter.flatMap(planning2CarryoverViolationFacts)
+    .filter(violation => !beforeKeys.has(planning2CarryoverViolationKey(violation)));
+  const introducedMornings = new Set(introducedViolations.map(violation => violation.morningIso));
   const requiredFollowUpMutations = [];
-  rules.filter(rule => !rule.ok).forEach(rule => {
+  carryoverAfter.filter(rule => introducedMornings.has(rule.morningIso)).forEach(rule => {
     const expected = rule.expectedOpenerEmployeeId;
-    const entry = expected && simulated.schedule?.[rule.morningIso]?.[expected];
+    const employee = employees.find(item => String(item.id) === String(expected));
+    const entry = employee && resolveShift(simulated, employee, rule.morningIso);
     if (entry && entry.start !== "08:55") requiredFollowUpMutations.push({ isoDate: rule.morningIso, employeeId: expected, before: { start: entry.start, end: entry.end }, after: { start: "08:55", end: entry.end }, reason: "CARRYOVER_OPENER" });
     rule.actualOpenerEmployeeIds.filter(id => String(id) !== String(expected)).forEach(id => {
-      const stale = simulated.schedule?.[rule.morningIso]?.[id];
+      const staleEmployee = employees.find(item => String(item.id) === String(id));
+      const stale = staleEmployee && resolveShift(simulated, staleEmployee, rule.morningIso);
       if (stale) requiredFollowUpMutations.push({ isoDate: rule.morningIso, employeeId: id, before: { start: stale.start, end: stale.end }, after: { start: "09:00", end: stale.end }, reason: "CARRYOVER_OPENER_RESET" });
     });
   });
-  const violations = rules.flatMap(rule => rule.violations.map(item => ({ rule: "CARRYOVER_OPENER_RULE", morningIso: rule.morningIso, closingIso: rule.closingIso, expectedEmployeeId: rule.expectedOpenerEmployeeId, actualEmployeeIds: [...rule.actualOpenerEmployeeIds], reason: item.code })));
-  const touchesCarryoverRule = (candidate?.mutations || []).some(mutation => [mutation.before?.start, mutation.after?.start].includes("08:55") || [mutation.before?.end, mutation.after?.end].includes("19:10"));
-  return { rules, requiredFollowUpMutations, touchesCarryoverRule, valid: violations.length === 0, violations };
+  const touchesCarryoverRule = carryoverAfter.some((after, index) => JSON.stringify(after) !== JSON.stringify(carryoverBefore[index]));
+  return { rules: carryoverAfter, carryoverBefore, carryoverAfter, introducedViolations, preExistingViolations, requiredFollowUpMutations, touchesCarryoverRule, valid: introducedViolations.length === 0, violations: introducedViolations };
 }
 
-if (typeof module !== "undefined") module.exports = { isPlanning2RelevantWorkday, previousPlanning2RelevantWorkday, nextPlanning2RelevantWorkday, planning2CarryoverRolePriority, rankPlanning2CarryoverCandidates, evaluatePlanning2CarryoverRule, planning2CarryoverProblem, evaluatePlanning2CandidateFollowUpRules };
+if (typeof module !== "undefined") module.exports = { isPlanning2RelevantWorkday, previousPlanning2RelevantWorkday, nextPlanning2RelevantWorkday, planning2CarryoverRolePriority, isPlanning2ExplicitCarryoverOpener, rankPlanning2CarryoverCandidates, evaluatePlanning2CarryoverRule, planning2CarryoverProblem, evaluatePlanning2CandidateFollowUpRules };
