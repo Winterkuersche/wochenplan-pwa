@@ -56,6 +56,38 @@ test('Pareto pruning removes dominated states', () => {
   assert.deepEqual(kept.map(value => value.id), ['best']);
 });
 
+test('an hours delta is not invented as month effect for Pareto pruning', () => {
+  const small = candidate('small-hours', '2026-09-01'), large = candidate('large-hours', '2026-09-02');
+  const result = Optimizer.run(session(), {
+    ...context([small, large]),
+    simulateState(baseline, mutations) {
+      const resultPlan = structuredClone(baseline);
+      mutations.forEach(mutation => { resultPlan.schedule[mutation.isoDate] = { [mutation.employeeId]: { type: 'shift', ...mutation.after } }; });
+      const deltaMinutes = mutations[0].isoDate === '2026-09-01' ? 30 : 300;
+      return { valid: true, simulatedPlan: resultPlan, coverageFacts: { understaffingMinutesAfter: 60, worsenedMinutes: 0 }, hoursFacts: { a: { deltaMinutes } } };
+    }
+  }, { maxDepth: 1, maxCandidatesPerGroup: 5 });
+  assert.equal(result.variants.length, 2);
+  assert.ok(result.variants.every(value => value.rankingFacts.hasMonthEffect === false));
+});
+
+test('bounded dependency pool protects a later package candidate from the normal cap', () => {
+  const normal = candidate('a-normal-best', '2026-09-01'); normal.coverageEffect = 100;
+  const dependency = candidate('z-required-package', '2026-09-02', 'b', 100, { requiresPackage: true });
+  let packageInputIds = [];
+  const result = Optimizer.run(session(), {
+    ...context([normal, dependency]),
+    generatePackages(_context, candidates) {
+      packageInputIds = candidates.map(value => value.candidateId);
+      const retained = candidates.find(value => value.candidateId === dependency.candidateId);
+      return { packages: retained ? [{ packageId: 'dependency-package', sourceCandidateIds: [retained.candidateId], mutations: retained.mutations }] : [] };
+    }
+  }, { maxCandidatesPerGroup: 1, maxDependencyCandidates: 2, maxDepth: 1 });
+  assert.deepEqual(packageInputIds, ['a-normal-best', 'z-required-package']);
+  assert.ok(result.variants.some(value => value.appliedPackageIds.includes('dependency-package')));
+  assert.equal(result.debugCounters.protectedDependencyCount, 1);
+});
+
 test('required follow-ups remain an atomic unit', () => {
   const primary = candidate('with-follow-up', '2026-09-01');
   primary.requiredFollowUpMutations = [{ isoDate: '2026-09-02', employeeId: 'b', before: null, after: { start: '12:00', end: '16:00', score: 20 } }];

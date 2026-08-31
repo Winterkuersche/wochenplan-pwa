@@ -6,6 +6,7 @@
 (function installPlanning2PlaygroundOptimizer(root) {
   const DEFAULT_CONFIG = Object.freeze({
     maxCandidatesPerGroup: 8,
+    maxDependencyCandidates: 24,
     maxPackageCandidates: 40,
     beamWidth: 24,
     maxDepth: 4,
@@ -72,17 +73,22 @@
   const unitId = unit => String(unit.packageId || unit.candidateId || stableId("unit", unit.mutations || unit));
   function factsOf(simulation, mutations) {
     const coverage = simulation.coverageFacts || {};
+    const explicitMonthEffect = simulation.rankingFacts?.monthEffect;
     return {
       understaffing: Number(coverage.understaffingMinutesAfter ?? simulation.rankingFacts?.understaffing ?? 0),
       coverageWorsened: Number(coverage.worsenedMinutes ?? simulation.rankingFacts?.coverageWorsened ?? 0),
-      monthEffect: Number(simulation.rankingFacts?.monthEffect ?? Object.values(simulation.hoursFacts || {}).reduce((sum, fact) => sum + Math.abs(Number(fact.deltaMinutes || 0)), 0)),
+      // E2 cannot infer month quality from the size of an hours transfer. Only a
+      // simulator-provided, domain-aware value may participate in this dimension.
+      monthEffect: Number.isFinite(explicitMonthEffect) ? Number(explicitMonthEffect) : 0,
+      hasMonthEffect: Number.isFinite(explicitMonthEffect),
       constraintRisk: Number(simulation.rankingFacts?.constraintRisk || 0),
       changes: mutations.length
     };
   }
   const compareStates = (a, b) => a.facts.understaffing - b.facts.understaffing || a.facts.coverageWorsened - b.facts.coverageWorsened || a.facts.constraintRisk - b.facts.constraintRisk || a.facts.monthEffect - b.facts.monthEffect || a.facts.changes - b.facts.changes || a.id.localeCompare(b.id);
   function dominates(a, b) {
-    const keys = ["understaffing", "coverageWorsened", "monthEffect", "constraintRisk", "changes"];
+    const keys = ["understaffing", "coverageWorsened", "constraintRisk", "changes"];
+    if (a.facts.hasMonthEffect && b.facts.hasMonthEffect) keys.push("monthEffect");
     return keys.every(key => a.facts[key] <= b.facts[key]) && keys.some(key => a.facts[key] < b.facts[key]);
   }
   function prune(states, width) {
@@ -106,13 +112,19 @@
     const generatorContext = { ...context, sourcePlan: clone(baselinePlan), plan: clone(baselinePlan), session: clone(input), problems: clone(problems), enableExistingShiftMutations: true };
     const rawCandidates = typeof candidateGenerator === "function" ? candidateGenerator(generatorContext) : clone(context.candidates || []);
     const selected = representativeSelection(rawCandidates || [], Math.max(1, config.maxCandidatesPerGroup));
+    // Package dependencies have their own bounded pool. They must reach Stage D
+    // even when the normal representative cap for their problem group is full.
+    const dependencyRelevant = candidate => candidate.requiresPackage || candidate.requiresCompensatingPackage
+      || (candidate.requiredFollowUpMutations || []).length > 0 || candidate.mutationType === "SHIFT_REMOVE";
+    const dependencyPool = (rawCandidates || []).filter(dependencyRelevant).sort((a, b) => unitId(a).localeCompare(unitId(b))).slice(0, Math.max(0, config.maxDependencyCandidates));
+    const packageInput = [...new Map([...selected, ...dependencyPool].map(value => [unitId(value), value])).values()].sort((a, b) => unitId(a).localeCompare(unitId(b)));
     const packageGenerator = context.generatePackages || root.generatePlanning2MutationPackages;
-    const packageResult = typeof packageGenerator === "function" ? packageGenerator({ ...context, sourcePlan: clone(baselinePlan), packageTopK: config.maxCandidatesPerGroup }, clone(selected)) : { packages: clone(context.packages || []) };
+    const packageResult = typeof packageGenerator === "function" ? packageGenerator({ ...context, sourcePlan: clone(baselinePlan), packageTopK: config.maxCandidatesPerGroup }, clone(packageInput)) : { packages: clone(context.packages || []) };
     const packages = (packageResult?.packages || []).slice().sort((a, b) => unitId(a).localeCompare(unitId(b))).slice(0, config.maxPackageCandidates);
     const packagedCandidateIds = new Set(packages.flatMap(value => value.sourceCandidateIds || []));
     const atomic = selected.filter(value => !(value.requiresPackage || value.requiresCompensatingPackage) && (!(value.requiredFollowUpMutations || []).length || value.allowFollowUpBundle !== false));
     const units = [...packages, ...atomic.filter(value => !packagedCandidateIds.has(value.candidateId))].map(normalizeUnit).filter(value => value.mutations && !value.mutations.some(mutation => lockViolation(input, mutation, today))).sort((a, b) => a.unitId.localeCompare(b.unitId));
-    const counters = { rawCandidateCount: (rawCandidates || []).length, prunedCandidateCount: units.length, simulatedStateCount: 0, maxFrontierSize: 0, packageCandidateCount: packages.length };
+    const counters = { rawCandidateCount: (rawCandidates || []).length, representativeCandidateCount: selected.length, protectedDependencyCount: dependencyPool.length, prunedCandidateCount: units.length, simulatedStateCount: 0, maxFrontierSize: 0, packageCandidateCount: packages.length };
     let frontier = [{ id: "baseline", mutations: [], used: [], plan: baselinePlan, planSignature: signature(baselinePlan), facts: { understaffing: Infinity, coverageWorsened: 0, monthEffect: Infinity, constraintRisk: 0, changes: 0 } }], accepted = [];
     for (let depth = 0; depth < config.maxDepth && counters.simulatedStateCount < config.maxSimulations; depth += 1) {
       const next = [];
