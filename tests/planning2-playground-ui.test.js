@@ -21,3 +21,17 @@ test('editing and shift fixation are separate and require no desktop modifier', 
   assert.doesNotMatch(ui, /shiftKey|ctrlKey|metaKey|altKey/);
   assert.doesNotMatch(ui, /contextmenu|dblclick|mouseenter|hover/);
 });
+
+test('playground delegates edits to the existing Planning 2 editor on an isolated copy', () => {
+  assert.match(preview, /window\.Planning2Editor=\{open/);
+  assert.match(ui, /window\.Planning2Editor/);
+  assert.match(ui, /api\.clone\(session\.workingPlan\)/);
+  assert.match(ui, /api\.commitWorkingPlan\(session/);
+  assert.doesNotMatch(ui, /start: "09:00", end: "17:00"/);
+});
+
+test('editor cancel has no playground commit callback and fast mode remains explicit', () => {
+  assert.match(preview, /function closeEditor\(\)\{editing=null/);
+  assert.match(preview, /if\(editing\?\.onCommit\)/);
+  assert.doesNotMatch(ui, /generatePlanning2CandidateEvaluation|generatePlanning2MutationPackages|buildPlanning2ProblemCandidateGroups/);
+});

@@ -47,7 +47,16 @@
   function entryLabel(entry) {
     if (entry?.type === "shift") return `${entry.start || "?"}–${entry.end || "?"}`;
     if (entry?.type === "off") return "Frei";
+    if (entry?.type === "vacation") return "Urlaub";
+    if (entry?.type === "sick") return "Krank";
+    if (entry?.type === "external-help") return `AH${entry.branch ? ` · ${entry.branch}` : ""}`;
     return entry ? entry.code || entry.type : "—";
+  }
+
+  function resolvedEntry(employee, isoDate) {
+    if (typeof getResolvedDayEntry !== "function") return session.workingPlan.schedule?.[isoDate]?.[employee.id] || null;
+    const resolved = getResolvedDayEntry({ employee, isoDate, schedule: session.workingPlan.schedule, absences: session.workingPlan.absences, stateKey: session.workingPlan.stateKey || "schleswig-holstein" });
+    return resolved?.sourceEntry || (resolved?.type && resolved.type !== "empty" ? { type: resolved.type } : null);
   }
 
   function exactLock(scope, employeeId = "", isoDate = "", weekId = "") {
@@ -86,8 +95,9 @@
       })).join("");
       const cells = days.map(day => {
         const constraint = api.getConstraint(session, employee.id, day);
-        const entry = session.workingPlan.schedule?.[day]?.[employee.id];
-        return `<div class="pgCell ${constraint.locked ? "isLocked" : ""} ${day <= today ? "isPast" : ""}"><button type="button" class="pgEditCell" data-cell data-eid="${escapeHtml(employee.id)}" data-iso="${day}" ${day <= today ? "disabled" : ""} aria-label="${day} für ${escapeHtml(employee.name || employee.id)} bearbeiten"><small>${day.slice(8)}</small><b>${escapeHtml(entryLabel(entry))}</b><span>${constraint.locked ? "🔒" : "✎"}</span></button>${lockButton({ scope: "shift", label: "Schicht", employeeId: employee.id, isoDate: day, disabled: day <= today || !entry, className: "pgCellLock" })}</div>`;
+        const storedEntry = session.workingPlan.schedule?.[day]?.[employee.id];
+        const displayEntry = resolvedEntry(employee, day);
+        return `<div class="pgCell ${constraint.locked ? "isLocked" : ""} ${day <= today ? "isPast" : ""}"><button type="button" class="pgEditCell" data-cell data-eid="${escapeHtml(employee.id)}" data-name="${escapeHtml(employee.name || employee.id)}" data-iso="${day}" ${day <= today ? "disabled" : ""} aria-label="${day} für ${escapeHtml(employee.name || employee.id)} bearbeiten"><small>${day.slice(8)}</small><b>${escapeHtml(entryLabel(displayEntry))}</b><span>${constraint.locked ? "🔒" : "✎"}</span></button>${lockButton({ scope: "shift", label: "Schicht", employeeId: employee.id, isoDate: day, disabled: day <= today || storedEntry?.type !== "shift", className: "pgCellLock" })}</div>`;
       }).join("");
       return `<div class="pgRow"><div class="pgPerson"><b>${escapeHtml(employee.name || employee.id)}</b>${lockButton({ scope: "employee-period", label: "Zeitraum", employeeId: employee.id })}<div class="pgEmployeeWeeks" aria-label="${escapeHtml(employee.name || employee.id)} pro Woche fixieren">${employeeWeekLocks}</div></div>${cells}</div>`;
     }).join("");
@@ -127,11 +137,24 @@
       else if (target.dataset.week) api.setSelectedWeeks(session, [...overlay.querySelectorAll("[data-week]:checked")].map(input => input.dataset.week));
       else if (target.dataset.toggleLock) toggleLock(target);
       else if (target.hasAttribute("data-cell")) {
-        const current = session.workingPlan.schedule?.[target.dataset.iso]?.[target.dataset.eid];
-        const next = !current
-          ? { type: "shift", status: "work", code: "FLEX", start: "09:00", end: "17:00", pause: 30, minutes: 450 }
-          : current.type === "shift" ? { type: "off", status: "off", code: "FR" } : null;
-        api.setWorkingEntry(session, target.dataset.eid, target.dataset.iso, next);
+        const editor = window.Planning2Editor;
+        if (!editor) return;
+        const employeeId = target.dataset.eid;
+        const isoDate = target.dataset.iso;
+        const editorPlan = api.clone(session.workingPlan);
+        editor.open({
+          employeeId,
+          isoDate,
+          name: target.dataset.name,
+          existing: editorPlan.schedule?.[isoDate]?.[employeeId] || null,
+          plan: editorPlan,
+          onCommit(nextPlan) {
+            api.commitWorkingPlan(session, employeeId, isoDate, nextPlan);
+            repository.save(session);
+            render();
+          }
+        });
+        return;
       }
       repository.save(session);
       render();

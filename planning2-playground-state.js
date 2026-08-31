@@ -22,7 +22,16 @@
     session.workingPlan.schedule ||= {}; session.workingPlan.schedule[isoDate] ||= {}; if (entry) session.workingPlan.schedule[isoDate][employeeId] = clone(entry); else delete session.workingPlan.schedule[isoDate][employeeId]; if (!Object.keys(session.workingPlan.schedule[isoDate]).length) delete session.workingPlan.schedule[isoDate];
     const automaticLock = addLock(session, { scope: "shift", employeeId, isoDate }, { origin: "automatic-manual" }); session.updatedAt = (options.now || new Date()).toISOString(); return { changed: true, automaticLock, outsideSelectedWeek: automaticLock.outsideSelectedWeek };
   }
+  function commitWorkingPlan(session, employeeId, isoDate, nextPlan, options = {}) {
+    const constraint = getConstraint(session, employeeId, isoDate, options.now);
+    if (constraint.locked && !(constraint.reason === "shift" && constraint.lock.origin === "automatic-manual")) return { changed: false, reason: constraint.reason };
+    if (JSON.stringify(session.workingPlan) === JSON.stringify(nextPlan)) return { changed: false, reason: "unchanged" };
+    session.workingPlan = clone(nextPlan);
+    const automaticLock = addLock(session, { scope: "shift", employeeId, isoDate }, { origin: "automatic-manual" });
+    session.updatedAt = (options.now || new Date()).toISOString();
+    return { changed: true, automaticLock, outsideSelectedWeek: automaticLock.outsideSelectedWeek };
+  }
   function setSelectedWeeks(session, ids) { session.selectedWeeks = [...new Set(ids)].sort(); session.locks.forEach(lock => { lock.outsideSelectedWeek = Boolean(lock.isoDate && !session.selectedWeeks.includes(mondayIso(lock.isoDate))); }); }
   function createRepository(storage) { return { load() { try { const value = JSON.parse(storage.getItem(STORAGE_KEY)); return value?.version === 1 ? value : null; } catch { return null; } }, save(session) { storage.setItem(STORAGE_KEY, JSON.stringify(session)); return session; }, discard() { storage.removeItem(STORAGE_KEY); } }; }
-  const api = { STORAGE_KEY, addLock, clone, createRepository, createSession, getConstraint, mondayIso, removeLock, setSelectedWeeks, setWorkingEntry, todayIso }; if (typeof module !== "undefined" && module.exports) module.exports = api; root.Planning2PlaygroundState = api;
+  const api = { STORAGE_KEY, addLock, clone, commitWorkingPlan, createRepository, createSession, getConstraint, mondayIso, removeLock, setSelectedWeeks, setWorkingEntry, todayIso }; if (typeof module !== "undefined" && module.exports) module.exports = api; root.Planning2PlaygroundState = api;
 })(typeof window !== "undefined" ? window : globalThis);
