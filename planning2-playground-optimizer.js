@@ -72,25 +72,27 @@
   }
   const unitId = unit => String(unit.packageId || unit.candidateId || stableId("unit", unit.mutations || unit));
   const finite = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-  const clock = value => { const match = /^(\d{1,2}):(\d{2})$/.exec(String(value || "")); return match ? Number(match[1]) * 60 + Number(match[2]) : 0; };
-  function workedMinutes(entry, context = {}) {
-    if (!entry || entry.type !== "shift") return 0;
-    if (Number.isFinite(entry.minutes)) return Number(entry.minutes);
-    if (typeof context.getWorkedMinutes === "function") return finite(context.getWorkedMinutes(entry));
-    const pause = typeof context.getRequiredBreakMinutes === "function" ? finite(context.getRequiredBreakMinutes(entry.start, entry.end))
-      : typeof root.getBusinessRequiredBreakMinutes === "function" ? finite(root.getBusinessRequiredBreakMinutes(entry.start, entry.end)) : finite(entry.breakMinutes ?? entry.pause);
-    return Math.max(0, clock(entry.end) - clock(entry.start) - pause);
-  }
+  const known = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
+  const clock = (value, context) => typeof context.hhmmToMinutes === "function" ? context.hhmmToMinutes(value) : typeof root.hhmmToMinutes === "function" ? root.hhmmToMinutes(value) : null;
   function eachIsoDate(yearMonth) {
     if (!/^\d{4}-\d{2}$/.test(String(yearMonth || ""))) return [];
     const [year, month] = yearMonth.split("-").map(Number), count = new Date(Date.UTC(year, month, 0)).getUTCDate();
     return Array.from({ length: count }, (_, index) => `${yearMonth}-${String(index + 1).padStart(2, "0")}`);
   }
-  function absenceType(plan, employeeId, isoDate) {
-    const explicit = plan.schedule?.[isoDate]?.[employeeId]?.type;
-    if (["vacation", "sick", "holiday"].includes(explicit)) return explicit;
-    const absence = (plan.absences || []).find(value => String(value.employeeId) === String(employeeId) && value.from <= isoDate && value.to >= isoDate);
-    return ["vacation", "sick"].includes(absence?.type) ? absence.type : null;
+  function centralResolvedEntry(plan, employee, isoDate, context) {
+    const resolver = context.resolveDayEntry || root.getResolvedDayEntry;
+    if (typeof resolver !== "function") throw new Error("Planning2 E3 requires the central getResolvedDayEntry helper");
+    return resolver({ employee, isoDate, schedule: plan.schedule || {}, absences: plan.absences || [], stateKey: plan.stateKey || context.stateKey || "schleswig-holstein" });
+  }
+  function centralMonthTarget(employee, context) {
+    const helper = context.getContractTargetMinutesPerMonth || root.getEmployeeContractTargetMinutesPerMonth;
+    if (typeof helper !== "function") throw new Error("Planning2 E3 requires the central monthly contract target helper");
+    return finite(helper(employee));
+  }
+  function isGfb(employee, context) {
+    const helper = context.isGfbEmployee || root.isGfbEmployee;
+    if (typeof helper !== "function") throw new Error("Planning2 E3 requires the central GFB helper");
+    return Boolean(helper(employee));
   }
   /* Domain profile for E3. Integrations can provide the central month calculator
    * through evaluateDomainFacts; this fallback deliberately uses persisted entry
@@ -100,23 +102,72 @@
     if (supplied) return normalizeVariantFacts(supplied, mutations, context, simulation);
     const employees = context.sourceEmployees || (context.employees || []).map(value => value.sourceEmployee || value);
     const month = context.yearMonth || mutations[0]?.isoDate?.slice(0, 7) || context.today?.slice(0, 7), dates = eachIsoDate(month);
+    const resolvedByEmployee = new Map();
     const employeeBalances = employees.map(employee => {
-      const id = String(employee.id ?? employee.employeeId), weekly = finite(employee.weeklyMinutes ?? employee.targetMinutes ?? employee.weeklyTargetMinutes);
-      const targetMinutes = finite(context.monthTargetMinutesByEmployee?.[id] ?? employee.monthTargetMinutes ?? employee.targetMinutesForMonth);
+      const id = String(employee.id ?? employee.employeeId), targetMinutes = centralMonthTarget(employee, context), gfb = isGfb(employee, context);
       let plannedMinutes = 0, creditedAbsenceMinutes = 0;
+      const resolved = [];
       dates.forEach(isoDate => {
-        const entry = plan.schedule?.[isoDate]?.[id]; plannedMinutes += workedMinutes(entry, context);
-        if (absenceType(plan, id, isoDate)) creditedAbsenceMinutes += weekly / 6;
+        const entry = centralResolvedEntry(plan, employee, isoDate, context); resolved.push({ isoDate, entry });
+        if (entry.type === "shift") plannedMinutes += finite(entry.minutesForMonth);
+        if (["vacation", "sick", "holiday"].includes(entry.type)) creditedAbsenceMinutes += finite(entry.minutesForMonth);
       });
-      const carryInMinusMinutes = Math.max(0, finite(context.carryInMinusMinutesByEmployee?.[id] ?? employee.carryInMinusMinutes));
-      const projectedBalanceMinutes = plannedMinutes + creditedAbsenceMinutes - targetMinutes - carryInMinusMinutes;
-      return { employeeId: id, targetMinutes, plannedMinutes, creditedAbsenceMinutes, carryInMinusMinutes, projectedBalanceMinutes, balanceClassification: projectedBalanceMinutes < 0 ? "minus" : projectedBalanceMinutes > 0 ? "plus" : "balanced" };
+      resolvedByEmployee.set(id, resolved);
+      const carryInMinusMinutes = gfb ? 0 : Math.max(0, finite(context.carryInMinusMinutesByEmployee?.[id]));
+      const projectedBalanceMinutes = gfb ? plannedMinutes + creditedAbsenceMinutes : plannedMinutes + creditedAbsenceMinutes - targetMinutes - carryInMinusMinutes;
+      return { employeeId: id, targetMinutes, plannedMinutes, creditedAbsenceMinutes, carryInMinusMinutes, projectedBalanceMinutes, balanceClassification: projectedBalanceMinutes < 0 ? "minus" : projectedBalanceMinutes > 0 ? "plus" : "balanced", isGfb: gfb };
     });
-    return normalizeVariantFacts({ employeeBalances }, mutations, context, simulation);
+    const normal = employeeBalances.filter(value => !value.isGfb), gfb = employeeBalances.filter(value => value.isGfb);
+    const weeklyDistributionPenalty = employees.reduce((total, employee) => {
+      if (isGfb(employee, context) || employee.flexibleWeekDistribution === true) return total;
+      const id = String(employee.id ?? employee.employeeId), weeklyTarget = targetMinutesForWeek(employee, context);
+      const weeks = new Map(); (resolvedByEmployee.get(id) || []).forEach(({ isoDate, entry }) => { const week = monday(isoDate); weeks.set(week, finite(weeks.get(week)) + finite(entry.minutesForMonth)); });
+      return total + [...weeks.values()].reduce((sum, minutes) => sum + Math.abs(minutes - weeklyTarget), 0);
+    }, 0);
+    const sequence = sequenceAndSaturdayFacts(employees, resolvedByEmployee, context);
+    const preference = preferenceFacts(employees, resolvedByEmployee, context);
+    const pause = pauseFacts(employees, resolvedByEmployee, context);
+    return normalizeVariantFacts({ employeeBalances, totalMinusMinutes: normal.reduce((sum, value) => sum + Math.max(0, -value.projectedBalanceMinutes), 0),
+      totalUnnecessaryPlusMinutes: normal.reduce((sum, value) => sum + Math.max(0, value.projectedBalanceMinutes), 0),
+      gfbBudgetMinutes: gfb.reduce((sum, value) => sum + value.targetMinutes, 0), gfbUsedMinutes: gfb.reduce((sum, value) => sum + value.plannedMinutes + value.creditedAbsenceMinutes, 0),
+      weeklyDistributionPenalty, ...sequence, ...preference, ...pause }, mutations, context, simulation);
+  }
+  function targetMinutesForWeek(employee, context) {
+    const helper = context.getTargetMinutesForWeek;
+    if (typeof helper === "function") return finite(helper(employee));
+    const absenceHelper = context.getAbsenceMinutesForEmployee || root.getAbsenceMinutesForEmployee;
+    if (typeof absenceHelper !== "function") throw new Error("Planning2 E3 requires the central daily target helper");
+    return finite(absenceHelper(employee)) * 6;
+  }
+  function sequenceAndSaturdayFacts(employees, resolvedByEmployee, context) {
+    let consecutiveWorkdayPenalty = 0, saturdayPenalty = 0; const saturdayFacts = [];
+    employees.forEach(employee => {
+      const id = String(employee.id ?? employee.employeeId), entries = resolvedByEmployee.get(id) || []; let run = 0, saturdayRun = 0, count = 0, maxRun = 0;
+      entries.forEach(({ isoDate, entry }) => { const works = entry.type === "shift"; run = works ? run + 1 : 0; maxRun = Math.max(maxRun, run); if (new Date(`${isoDate}T00:00:00Z`).getUTCDay() === 6) { saturdayRun = works ? saturdayRun + 1 : 0; if (works) count += 1; if (saturdayRun > 3) saturdayPenalty += saturdayRun - 3; } });
+      consecutiveWorkdayPenalty += Math.max(0, maxRun - 4); saturdayFacts.push({ employeeId: id, workedSaturdays: count, consecutiveWorkedSaturdays: saturdayRun });
+    });
+    return { consecutiveWorkdayPenalty, saturdayPenalty, saturdayFacts };
+  }
+  function preferenceFacts(employees, resolvedByEmployee, context) {
+    if (!employees.length) return { preferenceViolationMinutes: 0, preferenceViolations: [] };
+    const helper = context.getPreferenceFacts || root.getEmployeePlanning2PreferenceFacts;
+    if (typeof helper !== "function") throw new Error("Planning2 E3 requires Stage-A preference facts");
+    let preferenceViolationMinutes = 0; const preferenceViolations = [];
+    employees.forEach(employee => { const preference = helper(employee).timePreference, id = String(employee.id ?? employee.employeeId); if (preference === "any") return;
+      (resolvedByEmployee.get(id) || []).forEach(({ isoDate, entry }) => { if (entry.type !== "shift") return; const start = clock(entry.sourceEntry?.start, context); if (!known(start)) return; const violation = preference === "early" ? Math.max(0, start - 14 * 60) : Math.max(0, 14 * 60 - start); if (violation) { preferenceViolationMinutes += violation; preferenceViolations.push({ employeeId: id, isoDate, preference, violationMinutes: violation }); } });
+    }); return { preferenceViolationMinutes, preferenceViolations };
+  }
+  function pauseFacts(employees, resolvedByEmployee, context) {
+    if (!employees.length) return { unpaidPauseMinutes: 0 };
+    const helper = context.getRequiredBreakMinutes || root.getBusinessRequiredBreakMinutes;
+    if (typeof helper !== "function") throw new Error("Planning2 E3 requires the central break helper");
+    let unpaidPauseMinutes = 0;
+    employees.forEach(employee => (resolvedByEmployee.get(String(employee.id ?? employee.employeeId)) || []).forEach(({ entry }) => { if (entry.type === "shift") unpaidPauseMinutes += finite(helper(entry.sourceEntry?.start, entry.sourceEntry?.end)); }));
+    return { unpaidPauseMinutes };
   }
   function normalizeVariantFacts(raw = {}, mutations = [], context = {}, simulation = {}) {
     const coverage = raw.coverage || raw.coverageFacts || simulation.coverageFacts || {}, balances = clone(raw.employeeBalances || raw.month?.employees || []);
-    const minus = balances.filter(value => finite(value.projectedBalanceMinutes) < 0), plus = balances.filter(value => finite(value.projectedBalanceMinutes) > 0);
+    const minus = balances.filter(value => !value.isGfb && finite(value.projectedBalanceMinutes) < 0), plus = balances.filter(value => !value.isGfb && finite(value.projectedBalanceMinutes) > 0);
     const remainingCoverageWindows = clone(raw.remainingCoverageWindows || coverage.remainingCoverageWindows || coverage.newGaps || []);
     const understaffingMinutes = finite(raw.understaffingMinutes ?? coverage.understaffingMinutesAfter ?? simulation.rankingFacts?.understaffing);
     const baselineUnderstaffing = finite(context.baselineFacts?.understaffingMinutes ?? coverage.understaffingMinutesBefore);
@@ -130,23 +181,27 @@
       understaffingMinutes, understaffingEmployeeMinutes: finite(raw.understaffingEmployeeMinutes, understaffingMinutes), remainingCoverageWindows,
       fullyCovered: raw.fullyCovered ?? understaffingMinutes === 0, coverageImprovementVsStart: finite(raw.coverageImprovementVsStart, Math.max(0, baselineUnderstaffing - understaffingMinutes)),
       gfbBudgetMinutes, gfbUsedMinutes, gfbRemainingMinutes: finite(raw.gfbRemainingMinutes, Math.max(0, gfbBudgetMinutes - gfbUsedMinutes)),
-      gfbOverBudgetMinutes: finite(raw.gfbOverBudgetMinutes, Math.max(0, gfbUsedMinutes - gfbBudgetMinutes)), gfbUsefulUtilization: finite(raw.gfbUsefulUtilization),
-      demandBufferEmployeeMinutes: finite(raw.demandBufferEmployeeMinutes), usefulAdditionalHeads: finite(raw.usefulAdditionalHeads), weeklyDistributionPenalty: finite(raw.weeklyDistributionPenalty),
-      consecutiveWorkdayPenalty: finite(raw.consecutiveWorkdayPenalty), saturdayPenalty: finite(raw.saturdayPenalty), preferenceViolationMinutes: finite(raw.preferenceViolationMinutes),
-      unpaidPauseMinutes: finite(raw.unpaidPauseMinutes), outsideSelectedWeekChangeCount: finite(raw.outsideSelectedWeekChangeCount, outsideDates.length),
+      gfbOverBudgetMinutes: finite(raw.gfbOverBudgetMinutes, Math.max(0, gfbUsedMinutes - gfbBudgetMinutes)), gfbUsefulUtilization: known(raw.gfbUsefulUtilization) ? Number(raw.gfbUsefulUtilization) : null,
+      demandBufferEmployeeMinutes: known(raw.demandBufferEmployeeMinutes) ? Number(raw.demandBufferEmployeeMinutes) : null, usefulAdditionalHeads: known(raw.usefulAdditionalHeads) ? Number(raw.usefulAdditionalHeads) : null,
+      weeklyDistributionPenalty: known(raw.weeklyDistributionPenalty) ? Number(raw.weeklyDistributionPenalty) : null,
+      consecutiveWorkdayPenalty: known(raw.consecutiveWorkdayPenalty) ? Number(raw.consecutiveWorkdayPenalty) : null, saturdayPenalty: known(raw.saturdayPenalty) ? Number(raw.saturdayPenalty) : null,
+      preferenceViolationMinutes: known(raw.preferenceViolationMinutes) ? Number(raw.preferenceViolationMinutes) : null,
+      unpaidPauseMinutes: known(raw.unpaidPauseMinutes) ? Number(raw.unpaidPauseMinutes) : null, outsideSelectedWeekChangeCount: finite(raw.outsideSelectedWeekChangeCount, outsideDates.length),
       outsideSelectedWeekDates: clone(raw.outsideSelectedWeekDates || outsideDates), changeCount: finite(raw.changeCount, mutations.length), changeMagnitudeMinutes: finite(raw.changeMagnitudeMinutes),
       deliberatePlus: clone(raw.deliberatePlus || []), saturdayFacts: clone(raw.saturdayFacts || []), preferenceViolations: clone(raw.preferenceViolations || []),
       carryoverChanges: clone(raw.carryoverChanges || []), externalHelpHints: clone(raw.externalHelpHints || remainingCoverageWindows.map(value => ({ isoDate: value.isoDate, start: value.start, end: value.end, people: finite(value.required, 1) })))
     };
+    facts.availability = Object.fromEntries(["gfbUsefulUtilization", "demandBufferEmployeeMinutes", "usefulAdditionalHeads", "weeklyDistributionPenalty", "consecutiveWorkdayPenalty", "saturdayPenalty", "preferenceViolationMinutes", "unpaidPauseMinutes"].map(key => [key, known(facts[key])]));
     return { ...clone(raw), ...facts };
   }
   function rankingVector(facts) {
-    return [facts.understaffingEmployeeMinutes, facts.understaffingMinutes, facts.totalMinusMinutes, facts.totalUnnecessaryPlusMinutes,
-      -facts.gfbUsefulUtilization, -facts.demandBufferEmployeeMinutes, -facts.usefulAdditionalHeads, facts.weeklyDistributionPenalty,
-      facts.consecutiveWorkdayPenalty, facts.saturdayPenalty, facts.preferenceViolationMinutes, facts.unpaidPauseMinutes,
-      facts.outsideSelectedWeekChangeCount, facts.changeCount, facts.changeMagnitudeMinutes];
+    const dimension = (key, direction = 1) => ({ key, available: known(facts[key]), value: known(facts[key]) ? Number(facts[key]) * direction : null });
+    return [dimension("understaffingEmployeeMinutes"), dimension("understaffingMinutes"), dimension("totalMinusMinutes"), dimension("totalUnnecessaryPlusMinutes"),
+      dimension("gfbUsefulUtilization", -1), dimension("demandBufferEmployeeMinutes", -1), dimension("usefulAdditionalHeads", -1), dimension("weeklyDistributionPenalty"),
+      dimension("consecutiveWorkdayPenalty"), dimension("saturdayPenalty"), dimension("preferenceViolationMinutes"), dimension("unpaidPauseMinutes"),
+      dimension("outsideSelectedWeekChangeCount"), dimension("changeCount"), dimension("changeMagnitudeMinutes")];
   }
-  function compareDomainFacts(a, b) { const left = rankingVector(a), right = rankingVector(b); for (let i = 0; i < left.length; i += 1) if (left[i] !== right[i]) return left[i] - right[i]; return 0; }
+  function compareDomainFacts(a, b) { const left = rankingVector(a), right = rankingVector(b); for (let i = 0; i < left.length; i += 1) if (left[i].available && right[i].available && left[i].value !== right[i].value) return left[i].value - right[i].value; return 0; }
   function factsOf(simulation, mutations) {
     const coverage = simulation.coverageFacts || {};
     const explicitMonthEffect = simulation.rankingFacts?.monthEffect;
