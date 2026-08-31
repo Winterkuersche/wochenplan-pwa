@@ -85,12 +85,12 @@
     return resolver({ employee, isoDate, schedule: plan.schedule || {}, absences: plan.absences || [], stateKey: plan.stateKey || context.stateKey || "schleswig-holstein" });
   }
   function centralMonthTarget(employee, context) {
-    const helper = context.getContractTargetMinutesPerMonth || root.getEmployeeContractTargetMinutesPerMonth;
+    const helper = context.getContractTargetMinutesPerMonth || root.getPlanning2DomainContractTargetMinutesPerMonth || root.getEmployeeContractTargetMinutesPerMonth;
     if (typeof helper !== "function") throw new Error("Planning2 E3 requires the central monthly contract target helper");
     return finite(helper(employee));
   }
   function isGfb(employee, context) {
-    const helper = context.isGfbEmployee || root.isGfbEmployee;
+    const helper = context.isGfbEmployee || root.isPlanning2DomainGfbEmployee || root.isGfbEmployee;
     if (typeof helper !== "function") throw new Error("Planning2 E3 requires the central GFB helper");
     return Boolean(helper(employee));
   }
@@ -133,7 +133,7 @@
       weeklyDistributionPenalty, ...sequence, ...preference, ...pause }, mutations, context, simulation);
   }
   function targetMinutesForWeek(employee, context) {
-    const helper = context.getTargetMinutesForWeek;
+    const helper = context.getTargetMinutesForWeek || root.getPlanning2DomainTargetMinutesPerWeek;
     if (typeof helper === "function") return finite(helper(employee));
     const absenceHelper = context.getAbsenceMinutesForEmployee || root.getAbsenceMinutesForEmployee;
     if (typeof absenceHelper !== "function") throw new Error("Planning2 E3 requires the central daily target helper");
@@ -142,9 +142,9 @@
   function sequenceAndSaturdayFacts(employees, resolvedByEmployee, context) {
     let consecutiveWorkdayPenalty = 0, saturdayPenalty = 0; const saturdayFacts = [];
     employees.forEach(employee => {
-      const id = String(employee.id ?? employee.employeeId), entries = resolvedByEmployee.get(id) || []; let run = 0, saturdayRun = 0, count = 0, maxRun = 0;
-      entries.forEach(({ isoDate, entry }) => { const works = entry.type === "shift"; run = works ? run + 1 : 0; maxRun = Math.max(maxRun, run); if (new Date(`${isoDate}T00:00:00Z`).getUTCDay() === 6) { saturdayRun = works ? saturdayRun + 1 : 0; if (works) count += 1; if (saturdayRun > 3) saturdayPenalty += saturdayRun - 3; } });
-      consecutiveWorkdayPenalty += Math.max(0, maxRun - 4); saturdayFacts.push({ employeeId: id, workedSaturdays: count, consecutiveWorkedSaturdays: saturdayRun });
+      const id = String(employee.id ?? employee.employeeId), entries = resolvedByEmployee.get(id) || []; let run = 0, saturdayRun = 0, maxSaturdayRun = 0, count = 0, maxRun = 0;
+      entries.forEach(({ isoDate, entry }) => { const works = entry.type === "shift"; run = works ? run + 1 : 0; maxRun = Math.max(maxRun, run); if (new Date(`${isoDate}T00:00:00Z`).getUTCDay() === 6) { saturdayRun = works ? saturdayRun + 1 : 0; maxSaturdayRun = Math.max(maxSaturdayRun, saturdayRun); if (works) count += 1; } });
+      consecutiveWorkdayPenalty += Math.max(0, maxRun - 4); saturdayPenalty += Math.max(0, maxSaturdayRun - 3); saturdayFacts.push({ employeeId: id, workedSaturdays: count, currentConsecutiveWorkedSaturdays: saturdayRun, maxConsecutiveWorkedSaturdays: maxSaturdayRun });
     });
     return { consecutiveWorkdayPenalty, saturdayPenalty, saturdayFacts };
   }

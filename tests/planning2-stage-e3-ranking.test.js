@@ -81,7 +81,7 @@ test('central GFB, break, preference, Saturday and flexible-week facts feed the 
   assert.equal(profile.gfbBudgetMinutes, 2580); assert.equal(profile.gfbUsedMinutes, 960);
   assert.equal(profile.unpaidPauseMinutes, 60); // two centrally break-requiring 8h shifts
   assert.ok(profile.preferenceViolationMinutes > 0); assert.ok(profile.preferenceViolations.length > 0);
-  assert.ok(profile.saturdayPenalty > 0); assert.equal(profile.saturdayFacts[0].workedSaturdays, 4);
+  assert.ok(profile.saturdayPenalty > 0); assert.equal(profile.saturdayFacts[0].workedSaturdays, 4); assert.equal(profile.saturdayFacts[0].maxConsecutiveWorkedSaturdays, 4);
   assert.ok(profile.weeklyDistributionPenalty > 0); // flex contributes no weekly penalty
 });
 
