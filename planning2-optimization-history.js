@@ -17,16 +17,16 @@
     });
     return changes;
   }
-  function createRecord({ session, variant, currentPlan, history = [], validation, now = new Date() }) {
+  function createRecord({ session, variant, currentPlan, history = [], validation, acceptanceId, now = new Date() }) {
     const version = Math.max(0, ...history.map(item => Number(item.version) || 0)) + 1;
-    const facts = clone(variant.variantFacts || {}), explanationFacts = clone(variant.explanationFacts || facts), changes = planChanges(currentPlan, variant.workingPlan);
+    const facts = clone(validation?.variantFacts || variant.variantFacts || {}), explanationFacts = clone(validation?.explanationFacts || variant.explanationFacts || facts), changes = planChanges(currentPlan, variant.workingPlan);
     const selected = new Set(session.selectedWeeks || []), monday = root.Planning2PlaygroundState?.mondayIso || (iso => iso);
     const outsideSelectedWeekChanges = changes.filter(item => !selected.has(monday(item.isoDate)));
     const acceptedAt = now.toISOString();
     return clone({
       id: `planning2-optimization-${session.month}-${version}-${acceptedAt.replace(/\D/g, "")}`,
       version, label: `Optimierung ${version}`, month: session.month, acceptedAt,
-      playgroundId: session.id, variantId: variant.variantId, recommended: variant.recommended === true,
+      acceptanceId, transactionId: acceptanceId, playgroundId: session.id, variantId: variant.variantId, recommended: variant.recommended === true,
       selectedWeeks: session.selectedWeeks || [], optimizationRoundSource: session.source,
       changes, addedShifts: changes.filter(item => item.changeType === CHANGE.ADDED), changedShifts: changes.filter(item => item.changeType === CHANGE.CHANGED), removedShifts: changes.filter(item => item.changeType === CHANGE.REMOVED),
       outsideSelectedWeekChanges, locks: session.locks || [],
@@ -35,8 +35,8 @@
       employeeBalances: facts.employeeBalances || [], employeesInMinus: facts.employeesInMinus || 0, employeesInPlus: facts.employeesInPlus || 0,
       gfb: facts.gfb || { budgetMinutes: facts.gfbBudgetMinutes, usedMinutes: facts.gfbUsedMinutes, remainingMinutes: facts.gfbRemainingMinutes },
       remainingUnderstaffingMinutes: facts.understaffingMinutes || 0, coverageFacts: facts.coverageFacts || facts.coverage || { remainingCoverageWindows: facts.remainingCoverageWindows || [], fullyCovered: facts.fullyCovered }, saturdayFacts: facts.saturdayFacts || [], preferenceViolations: facts.preferenceViolations || [],
-      warnings: facts.warnings || validation?.violations || [], externalHelpHints: variant.externalHelpHints || facts.externalHelpHints || [], carryoverFacts: facts.carryoverFacts || facts.followUpFacts || [],
-      variantFacts: facts, explanationFacts, hardConstraintResult: validation
+      warnings: facts.warnings || validation?.hardConstraintResult?.violations || [], externalHelpHints: validation?.externalHelpHints || variant.externalHelpHints || facts.externalHelpHints || [], carryoverFacts: facts.carryoverFacts || facts.followUpFacts || [],
+      variantFacts: facts, explanationFacts, hardConstraintResult: validation?.hardConstraintResult || validation
     });
   }
   function createStorageRepository(storage, key = "wochenplan_planning2_optimization_history_v1") {

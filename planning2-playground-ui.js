@@ -11,7 +11,7 @@
   const historyRepository = window.Planning2OptimizationHistory.createStorageRepository(localStorage);
   const acceptanceAdapter = window.Planning2PlaygroundAcceptance.createLocalStorageAdapter({ storage: localStorage, planKey: LIVE_PLAN_KEY, historyRepository });
   let session = null;
-  let acceptanceOpen = false, acceptanceError = "", openedHistoryId = "";
+  let acceptanceOpen = false, acceptanceError = "", openedHistoryId = "", acceptanceRunning = false, acceptanceCommitted = false;
 
   function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; }
@@ -114,7 +114,7 @@
     const openedHistory = history.find(item => item.id === openedHistoryId);
     const historyHtml = `<section class="pgHistory"><h3>Optimierungen</h3>${history.map(item => `<button type="button" data-history="${escapeHtml(item.id)}">${escapeHtml(item.label)} · ${new Date(item.acceptedAt).toLocaleDateString("de-DE")}</button>`).join("") || "<p>Noch keine übernommene Optimierung.</p>"}${openedHistory ? `<article class="pgHistoryDetail"><h4>${escapeHtml(openedHistory.label)}</h4><p>Übernommene Variante: ${escapeHtml(openedHistory.variantId)}${openedHistory.recommended ? " · ⭐ Empfohlen" : ""}</p><p>Wochen: ${(openedHistory.selectedWeeks || []).map(escapeHtml).join(", ") || "—"} · Änderungen: ${(openedHistory.changes || []).length}</p><p>Unterbesetzung: ${minutesLabel(openedHistory.remainingUnderstaffingMinutes)} · Minus: ${openedHistory.employeesInMinus || 0} · Plus: ${openedHistory.employeesInPlus || 0}</p><p>GFB-Restbudget: ${minutesLabel(openedHistory.gfb?.remainingMinutes)} · Warnungen: ${(openedHistory.warnings || []).length} · Externe Hilfe: ${(openedHistory.externalHelpHints || []).length}</p><p>Außerhalb gewählter Wochen: ${(openedHistory.outsideSelectedWeekChanges || []).length} · Fixierungen: ${(openedHistory.locks || []).length}</p><details><summary>Änderungen anzeigen</summary>${(openedHistory.changes || []).map(item => `<div><b>${escapeHtml(item.employeeId)}</b> · ${escapeHtml(item.isoDate)} · ${escapeHtml(entryLabel(item.before))} → ${escapeHtml(entryLabel(item.after))}</div>`).join("") || "Keine Änderungen"}</details><details><summary>Mitarbeiter-Salden</summary>${(openedHistory.employeeBalances || []).map(item => `<div>${escapeHtml(item.employeeId)}: Soll ${minutesLabel(item.targetMinutes)} · geplant ${minutesLabel(item.plannedMinutes)} · Gutschriften ${minutesLabel(item.creditedAbsenceMinutes ?? item.creditMinutes)} · Ergebnis ${minutesLabel(item.projectedBalanceMinutes)}</div>`).join("") || "Keine Salden"}</details></article>` : ""}</section>`;
     const acceptanceFacts = currentVariant?.variantFacts || {};
-    const acceptanceDialog = acceptanceOpen && currentVariant ? `<div class="pgAcceptance" role="alertdialog" aria-modal="true"><div><h3>Variante ${(session.variants || []).indexOf(currentVariant) + 1} übernehmen?</h3><p>${acceptanceFacts.changeCount ?? currentVariant.totalChangeCount ?? 0} Änderungen · Unterbesetzung ${minutesLabel(acceptanceFacts.understaffingMinutes)}</p><p>${acceptanceFacts.employeesInMinus || 0} Mitarbeiter im Minus · ${acceptanceFacts.employeesInPlus || 0} im Plus · GFB-Restbudget ${minutesLabel(acceptanceFacts.gfbRemainingMinutes)}</p><p>${acceptanceFacts.outsideSelectedWeekChangeCount || 0} Änderungen außerhalb ausgewählter Wochen · ${(acceptanceFacts.warnings || []).length} Warnungen · ${(currentVariant.externalHelpHints || []).length} externe Hilfe Hinweise</p>${currentVariant.hardConstraintResult?.allowed === false ? '<p class="pgInvalid">Diese Variante kann nicht übernommen werden, solange Hard-Constraint-Verletzungen bestehen.</p>' : ""}${acceptanceError ? `<p class="pgInvalid">${escapeHtml(acceptanceError)}</p>` : ""}<button type="button" data-cancel-accept>Abbrechen</button><button type="button" data-confirm-accept ${currentVariant.hardConstraintResult?.allowed === false ? "disabled" : ""}>Variante übernehmen</button></div></div>` : "";
+    const acceptanceDialog = acceptanceOpen && currentVariant ? `<div class="pgAcceptance" role="alertdialog" aria-modal="true"><div><h3>Variante ${(session.variants || []).indexOf(currentVariant) + 1} übernehmen?</h3><p>${acceptanceFacts.changeCount ?? currentVariant.totalChangeCount ?? 0} Änderungen · Unterbesetzung ${minutesLabel(acceptanceFacts.understaffingMinutes)}</p><p>${acceptanceFacts.employeesInMinus || 0} Mitarbeiter im Minus · ${acceptanceFacts.employeesInPlus || 0} im Plus · GFB-Restbudget ${minutesLabel(acceptanceFacts.gfbRemainingMinutes)}</p><p>${acceptanceFacts.outsideSelectedWeekChangeCount || 0} Änderungen außerhalb ausgewählter Wochen · ${(acceptanceFacts.warnings || []).length} Warnungen · ${(currentVariant.externalHelpHints || []).length} externe Hilfe Hinweise</p>${currentVariant.hardConstraintResult?.allowed === false ? '<p class="pgInvalid">Diese Variante kann nicht übernommen werden, solange Hard-Constraint-Verletzungen bestehen.</p>' : ""}${acceptanceError ? `<p class="pgInvalid">${escapeHtml(acceptanceError)}</p>` : ""}<button type="button" data-cancel-accept>Abbrechen</button><button type="button" data-confirm-accept ${currentVariant.hardConstraintResult?.allowed === false || acceptanceRunning || acceptanceCommitted ? "disabled" : ""}>${acceptanceRunning ? "Wird übernommen …" : acceptanceCommitted ? "Bereits übernommen" : "Variante übernehmen"}</button></div></div>` : "";
 
     const weekControls = monthWeeks.map((week, index) => `<div class="pgWeekControl"><label><input data-week="${week.id}" type="checkbox" ${selected.has(week.id) ? "checked" : ""}>W${index + 1} · ${week.days[0].slice(8)}.–${week.days[5].slice(8)}.</label>${lockButton({ scope: "week", label: `W${index + 1}`, weekId: week.id })}</div>`).join("");
 
@@ -166,11 +166,19 @@
       if (!target) return;
       if (target.hasAttribute("data-close")) return overlay.classList.add("hidden");
       if (target.dataset.history) { openedHistoryId = target.dataset.history; return render(); }
-      if (target.hasAttribute("data-open-accept")) { acceptanceOpen = true; acceptanceError = ""; return render(); }
+      if (target.hasAttribute("data-open-accept")) { acceptanceOpen = true; acceptanceError = ""; acceptanceCommitted = false; return render(); }
       if (target.hasAttribute("data-cancel-accept")) { acceptanceOpen = false; acceptanceError = ""; return render(); }
       if (target.hasAttribute("data-confirm-accept")) {
-        const resultPromise = window.Planning2PlaygroundAcceptance.accept({ session, adapter: acceptanceAdapter, revalidate: evaluateVariant, discardPlayground() { repository.discard(); } });
-        resultPromise.then(result => { if (result.ok) { session = null; acceptanceOpen = false; overlay.classList.add("hidden"); } else { acceptanceError = result.message; render(); } });
+        if (acceptanceRunning || acceptanceCommitted) return;
+        acceptanceRunning = true; acceptanceError = ""; render();
+        window.Planning2PlaygroundAcceptance.accept({ session, adapter: acceptanceAdapter, revalidate: evaluateVariant, discardPlayground() { repository.discard(); } }).then(result => {
+          acceptanceRunning = false;
+          if (!result.ok) { acceptanceError = result.message; return render(); }
+          acceptanceCommitted = true;
+          const cleanupWarning = result.warnings?.find(item => item.code === "PLAYGROUND_CLEANUP_FAILED");
+          if (cleanupWarning) { acceptanceError = `Variante wurde übernommen. Der alte Spielplatz konnte nicht entfernt werden: ${cleanupWarning.message}`; return render(); }
+          session = null; acceptanceOpen = false; overlay.classList.add("hidden");
+        });
         return;
       }
       if (target.hasAttribute("data-discard")) { repository.discard(); session = null; return overlay.classList.add("hidden"); }
