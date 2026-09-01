@@ -13,13 +13,14 @@ const candidate = (id, extra = {}) => ({
   constraintResults: { allowed: true }, ...extra
 });
 
-function harness(values, packages = []) {
+function harness(values, packages = [], compareCentralFacts) {
   const calls = [];
   const service = createPlanning2TargetedSuggestionService({
     generateCandidates(context) { calls.push(context); return { candidates: values, rejected: [] }; },
     generatePackages(context, input) { return { packages, generationFacts: { inputCandidateCount: input.length } }; },
     rankCandidates(input) { return [...input].sort((a, b) => (b.priority || 0) - (a.priority || 0)); },
-    rankPackages(input) { return input; }
+    rankPackages(input) { return input; },
+    compareCentralFacts
   });
   return { service, calls };
 }
@@ -50,13 +51,23 @@ test('shows at most three valid problem-specific suggestions without padding', (
   assert.equal(harness([candidate('only')]).service.request({ days: [targetDay] }, problem).suggestions.length, 1);
 });
 
-test('central candidate order is retained and full solutions precede partial improvements', () => {
-  const partial = candidate('partial', { resolvesTargetGap: false, improvedMinutes: 120, priority: 10 });
-  const full = candidate('full', { priority: 0 });
-  const result = harness([partial, full]).service.request({ days: [targetDay] }, problem);
-  assert.equal(result.suggestions[0].candidateId, 'full');
-  assert.match(result.suggestions[0].reasons[0], /vollständig/);
-  assert.ok(result.suggestions.some(item => item.candidateId === 'partial'));
+test('common central facts comparator is not overwritten by a local mutation-count sort', () => {
+  const simple = candidate('simple', { rankingFacts: { domainRank: 2 } });
+  const betterPackage = {
+    packageId: 'better-package', problemIds: [simple.problemId], valid: true,
+    rankingFacts: { domainRank: 1 }, coverageFacts: { improvedMinutes: 60, fullyResolved: false },
+    mutations: [simple.mutations[0], { ...simple.mutations[0], employeeId: 'support' }]
+  };
+  const compare = (left, right) => left.domainRank - right.domainRank;
+  const result = harness([simple], [betterPackage], compare).service.request({ days: [targetDay] }, problem);
+  assert.equal(result.suggestions[0].packageId, 'better-package');
+  assert.equal(result.suggestions[0].mutations.length, 2);
+});
+
+test('existing candidate coverage facts are preserved without deriving minutes from window length', () => {
+  const value = candidate('facts', { coverageFacts: { improvedMinutes: 75, understaffingMinutesBefore: 180, understaffingMinutesAfter: 105, fullyResolved: false } });
+  const result = harness([value]).service.request({ days: [targetDay] }, problem);
+  assert.deepEqual(result.suggestions[0].coverageFacts, value.coverageFacts);
 });
 
 test('packages remain atomic and structured carryover/GFB/free-day facts become short reasons', () => {
@@ -69,8 +80,23 @@ test('packages remain atomic and structured carryover/GFB/free-day facts become 
 
 test('external help is a non-actionable hint only when no complete internal solution exists', () => {
   const empty = harness([]).service.request({ days: [targetDay] }, problem);
-  assert.deepEqual(empty.externalHelp, { isoDate: problem.isoDate, start: 960, end: 1140, missingPeople: 1, actionable: false });
+  assert.deepEqual(empty.externalHelp, { windows: [{ isoDate: problem.isoDate, start: 960, end: 1140, missingPeople: 1 }], actionable: false });
   assert.equal(harness([candidate('full')]).service.request({ days: [targetDay] }, problem).externalHelp, null);
+});
+
+test('partial coverage reports only structured remaining external-help windows', () => {
+  const partial = candidate('partial', { resolvesTargetGap: false, coverageFacts: { improvedMinutes: 120, fullyResolved: false }, coverageAfter: { gaps: [{ kind: 'understaffing', start: 1080, end: 1140, required: 2, actual: 1 }] } });
+  const result = harness([partial]).service.request({ days: [targetDay] }, problem);
+  assert.deepEqual(result.externalHelp.windows, [{ isoDate: problem.isoDate, start: 1080, end: 1140, missingPeople: 1 }]);
+});
+
+test('two same-day gaps have separate controls and selecting gap A cannot return gap B', () => {
+  const html = fs.readFileSync('planung2-preview.html', 'utf8');
+  assert.match(html, /gaps\.filter\(gap=>gap\.kind==='understaffing'\)\.map/);
+  assert.match(html, /data-targeted-start/);
+  const gapB = candidate('gap-b', { problemId: '2026-09-11|understaffing|540|660', understaffingWindow: { kind: 'understaffing', start: 540, end: 660 } });
+  const result = harness([candidate('gap-a'), gapB]).service.request({ days: [targetDay] }, problem);
+  assert.deepEqual(result.suggestions.map(item => item.candidateId), ['gap-a']);
 });
 
 test('normal render stays fast and targeted UI is touch capable without Stage E calls', () => {
