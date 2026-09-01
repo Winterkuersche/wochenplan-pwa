@@ -34,7 +34,7 @@
     return { changed: true, automaticLock, outsideSelectedWeek: automaticLock.outsideSelectedWeek };
   }
   function setSelectedWeeks(session, ids) { session.selectedWeeks = [...new Set(ids)].sort(); session.locks.forEach(lock => { lock.outsideSelectedWeek = Boolean(lock.isoDate && !session.selectedWeeks.includes(mondayIso(lock.isoDate))); }); }
-  function hydrate(value) { if (!value || value.version !== 1) return null; value.basePlan ||= clone(value.workingPlan || {}); value.variants ||= []; value.selectedVariantId ||= ""; value.optimization ||= { status: "idle", error: "" }; return value; }
+  function hydrate(value) { if (!value || value.version !== 1) return null; value.basePlan ||= clone(value.workingPlan || {}); value.variants ||= []; value.selectedVariantId ||= ""; value.optimization ||= { status: "idle", error: "" }; value.variants.forEach(variant => { variant.optimizationBasePlan ||= clone(value.basePlan); }); const selected = value.variants.find(variant => variant.variantId === value.selectedVariantId); if (selected) value.workingPlan = clone(selected.workingPlan); return value; }
   function createRepository(storage) { return { load() { try { return hydrate(JSON.parse(storage.getItem(STORAGE_KEY))); } catch { return null; } }, save(session) { storage.setItem(STORAGE_KEY, JSON.stringify(session)); return session; }, discard() { storage.removeItem(STORAGE_KEY); } }; }
   const api = { STORAGE_KEY, addLock, clone, commitWorkingPlan, createRepository, createSession, getConstraint, hydrate, mondayIso, removeLock, setSelectedWeeks, setWorkingEntry, todayIso }; if (typeof module !== "undefined" && module.exports) module.exports = api; root.Planning2PlaygroundState = api;
 })(typeof window !== "undefined" ? window : globalThis);

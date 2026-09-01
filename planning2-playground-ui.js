@@ -68,19 +68,11 @@
     context.evaluateCoverage = entries => evaluateResolvedDayCoverage(entries);
     return context;
   }
-  function planMutations(before, after) {
-    const mutations = [];
-    const dates = new Set([...Object.keys(before?.schedule || {}), ...Object.keys(after?.schedule || {})]);
-    dates.forEach(isoDate => new Set([...Object.keys(before?.schedule?.[isoDate] || {}), ...Object.keys(after?.schedule?.[isoDate] || {})]).forEach(employeeId => {
-      const oldEntry = before?.schedule?.[isoDate]?.[employeeId] || null, nextEntry = after?.schedule?.[isoDate]?.[employeeId] || null;
-      if (JSON.stringify(oldEntry) !== JSON.stringify(nextEntry)) mutations.push({ isoDate, employeeId, before: oldEntry?.type === "shift" ? oldEntry : null, after: nextEntry?.type === "shift" ? nextEntry : null });
-    }));
-    return mutations;
-  }
-  function evaluateVariant(plan) {
-    const context = optimizerContext(plan), mutations = planMutations(session.basePlan, plan);
-    const validation = simulatePlanning2MutationPackage({ ...context, sourcePlan: session.basePlan }, { packageType: "PLAYGROUND_MANUAL", mutations });
-    const facts = window.Planning2PlaygroundOptimizer.evaluateVariantFacts(plan, mutations, context, validation);
+  function evaluateVariant(plan, optimizationBasePlan) {
+    const context = optimizerContext(plan), mutations = workflow.planMutations(optimizationBasePlan, plan);
+    const validation = simulatePlanning2MutationPackage({ ...context, sourcePlan: optimizationBasePlan }, { packageType: "PLAYGROUND_MANUAL", mutations });
+    const comparisonMutations = workflow.planMutations(session.basePlan, plan);
+    const facts = window.Planning2PlaygroundOptimizer.evaluateVariantFacts(plan, comparisonMutations, context, validation);
     return { variantFacts: facts, explanationFacts: facts, externalHelpHints: facts.externalHelpHints, hardConstraintResult: validation.constraintResults };
   }
 
