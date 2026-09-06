@@ -20,6 +20,18 @@ function hmToMinutes(hm) {
   return hhmmToMinutes(hm);
 }
 
+// Shared Planning-2 boundary set for candidate stages B-D.
+function getPlanning2AllowedPlanMinutes() {
+  const values = [535];
+  for (let minute = 540; minute <= 1140; minute += 15) values.push(minute);
+  values.push(1150);
+  return values;
+}
+
+function isPlanning2AllowedPlanTime(value) {
+  return getPlanning2AllowedPlanMinutes().includes(hhmmToMinutes(value));
+}
+
 function minutesToHM(min) {
   const numeric = Number(min);
   const safeMinutes = Number.isNaN(numeric) ? 0 : Math.max(0, Math.round(numeric));
@@ -179,12 +191,12 @@ function getBusinessRequiredBreakMinutes(startHHMM, endHHMM, configuredBreakMinu
   const normalizedStart = normalizePlanTime(startHHMM);
   const normalizedEnd = normalizePlanTime(endHHMM);
 
-  // Deterministische Kurzschicht-Overrides zuerst.
-  if (normalizedStart === "08:55" && normalizedEnd === "15:00") return 5;
-  if (normalizedStart === "13:00" && normalizedEnd === "19:10") return 10;
-
-  const totalSpanMinutes = diffMinutesBetweenHHMM(normalizedStart, normalizedEnd);
-  let requiredBreakMinutes = totalSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES ? REQUIRED_BREAK_BASE_MINUTES : 0;
+  // Die fünf bzw. zehn Randminuten sind reine Zusatzpause. Für die reguläre
+  // Pausenstufe werden deshalb die vertraglichen Grenzen 09:00/19:00 verwendet.
+  const regularStart = normalizedStart === "08:55" ? "09:00" : normalizedStart;
+  const regularEnd = normalizedEnd === "19:10" ? "19:00" : normalizedEnd;
+  const regularSpanMinutes = diffMinutesBetweenHHMM(regularStart, regularEnd);
+  let requiredBreakMinutes = regularSpanMinutes > REQUIRED_BREAK_THRESHOLD_MINUTES ? REQUIRED_BREAK_BASE_MINUTES : 0;
 
   if (normalizedStart === "08:55") requiredBreakMinutes += 5;
   if (normalizedEnd === "19:10") requiredBreakMinutes += 10;

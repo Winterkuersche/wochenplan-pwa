@@ -351,6 +351,7 @@ select {
     minmax(90px, 0.6fr)
     minmax(155px, 1fr)
     minmax(105px, 0.8fr)
+    minmax(125px, 0.8fr)
     auto
     auto;
   gap: 8px;
@@ -374,6 +375,36 @@ select {
   line-height: 1.25;
   color: var(--subtext);
   white-space: normal;
+}
+
+.teamCheckboxField {
+  justify-items: start;
+}
+
+.teamCheckboxField input[type="checkbox"] {
+  margin: 0;
+}
+
+.employeeAvailability {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.employeeAvailability > summary { cursor: pointer; font-weight: 800; }
+.employeeAvailabilityPanel { display: grid; gap: 12px; padding-top: 12px; }
+.employeeAvailabilityPanel h4 { margin: 0; }
+.availabilityPreferenceRow, .availabilityLimitFields { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.availabilityPreferenceRow label, .availabilityLimitFields label { display: grid; gap: 4px; min-width: 120px; }
+.availabilityFlexibleField { display: flex !important; align-items: center; min-height: 44px; }
+.availabilityOverrideRow, .availabilityDateRow { display: grid; grid-template-columns: auto 90px 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.availabilityDateRow { grid-template-columns: minmax(140px, auto) 1fr auto; }
+
+@media (max-width: 640px) {
+  .availabilityOverrideRow, .availabilityDateRow { grid-template-columns: auto 1fr; }
+  .availabilityOverrideRow .availabilityLimitFields, .availabilityDateRow .availabilityLimitFields { grid-column: 1 / -1; }
+  .availabilityLimitFields label, .availabilityLimitFields input { width: 100%; }
 }
 
 /* =============================
@@ -4721,3 +4752,10 @@ body.dark .mepTable th {
   }
 
 }
+
+/* Planung 2: kompakte Monatsbasis-Hinweise */
+.p2BaselineBar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:7px 9px;border:1px solid var(--border,#d8dde3);border-radius:10px;font-size:11px}
+.p2BaselineBar button{white-space:nowrap;padding:6px 8px;border-radius:8px}
+.p2Cell--changed{box-shadow:inset 0 0 0 2px #d69b2d}
+.p2ChangeMark{color:#9a6300;font-size:10px;font-style:normal;font-weight:900}
+@media(max-width:600px){.p2BaselineBar{font-size:9px}.p2BaselineBar button{font-size:9px;padding:5px 7px}}

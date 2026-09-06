@@ -1,0 +1,66 @@
+name: Planung 2 Preview
+
+on:
+  push:
+    branches:
+      - planung-2-interaktiv
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: planung-2-preview
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Planung 2
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Planung-2-Dateien prüfen
+        working-directory: source
+        run: |
+          test -f planung2-preview.html
+          test -f time-utils.js
+          test -f day-resolution.js
+
+      - name: Planung-2-Tests ausführen
+        working-directory: source
+        run: |
+          node --test tests/planning2-preview-startup.test.js tests/planning2-preview-coverage.test.js tests/planning2-closing-autofix.test.js tests/time-logic.test.js
+
+      - name: Preview-Repository auschecken
+        uses: actions/checkout@v4
+        with:
+          repository: Winterkuersche/wochenplan-pwa-preview
+          token: ${{ secrets.PREVIEW_REPOSITORY_TOKEN }}
+          path: preview-repository
+
+      - name: Planung-2-Preview veröffentlichen
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          preview_directory="preview-repository/planung-2"
+          mkdir -p "$preview_directory"
+          rsync --archive --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            source/ "$preview_directory/"
+          cp "$preview_directory/planung2-preview.html" "$preview_directory/index.html"
+
+          cd preview-repository
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add planung-2
+
+          if git diff --cached --quiet; then
+            echo "Planung-2-Preview ist bereits aktuell."
+          else
+            git commit -m "Update Planung 2 preview (${SOURCE_SHA:0:7})"
+            git push
+          fi
