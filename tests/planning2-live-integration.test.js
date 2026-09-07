@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const index = fs.readFileSync('index.html', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
 const live = fs.readFileSync('planning2-live.js', 'utf8');
+const liveCss = fs.readFileSync('planning2-live.css', 'utf8');
 const legacyWeekView = fs.readFileSync('week-view.js', 'utf8');
 
 function sectionMarkup(id) {
@@ -22,6 +23,16 @@ test('normal app loads Planning 2 as its visible Wochenplan section and boots wi
   assert.match(app, /if \(view === "week"\) window\.Planning2Live\?\.mount\(\)/);
   assert.doesNotMatch(live, /mountPlanning2\(\);\s*\}\)\(\)/);
   assert.match(live, /window\.Planning2Live=\{mount:mountPlanning2,render\}/);
+});
+
+
+test('Planning 2 overlays and toast are inside the shared CSS host scope', () => {
+  const week = sectionMarkup('weekView');
+  assert.match(liveCss, /^#weekView\s*\{/);
+  assert.doesNotMatch(liveCss, /^#planning2View\s*\{/);
+  for (const id of ['editorOverlay', 'targetedSuggestionsOverlay', 'candidateDebugOverlay', 'toast']) {
+    assert.match(week, new RegExp(`id=\"${id}\"`));
+  }
 });
 
 test('all established navigation targets remain wired and returning to week remounts Planning 2', () => {
