@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const vm = require('node:vm');
 
 const index = fs.readFileSync('index.html', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
@@ -96,4 +97,86 @@ test('integrated week hides duplicate legacy controls and obsolete transfer UI',
   assert.doesNotMatch(index, /An Planung 2 übergeben/);
   assert.match(index, /id="legacyWeekView" class="overview hidden/);
   assert.match(live, /⚠ 08:55 fehlt/);
+});
+
+
+test('integrated targeted service executes a real request with callable A-D dependencies', () => {
+  const elements = new Map();
+  const element = id => {
+    if (!elements.has(id)) elements.set(id, {
+      id, hidden: false, innerHTML: '', textContent: '', value: '', dataset: {},
+      classList: { add() {}, remove() {}, contains() { return false; } },
+      setAttribute() {}, querySelectorAll() { return []; }
+    });
+    return elements.get(id);
+  };
+  const storage = new Map();
+  const context = vm.createContext({
+    console, Date, Math, JSON, setTimeout, clearTimeout, encodeURIComponent, decodeURIComponent,
+    document: {
+      getElementById: element,
+      querySelectorAll() { return []; },
+      addEventListener() {},
+      body: { dataset: {} }
+    },
+    localStorage: {
+      getItem(key) { return storage.get(key) ?? null; },
+      setItem(key, value) { storage.set(key, value); }
+    },
+    addEventListener() {},
+    CustomEvent: class CustomEvent {},
+    confirm() { return true; }
+  });
+  context.window = context;
+
+  const dependencies = [
+    'holidays.js', 'time-utils.js', 'employee-availability.js', 'shift-rules.js',
+    'date-utils.js', 'shift-utils.js', 'status-utils.js', 'contract-models.js',
+    'absences.js', 'planning2-domain-helpers.js', 'planning2-carryover.js',
+    'planning2-mutation-packages.js', 'planning2-targeted-suggestions.js',
+    'planning2-data-adapter.js', 'vacation-utils.js', 'day-resolution.js',
+    'monthly-plan-baselines.js'
+  ];
+  for (const filename of dependencies) {
+    vm.runInContext(fs.readFileSync(filename, 'utf8'), context, { filename });
+  }
+
+  vm.runInContext(`
+    globalThis.__targetedCalls = {};
+    const originalFactory = Planning2TargetedSuggestions.createPlanning2TargetedSuggestionService;
+    Planning2TargetedSuggestions.createPlanning2TargetedSuggestionService = dependencies => {
+      for (const key of ['generateCandidates', 'generatePackages', 'rankCandidates', 'rankPackages', 'simulatePackage']) {
+        if (typeof dependencies[key] !== 'function') throw new TypeError(key + ' is not callable');
+        const original = dependencies[key];
+        globalThis.__targetedCalls[key] = 0;
+        dependencies[key] = (...args) => {
+          globalThis.__targetedCalls[key] += 1;
+          return original(...args);
+        };
+      }
+      const service = originalFactory(dependencies);
+      globalThis.__integratedTargetedService = service;
+      return service;
+    };
+  `, context);
+  vm.runInContext(live, context, { filename: 'planning2-live.js' });
+
+  const result = vm.runInContext(`__integratedTargetedService.request({
+    days: [{
+      isoDate: '2026-09-07',
+      resolvedEntries: [],
+      coverage: { ok: false, gaps: [{ kind: 'understaffing', start: 540, end: 720, required: 2 }] }
+    }],
+    employees: []
+  }, {
+    isoDate: '2026-09-07',
+    gap: { kind: 'understaffing', start: 540, end: 720, required: 2, missingPeople: 2 }
+  })`, context);
+
+  assert.equal(Array.isArray(result.suggestions), true);
+  assert.equal(context.__targetedCalls.generateCandidates, 1);
+  assert.equal(context.__targetedCalls.generatePackages, 1);
+  assert.equal(context.__targetedCalls.rankCandidates, 1);
+  assert.equal(context.__targetedCalls.rankPackages, 1);
+  assert.equal(typeof context.__integratedTargetedService.request, 'function');
 });
