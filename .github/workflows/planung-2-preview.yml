@@ -25,6 +25,10 @@ jobs:
       - name: Planung-2-Dateien prüfen
         working-directory: source
         run: |
+          test -f index.html
+          test -f planning2-live.js
+          test -f planning2-live.css
+          test -f planning2-data-adapter.js
           test -f planung2-preview.html
           test -f time-utils.js
           test -f day-resolution.js
@@ -32,7 +36,7 @@ jobs:
       - name: Planung-2-Tests ausführen
         working-directory: source
         run: |
-          node --test tests/planning2-preview-startup.test.js tests/planning2-preview-coverage.test.js tests/planning2-closing-autofix.test.js tests/time-logic.test.js
+          node --test tests/planning2-live-integration.test.js tests/planning2-preview-startup.test.js tests/planning2-preview-coverage.test.js tests/planning2-closing-autofix.test.js tests/time-logic.test.js
 
       - name: Preview-Repository auschecken
         uses: actions/checkout@v4
@@ -41,7 +45,7 @@ jobs:
           token: ${{ secrets.PREVIEW_REPOSITORY_TOKEN }}
           path: preview-repository
 
-      - name: Planung-2-Preview veröffentlichen
+      - name: Standalone-Planning-2-Preview veröffentlichen
         env:
           SOURCE_SHA: ${{ github.sha }}
         run: |
@@ -53,14 +57,30 @@ jobs:
             source/ "$preview_directory/"
           cp "$preview_directory/planung2-preview.html" "$preview_directory/index.html"
 
+      - name: Integrierte App-Preview veröffentlichen
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          preview_directory="preview-repository/planung-2-live"
+          mkdir -p "$preview_directory"
+          rsync --archive --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            source/ "$preview_directory/"
+          test -f "$preview_directory/index.html"
+
+      - name: Preview-Repository aktualisieren
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
           cd preview-repository
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add planung-2
+          git add planung-2 planung-2-live
 
           if git diff --cached --quiet; then
-            echo "Planung-2-Preview ist bereits aktuell."
+            echo "Planning-2-Previews sind bereits aktuell."
           else
-            git commit -m "Update Planung 2 preview (${SOURCE_SHA:0:7})"
+            git commit -m "Update Planning 2 previews (${SOURCE_SHA:0:7})"
             git push
           fi
