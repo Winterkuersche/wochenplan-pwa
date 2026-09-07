@@ -50,7 +50,11 @@ function normalizeMonthlyPlanBaselines(value) {
         return days;
       }, {})
       : {};
-    result[month] = { month, createdAt: String(baseline.createdAt || ""), entries };
+    const changeTimestamps = baseline.changeTimestamps && typeof baseline.changeTimestamps === "object" && !Array.isArray(baseline.changeTimestamps)
+      ? Object.fromEntries(Object.entries(baseline.changeTimestamps)
+        .filter(([key, timestamp]) => /^\d{4}-\d{2}-\d{2}::.+/.test(key) && typeof timestamp === "string"))
+      : {};
+    result[month] = { month, createdAt: String(baseline.createdAt || ""), entries, changeTimestamps };
     return result;
   }, {});
 }
@@ -124,7 +128,21 @@ function buildMonthlyPlanBaseline(yearMonth, appState, createdAt = new Date().to
     });
     if (Object.keys(dayEntries).length) entries[isoDate] = dayEntries;
   }
-  return { month: yearMonth, createdAt, entries };
+  return { month: yearMonth, createdAt, entries, changeTimestamps: {} };
+}
+
+function monthlyPlanChangeTimestampKey(isoDate, employeeId) {
+  return `${isoDate}::${employeeId}`;
+}
+
+function markMonthlyPlanEntryChanged(isoDate, employeeId, appState, changedAt = new Date().toISOString()) {
+  const target = getMonthlyPlanState(appState);
+  const baseline = target?.monthlyPlanBaselines?.[String(isoDate || "").slice(0, 7)];
+  if (!baseline) return false;
+  baseline.changeTimestamps = baseline.changeTimestamps && typeof baseline.changeTimestamps === "object"
+    ? baseline.changeTimestamps : {};
+  baseline.changeTimestamps[monthlyPlanChangeTimestampKey(isoDate, employeeId)] = changedAt;
+  return true;
 }
 
 function hasMonthlyPlanBaseline(yearMonth, appState) {
@@ -264,10 +282,26 @@ function compareMonthlyPlanToBaseline(yearMonth, appState) {
       const after = current.entries[isoDate]?.[employeeId] || null;
       const facts = getMonthlyPlanChangeFacts(before, after);
       if (facts.changeType !== MONTHLY_PLAN_CHANGE.UNCHANGED) { changeCount += 1; netWorkMinutes += facts.workMinutesDifference; }
-      changes[isoDate][employeeId] = { ...facts, baseline: cloneMonthlyPlanValue(before), current: cloneMonthlyPlanValue(after) };
+      changes[isoDate][employeeId] = {
+        ...facts,
+        baseline: cloneMonthlyPlanValue(before),
+        current: cloneMonthlyPlanValue(after),
+        changedAt: baseline.changeTimestamps?.[monthlyPlanChangeTimestampKey(isoDate, employeeId)] || null
+      };
     });
   });
   return { hasBaseline: true, month: yearMonth, createdAt: baseline.createdAt, changes, changeCount, netWorkMinutes };
+}
+
+function listMonthlyPlanBaselineChanges(yearMonth, appState) {
+  const comparison = compareMonthlyPlanToBaseline(yearMonth, appState);
+  if (!comparison.hasBaseline) return [];
+  return Object.entries(comparison.changes || {}).flatMap(([isoDate, employees]) => (
+    Object.entries(employees || {})
+      .filter(([, change]) => change.changeType !== MONTHLY_PLAN_CHANGE.UNCHANGED)
+      .map(([employeeId, change]) => ({ isoDate, employeeId, ...change }))
+  )).sort((left, right) => left.isoDate.localeCompare(right.isoDate)
+    || String(left.employeeId).localeCompare(String(right.employeeId)));
 }
 
 function comparePlanEntryToMonthlyBaseline(isoDate, employeeId, appState) {

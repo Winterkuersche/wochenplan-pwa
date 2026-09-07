@@ -180,3 +180,33 @@ test('integrated targeted service executes a real request with callable A-D depe
   assert.equal(context.__targetedCalls.rankPackages, 1);
   assert.equal(typeof context.__integratedTargetedService.request, 'function');
 });
+
+test('productive UI derives red week tabs from the existing coverage and carryover facts', () => {
+  assert.match(live, /function getPlanning2WeekWarningFacts[^]*?buildPlanning2OptimizationContext/);
+  assert.match(live, /openWarningCount=context\.days\.filter\(day=>!day\.coverage\.ok\)\.length\+context\.carryoverProblems\.length\+missingFreeDayCount/);
+  assert.match(live, /weekFacts\[i\]\.hasOpenWarnings\?'hasProblems'/);
+  assert.match(liveCss, /\.weeks button\.hasProblems/);
+  assert.match(liveCss, /\.weeks button\.hasProblems\.on/);
+});
+
+test('productive suggestion controls are centrally paused without deleting the A-D implementation', () => {
+  assert.match(live, /const PLANNING2_SUGGESTIONS_ENABLED=false/);
+  const renderStart = live.indexOf('function render()');
+  const renderEnd = live.indexOf("document.getElementById('weeks').onclick", renderStart);
+  const renderBody = live.slice(renderStart, renderEnd);
+  assert.match(renderBody, /PLANNING2_SUGGESTIONS_ENABLED&&\(result\.gaps/);
+  assert.match(live, /createPlanning2TargetedSuggestionService/);
+  assert.match(live, /generateCandidates:generatePlanning2CandidateEvaluation/);
+  assert.match(live, /simulatePackage:simulatePlanning2MutationPackage/);
+});
+
+test('compact persisted baseline change view remains mobile-first and human-readable', () => {
+  const week = sectionMarkup('weekView');
+  assert.match(week, /<details id="baselineChanges"/);
+  assert.match(week, /Änderungen seit Festschreibung/);
+  assert.match(live, /listMonthlyPlanBaselineChanges/);
+  assert.match(live, /Keine Änderungen seit Festschreibung/);
+  assert.match(live, /Geändert:/);
+  assert.match(liveCss, /\.baselineChangeItem/);
+  assert.doesNotMatch(week, /<table[^>]+baselineChanges/);
+});

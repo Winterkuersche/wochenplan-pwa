@@ -13,7 +13,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="planning2-live.css">
+<link rel="stylesheet" href="planning2-live.css?v=2026-09-07-1">
 
 </head>
 
@@ -242,7 +242,9 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
   <div id="planung2RuntimeStatus" class="runtimeStatus" role="status">Planung 2 wird initialisiert …</div>
   <div class="top"><div><div class="eyebrow">PROTOTYP · PLANUNG 2</div><h1 id="title">Monat</h1></div><div class="nav"><button id="prev">◀</button><button id="next">▶</button></div></div>
   <div class="summary" aria-label="Wochenkennzahlen"><div class="card"><span>TZ offen</span><strong id="tz">—</strong></div><div class="card card--hours"><span>Filialstunden · Woche</span><strong id="branchWeek">—</strong></div><div class="card card--coverage"><span>Grundbesetzung</span><strong id="coverage">—</strong></div></div>
-  <div id="baselineBar" class="baselineBar"></div><div class="tools"><span class="safeBadge">Produktive Plandaten</span></div>
+  <div id="baselineBar" class="baselineBar"></div>
+  <details id="baselineChanges" class="baselineChanges" hidden><summary>Änderungen seit Festschreibung <span id="baselineChangeCount" class="changeCount"></span></summary><div id="baselineChangesList" class="baselineChangesList"></div></details>
+  <div class="tools"><span class="safeBadge">Produktive Plandaten</span></div>
   <div id="weeks" class="weeks"></div>
   <div class="table"><div class="scroll"><div id="grid"></div></div></div>
   <div class="note">Zelle antippen = planen. Änderungen werden im gemeinsamen Plan gespeichert und sind auch im bisherigen Planer sichtbar.</div>
@@ -759,32 +761,32 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-08-19-1"></script>
-<script src="./holidays.js?v=2026-08-19-1"></script>
-<script src="./time-utils.js?v=2026-08-19-1"></script>
-<script src="./employee-availability.js?v=2026-08-30-1"></script>
-<script src="./shift-rules.js?v=2026-08-19-1"></script>
-<script src="./date-utils.js?v=2026-08-19-1"></script>
-<script src="./shift-utils.js?v=2026-08-19-1"></script>
-<script src="./status-utils.js?v=2026-08-19-1"></script>
-<script src="./contract-models.js?v=2026-08-19-1"></script>
-<script src="./absences.js?v=2026-08-19-1"></script>
-<script src="./planning2-domain-helpers.js?v=2026-08-31-1"></script>
-<script src="./planning2-carryover.js?v=2026-09-06-1"></script>
-<script src="./planning2-mutation-packages.js?v=2026-09-06-1"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-09-06-1"></script>
-<script src="./planning2-data-adapter.js?v=2026-09-06-1"></script>
-<script src="./vacation-utils.js?v=2026-08-19-1"></script>
-<script src="./day-resolution.js?v=2026-08-19-1"></script>
-<script src="./month-engine.js?v=2026-08-19-1"></script>
-<script src="./day-view.js?v=2026-08-19-1"></script>
-<script src="./week-view.js?v=2026-08-19-1"></script>
-<script src="./mep-view.js?v=2026-08-19-1"></script>
-<script src="./month-view.js?v=2026-08-19-1"></script>
-<script src="./balance-utils.js?v=2026-08-19-1"></script>
-<script src="./monthly-plan-baselines.js?v=2026-08-29-1"></script>
-<script src="./backup-utils.js?v=2026-08-19-1"></script>
-<script src="./manual-month-utils.js?v=2026-08-19-1"></script>
+<script src="./version.js?v=2026-09-07-1"></script>
+<script src="./holidays.js?v=2026-09-07-1"></script>
+<script src="./time-utils.js?v=2026-09-07-1"></script>
+<script src="./employee-availability.js?v=2026-09-07-1"></script>
+<script src="./shift-rules.js?v=2026-09-07-1"></script>
+<script src="./date-utils.js?v=2026-09-07-1"></script>
+<script src="./shift-utils.js?v=2026-09-07-1"></script>
+<script src="./status-utils.js?v=2026-09-07-1"></script>
+<script src="./contract-models.js?v=2026-09-07-1"></script>
+<script src="./absences.js?v=2026-09-07-1"></script>
+<script src="./planning2-domain-helpers.js?v=2026-09-07-1"></script>
+<script src="./planning2-carryover.js?v=2026-09-07-1"></script>
+<script src="./planning2-mutation-packages.js?v=2026-09-07-1"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-09-07-1"></script>
+<script src="./planning2-data-adapter.js?v=2026-09-07-1"></script>
+<script src="./vacation-utils.js?v=2026-09-07-1"></script>
+<script src="./day-resolution.js?v=2026-09-07-1"></script>
+<script src="./month-engine.js?v=2026-09-07-1"></script>
+<script src="./day-view.js?v=2026-09-07-1"></script>
+<script src="./week-view.js?v=2026-09-07-1"></script>
+<script src="./mep-view.js?v=2026-09-07-1"></script>
+<script src="./month-view.js?v=2026-09-07-1"></script>
+<script src="./balance-utils.js?v=2026-09-07-1"></script>
+<script src="./monthly-plan-baselines.js?v=2026-09-07-1"></script>
+<script src="./backup-utils.js?v=2026-09-07-1"></script>
+<script src="./manual-month-utils.js?v=2026-09-07-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -796,10 +798,10 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-08-19-1"></script>
-<script src="./app-orchestration.js?v=2026-08-19-1"></script>
-<script src="./planning2-live.js?v=2026-09-06-1"></script>
-<script src="./app.js?v=2026-09-06-1"></script>
+<script src="./pdf-export.js?v=2026-09-07-1"></script>
+<script src="./app-orchestration.js?v=2026-09-07-1"></script>
+<script src="./planning2-live.js?v=2026-09-07-1"></script>
+<script src="./app.js?v=2026-09-07-1"></script>
 
 
 <script>

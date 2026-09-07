@@ -123,3 +123,34 @@ test('serialized plan state loads multiple normalized baselines unchanged',()=>{
 test('serialized legacy plan state loads with an empty baseline map',()=>{const {context,call}=api();context.loaded=JSON.parse('{"schedule":{},"absences":[]}');context.loaded.monthlyPlanBaselines=context.normalizeMonthlyPlanBaselines(context.loaded.monthlyPlanBaselines);assert.deepEqual(call("loaded.monthlyPlanBaselines"),{});});
 
 test('normal edits remain possible after freezing',()=>{const {context,call}=api();context.s={employees:[{id:'a'}],schedule:{'2026-10-01':{a:shift('09:00','14:00')}},absences:[]};call("createMonthlyPlanBaseline('2026-10',s)");context.s.schedule['2026-10-01'].a.end='17:00';assert.equal(context.s.schedule['2026-10-01'].a.end,'17:00');assert.equal(call("getMonthlyPlanBaseline('2026-10',s).entries['2026-10-01'].a.end"),'14:00');});
+
+test('current change list is baseline truth while persisted timestamps are only metadata', () => {
+  const { context, call } = api();
+  context.s = { employees:[{id:'a'}], schedule:{'2026-10-01':{a:shift('09:00','15:00')}}, absences:[] };
+  call("createMonthlyPlanBaseline('2026-10',s,{createdAt:'2026-09-30T12:00:00.000Z'})");
+  context.s.schedule['2026-10-01'].a.end = '16:00';
+  assert.equal(call("markMonthlyPlanEntryChanged('2026-10-01','a',s,'2026-10-01T08:42:00.000Z')"), true);
+  const changed = call("listMonthlyPlanBaselineChanges('2026-10',s)");
+  assert.equal(changed.length, 1);
+  assert.equal(changed[0].changeType, 'SHIFT_EXTENDED_END');
+  assert.equal(changed[0].changedAt, '2026-10-01T08:42:00.000Z');
+  context.s.schedule['2026-10-01'].a.end = '15:00';
+  assert.deepEqual(call("listMonthlyPlanBaselineChanges('2026-10',s)"), []);
+  assert.equal(call("getMonthlyPlanBaseline('2026-10',s).changeTimestamps['2026-10-01::a']"), '2026-10-01T08:42:00.000Z');
+});
+
+test('new, removed and Frei-to-shift entries are listed after persistence reload', () => {
+  const { context, call } = api();
+  context.s = { employees:[{id:'new'},{id:'removed'},{id:'free'}], schedule:{'2026-10-02':{removed:shift('09:00','15:00'),free:{type:'off'}}}, absences:[] };
+  call("createMonthlyPlanBaseline('2026-10',s)");
+  context.s.schedule['2026-10-02'].new = shift('12:00','18:00');
+  delete context.s.schedule['2026-10-02'].removed;
+  context.s.schedule['2026-10-02'].free = shift('09:00','14:00');
+  call("markMonthlyPlanEntryChanged('2026-10-02','new',s,'2026-10-02T10:00:00.000Z')");
+  context.persisted = JSON.stringify(context.s);
+  context.loaded = JSON.parse(context.persisted);
+  context.loaded.monthlyPlanBaselines = context.normalizeMonthlyPlanBaselines(context.loaded.monthlyPlanBaselines);
+  const changes = call("listMonthlyPlanBaselineChanges('2026-10',loaded)");
+  assert.deepEqual(changes.map(change => change.changeType).sort(), ['WORKDAY_ADDED','WORKDAY_ADDED','WORKDAY_REMOVED']);
+  assert.equal(changes.find(change => change.employeeId === 'new').changedAt, '2026-10-02T10:00:00.000Z');
+});
