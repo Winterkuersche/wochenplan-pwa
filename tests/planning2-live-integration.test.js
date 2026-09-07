@@ -7,6 +7,7 @@ const app = fs.readFileSync('app.js', 'utf8');
 const live = fs.readFileSync('planning2-live.js', 'utf8');
 const liveCss = fs.readFileSync('planning2-live.css', 'utf8');
 const legacyWeekView = fs.readFileSync('week-view.js', 'utf8');
+const targeted = fs.readFileSync('planning2-targeted-suggestions.js', 'utf8');
 
 function sectionMarkup(id) {
   const start = index.indexOf(`<section id="${id}"`);
@@ -73,4 +74,26 @@ test('normal render remains fast while explicit targeted suggestions and baselin
   assert.match(live, /openPlanning2TargetedSuggestions/);
   assert.match(live, /applyPlanning2TargetedSuggestion/);
   assert.match(live, /createMonthlyPlanBaseline/);
+});
+
+
+test('integrated targeted suggestions receive the complete existing A-D pipeline explicitly', () => {
+  const registration = live.match(/createPlanning2TargetedSuggestionService\(\{[^]*?\}\)/)?.[0] || '';
+  assert.match(registration, /generateCandidates:generatePlanning2CandidateEvaluation/);
+  assert.match(registration, /generatePackages:generatePlanning2MutationPackages/);
+  assert.match(registration, /rankCandidates:rankPlanning2Candidates/);
+  assert.match(registration, /rankPackages:rankPlanning2MutationPackages/);
+  assert.match(registration, /simulatePackage:simulatePlanning2MutationPackage/);
+  assert.match(live, /generatePlanning2EmptyDayCandidates/);
+  assert.match(live, /generatePlanning2ExistingShiftMutationEvaluation/);
+  assert.match(targeted, /data-targeted-loading/);
+  assert.match(live, /Keine fachlich validen internen Vorschläge/);
+});
+
+test('integrated week hides duplicate legacy controls and obsolete transfer UI', () => {
+  assert.match(app, /viewMetaLineEl\.classList\.add\("hidden"\)/);
+  assert.match(app, /btnResetWeekEl\.classList\.add\("hidden"\)/);
+  assert.doesNotMatch(index, /An Planung 2 übergeben/);
+  assert.match(index, /id="legacyWeekView" class="overview hidden/);
+  assert.match(live, /⚠ 08:55 fehlt/);
 });
