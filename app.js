@@ -1080,6 +1080,7 @@ const weeklyHoursStatusEl = document.getElementById("weeklyHoursStatus");
 
 const dayViewEl = document.getElementById("dayView");
 const weekViewEl = document.getElementById("weekView");
+const legacyWeekViewEl = document.getElementById("legacyWeekView");
 const monthViewEl = document.getElementById("monthView");
 const overviewViewEl = document.getElementById("overviewView");
 const mepTemplateViewEl = document.getElementById("mepTemplateView");
@@ -1097,6 +1098,7 @@ const topToolbarEl = document.getElementById("topToolbar");
 const btnResetWeekEl = document.getElementById("btnResetWeek");
 const btnExportBackupEl = document.getElementById("btnExportBackup");
 const btnImportBackupEl = document.getElementById("btnImportBackup");
+// Legacy transfer helpers remain available for standalone/preview compatibility; the integrated UI no longer exposes them.
 const backupFileInputEl = document.getElementById("backupFileInput");
 let isReconcilingMepEarlyStartForActiveMonth = false;
 const backupInfoEl = document.getElementById("backupInfo");
@@ -1212,6 +1214,10 @@ function normalizeEmployee(employee, index = 0) {
     vacationDays: Number(employee?.totalVacationDays ?? employee?.vacationDays ?? 30),
     birthDate: employee?.birthDate || "",
     serviceBonus: Boolean(employee?.serviceBonus),
+    planning2FullDayCandidate: employee?.planning2FullDayCandidate === true,
+    availability: normalizeEmployeeAvailability(employee?.availability),
+    timePreference: normalizeEmployeeTimePreference(employee?.timePreference),
+    flexibleWeekDistribution: employee?.flexibleWeekDistribution === true,
     activeFromMonth: normalizeYearMonth(employee?.activeFromMonth),
     activeToMonth: normalizeYearMonth(employee?.activeToMonth),
     manualMonthActualMinutes: normalizeManualMonthActualMinutes(employee?.manualMonthActualMinutes),
@@ -1337,6 +1343,10 @@ function saveMasterData() {
       vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate || "",
       serviceBonus: Boolean(emp.serviceBonus),
+      planning2FullDayCandidate: emp.planning2FullDayCandidate === true,
+      availability: normalizeEmployeeAvailability(emp.availability),
+      timePreference: normalizeEmployeeTimePreference(emp.timePreference),
+      flexibleWeekDistribution: emp.flexibleWeekDistribution === true,
       activeFromMonth: normalizeYearMonth(emp.activeFromMonth),
       activeToMonth: normalizeYearMonth(emp.activeToMonth),
       manualMonthActualMinutes: normalizeManualMonthActualMinutes(emp.manualMonthActualMinutes)
@@ -1350,7 +1360,8 @@ function savePlanData() {
     weekTo: state.weekTo,
     schedule: state.schedule || {},
     absences: state.absences || [],
-    salesByDate: state.salesByDate || {}
+    salesByDate: state.salesByDate || {},
+    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(state.monthlyPlanBaselines)
   });
 }
 
@@ -1451,6 +1462,10 @@ function defaultMasterState() {
       vacationDays: Number(emp.totalVacationDays ?? emp.vacationDays ?? 30),
       birthDate: emp.birthDate,
       serviceBonus: emp.serviceBonus,
+      planning2FullDayCandidate: emp.planning2FullDayCandidate === true,
+      availability: normalizeEmployeeAvailability(emp.availability),
+      timePreference: normalizeEmployeeTimePreference(emp.timePreference),
+      flexibleWeekDistribution: emp.flexibleWeekDistribution === true,
       activeFromMonth: normalizeYearMonth(emp.activeFromMonth),
       activeToMonth: normalizeYearMonth(emp.activeToMonth)
     }))
@@ -1463,7 +1478,8 @@ function defaultPlanState() {
     weekTo: "",
     schedule: {},
     absences: [],
-    salesByDate: {}
+    salesByDate: {},
+    monthlyPlanBaselines: {}
   };
 }
 function buildInitialState(options = {}) {
@@ -1502,7 +1518,8 @@ function buildInitialState(options = {}) {
     employees,
     schedule,
     absences,
-    salesByDate
+    salesByDate,
+    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(plan.monthlyPlanBaselines)
   };
 }
 
@@ -1706,33 +1723,11 @@ function getEmployeeTargetMinutes(employee) {
 }
 
 function isGfbEmployee(employee) {
-  if (!employee) return false;
-  return String(employee.roleKey || "").trim().toUpperCase() === "GFB";
+  return isPlanning2DomainGfbEmployee(employee);
 }
 
 function getEmployeeContractTargetMinutesPerMonth(employee) {
-  if (!employee) return 0;
-
-  if (isGfbEmployee(employee)) {
-    return 43 * 60;
-  }
-
-  const individualTargetMinutes = Number(employee.contractTargetMinutesPerMonth);
-  if (Number.isFinite(individualTargetMinutes) && individualTargetMinutes > 0) {
-    return Math.round(individualTargetMinutes);
-  }
-
-  const contractModelTargetMinutes = getContractModelTargetMinutesPerMonth(employee.contractModel || employee.roleKey || "");
-  if (Number.isFinite(contractModelTargetMinutes) && contractModelTargetMinutes > 0) {
-    return Math.round(contractModelTargetMinutes);
-  }
-
-  const weeklyTargetMinutes = getEmployeeTargetMinutes(employee);
-  if (weeklyTargetMinutes > 0) {
-    return Math.round((weeklyTargetMinutes * 52) / 12);
-  }
-
-  return 0;
+  return getPlanning2DomainContractTargetMinutesPerMonth(employee);
 }
 
 function getEmployeePlannedMinutesForWeek(employee, weekDays = getActiveWeekDays()) {
@@ -2491,19 +2486,63 @@ function collectFullBackupSnapshot() {
   };
 }
 
-function triggerBackupDownload(snapshot) {
+function triggerBackupDownload(snapshot, filename = `wochenplan-backup-${formatIsoDateForFileName()}.json`) {
   const payload = JSON.stringify(snapshot, null, 2);
   const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `wochenplan-backup-${formatIsoDateForFileName()}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
 
   URL.revokeObjectURL(url);
+}
+
+function collectPlanning2TransferSnapshot() {
+  const planData = loadJson(PLAN_KEY, defaultPlanState());
+  if (planData && typeof planData === "object") {
+    delete planData.salesByDate;
+    // Monats-Baselines sind ein garantierter Teil der Transfer-Schnittstelle, nicht nur zufälliger Plan-Inhalt.
+    planData.monthlyPlanBaselines = cloneMonthlyPlanValue(planData.monthlyPlanBaselines) || {};
+  }
+
+  return {
+    format: "wochenplan-planning2-transfer",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    master: loadJson(MASTER_KEY, defaultMasterState()),
+    plan: planData
+  };
+}
+
+async function exportPlanning2Transfer() {
+  try {
+    flushPendingAutoSave();
+    saveAppState();
+    const snapshot = collectPlanning2TransferSnapshot();
+    const filename = `wochenplan-planung-2-${formatIsoDateForFileName()}.json`;
+    const file = typeof File === "function"
+      ? new File([JSON.stringify(snapshot, null, 2)], filename, { type: "application/json" })
+      : null;
+
+    if (file && navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        title: "Planung-2-Testdaten",
+        text: "Stammdaten und aktueller Plan für Planung 2",
+        files: [file]
+      });
+      return;
+    }
+
+    triggerBackupDownload(snapshot, filename);
+    alert("Planung-2-Testdaten wurden exportiert. Öffne Planung 2 und wähle dort „Testdaten übernehmen“.");
+  } catch (error) {
+    if (error?.name === "AbortError") return;
+    alert("Planung-2-Testdaten konnten nicht bereitgestellt werden.");
+  }
 }
 
 function exportBackup() {
@@ -2548,7 +2587,8 @@ function importBackupFromObject(backupData) {
   const normalizedPlan = {
     ...normalizedPlanInput,
     schedule: validatedSchedule,
-    absences: normalizeAbsences(normalizedPlanInput.absences || [])
+    absences: normalizeAbsences(normalizedPlanInput.absences || []),
+    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(normalizedPlanInput.monthlyPlanBaselines)
   };
   delete normalizedPlan.salesByDate;
   const normalizedUi = sanitizeUiState(storage[UI_KEY], defaultUiState);
@@ -2743,11 +2783,12 @@ function renderTopbarVisibility() {
   const isMep = (uiState?.currentView || "week") === "mep";
 
   if (viewMetaLineEl) {
-    viewMetaLineEl.classList.toggle("hidden", !isWeek);
+    // Planning 2 owns its month/week navigation and summary when it is the week view.
+    viewMetaLineEl.classList.add("hidden");
   }
 
   if (btnResetWeekEl) {
-    btnResetWeekEl.classList.toggle("hidden", !isWeek);
+    btnResetWeekEl.classList.add("hidden");
   }
 
   if (btnMepModeNormalEl) {
@@ -2800,6 +2841,8 @@ function renderView() {
 
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
+  legacyWeekViewEl?.classList.add("hidden");
+  if (view === "week") window.Planning2Live?.mount();
   monthViewEl.classList.toggle("hidden", view !== "month");
   overviewViewEl.classList.toggle("hidden", view !== "overview");
   mepTemplateViewEl.classList.toggle("hidden", view !== "mep");
@@ -2815,6 +2858,8 @@ function renderView() {
   requestActiveResponsiveViewRefresh();
 }
 
+let expandedTeamEmployeeId = null;
+
 function renderTeamSetup() {
   if (!teamListEl) return;
 
@@ -2823,6 +2868,21 @@ function renderTeamSetup() {
   state.employees.forEach((emp, idx) => {
     const row = document.createElement("div");
     row.className = "teamRow";
+
+    const primary = document.createElement("div");
+    primary.className = "teamRowPrimary";
+    const detailPanel = document.createElement("div");
+    detailPanel.className = "teamRowDetails";
+    detailPanel.hidden = expandedTeamEmployeeId !== emp.id;
+    const labeledField = (label, control, className = "teamField") => {
+      const field = document.createElement("label");
+      field.className = className;
+      const caption = document.createElement("span");
+      caption.className = "teamFieldLabel";
+      caption.textContent = label;
+      field.append(caption, control);
+      return field;
+    };
 
     const nameInput = document.createElement("input");
     nameInput.type = "text";
@@ -2912,6 +2972,130 @@ serviceBonusInput.addEventListener("change", () => {
   renderAllViews();
 });
 
+    const planning2FullDayInput = document.createElement("input");
+    planning2FullDayInput.type = "checkbox";
+    planning2FullDayInput.checked = emp.planning2FullDayCandidate === true;
+    planning2FullDayInput.title = "Darf in Planung 2 für Ganztagsschichten vorgeschlagen werden";
+    planning2FullDayInput.addEventListener("change", () => {
+      emp.planning2FullDayCandidate = planning2FullDayInput.checked;
+      saveAppStateDebounced();
+      renderAllViews();
+    });
+
+    const planning2FullDayField = document.createElement("label");
+    planning2FullDayField.className = "teamField teamCheckboxField";
+    const planning2FullDayLabel = document.createElement("span");
+    planning2FullDayLabel.className = "teamFieldLabel";
+    planning2FullDayLabel.textContent = "Planung 2 Ganztag";
+    planning2FullDayField.append(planning2FullDayLabel, planning2FullDayInput);
+
+    const availabilityDetails = document.createElement("section");
+    availabilityDetails.className = "employeeAvailability";
+    const availabilitySummary = document.createElement("h3");
+    availabilitySummary.textContent = "Verfügbarkeit & Präferenz";
+    availabilityDetails.appendChild(availabilitySummary);
+
+    const availabilityPanel = document.createElement("div");
+    availabilityPanel.className = "employeeAvailabilityPanel";
+    const commitAvailability = () => {
+      emp.availability = normalizeEmployeeAvailability(emp.availability);
+      saveAppStateDebounced();
+    };
+    const makeLimitFields = (limit, onChange) => {
+      const fields = document.createElement("div");
+      fields.className = "availabilityLimitFields";
+      [["time", "earliestStart", "Frühestens"], ["time", "latestEnd", "Spätestens"], ["number", "maxShiftHours", "Max. Dauer (h)"]].forEach(([type, key, label]) => {
+        const field = document.createElement("label");
+        field.textContent = label;
+        const input = document.createElement("input");
+        input.type = type;
+        input.step = type === "time" ? "300" : "0.25";
+        input.min = type === "number" ? "0.25" : "";
+        input.value = key === "maxShiftHours" ? (limit.maxShiftMinutes ? limit.maxShiftMinutes / 60 : "") : (limit[key] || "");
+        input.addEventListener("change", () => {
+          if (key === "maxShiftHours") limit.maxShiftMinutes = input.value ? Number(input.value) * 60 : 0;
+          else limit[key] = input.value;
+          onChange();
+        });
+        field.appendChild(input);
+        fields.appendChild(field);
+      });
+      return fields;
+    };
+
+    emp.availability = normalizeEmployeeAvailability(emp.availability);
+    const preferenceRow = document.createElement("div");
+    preferenceRow.className = "availabilityPreferenceRow";
+    const preferenceField = document.createElement("label");
+    preferenceField.textContent = "Zeitpräferenz";
+    const preferenceSelect = document.createElement("select");
+    [["early", "Früh"], ["late", "Spät"], ["any", "Egal"]].forEach(([value, label]) => preferenceSelect.add(new Option(label, value)));
+    preferenceSelect.value = normalizeEmployeeTimePreference(emp.timePreference);
+    preferenceSelect.addEventListener("change", () => { emp.timePreference = preferenceSelect.value; saveAppStateDebounced(); });
+    preferenceField.appendChild(preferenceSelect);
+    const flexibleField = document.createElement("label");
+    flexibleField.className = "availabilityFlexibleField";
+    const flexibleInput = document.createElement("input");
+    flexibleInput.type = "checkbox";
+    flexibleInput.checked = emp.flexibleWeekDistribution === true;
+    flexibleInput.addEventListener("change", () => { emp.flexibleWeekDistribution = flexibleInput.checked; saveAppStateDebounced(); });
+    flexibleField.append(flexibleInput, "Flexible Wochenverteilung");
+    preferenceRow.append(preferenceField, flexibleField);
+    availabilityPanel.appendChild(preferenceRow);
+
+    const generalHeading = document.createElement("h4");
+    generalHeading.textContent = "Allgemeine harte Grenzen";
+    availabilityPanel.append(generalHeading, makeLimitFields(emp.availability.general, commitAvailability));
+
+    const weekdayDetails = document.createElement("details");
+    weekdayDetails.innerHTML = "<summary>Abweichungen nach Wochentag</summary>";
+    const weekdayNames = { 1: "Montag", 2: "Dienstag", 3: "Mittwoch", 4: "Donnerstag", 5: "Freitag", 6: "Samstag", 0: "Sonntag" };
+    EMPLOYEE_AVAILABILITY_WEEKDAYS.forEach((weekday) => {
+      const row = document.createElement("div");
+      row.className = "availabilityOverrideRow";
+      const enabled = document.createElement("input");
+      enabled.type = "checkbox";
+      enabled.checked = Object.prototype.hasOwnProperty.call(emp.availability.weekdays, String(weekday));
+      const label = document.createElement("strong");
+      label.textContent = weekdayNames[weekday];
+      const limit = emp.availability.weekdays[String(weekday)] || {};
+      const fields = makeLimitFields(limit, () => { emp.availability.weekdays[String(weekday)] = limit; enabled.checked = true; commitAvailability(); });
+      enabled.addEventListener("change", () => { if (enabled.checked) emp.availability.weekdays[String(weekday)] = limit; else delete emp.availability.weekdays[String(weekday)]; commitAvailability(); });
+      row.append(enabled, label, fields);
+      weekdayDetails.appendChild(row);
+    });
+    availabilityPanel.appendChild(weekdayDetails);
+
+    const dateHeading = document.createElement("h4");
+    dateHeading.textContent = "Ausnahmen für konkrete Daten";
+    const dateList = document.createElement("div");
+    const renderDateRows = () => {
+      dateList.innerHTML = "";
+      Object.entries(emp.availability.dates).sort().forEach(([isoDate, limit]) => {
+        const row = document.createElement("div"); row.className = "availabilityDateRow";
+        const dateInput = document.createElement("input"); dateInput.type = "date"; dateInput.value = isoDate;
+        dateInput.addEventListener("change", () => { if (!dateInput.value) return; delete emp.availability.dates[isoDate]; emp.availability.dates[dateInput.value] = limit; commitAvailability(); renderDateRows(); });
+        const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "Entfernen";
+        remove.addEventListener("click", () => { delete emp.availability.dates[isoDate]; commitAvailability(); renderDateRows(); });
+        row.append(dateInput, makeLimitFields(limit, commitAvailability), remove); dateList.appendChild(row);
+      });
+    };
+    const addDate = document.createElement("button"); addDate.type = "button"; addDate.textContent = "Datumsausnahme hinzufügen";
+    addDate.addEventListener("click", () => {
+      const date = new Date();
+      let isoDate = toIsoDate(date);
+      while (Object.prototype.hasOwnProperty.call(emp.availability.dates, isoDate)) {
+        date.setDate(date.getDate() + 1);
+        isoDate = toIsoDate(date);
+      }
+      emp.availability.dates[isoDate] = {};
+      commitAvailability();
+      renderDateRows();
+    });
+    renderDateRows();
+    availabilityPanel.append(dateHeading, dateList, addDate);
+    availabilityDetails.appendChild(availabilityPanel);
+
     const activeFromInput = document.createElement("input");
     activeFromInput.type = "month";
     activeFromInput.value = normalizeYearMonth(emp.activeFromMonth);
@@ -2979,19 +3163,37 @@ serviceBonusInput.addEventListener("change", () => {
       openManualMonthDialog(emp);
     });
 
-    row.appendChild(nameInput);
-    row.appendChild(roleSel);
-    row.appendChild(targetInput);
-    row.appendChild(activeFromField);
-    row.appendChild(activeToField);
-    row.appendChild(vacationInput);
-    row.appendChild(usedVacationInfo);
-    row.appendChild(remainingVacationInfo);
-    row.appendChild(birthDateInput);
-    row.appendChild(serviceBonusInput);
-    row.appendChild(manualMonthButton);
-    row.appendChild(removeEmployeeButton);
+    const toggleDetailsButton = document.createElement("button");
+    toggleDetailsButton.type = "button";
+    toggleDetailsButton.className = "teamDetailsToggle";
+    toggleDetailsButton.setAttribute("aria-expanded", String(!detailPanel.hidden));
+    toggleDetailsButton.setAttribute("aria-label", `Details für ${emp.name || `Mitarbeiter ${idx + 1}`} ${detailPanel.hidden ? "öffnen" : "schließen"}`);
+    toggleDetailsButton.textContent = detailPanel.hidden ? "⌄" : "⌃";
+    toggleDetailsButton.addEventListener("click", () => {
+      const opening = detailPanel.hidden;
+      teamListEl.querySelectorAll(".teamRowDetails").forEach((panel) => { panel.hidden = true; });
+      teamListEl.querySelectorAll(".teamDetailsToggle").forEach((button) => {
+        button.setAttribute("aria-expanded", "false");
+        button.textContent = "⌄";
+      });
+      expandedTeamEmployeeId = opening ? emp.id : null;
+      detailPanel.hidden = !opening;
+      toggleDetailsButton.setAttribute("aria-expanded", String(opening));
+      toggleDetailsButton.textContent = opening ? "⌃" : "⌄";
+    });
 
+    primary.append(
+      labeledField("Name", nameInput), labeledField("Rolle", roleSel),
+      labeledField("Wochen-Soll", targetInput), activeFromField, activeToField,
+      toggleDetailsButton
+    );
+    detailPanel.append(
+      labeledField("Urlaubstage", vacationInput), labeledField("Genommen", usedVacationInfo),
+      labeledField("Resturlaub", remainingVacationInfo), labeledField("Geburtsdatum", birthDateInput),
+      labeledField("Dienstjubiläum", serviceBonusInput, "teamField teamCheckboxField"),
+      planning2FullDayField, availabilityDetails, manualMonthButton, removeEmployeeButton
+    );
+    row.append(primary, detailPanel);
     teamListEl.appendChild(row);
     });
 }
@@ -3057,7 +3259,11 @@ function createEmptyEmployee() {
     birthDate: "",
     activeFromMonth: "",
     activeToMonth: "",
-    serviceBonus: false
+    serviceBonus: false,
+    planning2FullDayCandidate: false,
+    availability: { general: {}, weekdays: {}, dates: {} },
+    timePreference: "any",
+    flexibleWeekDistribution: false
   }, state.employees.length);
 }
 
@@ -3540,6 +3746,15 @@ function bootstrapApp() {
   }
 }
 
+window.addEventListener("planning2:plan-saved", () => {
+  const refreshed = loadAppState();
+  state = refreshed.state;
+  syncVacationScheduleFromAbsences();
+  refreshEmployeeVacationCounters();
+  syncMonthPlanToState();
+  syncWeekRangeFromActiveWeek();
+});
+
 /* ========= EVENTS ========= */
 console.info("startup: begin");
 
@@ -3784,6 +3999,10 @@ btnOverviewUploadEl?.addEventListener("click", async () => {
 
 btnExportBackupEl?.addEventListener("click", () => {
   exportBackup();
+});
+
+document.getElementById("btnExportPlanning2")?.addEventListener("click", async () => {
+  await exportPlanning2Transfer();
 });
 
 btnImportBackupEl?.addEventListener("click", () => {
