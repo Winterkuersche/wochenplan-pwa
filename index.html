@@ -13,6 +13,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="planning2-live.css">
 
 </head>
 
@@ -240,7 +241,53 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
 
 
 
-<section id="weekView" class="overview no-print">
+<section id="weekView" class="planning2Host no-print">
+<div id="planning2View" class="app">
+  <div id="planung2RuntimeStatus" class="runtimeStatus" role="status">Planung 2 wird initialisiert …</div>
+  <div class="top"><div><div class="eyebrow">PROTOTYP · PLANUNG 2</div><h1 id="title">Monat</h1></div><div class="nav"><button id="prev">◀</button><button id="next">▶</button></div></div>
+  <div class="summary" aria-label="Wochenkennzahlen"><div class="card"><span>TZ offen</span><strong id="tz">—</strong></div><div class="card card--hours"><span>Filialstunden · Woche</span><strong id="branchWeek">—</strong></div><div class="card card--coverage"><span>Grundbesetzung</span><strong id="coverage">—</strong></div></div>
+  <div id="baselineBar" class="baselineBar"></div><div class="tools"><span class="safeBadge">Produktive Plandaten</span></div>
+  <div id="weeks" class="weeks"></div>
+  <div class="table"><div class="scroll"><div id="grid"></div></div></div>
+  <div class="note">Zelle antippen = planen. Änderungen werden im gemeinsamen Plan gespeichert und sind auch im bisherigen Planer sichtbar.</div>
+</div>
+
+<div id="editorOverlay" class="overlay hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+    <div class="sheetHead"><div><h2 id="editorTitle">Schicht planen</h2><div id="editorSub" class="sheetSub"></div><div id="baselineDetail" class="baselineDetail" hidden></div></div><button id="closeEditor" class="closeBtn" type="button">✕</button></div>
+    <div class="quickGrid">
+      <button class="quick" data-quick="F3">F3</button><button class="quick" data-quick="F4">F4</button><button class="quick" data-quick="F5">F5</button><button class="quick" data-quick="F6">F6</button>
+      <button class="quick" data-quick="FO">FÖ</button><button class="quick" data-quick="G">G</button><button class="quick" data-quick="L">Late</button><button class="quick" data-quick="FLEX">Flex</button>
+      <button class="quick secondary" data-quick="FR">Frei</button><button class="quick secondary" data-quick="U">Urlaub</button><button class="quick secondary" data-quick="K">Krank</button><button class="quick secondary" data-quick="AH">AH</button>
+    </div>
+    <div class="fields">
+      <label class="field"><span>Typ</span><select id="editType"><option value="FLEX">Flex</option><option value="FO">FÖ</option><option value="G">G</option><option value="L">Late</option><option value="AH">AH</option></select></label>
+      <label class="field"><span>Abrechnung / Ende</span><select id="editCheckout"><option value="19:00">19:00</option><option value="19:10">19:10</option></select></label>
+      <label class="field"><span>Beginn</span><input id="editStart" type="time" step="300"></label>
+      <label class="field"><span>Ende</span><input id="editEnd" type="time" step="300"></label>
+      <label class="field full"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
+    </div>
+    <div class="saveRow"><button id="deleteEntry" class="danger" type="button">Eintrag löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
+    <div class="previewWarning">Planning 2 verwendet die zentrale Stammdatenpflege und den gemeinsamen Plan der normalen App.</div>
+  </div>
+</div>
+<div id="targetedSuggestionsOverlay" class="overlay hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="targetedSuggestionsTitle">
+    <div class="sheetHead"><div><h2 id="targetedSuggestionsTitle">💡 Vorschläge</h2><div id="targetedSuggestionsSub" class="sheetSub"></div></div><button id="closeTargetedSuggestions" class="closeBtn" type="button" aria-label="Vorschläge schließen">✕</button></div>
+    <div id="targetedSuggestionsList" class="targetedList" aria-live="polite"></div>
+  </div>
+</div>
+<div id="candidateDebugOverlay" class="overlay hidden" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="candidateDebugTitle">
+    <div class="sheetHead"><div><h2 id="candidateDebugTitle">Planning-2-Alternativen</h2><div id="candidateDebugSub" class="sheetSub"></div></div><button id="closeCandidateDebug" class="closeBtn" type="button">✕</button></div>
+    <div id="candidateDebugList" class="candidateList"></div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+</section>
+
+<section id="legacyWeekView" class="overview hidden no-print" aria-hidden="true">
 
 <div class="sectionhead">
 
@@ -727,6 +774,10 @@ L1E-L4E ohne Abrechnung
 <script src="./contract-models.js?v=2026-08-19-1"></script>
 <script src="./absences.js?v=2026-08-19-1"></script>
 <script src="./planning2-domain-helpers.js?v=2026-08-31-1"></script>
+<script src="./planning2-carryover.js?v=2026-09-06-1"></script>
+<script src="./planning2-mutation-packages.js?v=2026-09-06-1"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-09-06-1"></script>
+<script src="./planning2-data-adapter.js?v=2026-09-06-1"></script>
 <script src="./vacation-utils.js?v=2026-08-19-1"></script>
 <script src="./day-resolution.js?v=2026-08-19-1"></script>
 <script src="./month-engine.js?v=2026-08-19-1"></script>
@@ -751,7 +802,8 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
 </script>
 <script src="./pdf-export.js?v=2026-08-19-1"></script>
 <script src="./app-orchestration.js?v=2026-08-19-1"></script>
-<script src="./app.js?v=2026-08-19-1"></script>
+<script src="./planning2-live.js?v=2026-09-06-1"></script>
+<script src="./app.js?v=2026-09-06-1"></script>
 
 
 <script>
