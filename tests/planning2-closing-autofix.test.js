@@ -5,24 +5,26 @@ const vm = require('node:vm');
 const { loadScripts } = require('./test-helpers');
 
 const preview = fs.readFileSync('planung2-preview.html', 'utf8');
+const live = fs.readFileSync('planning2-live.js', 'utf8');
 function extractFunction(name) {
-  const start = preview.indexOf(`function ${name}`);
+  const source = preview.includes(`function ${name}`) ? preview : live;
+  const start = source.indexOf(`function ${name}`);
   assert.notEqual(start, -1, `${name} should exist`);
   let depth = 0;
-  for (let index = preview.indexOf('{', start); index < preview.length; index += 1) {
-    if (preview[index] === '{') depth += 1;
-    if (preview[index] === '}' && --depth === 0) return preview.slice(start, index + 1);
+  for (let index = source.indexOf('{', start); index < source.length; index += 1) {
+    if (source[index] === '{') depth += 1;
+    if (source[index] === '}' && --depth === 0) return source.slice(start, index + 1);
   }
   throw new Error(`Could not extract ${name}`);
 }
 function loadRule() {
-  const names = ['mins', 'shiftDayIso', 'previousRelevantWorkday', 'nextRelevantWorkday',
+  const names = ['absence', 'mins', 'shiftDayIso', 'previousRelevantWorkday', 'nextRelevantWorkday',
     'carryoverRolePriority', 'planning2ResolvedWorkShift', 'rankCarryoverCandidates', 'updatePlanning2ShiftStart',
     'applyPlanning2EarlyStartCarryover', 'closingWorkload', 'extendClosingShift', 'restoreClosingShift',
     'alignPreviousClosingTeam', 'applyPlanning2ClosingAutofix',
-    'applyPlanning2SavedDayAutofixes'];
-  const context = loadScripts(['holidays.js', 'time-utils.js', 'shift-rules.js', 'date-utils.js', 'shift-utils.js', 'status-utils.js', 'absences.js', 'day-resolution.js']);
-  vm.runInContext(`${names.map(extractFunction).join(';')} ;this.applyRule=applyPlanning2ClosingAutofix;this.applySavedDay=applyPlanning2SavedDayAutofixes;`, context);
+    'applyPlanning2SavedDayAutofixes', 'getPlanning2ChangedPlanCells'];
+  const context = loadScripts(['holidays.js', 'time-utils.js', 'shift-rules.js', 'date-utils.js', 'shift-utils.js', 'status-utils.js', 'absences.js', 'day-resolution.js', 'monthly-plan-baselines.js']);
+  vm.runInContext(`${names.map(extractFunction).join(';')} ;this.applyRule=applyPlanning2ClosingAutofix;this.applySavedDay=applyPlanning2SavedDayAutofixes;this.changedCells=getPlanning2ChangedPlanCells;`, context);
   return context;
 }
 const rules = loadRule();
@@ -489,4 +491,38 @@ test('saved-day autofix skips an individually closed day when aligning the previ
   assert.equal(plan.schedule['2026-04-07'].a.end, '19:10');
   assert.equal(plan.schedule['2026-04-09'].a.start, '08:55');
   assert.equal(plan.schedule['2026-04-08'], undefined);
+});
+
+test('one save timestamps every direct and automatic carryover change across workdays', () => {
+  const employees = [employee('a'), employee('b'), employee('c')];
+  const plan = {
+    employees,
+    absences: [],
+    schedule: {
+      '2026-04-09': {
+        a: { ...shift('09:00', '19:10'), planning2AutoCloser: true },
+        b: shift('13:00', '19:10'),
+        c: shift('09:00', '19:00')
+      },
+      '2026-04-10': {
+        a: { ...shift('08:55', '15:00'), planning2AutoOpener: true },
+        c: shift('09:00', '15:00', 'FLEX')
+      }
+    }
+  };
+  rules.createMonthlyPlanBaseline('2026-04', plan, { createdAt: '2026-04-01T00:00:00.000Z' });
+  const beforeSave = JSON.parse(JSON.stringify(plan));
+  plan.schedule['2026-04-10'].c = shift('08:55', '15:00', 'FO');
+
+  applySavedDay(plan, employees, '2026-04-10');
+  const changedCells = rules.changedCells(beforeSave, plan, { dayIso: '2026-04-10', employeeId: 'c' });
+  changedCells.forEach(cell => rules.markMonthlyPlanEntryChanged(cell.dayIso, cell.employeeId, plan, '2026-04-10T08:42:00.000Z'));
+
+  const changedKeys = changedCells.map(cell => `${cell.dayIso}::${cell.employeeId}`);
+  assert.ok(changedKeys.includes('2026-04-09::c'), 'automatic previous-day closer must be included');
+  assert.ok(changedKeys.includes('2026-04-10::a'), 'automatic opener reset must be included');
+  assert.ok(changedKeys.includes('2026-04-10::c'), 'directly edited entry must be included');
+  for (const key of changedKeys) {
+    assert.equal(plan.monthlyPlanBaselines['2026-04'].changeTimestamps[key], '2026-04-10T08:42:00.000Z');
+  }
 });
