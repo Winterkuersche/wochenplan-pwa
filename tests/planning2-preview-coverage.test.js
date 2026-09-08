@@ -180,6 +180,7 @@ test('persisted planning 2 edit is the entry used by coverage on the next render
     extractFunction('alignPreviousClosingTeam'),
     extractFunction('applyPlanning2ClosingAutofix'),
     extractFunction('applyPlanning2SavedDayAutofixes'),
+    extractFunction('planning2EmployeeActiveInMonth'),
     extractFunction('persist'),
     extractFunction('saveCustom'),
     `editing={eid:'late',dayIso:'${dayIso}'}`,

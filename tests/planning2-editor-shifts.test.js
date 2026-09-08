@@ -40,3 +40,27 @@ test('Planning-2 editor offers grouped shortcuts, ranges and duration wheels wit
   assert.match(html, /ohne Pause[^]*mit Pause/);
   assert.match(html, /data-quick="LAST"/);
 });
+
+test('Planning-2 keeps month-bounded employee activity for rendering and autofixes', () => {
+  const live = fs.readFileSync('planning2-live.js', 'utf8');
+  assert.match(live, /function planning2EmployeeActiveInMonth\(emp,ym\)/);
+  assert.match(live, /activeFromMonth[^]*activeToMonth/);
+  assert.match(live, /filter\(employee=>planning2EmployeeActiveInMonth\(employee,String\(editing\?\.dayIso/);
+  assert.doesNotMatch(live, /function active\(e\)\{return e\?\.active!==false\}/);
+});
+
+test('Planning-2 AH cells show attendance, AH, target branch and credited work', () => {
+  const live = fs.readFileSync('planning2-live.js', 'utf8');
+  const start = live.indexOf('function cell(resolved)');
+  let depth = 0;
+  let source = '';
+  for (let index = live.indexOf('{', start); index < live.length; index += 1) {
+    if (live[index] === '{') depth += 1;
+    if (live[index] === '}' && --depth === 0) { source = live.slice(start, index + 1); break; }
+  }
+  const cellContext = { resolvedShiftTimes: () => null, hm: minutes => `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}` };
+  vm.createContext(cellContext);
+  vm.runInContext(`${source};this.cell=cell`, cellContext);
+  const result = cellContext.cell({ type: 'external-help', minutesForMonth: 360, sourceEntry: { start: '09:00', end: '16:00', branch: 'Kiel', minutes: 360 } });
+  assert.deepEqual(Array.from(result), ['09:00–16:00', 'AH · Kiel · 6:00 h', 'abs']);
+});
