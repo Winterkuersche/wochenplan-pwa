@@ -29,6 +29,9 @@
       <button class="quick" data-quick="LAST" id="editLastShift" hidden>↻ Zuletzt</button><button class="quick" data-quick="G">G</button><button class="quick" data-quick="FLEX">Flex</button>
       <button class="quick secondary" data-quick="FR">Frei</button><button class="quick secondary" data-quick="U">Urlaub</button><button class="quick secondary" data-quick="K">Krank</button><button class="quick secondary" data-quick="AH">AH</button>
     </div>
+    <div id="editFavorites" class="editorFavorites" hidden></div>
+    <div id="editBalance" class="editorBalance" aria-live="polite"></div>
+    <div id="editWarning" class="editorWarning" hidden></div>
     <div class="fields">
       <label class="field"><span>Typ</span><select id="editType"><option value="FLEX">Flex</option><option value="G">G</option><option value="AH">AH</option><option value="U">Urlaub</option><option value="K">Krank</option></select></label>
       <label class="field" id="editCheckoutField"><span>Abrechnung / Ende</span><select id="editCheckout"><option value="19:00">19:00</option><option value="19:10">19:10</option></select></label>
@@ -39,7 +42,7 @@
       <label class="field full" id="editBranchField"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
       <label class="field" id="editAbsenceFromField" hidden><span>Von</span><input id="editAbsenceFrom" type="date"></label><label class="field" id="editAbsenceToField" hidden><span>Bis</span><input id="editAbsenceTo" type="date"></label>
     </div>
-    <div class="saveRow"><button id="deleteEntry" class="danger" type="button">Eintrag löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
+    <div class="saveRow"><button id="copyEntry" type="button" hidden>Kopieren</button><button id="multiEntry" type="button">⊕ Mehrfach</button><button id="deleteEntry" class="danger" type="button">Löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
     <div class="previewWarning">Planning 2 verwendet die zentrale Stammdatenpflege und den gemeinsamen Plan der normalen App.</div>
   </div>
 </div>
@@ -55,7 +58,7 @@
     <div id="candidateDebugList" class="candidateList"></div>
   </div>
 </div>
-<div id="toast" class="toast"></div>
+<div id="planning2MultiBar" class="planning2MultiBar" hidden role="status"><strong id="planning2MultiLabel"></strong><span id="planning2MultiFeedback" aria-live="polite"></span><button id="planning2MultiStop" type="button">Beenden</button></div><div id="toast" class="toast"></div>
 
 <script>
 (function installPlanning2Diagnostics(){
@@ -87,6 +90,7 @@
 <script src="./planning2-mutation-packages.js"></script>
 <script src="./planning2-targeted-suggestions.js"></script>
 <script src="./planning2-data-adapter.js"></script>
+<script src="./planning2-manual-tools.js"></script>
 <script>
 const PREVIEW_MASTER='wochenplan_master_v10_planning2_preview';
 const TEST_PLAN='wochenplan_plan_v10_planning2_preview';

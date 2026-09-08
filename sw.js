@@ -27,6 +27,7 @@ const APP_FILES = [
   "./planning2-carryover.js",
   "./planning2-mutation-packages.js",
   "./planning2-live.js",
+  "./planning2-manual-tools.js",
   "./vacation-utils.js",
   "./day-resolution.js",
   "./month-engine.js",

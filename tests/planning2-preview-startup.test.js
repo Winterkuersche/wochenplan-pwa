@@ -22,6 +22,7 @@ const expectedDependencies = [
   'planning2-mutation-packages.js',
   'planning2-targeted-suggestions.js',
   'planning2-data-adapter.js',
+  'planning2-manual-tools.js',
 ];
 
 function extractFunction(source, name) {
