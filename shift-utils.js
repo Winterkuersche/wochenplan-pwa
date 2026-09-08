@@ -140,6 +140,38 @@ function buildIndividualShiftEntry(startHHMM, workedMinutes, breakMinutes = 0) {
   };
 }
 
+// Builds a flexible attendance window from the values users actually plan:
+// start and credited work.  The central break rule remains the only authority
+// for the attendance extension.  Exactly six credited hours is the one case
+// where a voluntary regular break can be requested.
+function buildWorkDurationShiftEntry(startHHMM, workedMinutes, options = {}) {
+  const start = normalizePlanTime(startHHMM);
+  const work = normalizeMinutesToQuarterHour(workedMinutes);
+  if (!start || work < MIN_WORK_MINUTES) return null;
+
+  let pause = work === REQUIRED_BREAK_THRESHOLD_MINUTES && options.withBreakAtSix
+    ? REQUIRED_BREAK_BASE_MINUTES
+    : 0;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const end = addMinutesToHHMM(start, work + pause);
+    const required = getBusinessRequiredBreakMinutes(start, end, 0, {
+      includeBillingBonus: end === "19:10"
+    });
+    const nextPause = Math.max(pause, required);
+    if (nextPause === pause) return buildIndividualShiftEntry(start, work, pause);
+    pause = nextPause;
+  }
+  return null;
+}
+
+function buildLateShiftEntryForWorkedMinutes(workedMinutes, withCheckout = false) {
+  const work = normalizeMinutesToQuarterHour(workedMinutes);
+  const rule = getShiftRuleByCode("L");
+  return (rule?.startPolicy?.options || [])
+    .map((start) => buildLateShiftEntry(start, withCheckout))
+    .find((entry) => entry?.minutes === work) || null;
+}
+
 function buildIndividualCheckoutShiftEntry(startHHMM) {
   const start = normalizePlanTime(startHHMM);
   const end = "19:10";

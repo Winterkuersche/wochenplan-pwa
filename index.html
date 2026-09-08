@@ -254,16 +254,20 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
     <div class="sheetHead"><div><h2 id="editorTitle">Schicht planen</h2><div id="editorSub" class="sheetSub"></div><div id="baselineDetail" class="baselineDetail" hidden></div></div><button id="closeEditor" class="closeBtn" type="button">✕</button></div>
     <div class="quickGrid">
-      <button class="quick" data-quick="F3">F3</button><button class="quick" data-quick="F4">F4</button><button class="quick" data-quick="F5">F5</button><button class="quick" data-quick="F6">F6</button>
-      <button class="quick" data-quick="FO">FÖ</button><button class="quick" data-quick="G">G</button><button class="quick" data-quick="L">Late</button><button class="quick" data-quick="FLEX">Flex</button>
+      <details class="quickMenu"><summary class="quick">F</summary><div><button class="quick" data-quick="F3">F3</button><button class="quick" data-quick="F4">F4</button><button class="quick" data-quick="F5">F5</button><button class="quick" data-quick="F6">F6</button></div></details>
+      <details class="quickMenu"><summary class="quick">Late</summary><div><button class="quick" data-quick="L3">L3</button><button class="quick" data-quick="L4">L4</button><button class="quick" data-quick="L5">L5</button><button class="quick" data-quick="L6">L6</button></div></details>
+      <button class="quick" data-quick="LAST" id="editLastShift" hidden>↻ Zuletzt</button><button class="quick" data-quick="G">G</button><button class="quick" data-quick="FLEX">Flex</button>
       <button class="quick secondary" data-quick="FR">Frei</button><button class="quick secondary" data-quick="U">Urlaub</button><button class="quick secondary" data-quick="K">Krank</button><button class="quick secondary" data-quick="AH">AH</button>
     </div>
     <div class="fields">
-      <label class="field"><span>Typ</span><select id="editType"><option value="FLEX">Flex</option><option value="FO">FÖ</option><option value="G">G</option><option value="L">Late</option><option value="AH">AH</option></select></label>
-      <label class="field"><span>Abrechnung / Ende</span><select id="editCheckout"><option value="19:00">19:00</option><option value="19:10">19:10</option></select></label>
-      <label class="field"><span>Beginn</span><input id="editStart" type="time" step="300"></label>
-      <label class="field"><span>Ende</span><input id="editEnd" type="time" step="300"></label>
-      <label class="field full"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
+      <label class="field"><span>Typ</span><select id="editType"><option value="FLEX">Flex</option><option value="G">G</option><option value="AH">AH</option><option value="U">Urlaub</option><option value="K">Krank</option></select></label>
+      <label class="field" id="editCheckoutField"><span>Abrechnung / Ende</span><select id="editCheckout"><option value="19:00">19:00</option><option value="19:10">19:10</option></select></label>
+      <label class="field" id="editStartField"><span>Startzeit</span><select id="editStart"></select></label>
+      <label class="field" id="editWorkField"><span>Arbeitszeit</span><span class="workWheels"><select id="editWorkHours" aria-label="Arbeitsstunden"></select><select id="editWorkMinutes" aria-label="Arbeitsminuten"><option value="0">00 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option></select></span></label>
+      <label class="field full" id="editSixBreakField" hidden><span>6:00 Arbeitszeit</span><select id="editSixBreak"><option value="none">ohne Pause</option><option value="break">mit Pause</option></select></label>
+      <div class="field" id="editComputedEndField"><span>Automatisches Ende</span><strong id="editComputedEnd">—</strong></div>
+      <label class="field full" id="editBranchField"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
+      <label class="field" id="editAbsenceFromField" hidden><span>Von</span><input id="editAbsenceFrom" type="date"></label><label class="field" id="editAbsenceToField" hidden><span>Bis</span><input id="editAbsenceTo" type="date"></label>
     </div>
     <div class="saveRow"><button id="deleteEntry" class="danger" type="button">Eintrag löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
     <div class="previewWarning">Planning 2 verwendet die zentrale Stammdatenpflege und den gemeinsamen Plan der normalen App.</div>
