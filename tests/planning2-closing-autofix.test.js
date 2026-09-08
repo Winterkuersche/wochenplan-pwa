@@ -526,3 +526,21 @@ test('one save timestamps every direct and automatic carryover change across wor
     assert.equal(plan.monthlyPlanBaselines['2026-04'].changeTimestamps[key], '2026-04-10T08:42:00.000Z');
   }
 });
+
+test('absence range changes report every affected day for baseline timestamps', () => {
+  const before = { schedule: {}, absences: [] };
+  const after = {
+    schedule: {},
+    absences: [{ id: 'u1', employeeId: 'a', type: 'vacation', from: '2026-04-10', to: '2026-04-13', note: '' }]
+  };
+  assert.deepEqual(
+    Array.from(rules.changedCells(before, after), cell => `${cell.dayIso}::${cell.employeeId}`),
+    ['2026-04-10::a', '2026-04-11::a', '2026-04-12::a', '2026-04-13::a']
+  );
+});
+
+test('absence range timestamp detection ignores days whose resolved absence type stayed unchanged', () => {
+  const before = { schedule: {}, absences: [{ id: 'old', employeeId: 'a', type: 'sick', from: '2026-04-10', to: '2026-04-12' }] };
+  const after = { schedule: {}, absences: [{ id: 'new', employeeId: 'a', type: 'sick', from: '2026-04-10', to: '2026-04-13' }] };
+  assert.deepEqual(Array.from(rules.changedCells(before, after), cell => `${cell.dayIso}::${cell.employeeId}`), ['2026-04-13::a']);
+});

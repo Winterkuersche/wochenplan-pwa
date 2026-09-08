@@ -180,6 +180,7 @@ test('persisted planning 2 edit is the entry used by coverage on the next render
     extractFunction('alignPreviousClosingTeam'),
     extractFunction('applyPlanning2ClosingAutofix'),
     extractFunction('applyPlanning2SavedDayAutofixes'),
+    extractFunction('planning2EmployeeActiveInMonth'),
     extractFunction('persist'),
     extractFunction('saveCustom'),
     `editing={eid:'late',dayIso:'${dayIso}'}`,
@@ -220,7 +221,7 @@ test('persisted planning 2 edit is the entry used by coverage on the next render
 
   assert.equal(JSON.parse(stored.get('wochenplan_plan_v10')).schedule[dayIso].late.start, '14:00');
   assert.equal(JSON.parse(stored.get('wochenplan_plan_v10')).schedule[dayIso].late.end, '19:10');
-  assert.deepEqual(Array.from(renderedLateCells[1]), ['14:00–19:10', 'L', 'shift']);
+  assert.deepEqual(Array.from(renderedLateCells[1]), ['14:00–19:10', '5:00 h', 'shift']);
   assert.deepEqual(Array.from(renderedCoverage[1]), [true, '✓ Besetzung']);
 });
 
