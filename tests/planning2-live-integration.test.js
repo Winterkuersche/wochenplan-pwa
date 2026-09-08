@@ -27,7 +27,6 @@ test('normal app loads Planning 2 as its visible Wochenplan section and boots wi
   assert.match(live, /window\.Planning2Live=\{mount:mountPlanning2,render\}/);
 });
 
-
 test('Planning 2 overlays and toast are inside the shared CSS host scope', () => {
   const week = sectionMarkup('weekView');
   assert.match(liveCss, /^#weekView\s*\{/);
@@ -77,7 +76,6 @@ test('normal render remains fast while explicit targeted suggestions and baselin
   assert.match(live, /createMonthlyPlanBaseline/);
 });
 
-
 test('integrated targeted suggestions receive the complete existing A-D pipeline explicitly', () => {
   const registration = live.match(/createPlanning2TargetedSuggestionService\(\{[^]*?\}\)/)?.[0] || '';
   assert.match(registration, /generateCandidates:generatePlanning2CandidateEvaluation/);
@@ -98,7 +96,6 @@ test('integrated week hides duplicate legacy controls and obsolete transfer UI',
   assert.match(index, /id="legacyWeekView" class="overview hidden/);
   assert.match(live, /⚠ 08:55 fehlt/);
 });
-
 
 test('integrated targeted service executes a real request with callable A-D dependencies', () => {
   const elements = new Map();
@@ -183,7 +180,7 @@ test('integrated targeted service executes a real request with callable A-D depe
 
 test('productive UI derives red week tabs from the existing coverage and carryover facts', () => {
   assert.match(live, /function getPlanning2WeekWarningFacts[^]*?buildPlanning2OptimizationContext/);
-  assert.match(live, /openWarningCount=context\.days\.filter\(day=>!day\.coverage\.ok\)\.length\+context\.carryoverProblems\.length\+missingFreeDayCount/);
+  assert.match(live, /warnings=getPlanning2RelevantWarningFacts\(context\)/);
   assert.match(live, /weekFacts\[i\]\.hasOpenWarnings\?'hasProblems'/);
   assert.match(liveCss, /\.weeks button\.hasProblems/);
   assert.match(liveCss, /\.weeks button\.hasProblems\.on/);
@@ -209,4 +206,28 @@ test('compact persisted baseline change view remains mobile-first and human-read
   assert.match(live, /Geändert:/);
   assert.match(liveCss, /\.baselineChangeItem/);
   assert.doesNotMatch(week, /<table[^>]+baselineChanges/);
+});
+
+test('central relevant-warning aggregation keeps clean weeks normal and flags existing warnings', () => {
+  const start = live.indexOf('function getPlanning2RelevantWarningFacts');
+  assert.notEqual(start, -1);
+  let depth = 0;
+  let opened = false;
+  let source = '';
+  for (let index = start; index < live.length; index += 1) {
+    source += live[index];
+    if (live[index] === '{') { depth += 1; opened = true; }
+    if (live[index] === '}' && opened && --depth === 0) break;
+  }
+  const context = vm.createContext({});
+  vm.runInContext(`${source};this.relevant=getPlanning2RelevantWarningFacts`, context);
+  const applicableFreeDay = hasRegularFreeDay => ({ evaluation:{ freeDay:{ isApplicable:true, hasRegularFreeDay } } });
+  const clean = context.relevant({ days:[{isoDate:'2026-09-07',coverage:{ok:true}}], carryoverProblems:[], employees:[applicableFreeDay(true)] });
+  assert.equal(clean.length, 0);
+  const coverageWarning = context.relevant({ days:[{isoDate:'2026-09-07',coverage:{ok:false,reason:'Unterbesetzung'}}], carryoverProblems:[], employees:[applicableFreeDay(true)] });
+  assert.deepEqual(Array.from(coverageWarning, warning => warning.kind), ['coverage']);
+  const carryoverWarning = context.relevant({ days:[{isoDate:'2026-09-07',coverage:{ok:true}}], carryoverProblems:[{morningIso:'2026-09-07'}], employees:[applicableFreeDay(true)] });
+  assert.deepEqual(Array.from(carryoverWarning, warning => warning.kind), ['carryover']);
+  const existingFreeDayWarning = context.relevant({ days:[{isoDate:'2026-09-07',coverage:{ok:true}}], carryoverProblems:[], employees:[applicableFreeDay(false)] });
+  assert.deepEqual(Array.from(existingFreeDayWarning, warning => warning.kind), ['free-day']);
 });
