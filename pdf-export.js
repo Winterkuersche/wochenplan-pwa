@@ -189,6 +189,17 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
         filename,
         deliveryMethod: "navigator.share"
       });
+
+      // Der native Share-Dialog ist bereits der Zustellversuch für diese
+      // Benutzeraktion. Der bisherige Fall-through zum Link-Download startete
+      // nach einer Ablehnung des Share-Promises einen zweiten PDF-Vorgang. Das
+      // betrifft insbesondere Browser, die das Promise nach Übergabe an eine
+      // Druck-/PDF-App ablehnen. Ein Download bleibt der eigenständige Fallback,
+      // wenn File Sharing von vornherein nicht verfügbar ist.
+      if (error?.name === "AbortError") {
+        return { deliveryMethod: "navigator.share", cancelled: true };
+      }
+      throw error;
     }
   } else if (isIos) {
     console.info("MEP PDF Teilen via navigator.share nicht verfügbar", {

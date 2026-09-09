@@ -82,3 +82,42 @@ test('buildOverviewPdfBlobFromCanvases inserts page breaks when remaining space 
   assert.equal(result.actions[0].y, 8);
   assert.equal(result.actions[1].orientation, 'portrait');
 });
+
+test('shareOrDownloadPdfBlob does not start a download after native sharing was attempted', async () => {
+  let shareCalls = 0;
+  let downloadUrlCalls = 0;
+  const shareError = new Error('Native share handoff failed');
+  const deliveryContext = loadScripts(['pdf-export.js'], {
+    Blob,
+    File,
+    navigator: {
+      userAgent: '',
+      platform: '',
+      maxTouchPoints: 0,
+      canShare: () => true,
+      share: async () => {
+        shareCalls += 1;
+        throw shareError;
+      }
+    },
+    URL: {
+      createObjectURL: () => {
+        downloadUrlCalls += 1;
+        return 'blob:test';
+      },
+      revokeObjectURL() {}
+    },
+    window: {
+      WOCHENPLAN_DRIVE_CONFIG: {},
+      innerWidth: 1024,
+      devicePixelRatio: 1
+    }
+  });
+
+  await assert.rejects(
+    deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'uebersicht-2026-09.pdf'),
+    /Native share handoff failed/
+  );
+  assert.equal(shareCalls, 1);
+  assert.equal(downloadUrlCalls, 0);
+});
