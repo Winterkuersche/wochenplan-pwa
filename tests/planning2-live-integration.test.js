@@ -231,3 +231,45 @@ test('central relevant-warning aggregation keeps clean weeks normal and flags ex
   const existingFreeDayWarning = context.relevant({ days:[{isoDate:'2026-09-07',coverage:{ok:true}}], carryoverProblems:[], employees:[applicableFreeDay(false)] });
   assert.deepEqual(Array.from(existingFreeDayWarning, warning => warning.kind), ['free-day']);
 });
+
+test('changed cells keep only their triangle while concrete warning facts drive problem outlines', () => {
+  assert.doesNotMatch(liveCss, /\.cell\.changed\s*\{[^}]*box-shadow/);
+  assert.match(liveCss, /\.cell\.problem\s*\{[^}]*box-shadow/);
+  assert.match(live, /changed\?' changed'/);
+  assert.match(live, /changed\?'<span class="changeMark" aria-label="Vom Basisplan geändert">△<\/span>'/);
+  assert.match(live, /getPlanning2CellWarningFacts\(activeFacts\.warnings,dayIso,e\.id\)/);
+});
+
+test('cell problem facts only map warnings that identify the concrete employee and day', () => {
+  const start = live.indexOf('function getPlanning2CellWarningFacts');
+  assert.notEqual(start, -1);
+  let depth = 0, opened = false, source = '';
+  for (let index = start; index < live.length; index += 1) {
+    source += live[index];
+    if (live[index] === '{') { depth += 1; opened = true; }
+    if (live[index] === '}' && opened && --depth === 0) break;
+  }
+  const context = vm.createContext({});
+  vm.runInContext(`${source};this.cellWarnings=getPlanning2CellWarningFacts`, context);
+  const warnings = [
+    { kind:'coverage', isoDate:'2026-09-08', source:{ reason:'generic day warning' } },
+    { kind:'coverage', isoDate:'2026-09-08', source:{ gaps:[{ employeeIds:['b'] }] } },
+    { kind:'carryover', isoDate:'2026-09-09', source:{ expectedEmployeeId:'a', actualEmployeeIds:['c'] } },
+    { kind:'free-day', employeeId:'a', source:{} }
+  ];
+  assert.deepEqual(Array.from(context.cellWarnings(warnings, '2026-09-08', 'a')), []);
+  assert.deepEqual(Array.from(context.cellWarnings(warnings, '2026-09-08', 'b'), item => item.kind), ['coverage']);
+  assert.deepEqual(Array.from(context.cellWarnings(warnings, '2026-09-09', 'a'), item => item.kind), ['carryover']);
+  assert.deepEqual(Array.from(context.cellWarnings(warnings, '2026-09-09', 'c'), item => item.kind), ['carryover']);
+});
+
+test('editor shortcut menus remain touchable button controls and baseline detail has dark contrast', () => {
+  const week = sectionMarkup('weekView');
+  for (const code of ['F3','F4','F5','F6','L3','L4','L5','L6']) {
+    assert.match(week, new RegExp(`<button type="button" class="quick" data-quick="${code}">`));
+  }
+  assert.match(liveCss, /\.quickMenu\[open\]\{z-index:/);
+  assert.match(liveCss, /\.quickMenu button\{[^}]*min-height:44px[^}]*touch-action:manipulation/);
+  assert.match(liveCss, /baselineDetail\{background:#252b33;color:#edf1f5/);
+  assert.match(live, /baselineDetail\.innerHTML='<b>Aktuell<\/b>/);
+});
