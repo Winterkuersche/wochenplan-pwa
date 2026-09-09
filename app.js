@@ -3575,22 +3575,19 @@ function renderOverviewView() {
       const rangeStartIso = calculationDays[0]?.iso || "";
       const rangeEndIso = calculationDays[calculationDays.length - 1]?.iso || "";
       const weekRangeText = (rangeStartIso && rangeEndIso)
-        ? `${formatIsoDateForOverview(rangeStartIso)} bis ${formatIsoDateForOverview(rangeEndIso)}`
+        ? `${formatIsoDateForOverview(rangeStartIso).slice(0, 5)}–${formatIsoDateForOverview(rangeEndIso).slice(0, 5)}`
         : "—";
       const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
-      const differenceLabel = weekSummary.differenceMinutes >= 0
-        ? `Über ${formatSignedMinutes(weekSummary.differenceMinutes).replace("+", "")}`
-        : `Rest ${minutesToHM(Math.abs(weekSummary.differenceMinutes))}`;
+      const balanceDisplay = getOverviewBalanceDisplay(weekSummary.differenceMinutes);
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
       const weekSalesSummary = getWeekSalesSummaryForDays(weekDays);
 
       return `
         <section class="overviewWeekSection">
+          <div class="overviewWeekHeadingRow">
+            <h3 class="overviewWeekHeading">Woche ${weekRangeText}</h3>
+          </div>
           <div class="overviewWeekInfo week-summary-grid">
-            <div class="overviewWeekCard summary-card summary-card--muted">
-              <div class="miniLabel">Woche vom / bis</div>
-              <strong>${weekRangeText}</strong>
-            </div>
             <div class="overviewWeekCard summary-card summary-card--primary">
               <div class="miniLabel">Genutzte Wochenstunden</div>
               <strong class="${differenceClass}">${minutesToHM(weekSummary.usedMinutes)}</strong>
@@ -3600,8 +3597,8 @@ function renderOverviewView() {
               <strong>${minutesToHM(weekSummary.targetMinutes)}</strong>
             </div>
             <div class="overviewWeekCard summary-card summary-card--success">
-              <div class="miniLabel">Rest / Über</div>
-              <strong class="${differenceClass}">${differenceLabel}</strong>
+              <div class="miniLabel">${balanceDisplay.label}</div>
+              <strong class="${differenceClass}">${minutesToHM(balanceDisplay.minutes)}</strong>
             </div>
           </div>
           <div class="overviewInternalMetrics internalOnly" aria-label="Interne Wochenkennzahl">

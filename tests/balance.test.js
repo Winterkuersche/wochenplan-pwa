@@ -37,6 +37,27 @@ test('collectRelevantYearMonthsUntilActiveMonthBalance ignores out-of-range mont
   assert.deepEqual(JSON.parse(JSON.stringify(months)), ['2026-03']);
 });
 
+test('overview balance presents missing hours as positive Rest', () => {
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(ctx.getOverviewBalanceDisplay(-3360))),
+    { label: 'Rest', minutes: 3360 }
+  );
+});
+
+test('overview balance presents additional hours as positive Über', () => {
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(ctx.getOverviewBalanceDisplay(750))),
+    { label: 'Über', minutes: 750 }
+  );
+});
+
+test('overview balance labels an exact target as Ausgeglichen', () => {
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(ctx.getOverviewBalanceDisplay(0))),
+    { label: 'Ausgeglichen', minutes: 0 }
+  );
+});
+
 
 test('resolved day calculation stays stable after mixed replacements (single active state, no double minutes)', () => {
   const calcCtx = loadScripts([

@@ -395,7 +395,16 @@ function getCachedOverviewPdf(filename) {
 // Lokaler PDF-Exportpfad (DOM-Capture -> reine PDF-Builder)
 // =============================================================================
 
-function createOverviewPdfExportRoot() {
+function formatOverviewPdfTimestamp(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function buildOverviewPdfStatusText(monthTitle, createdAt = new Date()) {
+  return `${String(monthTitle || "Monatsübersicht").trim()} · Stand ${formatOverviewPdfTimestamp(createdAt)}`;
+}
+
+function createOverviewPdfExportRoot(options = {}) {
   const overviewView = document.getElementById("overviewView");
   const overviewContent = document.getElementById("overviewMonthContent");
   if (!overviewView || !overviewContent) return null;
@@ -409,6 +418,14 @@ function createOverviewPdfExportRoot() {
 
   clonedView.querySelectorAll("button").forEach((buttonEl) => buttonEl.remove());
   clonedView.querySelectorAll(".internalOnly, .noExport").forEach((el) => el.remove());
+  const monthTitle = clonedView.querySelector("#overviewMonthTitle")?.textContent?.trim() || "Monatsübersicht";
+  const statusText = buildOverviewPdfStatusText(monthTitle, options.createdAt);
+  clonedView.querySelectorAll(".overviewWeekSection").forEach((sectionEl) => {
+    const metaEl = document.createElement("div");
+    metaEl.className = "overviewPdfPageMeta";
+    metaEl.textContent = statusText;
+    sectionEl.prepend(metaEl);
+  });
   const clonedWrapEls = clonedView.querySelectorAll(".tableWrap, .compactTableWrap, .overviewWeekTableWrap");
   clonedWrapEls.forEach((wrapEl) => {
     wrapEl.style.overflow = "visible";
@@ -620,7 +637,7 @@ async function buildOverviewPdfBlob(options = {}) {
     renderOverviewView();
     await waitForAnimationFrames(2);
 
-    exportRoot = createOverviewPdfExportRoot();
+    exportRoot = createOverviewPdfExportRoot({ createdAt: options.createdAt || new Date() });
     if (!exportRoot) {
       throw new Error("Übersicht konnte nicht für den Export vorbereitet werden.");
     }
@@ -628,9 +645,7 @@ async function buildOverviewPdfBlob(options = {}) {
     await waitForAnimationFrames(2);
 
     const exportViewEl = exportRoot.querySelector(".overviewPdfExportView");
-    const exportBlocks = [
-      ...exportRoot.querySelectorAll(".overviewPdfExportView .sectionhead, .overviewPdfExportView .overviewWeekSection")
-    ];
+    const exportBlocks = [...exportRoot.querySelectorAll(".overviewPdfExportView .overviewWeekSection")];
     if (!exportViewEl || !exportBlocks.length) {
       throw new Error("Keine Wochenblöcke für den Export gefunden.");
     }
@@ -673,26 +688,23 @@ function buildOverviewPdfBlobFromCanvases(blockCanvases, options = {}) {
   const pageHeight = 297;
   const margin = 8;
   const contentWidthMm = pageWidth - margin * 2;
-  let currentY = margin;
-  let hasContentOnPage = false;
-
   blockCanvases.forEach((canvas, index) => {
     if (!canvas || !canvas.width || !canvas.height) {
       throw new Error(`Ungültiger Canvas-Block für Übersicht an Position ${index + 1}.`);
     }
 
-    const renderedHeightMm = (canvas.height * contentWidthMm) / canvas.width;
-    const remainingMm = pageHeight - margin - currentY;
-
-    if (hasContentOnPage && renderedHeightMm > remainingMm) {
+    if (index > 0) {
       pdf.addPage("a4", "portrait");
-      currentY = margin;
-      hasContentOnPage = false;
     }
+    const contentHeightMm = pageHeight - margin * 2;
+    const widthScale = contentWidthMm / canvas.width;
+    const heightScale = contentHeightMm / canvas.height;
+    const scale = Math.min(widthScale, heightScale);
+    const renderedWidthMm = canvas.width * scale;
+    const renderedHeightMm = canvas.height * scale;
+    const renderedX = margin + (contentWidthMm - renderedWidthMm) / 2;
 
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, currentY, contentWidthMm, renderedHeightMm, undefined, "FAST");
-    currentY += renderedHeightMm + 3;
-    hasContentOnPage = true;
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", renderedX, margin, renderedWidthMm, renderedHeightMm, undefined, "FAST");
   });
 
   return pdf.output("blob");

@@ -70,7 +70,7 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.actions[0].height, 210);
 });
 
-test('buildOverviewPdfBlobFromCanvases inserts page breaks when remaining space is too small', () => {
+test('buildOverviewPdfBlobFromCanvases creates exactly one fitted PDF page per complete week', () => {
   const firstBlock = createCanvas(1000, 1200, 'block-1');
   const secondBlock = createCanvas(1000, 1500, 'block-2');
 
@@ -81,6 +81,18 @@ test('buildOverviewPdfBlobFromCanvases inserts page breaks when remaining space 
   assert.equal(result.actions[0].x, 8);
   assert.equal(result.actions[0].y, 8);
   assert.equal(result.actions[1].orientation, 'portrait');
+  assert.equal(result.actions[2].height, 281);
+  assert.ok(result.actions[2].width < 194);
+});
+
+test('formatOverviewPdfTimestamp records the PDF creation time for page metadata', () => {
+  const createdAt = new Date(2026, 8, 9, 8, 4);
+
+  assert.equal(ctx.formatOverviewPdfTimestamp(createdAt), '09.09.2026 08:04');
+  assert.equal(
+    ctx.buildOverviewPdfStatusText('September 2026', createdAt),
+    'September 2026 · Stand 09.09.2026 08:04'
+  );
 });
 
 test('shareOrDownloadPdfBlob does not start a download after native sharing was attempted', async () => {

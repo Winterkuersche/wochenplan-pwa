@@ -40,6 +40,16 @@ test('month switch keeps week boundaries stable for adjacent months', () => {
   assert.equal(aprilFirstWeek.filter((day) => day.inCurrentMonth).length, 5);
 });
 
+test('September overview keeps the complete Monday-to-Saturday week across the month boundary', () => {
+  const septemberWeeks = ctx.buildMonthWeeks(2026, 8);
+  const lastWeek = septemberWeeks[septemberWeeks.length - 1];
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(lastWeek.slice(0, 6).map((day) => day.iso))),
+    ['2026-09-28', '2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03']
+  );
+});
+
 test('getMonthPlanFromYearMonth resolves strict YYYY-MM values', () => {
   const monthPlan = ctx.getMonthPlanFromYearMonth('2026-03');
   assert.equal(monthPlan.meta.firstOfMonthIso, '2026-03-01');
