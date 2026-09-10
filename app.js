@@ -2842,7 +2842,12 @@ function renderView() {
   dayViewEl.classList.toggle("hidden", view !== "day");
   weekViewEl.classList.toggle("hidden", view !== "week");
   legacyWeekViewEl?.classList.add("hidden");
-  if (view === "week") window.Planning2Live?.mount();
+  if (view === "week") {
+    // Planning 2 liest denselben produktiven Plan aus dem zentralen Storage.
+    // Vor dem Ansichtswechsel deshalb ausstehende Monatsplan-Änderungen sichern.
+    flushPendingAutoSave();
+    window.Planning2Live?.mount();
+  }
   monthViewEl.classList.toggle("hidden", view !== "month");
   overviewViewEl.classList.toggle("hidden", view !== "overview");
   mepTemplateViewEl.classList.toggle("hidden", view !== "mep");
@@ -3750,6 +3755,7 @@ window.addEventListener("planning2:plan-saved", () => {
   refreshEmployeeVacationCounters();
   syncMonthPlanToState();
   syncWeekRangeFromActiveWeek();
+  renderAllViews();
 });
 
 /* ========= EVENTS ========= */

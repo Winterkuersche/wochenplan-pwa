@@ -7,7 +7,6 @@ const DRIVE_UPLOAD_CONFIG = Object.freeze({
 
 let driveTokenClient = null;
 let driveAccessToken = "";
-let lastOverviewPdfCache = null;
 
 // =============================================================================
 // Lokaler PDF-Exportpfad (Capture + PDF-Erzeugung)
@@ -378,19 +377,6 @@ async function uploadOverviewPdfToGoogleDrive(pdfBlob, filename) {
   };
 }
 
-function cacheLastOverviewPdf(blob, filename) {
-  lastOverviewPdfCache = {
-    blob,
-    filename
-  };
-}
-
-function getCachedOverviewPdf(filename) {
-  if (!lastOverviewPdfCache) return null;
-  if (lastOverviewPdfCache.filename !== filename) return null;
-  return lastOverviewPdfCache;
-}
-
 // =============================================================================
 // Lokaler PDF-Exportpfad (DOM-Capture -> reine PDF-Builder)
 // =============================================================================
@@ -606,7 +592,6 @@ async function exportOverviewPdf() {
 
     const blob = await buildOverviewPdfBlob({ jsPdfCtor, captureFn });
     const overviewFilename = buildOverviewPdfFilename();
-    cacheLastOverviewPdf(blob, overviewFilename);
     await shareOrDownloadPdfBlob(blob, overviewFilename, {
       shareTitle: "Monatsübersicht PDF",
       shareText: "Übersicht als PDF"
@@ -758,9 +743,9 @@ async function uploadOverviewPdf() {
       btnOverviewUploadEl.textContent = "Übersicht wird hochgeladen …";
     }
 
-    const cachedPdf = getCachedOverviewPdf(filename);
-    const blob = cachedPdf?.blob || await buildOverviewPdfBlob();
-    cacheLastOverviewPdf(blob, filename);
+    // Immer aus der aktuell gerenderten zentralen Planung erzeugen. Ein zuvor
+    // exportierter Monats-Blob darf nach Planänderungen nicht erneut hochgeladen werden.
+    const blob = await buildOverviewPdfBlob();
 
     const uploadResult = await uploadOverviewPdfToGoogleDrive(blob, filename);
     const actionLabel = uploadResult.action === "updated" ? "aktualisiert" : "neu hochgeladen";

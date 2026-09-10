@@ -22,7 +22,7 @@ test('normal app loads Planning 2 as its visible Wochenplan section and boots wi
   assert.match(week, /id="planning2View"/);
   assert.match(week, /id="grid"/);
   assert.match(index, /planning2-live\.js[^]*app\.js/);
-  assert.match(app, /if \(view === "week"\) window\.Planning2Live\?\.mount\(\)/);
+  assert.match(app, /if \(view === "week"\) \{[^]*?Planning2Live\?\.mount\(\);[^]*?\}/);
   assert.doesNotMatch(live, /mountPlanning2\(\);\s*\}\)\(\)/);
   assert.match(live, /window\.Planning2Live=\{mount:mountPlanning2,render\}/);
 });
@@ -54,7 +54,26 @@ test('Planning 2 live uses only productive adapter data and publishes saves to t
   assert.match(live, /planning2Data\.savePlan\(plan\)/);
   assert.match(live, /planning2:plan-saved/);
   assert.match(app, /addEventListener\("planning2:plan-saved"/);
+  assert.match(app, /addEventListener\("planning2:plan-saved"[^]*?state = refreshed\.state[^]*?renderAllViews\(\)/);
   assert.doesNotMatch(live, /readPlan\([^)]*planning2_preview/);
+});
+
+test('month changes are persisted before Planning 2 reads the shared productive plan', () => {
+  assert.match(
+    app,
+    /if \(view === "week"\) \{[^]*?flushPendingAutoSave\(\);[^]*?Planning2Live\?\.mount\(\);[^]*?\}/
+  );
+});
+
+test('overview resolves plan entries directly from the shared application state', () => {
+  assert.match(
+    app,
+    /function getResolvedEntryForEmployeeOnIso\(emp, isoDate\) \{[^]*?schedule: state\.schedule,[^]*?absences: state\.absences/
+  );
+  assert.match(
+    app,
+    /function buildOverviewWeekPlannerTable\(weekDays, employees\) \{[^]*?getResolvedEntryForEmployeeOnIso\(emp, day\.iso\)/
+  );
 });
 
 test('legacy weekly planner stays present as an inactive fallback', () => {

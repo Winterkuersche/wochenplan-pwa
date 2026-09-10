@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { loadScripts } = require('./test-helpers');
 
 class MockPdf {
@@ -121,6 +122,15 @@ test('formatOverviewPdfTimestamp records the PDF creation time for page metadata
     ctx.buildOverviewPdfStatusText('September 2026', createdAt),
     'September 2026 · Stand 09.09.2026 08:04'
   );
+});
+
+test('overview PDF and Drive upload are rebuilt from the current overview without a persistent snapshot', () => {
+  const source = fs.readFileSync('pdf-export.js', 'utf8');
+  const uploadStart = source.indexOf('async function uploadOverviewPdf()');
+  const uploadSource = source.slice(uploadStart);
+
+  assert.match(uploadSource, /const blob = await buildOverviewPdfBlob\(\)/);
+  assert.doesNotMatch(source, /lastOverviewPdfCache|cacheLastOverviewPdf|getCachedOverviewPdf/);
 });
 
 test('shareOrDownloadPdfBlob does not start a download after native sharing was attempted', async () => {
