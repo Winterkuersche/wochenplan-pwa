@@ -28,11 +28,11 @@ class MockPdf {
   }
 
   output(type) {
-    return {
-      type,
+    assert.equal(type, 'blob');
+    return Object.assign(new Blob(['%PDF-mock'], { type: 'application/pdf' }), {
       options: this.options,
       actions: this.actions
-    };
+    });
   }
 }
 
@@ -47,6 +47,7 @@ function createCanvas(width, height, label) {
 }
 
 const ctx = loadScripts(['pdf-export.js'], {
+  Blob,
   window: {
     WOCHENPLAN_DRIVE_CONFIG: {},
     jspdf: { jsPDF: MockPdf }
@@ -123,10 +124,29 @@ test('one MEP sheet creates one PDF page exactly once', async () => {
   assert.deepEqual(result.actions.map((action) => action.type), ['addImage']);
 });
 
+test('two MEP sheets create exactly two ordered A4 landscape pages without a blank page', async () => {
+  const sheets = [{ id: 'first' }, { id: 'second' }];
+  const result = await ctx.buildMepPdfBlobFromSheets(sheets, {
+    jsPdfCtor: MockPdf,
+    captureFn: async (sheet) => createCanvas(1200, 849, sheet.id),
+    yieldBetweenPages: false
+  });
+
+  assert.deepEqual(result.actions.map((action) => action.type), ['addImage', 'addPage', 'addImage']);
+  assert.deepEqual(
+    result.actions.filter((action) => action.type === 'addImage').map((action) => action.dataUrl),
+    ['data:image/png;base64,first', 'data:image/png;base64,second'],
+  );
+  assert.ok(result.actions.filter((action) => action.type === 'addImage')
+    .every((action) => action.x === 0 && action.y === 0 && action.width === 297 && action.height === 210));
+  assert.deepEqual(result.actions[1], { type: 'addPage', format: 'a4', orientation: 'landscape' });
+});
+
 test('iOS-like devices use the reduced default capture scale and yield between pages', async () => {
   let capturedScale;
   let yields = 0;
   const iosContext = loadScripts(['pdf-export.js'], {
+    Blob,
     navigator: { userAgent: 'Mozilla/5.0 (iPhone)', platform: 'iPhone', maxTouchPoints: 5 },
     window: { WOCHENPLAN_DRIVE_CONFIG: {}, jspdf: { jsPDF: MockPdf }, setTimeout },
   });
@@ -166,10 +186,10 @@ test('MEP PDF uses toBlob bytes instead of a base64 data URL when available', as
   assert.equal(canvas.height, 0);
 });
 
-test('MEP PDF reports html2canvas, image conversion, addImage and output failures separately', async () => {
+test('MEP PDF reports capture, image conversion, addPage, addImage and output failures separately', async () => {
   await assert.rejects(
     ctx.buildMepPdfBlobFromSheets([{}], { jsPdfCtor: MockPdf, captureFn: async () => { throw new Error('capture'); } }),
-    (error) => error.stage === 'html2canvas' && error.pageIndex === 0
+    (error) => error.stage === 'capture' && error.pageIndex === 0
   );
   await assert.rejects(
     ctx.buildMepPdfBlobFromSheets([{}], {
@@ -181,12 +201,17 @@ test('MEP PDF reports html2canvas, image conversion, addImage and output failure
   class AddImageFailurePdf extends MockPdf { addImage() { throw new Error('addImage'); } }
   await assert.rejects(
     ctx.buildMepPdfBlobFromSheets([{}], { jsPdfCtor: AddImageFailurePdf, captureFn: async () => createCanvas(1, 1, 'x') }),
-    (error) => error.stage === 'jspdf.addImage'
+    (error) => error.stage === 'pdf.addImage'
+  );
+  class AddPageFailurePdf extends MockPdf { addPage() { throw new Error('addPage'); } }
+  await assert.rejects(
+    ctx.buildMepPdfBlobFromSheets([{}, {}], { jsPdfCtor: AddPageFailurePdf, captureFn: async () => createCanvas(1, 1, 'x') }),
+    (error) => error.stage === 'pdf.addPage' && error.pageIndex === 1
   );
   class OutputFailurePdf extends MockPdf { output() { throw new Error('output'); } }
   await assert.rejects(
     ctx.buildMepPdfBlobFromSheets([{}], { jsPdfCtor: OutputFailurePdf, captureFn: async () => createCanvas(1, 1, 'x') }),
-    (error) => error.stage === 'jspdf.output'
+    (error) => error.stage === 'pdf.output'
   );
 });
 
@@ -206,7 +231,7 @@ test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP 
 
   const result = ctx.buildMepPdfBlobFromCanvases(preparedPages, { jsPdfCtor: MockPdf });
 
-  assert.equal(result.type, 'blob');
+  assert.equal(result.type, 'application/pdf');
   assert.equal(result.options.orientation, 'landscape');
   assert.equal(result.options.unit, 'mm');
   assert.equal(result.options.format, 'a4');
@@ -312,9 +337,9 @@ test('shareOrDownloadPdfBlob does not start a download after native sharing was 
     Blob,
     File,
     navigator: {
-      userAgent: '',
-      platform: '',
-      maxTouchPoints: 0,
+      userAgent: 'iPhone',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
       canShare: () => true,
       share: async () => {
         shareCalls += 1;
@@ -337,7 +362,7 @@ test('shareOrDownloadPdfBlob does not start a download after native sharing was 
 
   await assert.rejects(
     deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'uebersicht-2026-09.pdf'),
-    (error) => error.stage === 'delivery.navigator.share' && error.cause === shareError
+    (error) => error.stage === 'delivery.share' && error.cause === shareError
   );
   assert.equal(shareCalls, 1);
   assert.equal(downloadUrlCalls, 0);
@@ -380,4 +405,56 @@ test('AbortError from the share sheet is cancellation, not an export failure', a
   assert.equal(result.deliveryMethod, 'navigator.share');
   assert.equal(result.cancelled, true);
   assert.equal(objectUrlCalls, 0);
+});
+
+test('desktop delivery downloads the PDF Blob through an Object URL even when Web Share exists', async () => {
+  let shared = 0;
+  let clicked = 0;
+  let appendedFile;
+  let revokedUrl;
+  const deliveryContext = loadScripts(['pdf-export.js'], {
+    Blob, File,
+    navigator: {
+      userAgent: 'Desktop Browser', platform: 'Linux', maxTouchPoints: 0,
+      canShare: () => true,
+      share: async () => { shared += 1; }
+    },
+    URL: {
+      createObjectURL(blob) {
+        assert.equal(blob.type, 'application/pdf');
+        return 'blob:pdf-download';
+      },
+      revokeObjectURL(url) { revokedUrl = url; }
+    },
+    document: {
+      createElement: () => ({ click() { clicked += 1; }, remove() {} }),
+      body: { appendChild(link) { appendedFile = link; } }
+    },
+    window: {
+      WOCHENPLAN_DRIVE_CONFIG: {}, innerWidth: 1280, devicePixelRatio: 1,
+      setTimeout(callback) { callback(); }
+    }
+  });
+
+  const result = await deliveryContext.shareOrDownloadPdfBlob(
+    new Blob(['pdf'], { type: 'application/pdf' }),
+    'mep-2026-09.pdf'
+  );
+  assert.equal(shared, 0);
+  assert.equal(clicked, 1);
+  assert.equal(appendedFile.href, 'blob:pdf-download');
+  assert.equal(appendedFile.download, 'mep-2026-09.pdf');
+  assert.equal(revokedUrl, 'blob:pdf-download');
+  assert.deepEqual({ ...result }, { deliveryMethod: 'link.click' });
+});
+
+test('MEP export has no print fallback and always removes its capture root in finally', () => {
+  const source = fs.readFileSync('pdf-export.js', 'utf8');
+  const start = source.indexOf('async function exportMepTemplatePdf()');
+  const end = source.indexOf('function buildMepPdfBlobFromCanvases', start);
+  const exportSource = source.slice(start, end);
+
+  assert.doesNotMatch(source, /offerMepExportFallback/);
+  assert.doesNotMatch(exportSource, /window\.print\s*\(/);
+  assert.match(exportSource, /finally\s*\{[\s\S]*removeMepPdfExportRoot\(exportRoot\)/);
 });

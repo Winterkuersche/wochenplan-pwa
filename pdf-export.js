@@ -160,12 +160,17 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
     throw new Error("Keine MEP-Seiten zum Export gefunden.");
   }
 
-  const pdf = new jsPdfCtor({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-    compress: true
-  });
+  let pdf;
+  try {
+    pdf = new jsPdfCtor({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+      compress: true
+    });
+  } catch (error) {
+    throwMepPdfStageError("prepare", "Der PDF-Generator konnte nicht vorbereitet werden.", error);
+  }
 
   for (let index = 0; index < preparedSheetEls.length; index += 1) {
     options.onCaptureStart?.(index);
@@ -180,7 +185,7 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
           removeContainer: true
         });
       } catch (error) {
-        throwMepPdfStageError("html2canvas", `MEP-Seite ${index + 1} konnte nicht erfasst werden.`, error, index);
+        throwMepPdfStageError("capture", `MEP-Seite ${index + 1} konnte nicht erfasst werden.`, error, index);
       }
       options.onStage?.("image.convert", index);
       try {
@@ -189,13 +194,18 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
         throwMepPdfStageError("image.convert", `Bildkonvertierung für MEP-Seite ${index + 1} ist fehlgeschlagen.`, error, index);
       }
       if (index > 0) {
-        pdf.addPage("a4", "landscape");
+        options.onStage?.("pdf.addPage", index);
+        try {
+          pdf.addPage("a4", "landscape");
+        } catch (error) {
+          throwMepPdfStageError("pdf.addPage", `PDF-Seite ${index + 1} konnte nicht angelegt werden.`, error, index);
+        }
       }
-      options.onStage?.("jspdf.addImage", index);
+      options.onStage?.("pdf.addImage", index);
       try {
         pdf.addImage(imageData.data, imageData.format, 0, 0, 297, 210, undefined, "FAST");
       } catch (error) {
-        throwMepPdfStageError("jspdf.addImage", `MEP-Seite ${index + 1} konnte nicht in das PDF eingefügt werden.`, error, index);
+        throwMepPdfStageError("pdf.addImage", `MEP-Seite ${index + 1} konnte nicht in das PDF eingefügt werden.`, error, index);
       }
     } finally {
       // Safari hält den backing store eines Canvas sonst auch nach dem nächsten
@@ -211,11 +221,15 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
       await (options.yieldFn || waitForBrowserYield)();
     }
   }
-  options.onStage?.("jspdf.output", preparedSheetEls.length - 1);
+  options.onStage?.("pdf.output", preparedSheetEls.length - 1);
   try {
-    return pdf.output("blob");
+    const blob = pdf.output("blob");
+    if (!(blob instanceof Blob) || blob.type !== "application/pdf") {
+      throw new Error("jsPDF hat keinen gültigen PDF-Blob geliefert.");
+    }
+    return blob;
   } catch (error) {
-    throwMepPdfStageError("jspdf.output", "Der PDF-Blob konnte nicht erzeugt werden.", error);
+    throwMepPdfStageError("pdf.output", "Der PDF-Blob konnte nicht erzeugt werden.", error);
   }
 }
 
@@ -272,21 +286,7 @@ function buildMepExportUserMessage(context = {}) {
     ? " Auf Mobilgeräten kann der Monats-Export zu groß sein."
     : "";
 
-  return `PDF-Export fehlgeschlagen.${failedPageHint}${mobileHint} Bitte Browser-Druckansicht öffnen oder auf Wochenansicht wechseln und dort exportieren.`;
-}
-
-function offerMepExportFallback(context = {}) {
-  const message = `${buildMepExportUserMessage(context)}
-
-Fallback jetzt öffnen?`;
-  const shouldOpenPrint = window.confirm(message);
-
-  if (shouldOpenPrint) {
-    window.print();
-    return;
-  }
-
-  alert("Tipp: Wechsle zur Wochenansicht und nutze dort 'Drucken / PDF', falls der Monats-Export auf diesem Gerät zu groß ist.");
+  return `PDF-Export in Phase „${debugContext.currentExportStep}“ fehlgeschlagen.${failedPageHint}${mobileHint} Es wurde keine Druckansicht geöffnet. Bitte erneut versuchen.`;
 }
 
 async function waitForMepCaptureResources(root) {
@@ -329,14 +329,17 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
     throwMepPdfStageError("delivery.file", "Die PDF-Datei konnte nicht für die Zustellung vorbereitet werden.", error);
   }
   const isIos = isIosLikeDevice();
+  const shouldShareFiles = options.preferNativeShare ?? isIos;
   let canShareFiles = false;
-  try {
-    canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
-  } catch (error) {
-    logMepExportError("navigator.canShare konnte nicht ausgeführt werden", error, {
-      currentExportStep: "share:navigator.canShare",
-      filename
-    });
+  if (shouldShareFiles) {
+    try {
+      canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
+    } catch (error) {
+      logMepExportError("navigator.canShare konnte nicht ausgeführt werden", error, {
+        currentExportStep: "delivery.share:canShare",
+        filename
+      });
+    }
   }
 
   console.info("MEP PDF Zustellung gestartet", {
@@ -346,7 +349,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
     hasNavigatorShare: typeof navigator.share === "function"
   });
 
-  if (canShareFiles && typeof navigator.share === "function") {
+  if (shouldShareFiles && canShareFiles && typeof navigator.share === "function") {
     try {
       await navigator.share({
         files: [file],
@@ -370,7 +373,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
       if (error?.name === "AbortError") {
         return { deliveryMethod: "navigator.share", cancelled: true };
       }
-      throwMepPdfStageError("delivery.navigator.share", "Der native Teilen-Dialog ist fehlgeschlagen.", error);
+      throwMepPdfStageError("delivery.share", "Der native Teilen-Dialog ist fehlgeschlagen.", error);
     }
   } else if (isIos) {
     console.info("MEP PDF Teilen via navigator.share nicht verfügbar", {
@@ -384,7 +387,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
   try {
     blobUrl = URL.createObjectURL(blob);
   } catch (error) {
-    throwMepPdfStageError("delivery.objectUrl", "Für die PDF konnte keine Download-Adresse erzeugt werden.", error);
+    throwMepPdfStageError("delivery.download", "Für die PDF konnte keine Download-Adresse erzeugt werden.", error);
   }
   try {
     const link = document.createElement("a");
@@ -406,21 +409,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
       link.remove();
     }
 
-    const popup = window.open(blobUrl, "_blank", "noopener");
-    if (popup) {
-      return { deliveryMethod: "window.open" };
-    }
-
-    const openError = new Error("window.open hat kein Fenster geöffnet.");
-    logMepExportError("MEP PDF Öffnen via window.open fehlgeschlagen", openError, {
-      currentExportStep: "share:window.open",
-      filename,
-      deliveryMethod: "window.open"
-    });
-
-    throw new MepPdfExportError("delivery.fallback", "Download und Öffnen der PDF sind fehlgeschlagen.", {
-      cause: openError
-    });
+    throw new MepPdfExportError("delivery.download", "Der PDF-Download ist fehlgeschlagen.");
   } finally {
     window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   }
@@ -608,7 +597,7 @@ async function exportMepTemplatePdf() {
   const captureFn = window.html2canvas;
 
   if (typeof jsPdfCtor !== "function" || typeof captureFn !== "function") {
-    alert("PDF-Export ist noch nicht verfügbar. Bitte Seite neu laden und erneut versuchen.");
+    alert("PDF-Export in Phase „prepare“ fehlgeschlagen. Bitte Seite neu laden und erneut versuchen. Es wurde keine Druckansicht geöffnet.");
     return;
   }
 
@@ -702,7 +691,7 @@ async function exportMepTemplatePdf() {
     await runExportAttempt(sheetEls, exportScale, "default");
   } catch (error) {
     logMepExportError("PDF-Export fehlgeschlagen", error, exportState);
-    offerMepExportFallback(exportState);
+    alert(buildMepExportUserMessage(exportState));
   } finally {
     removeMepPdfExportRoot(exportRoot);
 
