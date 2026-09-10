@@ -568,6 +568,9 @@ function buildMepPdfBlobFromCanvases(pageCanvases, options = {}) {
     if (index > 0) {
       pdf.addPage("a4", "landscape");
     }
+    // Anders als die Wochenblöcke der Übersicht ist jeder MEP-Canvas bereits
+    // eine vollständig paginierte Druckseite. Seine Pixelhöhe darf deshalb
+    // keine weitere Seite und keinen Canvas-Ausschnitt erzeugen.
     pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
   });
 

@@ -53,11 +53,14 @@ const ctx = loadScripts(['pdf-export.js'], {
   }
 });
 
-test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
-  const pageOne = createCanvas(1000, 700, 'page-1');
-  const pageTwo = createCanvas(1000, 700, 'page-2');
+test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP page', () => {
+  // Deliberately taller than an A4 landscape aspect ratio: prepared MEP pages
+  // must never be passed through the overview builder's height slicing.
+  const preparedPages = Array.from({ length: 10 }, (_, index) =>
+    createCanvas(1000, 1600, `page-${index + 1}`)
+  );
 
-  const result = ctx.buildMepPdfBlobFromCanvases([pageOne, pageTwo], { jsPdfCtor: MockPdf });
+  const result = ctx.buildMepPdfBlobFromCanvases(preparedPages, { jsPdfCtor: MockPdf });
 
   assert.equal(result.type, 'blob');
   assert.equal(result.options.orientation, 'landscape');
@@ -65,10 +68,16 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.options.format, 'a4');
   assert.equal(result.options.compress, true);
 
-  const actionTypes = result.actions.map((action) => action.type);
-  assert.deepEqual(actionTypes, ['addImage', 'addPage', 'addImage']);
-  assert.equal(result.actions[0].width, 297);
-  assert.equal(result.actions[0].height, 210);
+  const imageActions = result.actions.filter((action) => action.type === 'addImage');
+  const pageActions = result.actions.filter((action) => action.type === 'addPage');
+  assert.equal(imageActions.length, 10);
+  assert.equal(pageActions.length, 9);
+  assert.deepEqual(
+    imageActions.map((action) => action.dataUrl),
+    preparedPages.map((_, index) => `data:image/png;base64,page-${index + 1}`)
+  );
+  assert.ok(imageActions.every((action) => action.width === 297 && action.height === 210));
+  assert.ok(pageActions.every((action) => action.format === 'a4' && action.orientation === 'landscape'));
 });
 
 test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {
