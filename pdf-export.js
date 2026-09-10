@@ -83,10 +83,74 @@ function createMepPdfExportRoot() {
   return exportRoot;
 }
 
+function removeMepPdfExportRoot(exportRoot) {
+  exportRoot?.remove();
+}
+
+class MepPdfExportError extends Error {
+  constructor(stage, message, options = {}) {
+    super(message, options.cause ? { cause: options.cause } : undefined);
+    this.name = "MepPdfExportError";
+    this.stage = stage;
+    this.pageIndex = Number.isFinite(options.pageIndex) ? options.pageIndex : null;
+  }
+}
+
+function throwMepPdfStageError(stage, message, error, pageIndex = null) {
+  if (error instanceof MepPdfExportError) throw error;
+  throw new MepPdfExportError(stage, message, { cause: error, pageIndex });
+}
+
+function waitForBrowserYield() {
+  return new Promise((resolve) => window.setTimeout(resolve, 0));
+}
+
+function canvasToBlob(canvas, type, quality) {
+  return new Promise((resolve, reject) => {
+    if (typeof canvas?.toBlob !== "function") {
+      reject(new Error("Canvas.toBlob ist nicht verfügbar."));
+      return;
+    }
+    try {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Canvas.toBlob hat keine Bilddaten geliefert."));
+      }, type, quality);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+async function blobToUint8Array(blob) {
+  if (typeof blob?.arrayBuffer === "function") {
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("Bild-Blob konnte nicht gelesen werden."));
+    reader.onload = () => resolve(new Uint8Array(reader.result));
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
+async function canvasToMepPdfImage(canvas, options = {}) {
+  const mimeType = options.mimeType || "image/jpeg";
+  const quality = options.quality ?? 0.9;
+  if (typeof canvas?.toBlob === "function") {
+    const imageBlob = await canvasToBlob(canvas, mimeType, quality);
+    return { data: await blobToUint8Array(imageBlob), format: "JPEG" };
+  }
+
+  // Kompatibilitätsweg für ältere Browser/Test-Doubles. Moderne Safari-Versionen
+  // benutzen toBlob und erzeugen damit keinen großen Base64-/UTF-16-String.
+  return { data: canvas.toDataURL("image/jpeg", quality), format: "JPEG" };
+}
+
 async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
   const captureFn = options.captureFn || window.html2canvas;
   const jsPdfCtor = options.jsPdfCtor || window.jspdf?.jsPDF;
-  const scale = options.scale || (isIosLikeDevice() ? 1.5 : 2);
+  const scale = options.scale || (isIosLikeDevice() ? 1.25 : 2);
   if (typeof captureFn !== "function" || typeof jsPdfCtor !== "function") {
     throw new Error("PDF-Export ist noch nicht verfügbar.");
   }
@@ -106,16 +170,33 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
   for (let index = 0; index < preparedSheetEls.length; index += 1) {
     options.onCaptureStart?.(index);
     let canvas = null;
+    let imageData = null;
     try {
-      canvas = await captureFn(preparedSheetEls[index], {
-        backgroundColor: "#ffffff",
-        scale,
-        useCORS: true
-      });
+      try {
+        canvas = await captureFn(preparedSheetEls[index], {
+          backgroundColor: "#ffffff",
+          scale,
+          useCORS: true,
+          removeContainer: true
+        });
+      } catch (error) {
+        throwMepPdfStageError("html2canvas", `MEP-Seite ${index + 1} konnte nicht erfasst werden.`, error, index);
+      }
+      options.onStage?.("image.convert", index);
+      try {
+        imageData = await canvasToMepPdfImage(canvas, options);
+      } catch (error) {
+        throwMepPdfStageError("image.convert", `Bildkonvertierung für MEP-Seite ${index + 1} ist fehlgeschlagen.`, error, index);
+      }
       if (index > 0) {
         pdf.addPage("a4", "landscape");
       }
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
+      options.onStage?.("jspdf.addImage", index);
+      try {
+        pdf.addImage(imageData.data, imageData.format, 0, 0, 297, 210, undefined, "FAST");
+      } catch (error) {
+        throwMepPdfStageError("jspdf.addImage", `MEP-Seite ${index + 1} konnte nicht in das PDF eingefügt werden.`, error, index);
+      }
     } finally {
       // Safari hält den backing store eines Canvas sonst auch nach dem nächsten
       // await fest. Pro Durchlauf darf nur die aktuelle MEP-Seite leben.
@@ -123,16 +204,26 @@ async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
         canvas.width = 0;
         canvas.height = 0;
       }
+      imageData = null;
       canvas = null;
     }
+    if (options.yieldBetweenPages ?? isIosLikeDevice()) {
+      await (options.yieldFn || waitForBrowserYield)();
+    }
   }
-  return pdf.output("blob");
+  options.onStage?.("jspdf.output", preparedSheetEls.length - 1);
+  try {
+    return pdf.output("blob");
+  } catch (error) {
+    throwMepPdfStageError("jspdf.output", "Der PDF-Blob konnte nicht erzeugt werden.", error);
+  }
 }
 
 function isIosLikeDevice() {
-  const userAgent = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-  const touchPoints = Number(navigator.maxTouchPoints || 0);
+  const currentNavigator = typeof navigator === "undefined" ? {} : navigator;
+  const userAgent = currentNavigator.userAgent || "";
+  const platform = currentNavigator.platform || "";
+  const touchPoints = Number(currentNavigator.maxTouchPoints || 0);
 
   return /iPad|iPhone|iPod/.test(userAgent) || (platform === "MacIntel" && touchPoints > 1);
 }
@@ -198,6 +289,31 @@ Fallback jetzt öffnen?`;
   alert("Tipp: Wechsle zur Wochenansicht und nutze dort 'Drucken / PDF', falls der Monats-Export auf diesem Gerät zu groß ist.");
 }
 
+async function waitForMepCaptureResources(root) {
+  try {
+    await document.fonts?.ready;
+  } catch (error) {
+    console.warn("MEP-Schriften konnten vor dem Export nicht vollständig bestätigt werden.", error);
+  }
+
+  const images = [...(root?.querySelectorAll?.("img") || [])];
+  await Promise.all(images.map(async (imageEl) => {
+    if (imageEl.complete) return;
+    if (typeof imageEl.decode === "function") {
+      try {
+        await imageEl.decode();
+        return;
+      } catch (_) {
+        // load/error wartet unten auch bei nicht dekodierbaren Bildern zuverlässig ab.
+      }
+    }
+    await new Promise((resolve) => {
+      imageEl.addEventListener("load", resolve, { once: true });
+      imageEl.addEventListener("error", resolve, { once: true });
+    });
+  }));
+}
+
 // =============================================================================
 // Optionale Delivery-/Integrationspfade
 // (Teilen/Download lokal + optionaler Drive-Upload bestehender Funktionalität)
@@ -206,9 +322,22 @@ Fallback jetzt öffnen?`;
 async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
   const shareTitle = options.shareTitle || "PDF";
   const shareText = options.shareText || "PDF exportiert";
-  const file = new File([blob], filename, { type: "application/pdf" });
+  let file;
+  try {
+    file = new File([blob], filename, { type: "application/pdf" });
+  } catch (error) {
+    throwMepPdfStageError("delivery.file", "Die PDF-Datei konnte nicht für die Zustellung vorbereitet werden.", error);
+  }
   const isIos = isIosLikeDevice();
-  const canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
+  let canShareFiles = false;
+  try {
+    canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
+  } catch (error) {
+    logMepExportError("navigator.canShare konnte nicht ausgeführt werden", error, {
+      currentExportStep: "share:navigator.canShare",
+      filename
+    });
+  }
 
   console.info("MEP PDF Zustellung gestartet", {
     filename,
@@ -241,7 +370,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
       if (error?.name === "AbortError") {
         return { deliveryMethod: "navigator.share", cancelled: true };
       }
-      throw error;
+      throwMepPdfStageError("delivery.navigator.share", "Der native Teilen-Dialog ist fehlgeschlagen.", error);
     }
   } else if (isIos) {
     console.info("MEP PDF Teilen via navigator.share nicht verfügbar", {
@@ -251,7 +380,12 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
     });
   }
 
-  const blobUrl = URL.createObjectURL(blob);
+  let blobUrl;
+  try {
+    blobUrl = URL.createObjectURL(blob);
+  } catch (error) {
+    throwMepPdfStageError("delivery.objectUrl", "Für die PDF konnte keine Download-Adresse erzeugt werden.", error);
+  }
   try {
     const link = document.createElement("a");
     link.href = blobUrl;
@@ -284,7 +418,9 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
       deliveryMethod: "window.open"
     });
 
-    throw openError;
+    throw new MepPdfExportError("delivery.fallback", "Download und Öffnen der PDF sind fehlgeschlagen.", {
+      cause: openError
+    });
   } finally {
     window.setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   }
@@ -500,12 +636,19 @@ async function exportMepTemplatePdf() {
         onCaptureStart(index) {
           exportState.currentSheetIndex = index;
           exportState.currentExportStep = `capture:${attemptLabel}`;
+        },
+        onStage(stage, index) {
+          exportState.currentSheetIndex = index;
+          exportState.currentExportStep = `${stage}:${attemptLabel}`;
         }
       });
     } catch (error) {
-      const failedPageIndex = exportState.currentSheetIndex;
-      logMepExportError(`MEP-Seite ${failedPageIndex + 1} konnte nicht gerendert werden`, error, exportState);
-      throw new Error(`Rendern von Seite ${failedPageIndex + 1} fehlgeschlagen.`, { cause: error });
+      if (error instanceof MepPdfExportError) {
+        exportState.currentExportStep = `${error.stage}:${attemptLabel}`;
+        if (Number.isFinite(error.pageIndex)) exportState.currentSheetIndex = error.pageIndex;
+      }
+      logMepExportError(error.message || "MEP-PDF-Erzeugung fehlgeschlagen", error, exportState);
+      throw error;
     }
 
     exportState.currentExportStep = `shareOrDownload:${attemptLabel}`;
@@ -513,10 +656,11 @@ async function exportMepTemplatePdf() {
       const deliveryResult = await shareOrDownloadPdfBlob(blob, exportState.filename);
       exportState.deliveryMethod = deliveryResult?.deliveryMethod || null;
     } catch (error) {
+      if (error instanceof MepPdfExportError) {
+        exportState.currentExportStep = error.stage;
+      }
       logMepExportError("shareOrDownloadPdfBlob fehlgeschlagen", error, exportState);
-      throw new Error("PDF wurde erstellt, konnte aber nicht auf dem Gerät geöffnet oder geteilt werden.", {
-        cause: error
-      });
+      throw error;
     }
   };
 
@@ -539,9 +683,11 @@ async function exportMepTemplatePdf() {
     exportState.currentExportStep = "prepare:clone";
     exportRoot = createMepPdfExportRoot();
     if (!exportRoot) {
-      throw new Error("MEP-Exportansicht nicht gefunden.");
+      throw new MepPdfExportError("prepare.root", "MEP-Exportansicht konnte nicht erzeugt werden.");
     }
 
+    exportState.currentExportStep = "prepare.resources";
+    await waitForMepCaptureResources(exportRoot);
     await waitForAnimationFrames(2);
 
     // Nur die fertig gerenderten, direkten Druckseiten erfassen. Unterelemente
@@ -549,16 +695,16 @@ async function exportMepTemplatePdf() {
     const sheetEls = [...exportRoot.querySelectorAll(".mepTplPages > .mepTplSheet")];
     exportState.totalSheets = sheetEls.length;
     if (!sheetEls.length) {
-      throw new Error("Keine MEP-Seiten zum Export gefunden.");
+      throw new MepPdfExportError("prepare.sheets", "Keine MEP-Seiten zum Export gefunden.");
     }
 
-    const exportScale = isIosLikeDevice() ? 1.5 : 2;
+    const exportScale = isIosLikeDevice() ? 1.25 : 2;
     await runExportAttempt(sheetEls, exportScale, "default");
   } catch (error) {
     logMepExportError("PDF-Export fehlgeschlagen", error, exportState);
     offerMepExportFallback(exportState);
   } finally {
-    exportRoot?.remove();
+    removeMepPdfExportRoot(exportRoot);
 
     if (restoreView) {
       uiState.currentView = previousView;
