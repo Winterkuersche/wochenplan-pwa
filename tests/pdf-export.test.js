@@ -53,11 +53,40 @@ const ctx = loadScripts(['pdf-export.js'], {
   }
 });
 
-test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
-  const pageOne = createCanvas(1000, 700, 'page-1');
-  const pageTwo = createCanvas(1000, 700, 'page-2');
+test('MEP capture pipeline keeps five weeks with two prepared pages at ten canvases and PDF pages', async () => {
+  const preparedPages = Array.from({ length: 5 }, (_, weekIndex) =>
+    Array.from({ length: 2 }, (_, pageIndex) => ({ weekIndex, pageIndex }))
+  ).flat();
+  const capturedPages = [];
 
-  const result = ctx.buildMepPdfBlobFromCanvases([pageOne, pageTwo], { jsPdfCtor: MockPdf });
+  const canvases = await ctx.captureMepPdfPageCanvases(preparedPages, {
+    scale: 2,
+    captureFn: async (page, captureOptions) => {
+      capturedPages.push({ page, captureOptions });
+      return createCanvas(1000, 1600, `week-${page.weekIndex + 1}-page-${page.pageIndex + 1}`);
+    }
+  });
+  const result = ctx.buildMepPdfBlobFromCanvases(canvases, { jsPdfCtor: MockPdf });
+
+  assert.equal(preparedPages.length, 10);
+  assert.equal(capturedPages.length, 10);
+  assert.equal(canvases.length, 10);
+  assert.deepEqual(capturedPages.map(({ page }) => page), preparedPages);
+  assert.ok(capturedPages.every(({ captureOptions }) =>
+    captureOptions.scale === 2 && captureOptions.backgroundColor === '#ffffff' && captureOptions.useCORS === true
+  ));
+  assert.equal(result.actions.filter((action) => action.type === 'addImage').length, 10);
+  assert.equal(result.actions.filter((action) => action.type === 'addPage').length + 1, 10);
+});
+
+test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP page', () => {
+  // Deliberately taller than an A4 landscape aspect ratio: prepared MEP pages
+  // must never be passed through the overview builder's height slicing.
+  const preparedPages = Array.from({ length: 10 }, (_, index) =>
+    createCanvas(1000, 1600, `page-${index + 1}`)
+  );
+
+  const result = ctx.buildMepPdfBlobFromCanvases(preparedPages, { jsPdfCtor: MockPdf });
 
   assert.equal(result.type, 'blob');
   assert.equal(result.options.orientation, 'landscape');
@@ -65,10 +94,16 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.options.format, 'a4');
   assert.equal(result.options.compress, true);
 
-  const actionTypes = result.actions.map((action) => action.type);
-  assert.deepEqual(actionTypes, ['addImage', 'addPage', 'addImage']);
-  assert.equal(result.actions[0].width, 297);
-  assert.equal(result.actions[0].height, 210);
+  const imageActions = result.actions.filter((action) => action.type === 'addImage');
+  const pageActions = result.actions.filter((action) => action.type === 'addPage');
+  assert.equal(imageActions.length, 10);
+  assert.equal(pageActions.length, 9);
+  assert.deepEqual(
+    imageActions.map((action) => action.dataUrl),
+    preparedPages.map((_, index) => `data:image/png;base64,page-${index + 1}`)
+  );
+  assert.ok(imageActions.every((action) => action.width === 297 && action.height === 210));
+  assert.ok(pageActions.every((action) => action.format === 'a4' && action.orientation === 'landscape'));
 });
 
 test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {

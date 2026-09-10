@@ -65,15 +65,12 @@ function createMepPdfExportRoot() {
 
   clonePagesEl.querySelectorAll(".mepTplSheet").forEach((sheetEl) => {
     sheetEl.style.margin = "0";
-    sheetEl.style.breakAfter = "page";
-    sheetEl.style.pageBreakAfter = "always";
+    // Der Export erfasst jede fertige Seite einzeln. Druck-Umbruchregeln auf
+    // dem Capture-Ziel würden hier eine zweite, konkurrierende Pagination
+    // einführen und gehören ausschließlich in den Browser-Druckpfad.
+    sheetEl.style.breakAfter = "auto";
+    sheetEl.style.pageBreakAfter = "auto";
   });
-
-  const lastSheetEl = clonePagesEl.querySelector(".mepTplSheet:last-child");
-  if (lastSheetEl) {
-    lastSheetEl.style.breakAfter = "auto";
-    lastSheetEl.style.pageBreakAfter = "auto";
-  }
 
   exportRoot.appendChild(clonePagesEl);
   copyMepLayoutVariablesToNode(exportRoot);
@@ -84,6 +81,30 @@ function createMepPdfExportRoot() {
   }
 
   return exportRoot;
+}
+
+async function captureMepPdfPageCanvases(sheetEls, options = {}) {
+  const captureFn = options.captureFn || window.html2canvas;
+  const scale = options.scale || 2;
+  if (typeof captureFn !== "function") {
+    throw new Error("PDF-Export ist noch nicht verfügbar.");
+  }
+
+  const preparedSheetEls = Array.from(sheetEls || []);
+  if (!preparedSheetEls.length) {
+    throw new Error("Keine MEP-Seiten zum Export gefunden.");
+  }
+
+  const pageCanvases = [];
+  for (let index = 0; index < preparedSheetEls.length; index += 1) {
+    options.onCaptureStart?.(index);
+    pageCanvases.push(await captureFn(preparedSheetEls[index], {
+      backgroundColor: "#ffffff",
+      scale,
+      useCORS: true
+    }));
+  }
+  return pageCanvases;
 }
 
 function isIosLikeDevice() {
@@ -448,25 +469,20 @@ async function exportMepTemplatePdf() {
   const runExportAttempt = async (sheetEls, scale, attemptLabel) => {
     exportState.currentScale = scale;
     exportState.currentExportStep = `capture:init:${attemptLabel}`;
-    const pageCanvases = [];
-
-    for (let index = 0; index < sheetEls.length; index += 1) {
-      const sheetEl = sheetEls[index];
-      exportState.currentSheetIndex = index;
-      exportState.currentExportStep = `capture:${attemptLabel}`;
-
-      let canvas;
-      try {
-        canvas = await captureFn(sheetEl, {
-          backgroundColor: "#ffffff",
-          scale,
-          useCORS: true
-        });
-      } catch (error) {
-        logMepExportError(`MEP-Seite ${index + 1} konnte nicht gerendert werden`, error, exportState);
-        throw new Error(`Rendern von Seite ${index + 1} fehlgeschlagen.`, { cause: error });
-      }
-      pageCanvases.push(canvas);
+    let pageCanvases;
+    try {
+      pageCanvases = await captureMepPdfPageCanvases(sheetEls, {
+        captureFn,
+        scale,
+        onCaptureStart(index) {
+          exportState.currentSheetIndex = index;
+          exportState.currentExportStep = `capture:${attemptLabel}`;
+        }
+      });
+    } catch (error) {
+      const failedPageIndex = exportState.currentSheetIndex;
+      logMepExportError(`MEP-Seite ${failedPageIndex + 1} konnte nicht gerendert werden`, error, exportState);
+      throw new Error(`Rendern von Seite ${failedPageIndex + 1} fehlgeschlagen.`, { cause: error });
     }
 
     exportState.currentExportStep = `pdf.build:${attemptLabel}`;
@@ -514,7 +530,9 @@ async function exportMepTemplatePdf() {
 
     await waitForAnimationFrames(2);
 
-    const sheetEls = [...exportRoot.querySelectorAll(".mepTplSheet")];
+    // Nur die fertig gerenderten, direkten Druckseiten erfassen. Unterelemente
+    // einer Seite dürfen nie als zusätzliche Capture-Blöcke interpretiert werden.
+    const sheetEls = [...exportRoot.querySelectorAll(".mepTplPages > .mepTplSheet")];
     exportState.totalSheets = sheetEls.length;
     if (!sheetEls.length) {
       throw new Error("Keine MEP-Seiten zum Export gefunden.");
@@ -568,6 +586,9 @@ function buildMepPdfBlobFromCanvases(pageCanvases, options = {}) {
     if (index > 0) {
       pdf.addPage("a4", "landscape");
     }
+    // Anders als die Wochenblöcke der Übersicht ist jeder MEP-Canvas bereits
+    // eine vollständig paginierte Druckseite. Seine Pixelhöhe darf deshalb
+    // keine weitere Seite und keinen Canvas-Ausschnitt erzeugen.
     pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
   });
 
