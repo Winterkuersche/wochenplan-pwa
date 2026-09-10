@@ -53,6 +53,32 @@ const ctx = loadScripts(['pdf-export.js'], {
   }
 });
 
+test('MEP capture pipeline keeps five weeks with two prepared pages at ten canvases and PDF pages', async () => {
+  const preparedPages = Array.from({ length: 5 }, (_, weekIndex) =>
+    Array.from({ length: 2 }, (_, pageIndex) => ({ weekIndex, pageIndex }))
+  ).flat();
+  const capturedPages = [];
+
+  const canvases = await ctx.captureMepPdfPageCanvases(preparedPages, {
+    scale: 2,
+    captureFn: async (page, captureOptions) => {
+      capturedPages.push({ page, captureOptions });
+      return createCanvas(1000, 1600, `week-${page.weekIndex + 1}-page-${page.pageIndex + 1}`);
+    }
+  });
+  const result = ctx.buildMepPdfBlobFromCanvases(canvases, { jsPdfCtor: MockPdf });
+
+  assert.equal(preparedPages.length, 10);
+  assert.equal(capturedPages.length, 10);
+  assert.equal(canvases.length, 10);
+  assert.deepEqual(capturedPages.map(({ page }) => page), preparedPages);
+  assert.ok(capturedPages.every(({ captureOptions }) =>
+    captureOptions.scale === 2 && captureOptions.backgroundColor === '#ffffff' && captureOptions.useCORS === true
+  ));
+  assert.equal(result.actions.filter((action) => action.type === 'addImage').length, 10);
+  assert.equal(result.actions.filter((action) => action.type === 'addPage').length + 1, 10);
+});
+
 test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP page', () => {
   // Deliberately taller than an A4 landscape aspect ratio: prepared MEP pages
   // must never be passed through the overview builder's height slicing.
