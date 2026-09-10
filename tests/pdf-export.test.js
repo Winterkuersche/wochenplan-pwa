@@ -70,9 +70,9 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.actions[0].height, 210);
 });
 
-test('buildOverviewPdfBlobFromCanvases creates exactly one fitted PDF page per complete week', () => {
+test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {
   const firstBlock = createCanvas(1000, 1200, 'block-1');
-  const secondBlock = createCanvas(1000, 1500, 'block-2');
+  const secondBlock = createCanvas(1000, 1000, 'block-2');
 
   const result = ctx.buildOverviewPdfBlobFromCanvases([firstBlock, secondBlock], { jsPdfCtor: MockPdf });
   const actionTypes = result.actions.map((action) => action.type);
@@ -81,8 +81,36 @@ test('buildOverviewPdfBlobFromCanvases creates exactly one fitted PDF page per c
   assert.equal(result.actions[0].x, 8);
   assert.equal(result.actions[0].y, 8);
   assert.equal(result.actions[1].orientation, 'portrait');
-  assert.equal(result.actions[2].height, 281);
-  assert.ok(result.actions[2].width < 194);
+  assert.equal(result.actions[0].width, 194);
+  assert.equal(result.actions[0].height, 232.8);
+  assert.equal(result.actions[2].width, 194);
+  assert.equal(result.actions[2].height, 194);
+});
+
+test('buildOverviewPdfBlobFromCanvases continues an exceptionally tall week at readable width', () => {
+  const tallBlock = createCanvas(1000, 1500, 'tall-week');
+  const crops = [];
+  const canvasFactory = () => ({
+    width: 0,
+    height: 0,
+    getContext: () => ({
+      drawImage: (...args) => crops.push(args.slice(1, 5))
+    }),
+    toDataURL() {
+      return `data:image/png;base64,slice-${this.height}`;
+    }
+  });
+
+  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf, canvasFactory });
+
+  assert.deepEqual(result.actions.map((action) => action.type), ['addImage', 'addPage', 'addImage']);
+  assert.equal(result.actions[0].width, 194);
+  assert.ok(result.actions[0].height <= 281);
+  assert.equal(result.actions[2].width, 194);
+  assert.deepEqual(crops, [
+    [0, 0, 1000, 1448],
+    [0, 1448, 1000, 52]
+  ]);
 });
 
 test('formatOverviewPdfTimestamp records the PDF creation time for page metadata', () => {

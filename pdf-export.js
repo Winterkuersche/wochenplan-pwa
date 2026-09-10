@@ -688,23 +688,62 @@ function buildOverviewPdfBlobFromCanvases(blockCanvases, options = {}) {
   const pageHeight = 297;
   const margin = 8;
   const contentWidthMm = pageWidth - margin * 2;
+  const contentHeightMm = pageHeight - margin * 2;
+  let pageCount = 0;
+
   blockCanvases.forEach((canvas, index) => {
     if (!canvas || !canvas.width || !canvas.height) {
       throw new Error(`Ungültiger Canvas-Block für Übersicht an Position ${index + 1}.`);
     }
 
-    if (index > 0) {
-      pdf.addPage("a4", "portrait");
-    }
-    const contentHeightMm = pageHeight - margin * 2;
     const widthScale = contentWidthMm / canvas.width;
-    const heightScale = contentHeightMm / canvas.height;
-    const scale = Math.min(widthScale, heightScale);
-    const renderedWidthMm = canvas.width * scale;
-    const renderedHeightMm = canvas.height * scale;
-    const renderedX = margin + (contentWidthMm - renderedWidthMm) / 2;
+    const maxSliceHeightPx = Math.max(1, Math.floor(contentHeightMm / widthScale));
+    const sliceCount = Math.ceil(canvas.height / maxSliceHeightPx);
 
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", renderedX, margin, renderedWidthMm, renderedHeightMm, undefined, "FAST");
+    for (let sliceIndex = 0; sliceIndex < sliceCount; sliceIndex += 1) {
+      if (pageCount > 0) {
+        pdf.addPage("a4", "portrait");
+      }
+
+      const sourceY = sliceIndex * maxSliceHeightPx;
+      const sourceHeight = Math.min(maxSliceHeightPx, canvas.height - sourceY);
+      let pageCanvas = canvas;
+
+      if (sliceCount > 1) {
+        const canvasFactory = options.canvasFactory || (() => document.createElement("canvas"));
+        pageCanvas = canvasFactory();
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sourceHeight;
+        const pageContext = pageCanvas.getContext("2d");
+        if (!pageContext) {
+          throw new Error(`Canvas-Ausschnitt für Übersicht an Position ${index + 1} konnte nicht erstellt werden.`);
+        }
+        pageContext.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          sourceHeight,
+          0,
+          0,
+          canvas.width,
+          sourceHeight
+        );
+      }
+
+      const renderedHeightMm = sourceHeight * widthScale;
+      pdf.addImage(
+        pageCanvas.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        contentWidthMm,
+        renderedHeightMm,
+        undefined,
+        "FAST"
+      );
+      pageCount += 1;
+    }
   });
 
   return pdf.output("blob");
