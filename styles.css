@@ -4629,11 +4629,13 @@ body.dark .mepTable th {
 
   .mepTplSheet {
     display: block;
-    width: var(--mep-page-w);
-    max-width: var(--mep-page-w);
-    height: var(--mep-page-h);
-    min-height: var(--mep-page-h);
-    margin: 0 auto;
+    width: calc(var(--mep-page-w) - 1mm);
+    min-width: 0;
+    max-width: calc(var(--mep-page-w) - 1mm);
+    height: calc(var(--mep-page-h) - 1mm);
+    min-height: 0;
+    max-height: calc(var(--mep-page-h) - 1mm);
+    margin: 0;
     border-width: 1.8px;
     page-break-inside: avoid;
     break-inside: avoid-page;
@@ -4645,8 +4647,9 @@ body.dark .mepTable th {
 
   .mepTplSheetInner {
     --mep-table-head-rows: 3;
+    --mep-sheet-content-height: calc(var(--mep-sheet-inner-height) - 9mm);
     width: 100%;
-    height: var(--mep-sheet-inner-height);
+    height: 100%;
     padding: 4.2mm 4.5mm 3.8mm;
     --mep-table-font-size: 6.7pt;
     --mep-footer-font-size: 7pt;

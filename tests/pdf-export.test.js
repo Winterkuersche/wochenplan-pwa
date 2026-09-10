@@ -53,11 +53,74 @@ const ctx = loadScripts(['pdf-export.js'], {
   }
 });
 
-test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
-  const pageOne = createCanvas(1000, 700, 'page-1');
-  const pageTwo = createCanvas(1000, 700, 'page-2');
+function buildMepModelContext(employeeCount, weekCount) {
+  const employees = Array.from({ length: employeeCount }, (_, index) => ({ id: `employee-${index + 1}` }));
+  const weeks = Array.from({ length: weekCount }, (_, weekIndex) =>
+    Array.from({ length: 7 }, (_, dayIndex) => ({
+      iso: `2026-09-${String(weekIndex * 7 + dayIndex + 1).padStart(2, '0')}`,
+      inCurrentMonth: true
+    }))
+  );
+  return loadScripts(['mep-view.js'], {
+    state: { activeMonth: '2026-09', employees, monthPlan: { weeks } },
+    isEmployeeActiveInMonth: () => true
+  });
+}
 
-  const result = ctx.buildMepPdfBlobFromCanvases([pageOne, pageTwo], { jsPdfCtor: MockPdf });
+test('MEP sheet models keep nine employees on one page and split eighteen across two pages of the same week', () => {
+  const nineEmployeePages = buildMepModelContext(9, 1).getMepTemplateSheetModelsForMonth();
+  const eighteenEmployeePages = buildMepModelContext(18, 1).getMepTemplateSheetModelsForMonth();
+
+  assert.equal(nineEmployeePages.length, 1);
+  assert.equal(nineEmployeePages[0].employees.length, 9);
+  assert.equal(eighteenEmployeePages.length, 2);
+  assert.deepEqual(eighteenEmployeePages.map((page) => page.weekIndex), [0, 0]);
+  assert.deepEqual(eighteenEmployeePages.map((page) => page.employees.length), [9, 9]);
+});
+
+test('MEP sheet models create ten finished sheets for five weeks with eighteen employees', () => {
+  const pages = buildMepModelContext(18, 5).getMepTemplateSheetModelsForMonth();
+
+  assert.equal(pages.length, 10);
+  assert.deepEqual(pages.map((page) => page.weekIndex), [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]);
+});
+
+test('MEP export processes five weeks with two pages sequentially into ten PDF pages', async () => {
+  const preparedPages = Array.from({ length: 5 }, (_, weekIndex) =>
+    Array.from({ length: 2 }, (_, pageIndex) => ({ weekIndex, pageIndex }))
+  ).flat();
+  const capturedCanvases = [];
+
+  const result = await ctx.buildMepPdfBlobFromSheets(preparedPages, {
+    jsPdfCtor: MockPdf,
+    scale: 2,
+    captureFn: async (page, captureOptions) => {
+      assert.ok(capturedCanvases.every(({ canvas }) => canvas.width === 0 && canvas.height === 0));
+      const canvas = createCanvas(1000, 1600, `week-${page.weekIndex + 1}-page-${page.pageIndex + 1}`);
+      capturedCanvases.push({ page, captureOptions, canvas });
+      return canvas;
+    }
+  });
+
+  assert.equal(preparedPages.length, 10);
+  assert.equal(capturedCanvases.length, 10);
+  assert.deepEqual(capturedCanvases.map(({ page }) => page), preparedPages);
+  assert.ok(capturedCanvases.every(({ captureOptions }) =>
+    captureOptions.scale === 2 && captureOptions.backgroundColor === '#ffffff' && captureOptions.useCORS === true
+  ));
+  assert.ok(capturedCanvases.every(({ canvas }) => canvas.width === 0 && canvas.height === 0));
+  assert.equal(result.actions.filter((action) => action.type === 'addImage').length, 10);
+  assert.equal(result.actions.filter((action) => action.type === 'addPage').length + 1, 10);
+});
+
+test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP page', () => {
+  // Deliberately taller than an A4 landscape aspect ratio: prepared MEP pages
+  // must never be passed through the overview builder's height slicing.
+  const preparedPages = Array.from({ length: 10 }, (_, index) =>
+    createCanvas(1000, 1600, `page-${index + 1}`)
+  );
+
+  const result = ctx.buildMepPdfBlobFromCanvases(preparedPages, { jsPdfCtor: MockPdf });
 
   assert.equal(result.type, 'blob');
   assert.equal(result.options.orientation, 'landscape');
@@ -65,10 +128,29 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.options.format, 'a4');
   assert.equal(result.options.compress, true);
 
-  const actionTypes = result.actions.map((action) => action.type);
-  assert.deepEqual(actionTypes, ['addImage', 'addPage', 'addImage']);
-  assert.equal(result.actions[0].width, 297);
-  assert.equal(result.actions[0].height, 210);
+  const imageActions = result.actions.filter((action) => action.type === 'addImage');
+  const pageActions = result.actions.filter((action) => action.type === 'addPage');
+  assert.equal(imageActions.length, 10);
+  assert.equal(pageActions.length, 9);
+  assert.deepEqual(
+    imageActions.map((action) => action.dataUrl),
+    preparedPages.map((_, index) => `data:image/png;base64,page-${index + 1}`)
+  );
+  assert.ok(imageActions.every((action) => action.width === 297 && action.height === 210));
+  assert.ok(pageActions.every((action) => action.format === 'a4' && action.orientation === 'landscape'));
+});
+
+test('MEP print CSS keeps each finished sheet inside one landscape page', () => {
+  const styles = fs.readFileSync('styles.css', 'utf8');
+  const mepPrintStart = styles.indexOf('@media print {', styles.indexOf('MEP-TABELLENANSICHT'));
+  const mepPrintCss = styles.slice(mepPrintStart);
+
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*height:\s*calc\(var\(--mep-page-h\) - 1mm\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*max-height:\s*calc\(var\(--mep-page-h\) - 1mm\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*box-sizing:\s*border-box/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*break-inside:\s*avoid-page/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*break-after:\s*page/);
+  assert.doesNotMatch(mepPrintCss, /\.mepTplSheet\s*\{[^}]*break-inside:\s*auto/);
 });
 
 test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {
