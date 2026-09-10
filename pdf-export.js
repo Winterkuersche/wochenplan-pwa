@@ -83,10 +83,11 @@ function createMepPdfExportRoot() {
   return exportRoot;
 }
 
-async function captureMepPdfPageCanvases(sheetEls, options = {}) {
+async function buildMepPdfBlobFromSheets(sheetEls, options = {}) {
   const captureFn = options.captureFn || window.html2canvas;
-  const scale = options.scale || 2;
-  if (typeof captureFn !== "function") {
+  const jsPdfCtor = options.jsPdfCtor || window.jspdf?.jsPDF;
+  const scale = options.scale || (isIosLikeDevice() ? 1.5 : 2);
+  if (typeof captureFn !== "function" || typeof jsPdfCtor !== "function") {
     throw new Error("PDF-Export ist noch nicht verfügbar.");
   }
 
@@ -95,16 +96,37 @@ async function captureMepPdfPageCanvases(sheetEls, options = {}) {
     throw new Error("Keine MEP-Seiten zum Export gefunden.");
   }
 
-  const pageCanvases = [];
+  const pdf = new jsPdfCtor({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+    compress: true
+  });
+
   for (let index = 0; index < preparedSheetEls.length; index += 1) {
     options.onCaptureStart?.(index);
-    pageCanvases.push(await captureFn(preparedSheetEls[index], {
-      backgroundColor: "#ffffff",
-      scale,
-      useCORS: true
-    }));
+    let canvas = null;
+    try {
+      canvas = await captureFn(preparedSheetEls[index], {
+        backgroundColor: "#ffffff",
+        scale,
+        useCORS: true
+      });
+      if (index > 0) {
+        pdf.addPage("a4", "landscape");
+      }
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 297, 210, undefined, "FAST");
+    } finally {
+      // Safari hält den backing store eines Canvas sonst auch nach dem nächsten
+      // await fest. Pro Durchlauf darf nur die aktuelle MEP-Seite leben.
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+      canvas = null;
+    }
   }
-  return pageCanvases;
+  return pdf.output("blob");
 }
 
 function isIosLikeDevice() {
@@ -469,10 +491,11 @@ async function exportMepTemplatePdf() {
   const runExportAttempt = async (sheetEls, scale, attemptLabel) => {
     exportState.currentScale = scale;
     exportState.currentExportStep = `capture:init:${attemptLabel}`;
-    let pageCanvases;
+    let blob;
     try {
-      pageCanvases = await captureMepPdfPageCanvases(sheetEls, {
+      blob = await buildMepPdfBlobFromSheets(sheetEls, {
         captureFn,
+        jsPdfCtor,
         scale,
         onCaptureStart(index) {
           exportState.currentSheetIndex = index;
@@ -483,15 +506,6 @@ async function exportMepTemplatePdf() {
       const failedPageIndex = exportState.currentSheetIndex;
       logMepExportError(`MEP-Seite ${failedPageIndex + 1} konnte nicht gerendert werden`, error, exportState);
       throw new Error(`Rendern von Seite ${failedPageIndex + 1} fehlgeschlagen.`, { cause: error });
-    }
-
-    exportState.currentExportStep = `pdf.build:${attemptLabel}`;
-    let blob;
-    try {
-      blob = buildMepPdfBlobFromCanvases(pageCanvases, { jsPdfCtor });
-    } catch (error) {
-      logMepExportError("MEP-PDF konnte aus Canvas-Seiten nicht erzeugt werden", error, exportState);
-      throw new Error("PDF-Datei konnte nicht erzeugt werden.", { cause: error });
     }
 
     exportState.currentExportStep = `shareOrDownload:${attemptLabel}`;
@@ -538,7 +552,7 @@ async function exportMepTemplatePdf() {
       throw new Error("Keine MEP-Seiten zum Export gefunden.");
     }
 
-    const exportScale = 2;
+    const exportScale = isIosLikeDevice() ? 1.5 : 2;
     await runExportAttempt(sheetEls, exportScale, "default");
   } catch (error) {
     logMepExportError("PDF-Export fehlgeschlagen", error, exportState);
