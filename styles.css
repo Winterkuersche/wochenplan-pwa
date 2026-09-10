@@ -1195,6 +1195,19 @@ body.dark .ahCellSubrow {
   margin-bottom: 14px;
 }
 
+.overviewWeekHeadingRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.overviewWeekHeading {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
 .overviewWeekCard {
   padding: 12px 13px;
   border: 1px solid var(--border);
@@ -1357,9 +1370,37 @@ body.dark .ahCellSubrow {
 }
 
 .overviewPdfExportView .overviewWeekSection {
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  padding: 14px;
   break-inside: avoid;
   page-break-inside: avoid;
+}
+
+.overviewPdfPageMeta {
+  margin-bottom: 5px;
+  color: #555;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.overviewPdfExportView .overviewWeekInfo {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.overviewPdfExportView .overviewWeekCard {
+  padding: 7px 9px;
+  border-radius: 9px;
+}
+
+.overviewPdfExportView .summary-card .miniLabel {
+  margin-bottom: 2px;
+}
+
+.overviewPdfExportView .overviewWeekTableWrap {
+  margin-top: 6px;
 }
 
 .overviewPdfExportView .overviewWeekSection:last-child {

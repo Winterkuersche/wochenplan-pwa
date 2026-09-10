@@ -48,3 +48,15 @@ function collectRelevantYearMonthsUntilActiveMonthBalance({
 
   return months;
 }
+
+function getOverviewBalanceDisplay(differenceMinutes) {
+  const normalizedDifference = Number(differenceMinutes) || 0;
+
+  if (normalizedDifference < 0) {
+    return { label: 'Rest', minutes: Math.abs(normalizedDifference) };
+  }
+  if (normalizedDifference > 0) {
+    return { label: 'Über', minutes: normalizedDifference };
+  }
+  return { label: 'Ausgeglichen', minutes: 0 };
+}

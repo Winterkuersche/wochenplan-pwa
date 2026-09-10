@@ -7,7 +7,6 @@ const DRIVE_UPLOAD_CONFIG = Object.freeze({
 
 let driveTokenClient = null;
 let driveAccessToken = "";
-let lastOverviewPdfCache = null;
 
 // =============================================================================
 // Lokaler PDF-Exportpfad (Capture + PDF-Erzeugung)
@@ -378,24 +377,20 @@ async function uploadOverviewPdfToGoogleDrive(pdfBlob, filename) {
   };
 }
 
-function cacheLastOverviewPdf(blob, filename) {
-  lastOverviewPdfCache = {
-    blob,
-    filename
-  };
-}
-
-function getCachedOverviewPdf(filename) {
-  if (!lastOverviewPdfCache) return null;
-  if (lastOverviewPdfCache.filename !== filename) return null;
-  return lastOverviewPdfCache;
-}
-
 // =============================================================================
 // Lokaler PDF-Exportpfad (DOM-Capture -> reine PDF-Builder)
 // =============================================================================
 
-function createOverviewPdfExportRoot() {
+function formatOverviewPdfTimestamp(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function buildOverviewPdfStatusText(monthTitle, createdAt = new Date()) {
+  return `${String(monthTitle || "Monatsübersicht").trim()} · Stand ${formatOverviewPdfTimestamp(createdAt)}`;
+}
+
+function createOverviewPdfExportRoot(options = {}) {
   const overviewView = document.getElementById("overviewView");
   const overviewContent = document.getElementById("overviewMonthContent");
   if (!overviewView || !overviewContent) return null;
@@ -409,6 +404,14 @@ function createOverviewPdfExportRoot() {
 
   clonedView.querySelectorAll("button").forEach((buttonEl) => buttonEl.remove());
   clonedView.querySelectorAll(".internalOnly, .noExport").forEach((el) => el.remove());
+  const monthTitle = clonedView.querySelector("#overviewMonthTitle")?.textContent?.trim() || "Monatsübersicht";
+  const statusText = buildOverviewPdfStatusText(monthTitle, options.createdAt);
+  clonedView.querySelectorAll(".overviewWeekSection").forEach((sectionEl) => {
+    const metaEl = document.createElement("div");
+    metaEl.className = "overviewPdfPageMeta";
+    metaEl.textContent = statusText;
+    sectionEl.prepend(metaEl);
+  });
   const clonedWrapEls = clonedView.querySelectorAll(".tableWrap, .compactTableWrap, .overviewWeekTableWrap");
   clonedWrapEls.forEach((wrapEl) => {
     wrapEl.style.overflow = "visible";
@@ -589,7 +592,6 @@ async function exportOverviewPdf() {
 
     const blob = await buildOverviewPdfBlob({ jsPdfCtor, captureFn });
     const overviewFilename = buildOverviewPdfFilename();
-    cacheLastOverviewPdf(blob, overviewFilename);
     await shareOrDownloadPdfBlob(blob, overviewFilename, {
       shareTitle: "Monatsübersicht PDF",
       shareText: "Übersicht als PDF"
@@ -620,7 +622,7 @@ async function buildOverviewPdfBlob(options = {}) {
     renderOverviewView();
     await waitForAnimationFrames(2);
 
-    exportRoot = createOverviewPdfExportRoot();
+    exportRoot = createOverviewPdfExportRoot({ createdAt: options.createdAt || new Date() });
     if (!exportRoot) {
       throw new Error("Übersicht konnte nicht für den Export vorbereitet werden.");
     }
@@ -628,9 +630,7 @@ async function buildOverviewPdfBlob(options = {}) {
     await waitForAnimationFrames(2);
 
     const exportViewEl = exportRoot.querySelector(".overviewPdfExportView");
-    const exportBlocks = [
-      ...exportRoot.querySelectorAll(".overviewPdfExportView .sectionhead, .overviewPdfExportView .overviewWeekSection")
-    ];
+    const exportBlocks = [...exportRoot.querySelectorAll(".overviewPdfExportView .overviewWeekSection")];
     if (!exportViewEl || !exportBlocks.length) {
       throw new Error("Keine Wochenblöcke für den Export gefunden.");
     }
@@ -673,26 +673,62 @@ function buildOverviewPdfBlobFromCanvases(blockCanvases, options = {}) {
   const pageHeight = 297;
   const margin = 8;
   const contentWidthMm = pageWidth - margin * 2;
-  let currentY = margin;
-  let hasContentOnPage = false;
+  const contentHeightMm = pageHeight - margin * 2;
+  let pageCount = 0;
 
   blockCanvases.forEach((canvas, index) => {
     if (!canvas || !canvas.width || !canvas.height) {
       throw new Error(`Ungültiger Canvas-Block für Übersicht an Position ${index + 1}.`);
     }
 
-    const renderedHeightMm = (canvas.height * contentWidthMm) / canvas.width;
-    const remainingMm = pageHeight - margin - currentY;
+    const widthScale = contentWidthMm / canvas.width;
+    const maxSliceHeightPx = Math.max(1, Math.floor(contentHeightMm / widthScale));
+    const sliceCount = Math.ceil(canvas.height / maxSliceHeightPx);
 
-    if (hasContentOnPage && renderedHeightMm > remainingMm) {
-      pdf.addPage("a4", "portrait");
-      currentY = margin;
-      hasContentOnPage = false;
+    for (let sliceIndex = 0; sliceIndex < sliceCount; sliceIndex += 1) {
+      if (pageCount > 0) {
+        pdf.addPage("a4", "portrait");
+      }
+
+      const sourceY = sliceIndex * maxSliceHeightPx;
+      const sourceHeight = Math.min(maxSliceHeightPx, canvas.height - sourceY);
+      let pageCanvas = canvas;
+
+      if (sliceCount > 1) {
+        const canvasFactory = options.canvasFactory || (() => document.createElement("canvas"));
+        pageCanvas = canvasFactory();
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sourceHeight;
+        const pageContext = pageCanvas.getContext("2d");
+        if (!pageContext) {
+          throw new Error(`Canvas-Ausschnitt für Übersicht an Position ${index + 1} konnte nicht erstellt werden.`);
+        }
+        pageContext.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          sourceHeight,
+          0,
+          0,
+          canvas.width,
+          sourceHeight
+        );
+      }
+
+      const renderedHeightMm = sourceHeight * widthScale;
+      pdf.addImage(
+        pageCanvas.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        contentWidthMm,
+        renderedHeightMm,
+        undefined,
+        "FAST"
+      );
+      pageCount += 1;
     }
-
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", margin, currentY, contentWidthMm, renderedHeightMm, undefined, "FAST");
-    currentY += renderedHeightMm + 3;
-    hasContentOnPage = true;
   });
 
   return pdf.output("blob");
@@ -707,9 +743,9 @@ async function uploadOverviewPdf() {
       btnOverviewUploadEl.textContent = "Übersicht wird hochgeladen …";
     }
 
-    const cachedPdf = getCachedOverviewPdf(filename);
-    const blob = cachedPdf?.blob || await buildOverviewPdfBlob();
-    cacheLastOverviewPdf(blob, filename);
+    // Immer aus der aktuell gerenderten zentralen Planung erzeugen. Ein zuvor
+    // exportierter Monats-Blob darf nach Planänderungen nicht erneut hochgeladen werden.
+    const blob = await buildOverviewPdfBlob();
 
     const uploadResult = await uploadOverviewPdfToGoogleDrive(blob, filename);
     const actionLabel = uploadResult.action === "updated" ? "aktualisiert" : "neu hochgeladen";

@@ -1,5 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { loadScripts } = require('./test-helpers');
 
 class MockPdf {
@@ -70,9 +71,9 @@ test('buildMepPdfBlobFromCanvases creates one PDF page per canvas', () => {
   assert.equal(result.actions[0].height, 210);
 });
 
-test('buildOverviewPdfBlobFromCanvases inserts page breaks when remaining space is too small', () => {
+test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {
   const firstBlock = createCanvas(1000, 1200, 'block-1');
-  const secondBlock = createCanvas(1000, 1500, 'block-2');
+  const secondBlock = createCanvas(1000, 1000, 'block-2');
 
   const result = ctx.buildOverviewPdfBlobFromCanvases([firstBlock, secondBlock], { jsPdfCtor: MockPdf });
   const actionTypes = result.actions.map((action) => action.type);
@@ -81,6 +82,55 @@ test('buildOverviewPdfBlobFromCanvases inserts page breaks when remaining space 
   assert.equal(result.actions[0].x, 8);
   assert.equal(result.actions[0].y, 8);
   assert.equal(result.actions[1].orientation, 'portrait');
+  assert.equal(result.actions[0].width, 194);
+  assert.equal(result.actions[0].height, 232.8);
+  assert.equal(result.actions[2].width, 194);
+  assert.equal(result.actions[2].height, 194);
+});
+
+test('buildOverviewPdfBlobFromCanvases continues an exceptionally tall week at readable width', () => {
+  const tallBlock = createCanvas(1000, 1500, 'tall-week');
+  const crops = [];
+  const canvasFactory = () => ({
+    width: 0,
+    height: 0,
+    getContext: () => ({
+      drawImage: (...args) => crops.push(args.slice(1, 5))
+    }),
+    toDataURL() {
+      return `data:image/png;base64,slice-${this.height}`;
+    }
+  });
+
+  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf, canvasFactory });
+
+  assert.deepEqual(result.actions.map((action) => action.type), ['addImage', 'addPage', 'addImage']);
+  assert.equal(result.actions[0].width, 194);
+  assert.ok(result.actions[0].height <= 281);
+  assert.equal(result.actions[2].width, 194);
+  assert.deepEqual(crops, [
+    [0, 0, 1000, 1448],
+    [0, 1448, 1000, 52]
+  ]);
+});
+
+test('formatOverviewPdfTimestamp records the PDF creation time for page metadata', () => {
+  const createdAt = new Date(2026, 8, 9, 8, 4);
+
+  assert.equal(ctx.formatOverviewPdfTimestamp(createdAt), '09.09.2026 08:04');
+  assert.equal(
+    ctx.buildOverviewPdfStatusText('September 2026', createdAt),
+    'September 2026 · Stand 09.09.2026 08:04'
+  );
+});
+
+test('overview PDF and Drive upload are rebuilt from the current overview without a persistent snapshot', () => {
+  const source = fs.readFileSync('pdf-export.js', 'utf8');
+  const uploadStart = source.indexOf('async function uploadOverviewPdf()');
+  const uploadSource = source.slice(uploadStart);
+
+  assert.match(uploadSource, /const blob = await buildOverviewPdfBlob\(\)/);
+  assert.doesNotMatch(source, /lastOverviewPdfCache|cacheLastOverviewPdf|getCachedOverviewPdf/);
 });
 
 test('shareOrDownloadPdfBlob does not start a download after native sharing was attempted', async () => {
