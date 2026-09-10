@@ -72,9 +72,14 @@ die verfügbare Papierfläche behandeln und vertikal auf zwei Druckseiten
 fragmentieren. Dieses Druckrisiko besteht seit **25. März 2026**.
 
 Die Korrektur lässt Wochen-/Mitarbeiteraufteilung und interne MEP-Pagination
-unverändert. Sie begrenzt ausschließlich den fertigen Browser-Druckbogen mit
-einem kleinen WebKit-Sicherheitsraum und behält den Umbruch *nach* dem Sheet
-sowie den Schutz vor einem Umbruch *innerhalb* des Sheets bei.
+unverändert. Die bereits erzeugte `.mepTplSheet` ist selbst die Seitengrenze
+und bleibt einschließlich ihres Rahmens durch `box-sizing: border-box` exakt
+297 × 210 mm groß. Insbesondere wird sie nicht auf 296 × 209 mm verkleinert:
+Das hätte zwar einen WebKit-Sicherheitsraum geschaffen, zugleich aber die
+fertige Tabelle beschnitten. Der Druckpfad behält den Umbruch *nach* dem Sheet
+und den Schutz vor einem Umbruch *innerhalb* des Sheets bei. Der direkte
+PDF-Pfad erfasst ebenfalls jedes Sheet einzeln und setzt genau dieses eine
+vollständige Capture ohne Slicing auf genau eine A4-Querformatseite.
 
 ## Verwendete Historienprüfungen
 

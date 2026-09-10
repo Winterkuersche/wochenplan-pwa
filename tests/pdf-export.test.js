@@ -224,17 +224,22 @@ test('buildMepPdfBlobFromCanvases creates exactly one PDF page per prepared MEP 
   assert.ok(pageActions.every((action) => action.format === 'a4' && action.orientation === 'landscape'));
 });
 
-test('MEP print CSS keeps each finished sheet inside one landscape page', () => {
+test('MEP print CSS uses each complete finished sheet as the exact A4 landscape page boundary', () => {
   const styles = fs.readFileSync('styles.css', 'utf8');
   const mepPrintStart = styles.indexOf('@media print {', styles.indexOf('MEP-TABELLENANSICHT'));
   const mepPrintCss = styles.slice(mepPrintStart);
 
-  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*height:\s*calc\(var\(--mep-page-h\) - 1mm\)/);
-  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*max-height:\s*calc\(var\(--mep-page-h\) - 1mm\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*width:\s*var\(--mep-page-w\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*min-width:\s*var\(--mep-page-w\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*max-width:\s*var\(--mep-page-w\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*height:\s*var\(--mep-page-h\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*min-height:\s*var\(--mep-page-h\)/);
+  assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*max-height:\s*var\(--mep-page-h\)/);
   assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*box-sizing:\s*border-box/);
   assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*break-inside:\s*avoid-page/);
   assert.match(mepPrintCss, /\.mepTplSheet\s*\{[\s\S]*break-after:\s*page/);
   assert.doesNotMatch(mepPrintCss, /\.mepTplSheet\s*\{[^}]*break-inside:\s*auto/);
+  assert.doesNotMatch(mepPrintCss, /\.mepTplSheet\s*\{[^}]*(?:width|height):\s*calc\([^;]*-\s*1mm/);
 });
 
 test('buildOverviewPdfBlobFromCanvases uses the full page width without height-based shrinking', () => {

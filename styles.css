@@ -4629,12 +4629,12 @@ body.dark .mepTable th {
 
   .mepTplSheet {
     display: block;
-    width: calc(var(--mep-page-w) - 1mm);
-    min-width: 0;
-    max-width: calc(var(--mep-page-w) - 1mm);
-    height: calc(var(--mep-page-h) - 1mm);
-    min-height: 0;
-    max-height: calc(var(--mep-page-h) - 1mm);
+    width: var(--mep-page-w);
+    min-width: var(--mep-page-w);
+    max-width: var(--mep-page-w);
+    height: var(--mep-page-h);
+    min-height: var(--mep-page-h);
+    max-height: var(--mep-page-h);
     margin: 0;
     border-width: 1.8px;
     page-break-inside: avoid;
