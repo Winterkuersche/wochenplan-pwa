@@ -32,6 +32,28 @@ Der korrigierte Pfad stellt deshalb die frühere Reihenfolge gezielt wieder her
 und ergänzt die explizite Freigabe des gerade verarbeiteten Canvas. Er führt
 keine gemeinsame Pagination mit dem Overview-Export ein.
 
+Commit `0bfa9ee` beseitigte damit zwar die gleichzeitigen Canvas-Backing-Stores,
+aber nicht die zweite Speichervervielfachung innerhalb jedes Durchlaufs. Sein
+Pfad erzeugte weiterhin aus jedem Canvas zunächst eine PNG-Data-URL. Safari
+musste dadurch gleichzeitig Canvas-Pixel, verlustfrei komprimierte PNG-Daten,
+den Base64-/JavaScript-String und die von jsPDF dekodierten bzw. gecachten
+Bilddaten halten. Das Nullsetzen der Canvas-Abmessungen kann nur dessen Backing
+Store freigeben; es gibt weder den an `addImage` übergebenen String noch den
+internen jsPDF-Bildbestand frei. Bei mehrseitigen MEPs wächst Letzterer bis zu
+`pdf.output("blob")` zwangsläufig weiter. Außerdem fasste `0bfa9ee` Fehler aus
+Capture, `toDataURL`, `addImage` und `output` fälschlich als Renderfehler der
+aktuellen Seite zusammen.
+
+Der aktuelle Fix kodiert deshalb jede Seite asynchron mit `canvas.toBlob()` als
+JPEG und übergibt jsPDF direkt ein `Uint8Array`. Die Base64-Darstellung entfällt
+vollständig, und die in jsPDF verbleibenden komprimierten Seitendaten sind
+wesentlich kleiner als PNGs der tabellenreichen Vollseiten. Auf iOS wird mit
+Scale 1,25 statt 1,5 erfasst und nach jeder Seite ein Browser-Zyklus freigegeben.
+`html2canvas` erhält zudem ausdrücklich `removeContainer: true`. Vor dem ersten
+Capture wartet der Export auf Fonts und Bilder. Stufenfehler unterscheiden nun
+DOM-/Seitensuche, Capture, Bildkonvertierung, `addImage`, `output`, File,
+`canShare`, `share` und Download-/Öffnen-Fallback.
+
 ### Safari-Browserdruck
 
 `git blame` führt die volle MEP-Innenhöhe im Print-Pfad auf Commit `710af6d`
@@ -50,9 +72,14 @@ die verfügbare Papierfläche behandeln und vertikal auf zwei Druckseiten
 fragmentieren. Dieses Druckrisiko besteht seit **25. März 2026**.
 
 Die Korrektur lässt Wochen-/Mitarbeiteraufteilung und interne MEP-Pagination
-unverändert. Sie begrenzt ausschließlich den fertigen Browser-Druckbogen mit
-einem kleinen WebKit-Sicherheitsraum und behält den Umbruch *nach* dem Sheet
-sowie den Schutz vor einem Umbruch *innerhalb* des Sheets bei.
+unverändert. Die bereits erzeugte `.mepTplSheet` ist selbst die Seitengrenze
+und bleibt einschließlich ihres Rahmens durch `box-sizing: border-box` exakt
+297 × 210 mm groß. Insbesondere wird sie nicht auf 296 × 209 mm verkleinert:
+Das hätte zwar einen WebKit-Sicherheitsraum geschaffen, zugleich aber die
+fertige Tabelle beschnitten. Der Druckpfad behält den Umbruch *nach* dem Sheet
+und den Schutz vor einem Umbruch *innerhalb* des Sheets bei. Der direkte
+PDF-Pfad erfasst ebenfalls jedes Sheet einzeln und setzt genau dieses eine
+vollständige Capture ohne Slicing auf genau eine A4-Querformatseite.
 
 ## Verwendete Historienprüfungen
 
@@ -64,4 +91,3 @@ git blame -L 4600,4668 styles.css
 git log --all -S'--mep-sheet-inner-height: 210mm' -- styles.css
 git show 710af6d -- styles.css
 ```
-
