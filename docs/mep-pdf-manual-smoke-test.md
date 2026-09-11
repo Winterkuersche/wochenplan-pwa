@@ -13,6 +13,22 @@ mehr von Safaris Druck-Pagination abhängt.
 - Safari auf einem iPhone oder iPad; alternativ die installierte PWA.
 - Ein MEP-Monat, der mehrere `.mepTplSheet`-Seiten erzeugt.
 
+## Technischer Hintergrund des iOS-Pfads
+
+Der vorherige echte Export wandelte jedes JPEG zunächst vollständig in einen
+`Uint8Array` um. jsPDF 2.5.1 wandelte diese Daten in seinem `addImage`-Pfad
+intern erneut in eine binäre String-Repräsentation um. Auf speicherbegrenzten
+iOS-Geräten entstanden dadurch neben Canvas und JPEG-Blob weitere vollständige
+Seitenkopien; genau die Übergabe an `addImage` beziehungsweise der anschließende
+`output("blob")` konnte deshalb trotz erfolgreichem Capture scheitern.
+
+Der MEP-Export verwendet nun keinen jsPDF-`addImage`-Pfad mehr. Ein kleiner,
+auf diesen Anwendungsfall beschränkter PDF-Writer hängt die von `canvas.toBlob`
+erzeugten JPEG-Blobs direkt als `/DCTDecode`-Image-XObjects an den finalen
+PDF-Blob. Die iOS-Kompatibilitätsannahme beschränkt sich damit auf APIs, die der
+Export ohnehin benötigt: `canvas.toBlob`, `Blob`/Blob-Parts, `File` und für die
+native Zustellung die Web Share API mit Dateiunterstützung.
+
 ## Ablauf und erwartetes Ergebnis
 
 1. Live-App in Safari oder als PWA öffnen.
