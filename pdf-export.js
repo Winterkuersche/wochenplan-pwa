@@ -336,10 +336,10 @@ function buildMepExportUserMessage(context = {}) {
     ? ` Abbruch bei Seite ${debugContext.currentPageNumber} von ${debugContext.totalSheets || "?"}.`
     : "";
   const mobileHint = debugContext.windowInnerWidth <= 820 || debugContext.isIosLikeDevice
-    ? " Auf Mobilgeräten kann der Monats-Export zu groß sein."
+    ? " Bitte freien Gerätespeicher prüfen und erneut versuchen."
     : "";
 
-  return `PDF-Export in Phase „${debugContext.currentExportStep}“ fehlgeschlagen.${failedPageHint}${mobileHint} Es wurde keine Druckansicht geöffnet. Bitte erneut versuchen.`;
+  return `MEP-PDF-Export in Phase „${debugContext.currentExportStep}“ fehlgeschlagen.${failedPageHint}${mobileHint}`;
 }
 
 async function waitForMepCaptureResources(root) {
@@ -375,20 +375,20 @@ async function waitForMepCaptureResources(root) {
 async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
   const shareTitle = options.shareTitle || "PDF";
   const shareText = options.shareText || "PDF exportiert";
-  let file;
-  try {
-    file = new File([blob], filename, { type: "application/pdf" });
-  } catch (error) {
-    throwMepPdfStageError("delivery.file", "Die PDF-Datei konnte nicht für die Zustellung vorbereitet werden.", error);
-  }
   const isIos = isIosLikeDevice();
-  const shouldShareFiles = options.preferNativeShare ?? isIos;
+  // Ein Export ist ein Dateidownload. Web Share ist nur eine ausdrücklich
+  // angeforderte Zusatzoption: Safari kann große, mehrseitige Dateien zwar in
+  // canShare() akzeptieren, die Übergabe anschließend aber dennoch ablehnen.
+  // Dieser Fehler darf den bereits erfolgreich erzeugten Export nicht verlieren.
+  const shouldShareFiles = options.preferNativeShare === true;
   let canShareFiles = false;
+  let file = null;
   if (shouldShareFiles) {
     try {
+      file = new File([blob], filename, { type: "application/pdf" });
       canShareFiles = Boolean(navigator.canShare?.({ files: [file] }));
     } catch (error) {
-      logMepExportError("navigator.canShare konnte nicht ausgeführt werden", error, {
+      logMepExportError("Native Dateifreigabe konnte nicht vorbereitet werden", error, {
         currentExportStep: "delivery.share:canShare",
         filename
       });
@@ -417,16 +417,13 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
         deliveryMethod: "navigator.share"
       });
 
-      // Der native Share-Dialog ist bereits der Zustellversuch für diese
-      // Benutzeraktion. Der bisherige Fall-through zum Link-Download startete
-      // nach einer Ablehnung des Share-Promises einen zweiten PDF-Vorgang. Das
-      // betrifft insbesondere Browser, die das Promise nach Übergabe an eine
-      // Druck-/PDF-App ablehnen. Ein Download bleibt der eigenständige Fallback,
-      // wenn File Sharing von vornherein nicht verfügbar ist.
+      // Ein bewusst abgebrochener Teilen-Dialog bleibt ein Abbruch. Technische
+      // Fehler beim Teilen dürfen dagegen zum Download weiterlaufen.
       if (error?.name === "AbortError") {
         return { deliveryMethod: "navigator.share", cancelled: true };
       }
-      throwMepPdfStageError("delivery.share", "Der native Teilen-Dialog ist fehlgeschlagen.", error);
+      // Die PDF existiert bereits. Bei einem Web-Share-Fehler folgt daher der
+      // normale Download, statt den gesamten Export als fehlgeschlagen zu melden.
     }
   } else if (isIos) {
     console.info("MEP PDF Teilen via navigator.share nicht verfügbar", {
@@ -451,7 +448,7 @@ async function shareOrDownloadPdfBlob(blob, filename, options = {}) {
 
     try {
       link.click();
-      return { deliveryMethod: "link.click" };
+      return { deliveryMethod: "download" };
     } catch (error) {
       logMepExportError("MEP PDF Download via link.click fehlgeschlagen", error, {
         currentExportStep: "share:link.click",

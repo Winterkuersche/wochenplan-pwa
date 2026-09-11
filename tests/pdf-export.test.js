@@ -327,7 +327,7 @@ test('overview PDF and Drive upload are rebuilt from the current overview withou
   assert.doesNotMatch(source, /lastOverviewPdfCache|cacheLastOverviewPdf|getCachedOverviewPdf/);
 });
 
-test('shareOrDownloadPdfBlob does not start a download after native sharing was attempted', async () => {
+test('shareOrDownloadPdfBlob falls back to download after native sharing fails', async () => {
   let shareCalls = 0;
   let downloadUrlCalls = 0;
   const shareError = new Error('Native share handoff failed');
@@ -351,19 +351,26 @@ test('shareOrDownloadPdfBlob does not start a download after native sharing was 
       },
       revokeObjectURL() {}
     },
+    document: {
+      createElement: () => ({ click() {}, remove() {} }),
+      body: { appendChild() {} }
+    },
     window: {
       WOCHENPLAN_DRIVE_CONFIG: {},
       innerWidth: 1024,
-      devicePixelRatio: 1
+      devicePixelRatio: 1,
+      setTimeout(callback) { callback(); }
     }
   });
 
-  await assert.rejects(
-    deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'uebersicht-2026-09.pdf'),
-    (error) => error.stage === 'delivery.share' && error.cause === shareError
+  const result = await deliveryContext.shareOrDownloadPdfBlob(
+    new Blob(['pdf']),
+    'uebersicht-2026-09.pdf',
+    { preferNativeShare: true }
   );
   assert.equal(shareCalls, 1);
-  assert.equal(downloadUrlCalls, 0);
+  assert.equal(downloadUrlCalls, 1);
+  assert.equal(result.deliveryMethod, 'download');
 });
 
 test('successful native sharing returns without starting the download fallback', async () => {
@@ -379,7 +386,7 @@ test('successful native sharing returns without starting the download fallback',
     URL: { createObjectURL: () => { objectUrlCalls += 1; }, revokeObjectURL() {} },
     window: { WOCHENPLAN_DRIVE_CONFIG: {}, innerWidth: 390, devicePixelRatio: 3 }
   });
-  const result = await deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'mep.pdf');
+  const result = await deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'mep.pdf', { preferNativeShare: true });
   assert.deepEqual({ ...result }, { deliveryMethod: 'navigator.share' });
   assert.equal(shareCalls, 1);
   assert.equal(objectUrlCalls, 0);
@@ -399,7 +406,7 @@ test('AbortError from the share sheet is cancellation, not an export failure', a
     URL: { createObjectURL: () => { objectUrlCalls += 1; }, revokeObjectURL() {} },
     window: { WOCHENPLAN_DRIVE_CONFIG: {}, innerWidth: 390, devicePixelRatio: 3 }
   });
-  const result = await deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'mep.pdf');
+  const result = await deliveryContext.shareOrDownloadPdfBlob(new Blob(['pdf']), 'mep.pdf', { preferNativeShare: true });
   assert.equal(result.deliveryMethod, 'navigator.share');
   assert.equal(result.cancelled, true);
   assert.equal(objectUrlCalls, 0);
@@ -443,7 +450,37 @@ test('desktop delivery downloads the PDF Blob through an Object URL even when We
   assert.equal(appendedFile.href, 'blob:pdf-download');
   assert.equal(appendedFile.download, 'mep-2026-09.pdf');
   assert.equal(revokedUrl, 'blob:pdf-download');
-  assert.deepEqual({ ...result }, { deliveryMethod: 'link.click' });
+  assert.deepEqual({ ...result }, { deliveryMethod: 'download' });
+});
+
+test('iOS MEP export downloads directly and does not depend on Web Share', async () => {
+  let shareCalls = 0;
+  let clicked = 0;
+  const deliveryContext = loadScripts(['pdf-export.js'], {
+    Blob, File,
+    navigator: {
+      userAgent: 'iPhone', platform: 'iPhone', maxTouchPoints: 5,
+      canShare: () => true,
+      share: async () => { shareCalls += 1; throw new Error('delivery.share'); }
+    },
+    URL: { createObjectURL: () => 'blob:mep', revokeObjectURL() {} },
+    document: {
+      createElement: () => ({ click() { clicked += 1; }, remove() {} }),
+      body: { appendChild() {} }
+    },
+    window: {
+      WOCHENPLAN_DRIVE_CONFIG: {}, innerWidth: 390, devicePixelRatio: 3,
+      setTimeout(callback) { callback(); }
+    }
+  });
+
+  const result = await deliveryContext.shareOrDownloadPdfBlob(
+    new Blob(['pdf'], { type: 'application/pdf' }),
+    'mep-2026-09.pdf'
+  );
+  assert.equal(shareCalls, 0);
+  assert.equal(clicked, 1);
+  assert.equal(result.deliveryMethod, 'download');
 });
 
 test('MEP export has no print fallback and always removes its capture root in finally', () => {
