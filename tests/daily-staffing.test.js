@@ -59,3 +59,22 @@ test('renders names, counts and at most Monday through Saturday with escaped nam
   assert.doesNotMatch(html, />So </);
   assert.match(html, /class="dailyStaffing noExport"/);
 });
+
+test('selects Monday through Saturday explicitly across a month boundary', () => {
+  const days = [
+    { iso: '2026-08-30', weekdayLabel: 'So', date: new Date(2026, 7, 30) },
+    { iso: '2026-08-31', weekdayLabel: 'Mo', date: new Date(2026, 7, 31), isOutsideMonth: true },
+    { iso: '2026-09-01', weekdayLabel: 'Di', date: new Date(2026, 8, 1) },
+    { iso: '2026-09-02', weekdayLabel: 'Mi', date: new Date(2026, 8, 2) },
+    { iso: '2026-09-03', weekdayLabel: 'Do', date: new Date(2026, 8, 3) },
+    { iso: '2026-09-04', weekdayLabel: 'Fr', date: new Date(2026, 8, 4) },
+    { iso: '2026-09-05', weekdayLabel: 'Sa', date: new Date(2026, 8, 5) }
+  ];
+
+  const result = ctx.buildDailyStaffingForDays(days, [], () => null);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(result.map(({ day }) => day.iso))),
+    ['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05']
+  );
+});

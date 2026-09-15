@@ -3586,7 +3586,7 @@ function renderOverviewView() {
       const balanceDisplay = getOverviewBalanceDisplay(weekSummary.differenceMinutes);
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
       const dailyStaffingMarkup = buildDailyStaffingMarkup(
-        calculationDays,
+        weekDays,
         activeEmployees,
         getResolvedEntryForEmployeeOnIso
       );

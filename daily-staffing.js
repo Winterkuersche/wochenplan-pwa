@@ -24,7 +24,12 @@ function getDailyStaffingGroup(entry) {
 }
 
 function buildDailyStaffingForDays(days, employees, getResolvedEntry) {
-  return (Array.isArray(days) ? days : []).slice(0, 6).filter(Boolean).map((day) => {
+  const mondayThroughSaturday = (Array.isArray(days) ? days : []).filter((day) => {
+    const weekday = day?.date instanceof Date ? day.date.getDay() : 0;
+    return weekday >= 1 && weekday <= 6;
+  });
+
+  return mondayThroughSaturday.map((day) => {
     const groups = Object.fromEntries(DAILY_STAFFING_GROUPS.map(({ key }) => [key, []]));
 
     (employees || []).forEach((employee) => {
