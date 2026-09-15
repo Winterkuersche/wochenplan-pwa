@@ -264,18 +264,16 @@ test('work cells receive a time-based visual tone while non-work cells keep thei
   const end = live.indexOf('\nfunction cell', start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
-  const context = vm.createContext({ mins: value => {
-    const [hours, minutes] = value.split(':').map(Number);
-    return hours * 60 + minutes;
-  } });
+  const context = vm.createContext({});
   vm.runInContext(`${live.slice(start, end)};this.tone=planning2ShiftTone`, context);
 
   assert.equal(context.tone({ start:'09:00', end:'14:00' }), 'shift--early');
-  assert.equal(context.tone({ start:'10:00', end:'16:00' }), 'shift--early');
+  assert.equal(context.tone({ start:'08:55', end:'16:00' }), 'shift--early');
   assert.equal(context.tone({ start:'14:00', end:'19:00' }), 'shift--late');
-  assert.equal(context.tone({ start:'12:00', end:'18:00' }), 'shift--late');
+  assert.equal(context.tone({ start:'12:00', end:'19:10' }), 'shift--late');
   assert.equal(context.tone({ start:'09:00', end:'19:00' }), 'shift--full');
-  assert.equal(context.tone({ start:'11:00', end:'17:00' }), 'shift--full');
+  assert.equal(context.tone({ start:'08:55', end:'19:10' }), 'shift--full');
+  assert.equal(context.tone({ start:'11:00', end:'16:00' }), 'shift--middle');
   assert.match(live, /\['shift',planning2ShiftTone\(times\)\]/);
   assert.match(live, /resolved\.type==='vacation'[^]*return\['U','Urlaub','abs'\]/);
   assert.match(live, /resolved\.type==='sick'[^]*return\['K','Krank','abs'\]/);
@@ -283,7 +281,7 @@ test('work cells receive a time-based visual tone while non-work cells keep thei
 });
 
 test('shift tones have subtle light and dark colors without replacing problem or change indicators', () => {
-  for (const tone of ['early', 'late', 'full']) {
+  for (const tone of ['early', 'late', 'full', 'middle']) {
     assert.match(liveCss, new RegExp(`\\.cell\\.shift--${tone}\\{background:`));
   }
   assert.match(liveCss, /@media\(prefers-color-scheme:dark\)[^]*\.cell\.shift--early\{background:/);
