@@ -31,6 +31,7 @@ const APP_FILES = [
   "./vacation-utils.js",
   "./day-resolution.js",
   "./month-engine.js",
+  "./daily-staffing.js",
   "./day-view.js",
   "./week-view.js",
   "./mep-view.js",

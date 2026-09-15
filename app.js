@@ -3585,6 +3585,11 @@ function renderOverviewView() {
       const differenceClass = getDeltaVisualState(weekSummary.differenceMinutes);
       const balanceDisplay = getOverviewBalanceDisplay(weekSummary.differenceMinutes);
       const weekTableMarkup = buildOverviewWeekPlannerTable(weekDays, activeEmployees);
+      const dailyStaffingMarkup = buildDailyStaffingMarkup(
+        calculationDays,
+        activeEmployees,
+        getResolvedEntryForEmployeeOnIso
+      );
       const weekSalesSummary = getWeekSalesSummaryForDays(weekDays);
 
       return `
@@ -3620,6 +3625,7 @@ function renderOverviewView() {
               <strong>${formatEuroPerHour(weekSalesSummary.euroPerHour)}</strong>
             </div>
           </div>
+          ${dailyStaffingMarkup}
           <div class="overviewWeekTableWrap">
             ${weekTableMarkup}
           </div>

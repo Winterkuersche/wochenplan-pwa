@@ -1266,6 +1266,105 @@ body.dark .ahCellSubrow {
   margin-top: 10px;
 }
 
+.dailyStaffing {
+  margin: 10px 0 14px;
+}
+
+.dailyStaffingTitle {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.dailyStaffingDays {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dailyStaffingDay {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg);
+}
+
+.dailyStaffingDay h5 {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 0 0 7px;
+  font-size: 0.82rem;
+}
+
+.dailyStaffingDay h5 span {
+  color: var(--subtext);
+  font-weight: 500;
+}
+
+.dailyStaffingGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dailyStaffingGroup {
+  min-width: 0;
+  padding: 6px 7px;
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.dailyStaffingGroupHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  color: var(--subtext);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.dailyStaffingGroupHeading strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--accent, #2667d8);
+  color: #fff;
+  font-size: 0.68rem;
+}
+
+.dailyStaffingNames {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+@media (max-width: 640px) {
+  .dailyStaffingDays {
+    grid-template-columns: 1fr;
+  }
+
+  .dailyStaffingGroups {
+    grid-template-columns: 1fr;
+  }
+
+  .dailyStaffingGroup {
+    display: grid;
+    grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.2fr);
+    gap: 8px;
+    align-items: start;
+  }
+
+  .dailyStaffingNames {
+    margin-top: 1px;
+  }
+}
+
 .overviewInternalMetrics {
   display: flex;
   flex-wrap: wrap;
