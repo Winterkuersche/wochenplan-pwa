@@ -318,6 +318,21 @@ test('formatOverviewPdfTimestamp records the PDF creation time for page metadata
   );
 });
 
+test('overview PDF styling keeps the compact staffing table below the unchanged planner table', () => {
+  const appSource = fs.readFileSync('app.js', 'utf8');
+  const styles = fs.readFileSync('styles.css', 'utf8');
+  const tablePosition = appSource.indexOf('${weekTableMarkup}');
+  const staffingPosition = appSource.indexOf('${dailyStaffingPdfTableMarkup}');
+
+  assert.ok(tablePosition > -1 && staffingPosition > tablePosition);
+  assert.match(styles, /\.overviewPdfExportView \.dailyStaffingPdf\s*\{[\s\S]*?display:\s*block !important/);
+  assert.match(styles, /\.dailyStaffingPdfTable\s*\{[\s\S]*?table-layout:\s*fixed/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--early\s*\{[\s\S]*?background:\s*#edf7f0/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--fullDay\s*\{[\s\S]*?background:\s*#edf5fb/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--between\s*\{[\s\S]*?background:\s*#f1f3f5/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--late\s*\{[\s\S]*?background:\s*#f5eff9/);
+});
+
 test('overview PDF and Drive upload are rebuilt from the current overview without a persistent snapshot', () => {
   const source = fs.readFileSync('pdf-export.js', 'utf8');
   const uploadStart = source.indexOf('async function uploadOverviewPdf()');

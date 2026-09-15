@@ -88,3 +88,34 @@ test('selects Monday through Saturday explicitly across a month boundary', () =>
     ['2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-05']
   );
 });
+
+test('renders a compact PDF table from the shared staffing and first-name logic', () => {
+  const days = [
+    { iso: '2026-09-14', weekdayLabel: 'Mo', date: new Date(2026, 8, 14) },
+    { iso: '2026-09-15', weekdayLabel: 'Di', date: new Date(2026, 8, 15) }
+  ];
+  const employees = [
+    { id: 'early', name: 'Müller, Anna' },
+    { id: 'full', name: 'Schmidt, Ben' },
+    { id: 'late', name: 'Test, <Cara>' }
+  ];
+  const entries = {
+    early: { start: '09:00', end: '14:00' },
+    full: { start: '08:55', end: '19:10' },
+    late: { start: '12:00', end: '19:00' }
+  };
+
+  const html = ctx.buildDailyStaffingPdfTableMarkup(days, employees, (employee) => entries[employee.id]);
+
+  assert.match(html, /class="dailyStaffingPdf exportOnly"/);
+  assert.match(html, /<th>Tag<\/th>/);
+  assert.match(html, />Früh<\/th>/);
+  assert.match(html, />Ganzer Tag<\/th>/);
+  assert.match(html, />Dazwischen<\/th>/);
+  assert.match(html, />Spät<\/th>/);
+  assert.match(html, /<strong>1<\/strong><span>Anna<\/span>/);
+  assert.match(html, /<strong>1<\/strong><span>Ben<\/span>/);
+  assert.match(html, /<strong>1<\/strong><span>&lt;Cara&gt;<\/span>/);
+  assert.match(html, /<strong>0<\/strong><span>—<\/span>/);
+  assert.doesNotMatch(html, /Müller|Schmidt|Test,/);
+});
