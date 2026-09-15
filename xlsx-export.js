@@ -22,7 +22,10 @@ function buildOverviewXlsxWorkbook(options = {}) {
   const columnCount = 7;
 
   weeks.forEach((weekDays) => {
-    const visibleDays = (weekDays || []).slice(0, 6).filter(Boolean);
+    const visibleDays = (weekDays || []).filter((day) => {
+      const weekday = day?.date instanceof Date ? day.date.getDay() : 0;
+      return weekday >= 1 && weekday <= 6;
+    });
     if (!visibleDays.some((day) => day.inCurrentMonth)) return;
 
     const summary = getWeekSummary(weekDays);

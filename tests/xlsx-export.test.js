@@ -88,3 +88,41 @@ test('XLSX export writes a compatible xlsx filename for the selected month', () 
   assert.equal(written.filename, 'Monatsuebersicht-2026-09.xlsx');
   assert.equal(written.options.compression, true);
 });
+
+test('XLSX overview selects Monday through Saturday explicitly across a month boundary', () => {
+  const ctx = loadScripts(['xlsx-export.js']);
+  const XLSX = createXlsxMock();
+  const week = [
+    { iso: '2026-09-06', date: new Date(2026, 8, 6), weekdayLabel: 'So', inCurrentMonth: true },
+    { iso: '2026-08-31', date: new Date(2026, 7, 31), weekdayLabel: 'Mo', inCurrentMonth: false },
+    ...Array.from({ length: 5 }, (_, index) => ({
+      iso: `2026-09-0${index + 1}`,
+      date: new Date(2026, 8, index + 1),
+      weekdayLabel: ['Di', 'Mi', 'Do', 'Fr', 'Sa'][index],
+      inCurrentMonth: true
+    }))
+  ];
+  const resolvedDates = [];
+  const workbook = ctx.buildOverviewXlsxWorkbook({
+    XLSX,
+    monthTitle: 'September 2026',
+    weeks: [week],
+    employees: [{ id: 'e1', name: 'Anna' }],
+    getWeekSummary: () => ({ usedMinutes: 0, targetMinutes: 2400, differenceMinutes: -2400 }),
+    getResolvedEntry(_employee, iso) {
+      resolvedDates.push(iso);
+      return { label: iso };
+    },
+    getPlannerCellText: (entry) => entry.label,
+    buildDailyStaffing: () => []
+  });
+
+  const sheet = workbook.Sheets['Übersicht'];
+  assert.equal(sheet.A3.v, 'Woche 31.08.–05.09.');
+  assert.deepEqual(resolvedDates, [
+    '2026-08-31', '2026-09-01', '2026-09-02',
+    '2026-09-03', '2026-09-04', '2026-09-05'
+  ]);
+  assert.equal(sheet.B5.v, 'Mo 31.08.');
+  assert.equal(sheet.G5.v, 'Sa 05.09.');
+});
