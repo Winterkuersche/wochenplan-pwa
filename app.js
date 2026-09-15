@@ -1105,6 +1105,7 @@ const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnOverviewUploadEl = document.getElementById("btnOverviewUpload");
+const btnOverviewXlsxEl = document.getElementById("btnOverviewXlsx");
 const overviewSalesWeekSelectEl = document.getElementById("overviewSalesWeekSelect");
 const overviewSalesDayChipListEl = document.getElementById("overviewSalesDayChipList");
 const overviewSalesDateEl = document.getElementById("overviewSalesDate");
@@ -4010,6 +4011,31 @@ btnPrintEl?.addEventListener("click", async () => {
 
 btnOverviewUploadEl?.addEventListener("click", async () => {
   await uploadOverviewPdf();
+});
+
+btnOverviewXlsxEl?.addEventListener("click", () => {
+  const originalLabel = btnOverviewXlsxEl.textContent;
+  try {
+    btnOverviewXlsxEl.disabled = true;
+    btnOverviewXlsxEl.textContent = "Tabelle wird erstellt …";
+    const activeEmployees = state.employees.filter((employee) => isEmployeeActiveInMonth(employee, state.activeMonth));
+    exportOverviewXlsx({
+      activeMonth: state.activeMonth,
+      monthTitle: document.getElementById("overviewMonthTitle")?.textContent || "Monatsübersicht",
+      weeks: getCurrentMonthWeeks(),
+      employees: activeEmployees,
+      getWeekSummary: getWeekPlannerSummaryForDays,
+      getResolvedEntry: getResolvedEntryForEmployeeOnIso,
+      getPlannerCellText: getOverviewWeekPlannerCellText,
+      buildDailyStaffing: buildDailyStaffingForDays
+    });
+  } catch (error) {
+    console.error("XLSX-Export fehlgeschlagen", error);
+    alert(error?.message || "Der Tabellen-Export ist fehlgeschlagen. Bitte erneut versuchen.");
+  } finally {
+    btnOverviewXlsxEl.disabled = false;
+    btnOverviewXlsxEl.textContent = originalLabel;
+  }
 });
 
 btnExportBackupEl?.addEventListener("click", () => {
