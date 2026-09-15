@@ -282,30 +282,14 @@ test('buildOverviewPdfBlobFromCanvases uses the full page width without height-b
   assert.equal(result.actions[2].height, 194);
 });
 
-test('buildOverviewPdfBlobFromCanvases continues an exceptionally tall week at readable width', () => {
+test('buildOverviewPdfBlobFromCanvases keeps an exceptionally tall week on exactly one page', () => {
   const tallBlock = createCanvas(1000, 1500, 'tall-week');
-  const crops = [];
-  const canvasFactory = () => ({
-    width: 0,
-    height: 0,
-    getContext: () => ({
-      drawImage: (...args) => crops.push(args.slice(1, 5))
-    }),
-    toDataURL() {
-      return `data:image/png;base64,slice-${this.height}`;
-    }
-  });
+  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf });
 
-  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf, canvasFactory });
-
-  assert.deepEqual(result.actions.map((action) => action.type), ['addImage', 'addPage', 'addImage']);
-  assert.equal(result.actions[0].width, 194);
-  assert.ok(result.actions[0].height <= 281);
-  assert.equal(result.actions[2].width, 194);
-  assert.deepEqual(crops, [
-    [0, 0, 1000, 1448],
-    [0, 1448, 1000, 52]
-  ]);
+  assert.deepEqual(result.actions.map((action) => action.type), ['addImage']);
+  assert.equal(result.actions[0].height, 281);
+  assert.ok(result.actions[0].width < 194);
+  assert.ok(result.actions[0].x > 8);
 });
 
 test('formatOverviewPdfTimestamp records the PDF creation time for page metadata', () => {
@@ -316,6 +300,21 @@ test('formatOverviewPdfTimestamp records the PDF creation time for page metadata
     ctx.buildOverviewPdfStatusText('September 2026', createdAt),
     'September 2026 · Stand 09.09.2026 08:04'
   );
+});
+
+test('overview PDF styling keeps the compact staffing table below the unchanged planner table', () => {
+  const appSource = fs.readFileSync('app.js', 'utf8');
+  const styles = fs.readFileSync('styles.css', 'utf8');
+  const tablePosition = appSource.indexOf('${weekTableMarkup}');
+  const staffingPosition = appSource.indexOf('${dailyStaffingPdfTableMarkup}');
+
+  assert.ok(tablePosition > -1 && staffingPosition > tablePosition);
+  assert.match(styles, /\.overviewPdfExportView \.dailyStaffingPdf\s*\{[\s\S]*?display:\s*block !important/);
+  assert.match(styles, /\.dailyStaffingPdfTable\s*\{[\s\S]*?table-layout:\s*fixed/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--early\s*\{[\s\S]*?background:\s*#edf7f0/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--fullDay\s*\{[\s\S]*?background:\s*#edf5fb/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--between\s*\{[\s\S]*?background:\s*#f1f3f5/);
+  assert.match(styles, /\.dailyStaffingPdfGroup--late\s*\{[\s\S]*?background:\s*#f5eff9/);
 });
 
 test('overview PDF and Drive upload are rebuilt from the current overview without a persistent snapshot', () => {

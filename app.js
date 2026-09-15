@@ -3590,6 +3590,11 @@ function renderOverviewView() {
         activeEmployees,
         getResolvedEntryForEmployeeOnIso
       );
+      const dailyStaffingPdfTableMarkup = buildDailyStaffingPdfTableMarkup(
+        weekDays,
+        activeEmployees,
+        getResolvedEntryForEmployeeOnIso
+      );
       const weekSalesSummary = getWeekSalesSummaryForDays(weekDays);
 
       return `
@@ -3629,6 +3634,7 @@ function renderOverviewView() {
           <div class="overviewWeekTableWrap">
             ${weekTableMarkup}
           </div>
+          ${dailyStaffingPdfTableMarkup}
         </section>
       `;
     })

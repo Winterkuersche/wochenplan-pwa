@@ -79,3 +79,33 @@ function buildDailyStaffingMarkup(days, employees, getResolvedEntry) {
     </section>
   `;
 }
+
+function buildDailyStaffingPdfTableMarkup(days, employees, getResolvedEntry) {
+  const staffingDays = buildDailyStaffingForDays(days, employees, getResolvedEntry);
+  if (!staffingDays.length) return "";
+
+  return `
+    <section class="dailyStaffingPdf exportOnly" aria-label="Tagesbesetzung Montag bis Samstag">
+      <h4 class="dailyStaffingPdfTitle">Tagesbesetzung</h4>
+      <table class="dailyStaffingPdfTable">
+        <thead>
+          <tr>
+            <th>Tag</th>
+            ${DAILY_STAFFING_GROUPS.map(({ key, label }) => `<th class="dailyStaffingPdfGroup--${key}">${label}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${staffingDays.map(({ day, groups }) => `
+            <tr>
+              <th>${escapeHtml(day.weekdayLabel || "")} <span>${String(day.date.getDate()).padStart(2, "0")}.${String(day.date.getMonth() + 1).padStart(2, "0")}</span></th>
+              ${DAILY_STAFFING_GROUPS.map(({ key }) => {
+                const names = groups[key];
+                return `<td class="dailyStaffingPdfGroup--${key}"><strong>${names.length}</strong><span>${names.length ? names.map(escapeHtml).join(", ") : "—"}</span></td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </section>
+  `;
+}

@@ -866,54 +866,29 @@ function buildOverviewPdfBlobFromCanvases(blockCanvases, options = {}) {
       throw new Error(`Ungültiger Canvas-Block für Übersicht an Position ${index + 1}.`);
     }
 
-    const widthScale = contentWidthMm / canvas.width;
-    const maxSliceHeightPx = Math.max(1, Math.floor(contentHeightMm / widthScale));
-    const sliceCount = Math.ceil(canvas.height / maxSliceHeightPx);
-
-    for (let sliceIndex = 0; sliceIndex < sliceCount; sliceIndex += 1) {
-      if (pageCount > 0) {
-        pdf.addPage("a4", "portrait");
-      }
-
-      const sourceY = sliceIndex * maxSliceHeightPx;
-      const sourceHeight = Math.min(maxSliceHeightPx, canvas.height - sourceY);
-      let pageCanvas = canvas;
-
-      if (sliceCount > 1) {
-        const canvasFactory = options.canvasFactory || (() => document.createElement("canvas"));
-        pageCanvas = canvasFactory();
-        pageCanvas.width = canvas.width;
-        pageCanvas.height = sourceHeight;
-        const pageContext = pageCanvas.getContext("2d");
-        if (!pageContext) {
-          throw new Error(`Canvas-Ausschnitt für Übersicht an Position ${index + 1} konnte nicht erstellt werden.`);
-        }
-        pageContext.drawImage(
-          canvas,
-          0,
-          sourceY,
-          canvas.width,
-          sourceHeight,
-          0,
-          0,
-          canvas.width,
-          sourceHeight
-        );
-      }
-
-      const renderedHeightMm = sourceHeight * widthScale;
-      pdf.addImage(
-        pageCanvas.toDataURL("image/png"),
-        "PNG",
-        margin,
-        margin,
-        contentWidthMm,
-        renderedHeightMm,
-        undefined,
-        "FAST"
-      );
-      pageCount += 1;
+    if (pageCount > 0) {
+      pdf.addPage("a4", "portrait");
     }
+
+    // Eine gerenderte Woche bleibt genau eine PDF-Seite. Die regulären
+    // Wochen nutzen unverändert die volle Breite; nur wenn ein Block tatsächlich
+    // höher als die Seite ist, wird er proportional auf die freie Fläche skaliert.
+    const widthScale = contentWidthMm / canvas.width;
+    const scale = Math.min(widthScale, contentHeightMm / canvas.height);
+    const renderedWidthMm = canvas.width * scale;
+    const renderedHeightMm = canvas.height * scale;
+    const x = margin + (contentWidthMm - renderedWidthMm) / 2;
+    pdf.addImage(
+      canvas.toDataURL("image/png"),
+      "PNG",
+      x,
+      margin,
+      renderedWidthMm,
+      renderedHeightMm,
+      undefined,
+      "FAST"
+    );
+    pageCount += 1;
   });
 
   return pdf.output("blob");
