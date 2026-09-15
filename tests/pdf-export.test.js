@@ -330,7 +330,10 @@ test('overview PDF styling keeps the readable staffing table below the unchanged
   assert.match(styles, /\.dailyStaffingPdfTable\s*\{[\s\S]*?font-size:\s*11\.5px/);
   assert.match(styles, /\.dailyStaffingPdfTable th,\s*\n\.dailyStaffingPdfTable td\s*\{[\s\S]*?padding:\s*4px 7px/);
   assert.match(styles, /\.dailyStaffingPdfTable td strong\s*\{[\s\S]*?font-weight:\s*800/);
-  assert.match(styles, /\.dailyStaffingPdfTable td span\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?font-weight:\s*600/);
+  assert.match(styles, /\.dailyStaffingPdfPeople\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?font-weight:\s*600/);
+  assert.match(styles, /\.dailyStaffingPdfPerson\s*\{[\s\S]*?display:\s*inline-block;[\s\S]*?white-space:\s*nowrap/);
+  assert.match(styles, /\.dailyStaffingPdfPerson b\s*\{[\s\S]*?font-weight:\s*700/);
+  assert.match(styles, /\.dailyStaffingPdfPerson small\s*\{[\s\S]*?color:\s*#6b7280;[\s\S]*?font-size:\s*9\.5px;[\s\S]*?font-weight:\s*400/);
   assert.match(styles, /\.dailyStaffingPdfGroup--early\s*\{[\s\S]*?background:\s*#e4f3e9/);
   assert.match(styles, /\.dailyStaffingPdfGroup--fullDay\s*\{[\s\S]*?background:\s*#e3f0f9/);
   assert.match(styles, /\.dailyStaffingPdfGroup--between\s*\{[\s\S]*?background:\s*#e9edf0/);
