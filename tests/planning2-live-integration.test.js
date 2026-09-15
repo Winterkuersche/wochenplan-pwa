@@ -259,6 +259,37 @@ test('changed cells keep only their triangle while concrete warning facts drive 
   assert.match(live, /getPlanning2CellWarningFacts\(activeFacts\.warnings,dayIso,e\.id\)/);
 });
 
+test('work cells receive a time-based visual tone while non-work cells keep their status classes', () => {
+  const start = live.indexOf('function planning2ShiftTone');
+  const end = live.indexOf('\nfunction cell', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const context = vm.createContext({});
+  vm.runInContext(`${live.slice(start, end)};this.tone=planning2ShiftTone`, context);
+
+  assert.equal(context.tone({ start:'09:00', end:'14:00' }), 'shift--early');
+  assert.equal(context.tone({ start:'08:55', end:'16:00' }), 'shift--early');
+  assert.equal(context.tone({ start:'14:00', end:'19:00' }), 'shift--late');
+  assert.equal(context.tone({ start:'12:00', end:'19:10' }), 'shift--late');
+  assert.equal(context.tone({ start:'09:00', end:'19:00' }), 'shift--full');
+  assert.equal(context.tone({ start:'08:55', end:'19:10' }), 'shift--full');
+  assert.equal(context.tone({ start:'11:00', end:'16:00' }), 'shift--middle');
+  assert.match(live, /\['shift',planning2ShiftTone\(times\)\]/);
+  assert.match(live, /resolved\.type==='vacation'[^]*return\['U','Urlaub','abs'\]/);
+  assert.match(live, /resolved\.type==='sick'[^]*return\['K','Krank','abs'\]/);
+  assert.match(live, /resolved\.type==='off'&&e[^]*return\['Frei','AG-Frei','off'\]/);
+});
+
+test('shift tones have subtle light and dark colors without replacing problem or change indicators', () => {
+  for (const tone of ['early', 'late', 'full', 'middle']) {
+    assert.match(liveCss, new RegExp(`\\.cell\\.shift--${tone}\\{background:`));
+  }
+  assert.match(liveCss, /@media\(prefers-color-scheme:dark\)[^]*\.cell\.shift--early\{background:/);
+  assert.match(liveCss, /@media\(prefers-color-scheme:dark\)[^]*\.cell\.shift--late\{background:/);
+  assert.match(liveCss, /\.cell\.problem\{box-shadow:inset 0 0 0 2px #d69b2d\}/);
+  assert.match(liveCss, /\.changeMark\{color:#9a6300/);
+});
+
 test('cell problem facts only map warnings that identify the concrete employee and day', () => {
   const start = live.indexOf('function getPlanning2CellWarningFacts');
   assert.notEqual(start, -1);
