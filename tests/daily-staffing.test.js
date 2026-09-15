@@ -41,13 +41,20 @@ test('lists full-day employees only in the full-day group', () => {
   });
 });
 
+test('uses only the first-name part of names stored as surname, first name', () => {
+  assert.equal(ctx.getDailyStaffingFirstName('Müller, Anna'), 'Anna');
+  assert.equal(ctx.getDailyStaffingFirstName('Schmidt, Jan Paul'), 'Jan Paul');
+  assert.equal(ctx.getDailyStaffingFirstName('Madonna'), 'Madonna');
+  assert.equal(ctx.getDailyStaffingFirstName('Nachname,'), 'Nachname');
+});
+
 test('renders names, counts and at most Monday through Saturday with escaped names', () => {
   const days = Array.from({ length: 7 }, (_, index) => ({
     iso: `2026-09-${14 + index}`,
     weekdayLabel: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][index],
     date: new Date(2026, 8, 14 + index)
   }));
-  const html = ctx.buildDailyStaffingMarkup(days, [{ id: 'e1', name: '<Alex>' }], () => ({
+  const html = ctx.buildDailyStaffingMarkup(days, [{ id: 'e1', name: 'Muster, <Alex>' }], () => ({
     start: '09:00',
     end: '13:00'
   }));
@@ -56,6 +63,9 @@ test('renders names, counts and at most Monday through Saturday with escaped nam
   assert.match(html, /Früh/);
   assert.match(html, /aria-label="1 Personen">1/);
   assert.match(html, /&lt;Alex&gt;/);
+  assert.doesNotMatch(html, /Muster/);
+  assert.match(html, /class="dailyStaffingName">&lt;Alex&gt;<\/span>/);
+  assert.match(html, /dailyStaffingGroup--fullDay is-empty/);
   assert.doesNotMatch(html, />So </);
   assert.match(html, /class="dailyStaffing noExport"/);
 });

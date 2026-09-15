@@ -23,6 +23,16 @@ function getDailyStaffingGroup(entry) {
   return null;
 }
 
+function getDailyStaffingFirstName(name) {
+  const storedName = String(name || "").trim();
+  if (!storedName) return "—";
+
+  const separatorIndex = storedName.indexOf(",");
+  if (separatorIndex === -1) return storedName;
+
+  return storedName.slice(separatorIndex + 1).trim() || storedName.slice(0, separatorIndex).trim() || "—";
+}
+
 function buildDailyStaffingForDays(days, employees, getResolvedEntry) {
   const mondayThroughSaturday = (Array.isArray(days) ? days : []).filter((day) => {
     const weekday = day?.date instanceof Date ? day.date.getDay() : 0;
@@ -34,7 +44,7 @@ function buildDailyStaffingForDays(days, employees, getResolvedEntry) {
 
     (employees || []).forEach((employee) => {
       const group = getDailyStaffingGroup(getResolvedEntry(employee, day.iso));
-      if (group) groups[group].push(employee.name || "—");
+      if (group) groups[group].push(getDailyStaffingFirstName(employee.name));
     });
 
     return { day, groups };
@@ -56,9 +66,9 @@ function buildDailyStaffingMarkup(days, employees, getResolvedEntry) {
               ${DAILY_STAFFING_GROUPS.map(({ key, label }) => {
                 const names = groups[key];
                 return `
-                  <div class="dailyStaffingGroup dailyStaffingGroup--${key}">
+                  <div class="dailyStaffingGroup dailyStaffingGroup--${key}${names.length ? "" : " is-empty"}">
                     <div class="dailyStaffingGroupHeading"><span>${label}</span><strong aria-label="${names.length} Personen">${names.length}</strong></div>
-                    <div class="dailyStaffingNames">${names.length ? names.map(escapeHtml).join(", ") : "—"}</div>
+                    ${names.length ? `<div class="dailyStaffingNames">${names.map((name) => `<span class="dailyStaffingName">${escapeHtml(name)}</span>`).join("")}</div>` : ""}
                   </div>
                 `;
               }).join("")}
