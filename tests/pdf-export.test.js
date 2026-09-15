@@ -282,14 +282,30 @@ test('buildOverviewPdfBlobFromCanvases uses the full page width without height-b
   assert.equal(result.actions[2].height, 194);
 });
 
-test('buildOverviewPdfBlobFromCanvases keeps an exceptionally tall week on exactly one page', () => {
+test('buildOverviewPdfBlobFromCanvases continues an exceptionally tall week at readable width', () => {
   const tallBlock = createCanvas(1000, 1500, 'tall-week');
-  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf });
+  const crops = [];
+  const canvasFactory = () => ({
+    width: 0,
+    height: 0,
+    getContext: () => ({
+      drawImage: (...args) => crops.push(args.slice(1, 5))
+    }),
+    toDataURL() {
+      return `data:image/png;base64,slice-${this.height}`;
+    }
+  });
 
-  assert.deepEqual(result.actions.map((action) => action.type), ['addImage']);
-  assert.equal(result.actions[0].height, 281);
-  assert.ok(result.actions[0].width < 194);
-  assert.ok(result.actions[0].x > 8);
+  const result = ctx.buildOverviewPdfBlobFromCanvases([tallBlock], { jsPdfCtor: MockPdf, canvasFactory });
+
+  assert.deepEqual(result.actions.map((action) => action.type), ['addImage', 'addPage', 'addImage']);
+  assert.equal(result.actions[0].width, 194);
+  assert.ok(result.actions[0].height <= 281);
+  assert.equal(result.actions[2].width, 194);
+  assert.deepEqual(crops, [
+    [0, 0, 1000, 1448],
+    [0, 1448, 1000, 52]
+  ]);
 });
 
 test('formatOverviewPdfTimestamp records the PDF creation time for page metadata', () => {
