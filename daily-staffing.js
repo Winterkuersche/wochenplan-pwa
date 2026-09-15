@@ -43,8 +43,16 @@ function buildDailyStaffingForDays(days, employees, getResolvedEntry) {
     const groups = Object.fromEntries(DAILY_STAFFING_GROUPS.map(({ key }) => [key, []]));
 
     (employees || []).forEach((employee) => {
-      const group = getDailyStaffingGroup(getResolvedEntry(employee, day.iso));
-      if (group) groups[group].push(getDailyStaffingFirstName(employee.name));
+      const resolvedEntry = getResolvedEntry(employee, day.iso);
+      const sourceEntry = resolvedEntry?.sourceEntry || resolvedEntry;
+      const group = getDailyStaffingGroup(resolvedEntry);
+      if (group) {
+        groups[group].push({
+          name: getDailyStaffingFirstName(employee.name),
+          start: normalizePlanTime(sourceEntry?.start || ""),
+          end: normalizePlanTime(sourceEntry?.end || "")
+        });
+      }
     });
 
     return { day, groups };
@@ -64,11 +72,11 @@ function buildDailyStaffingMarkup(days, employees, getResolvedEntry) {
             <h5>${escapeHtml(day.weekdayLabel || "")} <span>${String(day.date.getDate()).padStart(2, "0")}.${String(day.date.getMonth() + 1).padStart(2, "0")}</span></h5>
             <div class="dailyStaffingGroups">
               ${DAILY_STAFFING_GROUPS.map(({ key, label }) => {
-                const names = groups[key];
+                const people = groups[key];
                 return `
-                  <div class="dailyStaffingGroup dailyStaffingGroup--${key}${names.length ? "" : " is-empty"}">
-                    <div class="dailyStaffingGroupHeading"><span>${label}</span><strong aria-label="${names.length} Personen">${names.length}</strong></div>
-                    ${names.length ? `<div class="dailyStaffingNames">${names.map((name) => `<span class="dailyStaffingName">${escapeHtml(name)}</span>`).join("")}</div>` : ""}
+                  <div class="dailyStaffingGroup dailyStaffingGroup--${key}${people.length ? "" : " is-empty"}">
+                    <div class="dailyStaffingGroupHeading"><span>${label}</span><strong aria-label="${people.length} Personen">${people.length}</strong></div>
+                    ${people.length ? `<div class="dailyStaffingNames">${people.map(({ name }) => `<span class="dailyStaffingName">${escapeHtml(name)}</span>`).join("")}</div>` : ""}
                   </div>
                 `;
               }).join("")}
@@ -99,8 +107,11 @@ function buildDailyStaffingPdfTableMarkup(days, employees, getResolvedEntry) {
             <tr>
               <th>${escapeHtml(day.weekdayLabel || "")} <span>${String(day.date.getDate()).padStart(2, "0")}.${String(day.date.getMonth() + 1).padStart(2, "0")}</span></th>
               ${DAILY_STAFFING_GROUPS.map(({ key }) => {
-                const names = groups[key];
-                return `<td class="dailyStaffingPdfGroup--${key}"><strong>${names.length}</strong><span>${names.length ? names.map(escapeHtml).join(", ") : "—"}</span></td>`;
+                const people = groups[key];
+                const peopleMarkup = people.map(({ name, start, end }) => `
+                  <span class="dailyStaffingPdfPerson"><b>${escapeHtml(name)}</b> <small>${escapeHtml(start)}–${escapeHtml(end)}</small></span>
+                `).join("");
+                return `<td class="dailyStaffingPdfGroup--${key}"><strong>${people.length}</strong><span class="dailyStaffingPdfPeople">${people.length ? peopleMarkup : "—"}</span></td>`;
               }).join("")}
             </tr>
           `).join("")}

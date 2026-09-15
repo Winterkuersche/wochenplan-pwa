@@ -34,10 +34,10 @@ test('lists full-day employees only in the full-day group', () => {
   const result = ctx.buildDailyStaffingForDays([day], employees, (employee) => entries[employee.id]);
 
   assert.deepEqual(JSON.parse(JSON.stringify(result[0].groups)), {
-    early: ['Ada'],
-    fullDay: ['Berta'],
-    between: ['Clara'],
-    late: ['Dora']
+    early: [{ name: 'Ada', start: '09:00', end: '13:00' }],
+    fullDay: [{ name: 'Berta', start: '08:55', end: '19:10' }],
+    between: [{ name: 'Clara', start: '10:00', end: '17:00' }],
+    late: [{ name: 'Dora', start: '13:00', end: '19:00' }]
   });
 });
 
@@ -113,9 +113,26 @@ test('renders a compact PDF table from the shared staffing and first-name logic'
   assert.match(html, />Ganzer Tag<\/th>/);
   assert.match(html, />Dazwischen<\/th>/);
   assert.match(html, />Spät<\/th>/);
-  assert.match(html, /<strong>1<\/strong><span>Anna<\/span>/);
-  assert.match(html, /<strong>1<\/strong><span>Ben<\/span>/);
-  assert.match(html, /<strong>1<\/strong><span>&lt;Cara&gt;<\/span>/);
-  assert.match(html, /<strong>0<\/strong><span>—<\/span>/);
+  assert.match(html, /<b>Anna<\/b> <small>09:00–14:00<\/small>/);
+  assert.match(html, /<b>Ben<\/b> <small>08:55–19:10<\/small>/);
+  assert.match(html, /<b>&lt;Cara&gt;<\/b> <small>12:00–19:00<\/small>/);
+  assert.match(html, /<strong>0<\/strong><span class="dailyStaffingPdfPeople">—<\/span>/);
   assert.doesNotMatch(html, /Müller|Schmidt|Test,/);
+});
+
+test('keeps each PDF first name and shift time together while escaping plan times', () => {
+  const day = { iso: '2026-09-14', weekdayLabel: 'Mo', date: new Date(2026, 8, 14) };
+  const employees = [
+    { id: 'one', name: 'Muster, Svenja' },
+    { id: 'two', name: 'Beispiel, Ada' }
+  ];
+  const entries = {
+    one: { sourceEntry: { start: '9:00', end: '15:00' } },
+    two: { start: '09:00', end: '14:00' }
+  };
+
+  const html = ctx.buildDailyStaffingPdfTableMarkup([day], employees, (employee) => entries[employee.id]);
+
+  assert.match(html, /class="dailyStaffingPdfPerson"><b>Svenja<\/b> <small>09:00–15:00<\/small><\/span>/);
+  assert.match(html, /class="dailyStaffingPdfPerson"><b>Ada<\/b> <small>09:00–14:00<\/small><\/span>/);
 });
