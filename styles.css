@@ -1309,10 +1309,39 @@ body.dark .ahCellSubrow {
 }
 
 .dailyStaffingGroup {
+  --staffing-color: #59636f;
+  --staffing-surface: #f1f3f5;
+  --staffing-border: #d9dee3;
   min-width: 0;
   padding: 6px 7px;
+  border: 1px solid var(--staffing-border);
   border-radius: 8px;
-  background: var(--panel);
+  background: var(--staffing-surface);
+}
+
+.dailyStaffingGroup--early {
+  --staffing-color: #39714d;
+  --staffing-surface: #edf7f0;
+  --staffing-border: #cee5d5;
+}
+
+.dailyStaffingGroup--fullDay {
+  --staffing-color: #356c99;
+  --staffing-surface: #edf5fb;
+  --staffing-border: #cddfec;
+}
+
+.dailyStaffingGroup--late {
+  --staffing-color: #76518f;
+  --staffing-surface: #f5eff9;
+  --staffing-border: #e0d2e9;
+}
+
+.dailyStaffingGroup.is-empty {
+  padding-block: 4px;
+  border-color: color-mix(in srgb, var(--staffing-border) 65%, transparent);
+  background: color-mix(in srgb, var(--staffing-surface) 55%, transparent);
+  opacity: 0.68;
 }
 
 .dailyStaffingGroupHeading {
@@ -1332,36 +1361,66 @@ body.dark .ahCellSubrow {
   height: 18px;
   padding: 0 4px;
   border-radius: 9px;
-  background: var(--accent, #2667d8);
+  background: var(--staffing-color);
   color: #fff;
   font-size: 0.68rem;
 }
 
 .dailyStaffingNames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
   margin-top: 3px;
-  overflow-wrap: anywhere;
   font-size: 0.76rem;
   line-height: 1.25;
 }
 
+.dailyStaffingName {
+  min-width: 0;
+  padding: 2px 5px;
+  overflow: hidden;
+  border: 1px solid var(--staffing-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--staffing-surface) 45%, white);
+  color: var(--staffing-color);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
+  .dailyStaffing {
+    margin-block: 7px 10px;
+  }
+
+  .dailyStaffingTitle {
+    margin-bottom: 5px;
+  }
+
   .dailyStaffingDays {
     grid-template-columns: 1fr;
+    gap: 5px;
   }
 
   .dailyStaffingGroups {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .dailyStaffingGroup {
-    display: grid;
-    grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.2fr);
-    gap: 8px;
-    align-items: start;
+    padding: 5px 6px;
+  }
+
+  .dailyStaffingDay {
+    padding: 7px;
+  }
+
+  .dailyStaffingDay h5 {
+    margin-bottom: 5px;
   }
 
   .dailyStaffingNames {
-    margin-top: 1px;
+    margin-top: 3px;
   }
 }
 
