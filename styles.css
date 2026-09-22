@@ -5088,3 +5088,5 @@ body.dark .mepTable th {
   .teamRowDetails { grid-template-columns: 1fr; }
   .teamRowDetails .employeeAvailability { grid-column: 1; }
 }
+
+.teamOrderControls{display:flex;gap:8px}.teamOrderControls button{min-height:44px;min-width:88px;touch-action:manipulation}.teamOrderControls button:disabled{opacity:.45}

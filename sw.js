@@ -41,8 +41,8 @@ const APP_FILES = [
   "./backup-utils.js",
   "./manual-month-utils.js",
   "./pdf-export.js",
-  "./xlsx-export.js",
   "./app-orchestration.js",
+  "./employee-order.js",
   "./app.js"
 ];
 
