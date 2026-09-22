@@ -58,13 +58,23 @@ function rankPlanning2CarryoverCandidates(employees, getShift, closingIso, morni
       const closing = getShift(employee, closingIso);
       const morning = getShift(employee, morningIso);
       return closing && allowedEnds.includes(closing.end) && ["08:55", "09:00"].includes(morning?.start);
-    });
+  });
   const explicit = eligible.filter(({ employee }) => isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso));
-  return (explicit.length ? explicit : eligible)
+  const candidates = explicit.length ? explicit : eligible;
+  const ids = candidates.map(item => String(item.employee.id)).sort((left, right) => left.localeCompare(right));
+  const lastOpener = candidates.reduce((latest, item) => item.history.lastIso > (latest?.history.lastIso || "") ? item : latest, null);
+  const monthSeed = Number(morningIso.slice(0, 4)) * 12 + Number(morningIso.slice(5, 7));
+  const rotationStart = ids.length
+    ? lastOpener
+      ? (ids.indexOf(String(lastOpener.employee.id)) + 1) % ids.length
+      : monthSeed % ids.length
+    : 0;
+  const rotationRank = employee => (ids.indexOf(String(employee.id)) - rotationStart + ids.length) % ids.length;
+  return candidates
     .sort((left, right) => planning2CarryoverRolePriority(right.employee) - planning2CarryoverRolePriority(left.employee)
       || left.history.count - right.history.count
       || left.history.lastIso.localeCompare(right.history.lastIso)
-      || String(left.employee.id).localeCompare(String(right.employee.id)))
+      || rotationRank(left.employee) - rotationRank(right.employee))
     .map(item => item.employee);
 }
 
