@@ -1105,7 +1105,6 @@ const backupInfoEl = document.getElementById("backupInfo");
 const saveStatusEl = document.getElementById("saveStatus");
 const btnPrintEl = document.getElementById("btnPrint");
 const btnOverviewUploadEl = document.getElementById("btnOverviewUpload");
-const btnOverviewXlsxEl = document.getElementById("btnOverviewXlsx");
 const overviewSalesWeekSelectEl = document.getElementById("overviewSalesWeekSelect");
 const overviewSalesDayChipListEl = document.getElementById("overviewSalesDayChipList");
 const overviewSalesDateEl = document.getElementById("overviewSalesDate");
@@ -3161,6 +3160,17 @@ serviceBonusInput.addEventListener("change", () => {
       const shouldCleanupPlanData = confirm("Zugehörige Plan- und Absenzdaten ebenfalls löschen?\nOK = Ja, Abbrechen = Nein (nur Stammdaten entfernen)");
       removeEmployee(emp.id, { cleanupPlanData: shouldCleanupPlanData });
     });
+    const orderControls = document.createElement("div");
+    orderControls.className = "teamOrderControls";
+    const moveUpButton = document.createElement("button");
+    moveUpButton.type = "button"; moveUpButton.textContent = "↑ Hoch"; moveUpButton.disabled = idx === 0;
+    const moveDownButton = document.createElement("button");
+    moveDownButton.type = "button"; moveDownButton.textContent = "↓ Runter"; moveDownButton.disabled = idx === state.employees.length - 1;
+    const moveEmployee = (offset) => { if (!moveEmployeeInOrder(state.employees, emp.id, offset)) return; expandedTeamEmployeeId = emp.id; saveAppState(); renderAllViews(); };
+    moveUpButton.addEventListener("click", () => moveEmployee(-1));
+    moveDownButton.addEventListener("click", () => moveEmployee(1));
+    orderControls.append(moveUpButton, moveDownButton);
+
     const manualMonthButton = document.createElement("button");
     manualMonthButton.type = "button";
     manualMonthButton.textContent = "Monats-Iststunden";
@@ -3197,7 +3207,7 @@ serviceBonusInput.addEventListener("change", () => {
       labeledField("Urlaubstage", vacationInput), labeledField("Genommen", usedVacationInfo),
       labeledField("Resturlaub", remainingVacationInfo), labeledField("Geburtsdatum", birthDateInput),
       labeledField("Dienstjubiläum", serviceBonusInput, "teamField teamCheckboxField"),
-      planning2FullDayField, availabilityDetails, manualMonthButton, removeEmployeeButton
+      planning2FullDayField, availabilityDetails, orderControls, manualMonthButton, removeEmployeeButton
     );
     row.append(primary, detailPanel);
     teamListEl.appendChild(row);
@@ -4011,31 +4021,6 @@ btnPrintEl?.addEventListener("click", async () => {
 
 btnOverviewUploadEl?.addEventListener("click", async () => {
   await uploadOverviewPdf();
-});
-
-btnOverviewXlsxEl?.addEventListener("click", () => {
-  const originalLabel = btnOverviewXlsxEl.textContent;
-  try {
-    btnOverviewXlsxEl.disabled = true;
-    btnOverviewXlsxEl.textContent = "Tabelle wird erstellt …";
-    const activeEmployees = state.employees.filter((employee) => isEmployeeActiveInMonth(employee, state.activeMonth));
-    exportOverviewXlsx({
-      activeMonth: state.activeMonth,
-      monthTitle: document.getElementById("overviewMonthTitle")?.textContent || "Monatsübersicht",
-      weeks: getCurrentMonthWeeks(),
-      employees: activeEmployees,
-      getWeekSummary: getWeekPlannerSummaryForDays,
-      getResolvedEntry: getResolvedEntryForEmployeeOnIso,
-      getPlannerCellText: getOverviewWeekPlannerCellText,
-      buildDailyStaffing: buildDailyStaffingForDays
-    });
-  } catch (error) {
-    console.error("XLSX-Export fehlgeschlagen", error);
-    alert(error?.message || "Der Tabellen-Export ist fehlgeschlagen. Bitte erneut versuchen.");
-  } finally {
-    btnOverviewXlsxEl.disabled = false;
-    btnOverviewXlsxEl.textContent = originalLabel;
-  }
 });
 
 btnExportBackupEl?.addEventListener("click", () => {

@@ -272,10 +272,11 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
       <label class="field full" id="editBranchField"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
       <label class="field" id="editAbsenceFromField" hidden><span>Von</span><input id="editAbsenceFrom" type="date"></label><label class="field" id="editAbsenceToField" hidden><span>Bis</span><input id="editAbsenceTo" type="date"></label>
     </div>
-    <div class="saveRow"><button id="copyEntry" type="button" hidden>Kopieren</button><button id="multiEntry" type="button">⊕ Mehrfach</button><button id="deleteEntry" class="danger" type="button">Löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
+    <div class="saveRow"><button id="moveEntry" type="button" hidden>Verschieben</button><button id="swapEntry" type="button" hidden>Tauschen</button><button id="copyEntry" type="button" hidden>Kopieren</button><button id="multiEntry" type="button">⊕ Mehrfach</button><button id="deleteEntry" class="danger" type="button">Löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
     <div class="previewWarning">Planning 2 verwendet die zentrale Stammdatenpflege und den gemeinsamen Plan der normalen App.</div>
   </div>
 </div>
+<div id="transferOverlay" class="overlay hidden" aria-hidden="true"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="transferTitle"><div class="sheetHead"><div><h2 id="transferTitle">Schicht verschieben</h2><div id="transferSub" class="sheetSub"></div></div><button id="closeTransfer" class="closeBtn" type="button">✕</button></div><div class="transferFields"><label class="field"><span>Mitarbeiter am selben Tag</span><select id="transferTarget"></select></label><div id="transferPreview" class="transferPreview" aria-live="polite"></div></div><div class="saveRow"><button id="cancelTransfer" type="button">Abbrechen</button><button id="confirmTransfer" class="primary" type="button">Bestätigen</button></div></div></div>
 <div id="targetedSuggestionsOverlay" class="overlay hidden" aria-hidden="true">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="targetedSuggestionsTitle">
     <div class="sheetHead"><div><h2 id="targetedSuggestionsTitle">💡 Vorschläge</h2><div id="targetedSuggestionsSub" class="sheetSub"></div></div><button id="closeTargetedSuggestions" class="closeBtn" type="button" aria-label="Vorschläge schließen">✕</button></div>
@@ -388,7 +389,6 @@ L1E-L4E ohne Abrechnung
     <div class="month-overview-actions">
       <div class="toolbarRow">
         <button id="btnOverviewUpload" type="button" class="btnSecondary">Übersicht hochladen</button>
-        <button id="btnOverviewXlsx" type="button" class="btnSecondary">Bearbeitbare Tabelle (.xlsx)</button>
       </div>
       <div class="revenue-editor internalOnly">
         <label class="revenue-editor-label" for="overviewSalesDate">Interner Tagesumsatz</label>
@@ -798,7 +798,6 @@ L1E-L4E ohne Abrechnung
 <script src="./manual-month-utils.js?v=2026-09-15-3"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 window.WOCHENPLAN_DRIVE_CONFIG = {
@@ -809,8 +808,8 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
 };
 </script>
 <script src="./pdf-export.js?v=2026-09-15-3"></script>
-<script src="./xlsx-export.js?v=2026-09-15-3"></script>
 <script src="./app-orchestration.js?v=2026-09-15-3"></script>
+<script src="./employee-order.js?v=2026-09-18-1"></script>
 <script src="./planning2-manual-tools.js?v=2026-09-15-3"></script>
 <script src="./planning2-live.js?v=2026-09-15-3"></script>
 <script src="./app.js?v=2026-09-15-3"></script>

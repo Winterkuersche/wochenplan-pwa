@@ -37,16 +37,44 @@ function isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso) {
     && (["FO", "FLEX"].includes(morning.code) || morning.shiftKey === "FO" || morning.mode === "early" || morning.shiftType === "early");
 }
 
+function getPlanning20855History(employee, getShift, morningIso) {
+  const monthStart = `${morningIso.slice(0, 7)}-01`;
+  let count = 0;
+  let lastIso = "";
+  for (let isoDate = monthStart; isoDate < morningIso; isoDate = planning2ShiftDayIso(isoDate, 1)) {
+    if (getShift(employee, isoDate)?.start !== "08:55") continue;
+    count += 1;
+    lastIso = isoDate;
+  }
+  return { count, lastIso };
+}
+
 function rankPlanning2CarryoverCandidates(employees, getShift, closingIso, morningIso, allowedEnds = ["19:10"]) {
-  const eligible = (employees || []).map((employee, index) => ({ employee, index }))
+  const eligible = (employees || []).map(employee => ({
+    employee,
+    history: getPlanning20855History(employee, getShift, morningIso)
+  }))
     .filter(({ employee }) => {
       const closing = getShift(employee, closingIso);
       const morning = getShift(employee, morningIso);
       return closing && allowedEnds.includes(closing.end) && ["08:55", "09:00"].includes(morning?.start);
-    });
+  });
   const explicit = eligible.filter(({ employee }) => isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso));
-  return (explicit.length ? explicit : eligible)
-    .sort((left, right) => planning2CarryoverRolePriority(right.employee) - planning2CarryoverRolePriority(left.employee) || left.index - right.index)
+  const candidates = explicit.length ? explicit : eligible;
+  const ids = candidates.map(item => String(item.employee.id)).sort((left, right) => left.localeCompare(right));
+  const lastOpener = candidates.reduce((latest, item) => item.history.lastIso > (latest?.history.lastIso || "") ? item : latest, null);
+  const monthSeed = Number(morningIso.slice(0, 4)) * 12 + Number(morningIso.slice(5, 7));
+  const rotationStart = ids.length
+    ? lastOpener
+      ? (ids.indexOf(String(lastOpener.employee.id)) + 1) % ids.length
+      : monthSeed % ids.length
+    : 0;
+  const rotationRank = employee => (ids.indexOf(String(employee.id)) - rotationStart + ids.length) % ids.length;
+  return candidates
+    .sort((left, right) => planning2CarryoverRolePriority(right.employee) - planning2CarryoverRolePriority(left.employee)
+      || left.history.count - right.history.count
+      || left.history.lastIso.localeCompare(right.history.lastIso)
+      || rotationRank(left.employee) - rotationRank(right.employee))
     .map(item => item.employee);
 }
 
@@ -146,4 +174,4 @@ function evaluatePlanning2CandidateFollowUpRules(candidate, context) {
   return { rules: carryoverAfter, carryoverBefore, carryoverAfter, introducedViolations, preExistingViolations, requiredFollowUpMutations, touchesCarryoverRule, valid: introducedViolations.length === 0, violations: introducedViolations };
 }
 
-if (typeof module !== "undefined") module.exports = { isPlanning2RelevantWorkday, previousPlanning2RelevantWorkday, nextPlanning2RelevantWorkday, planning2CarryoverRolePriority, isPlanning2ExplicitCarryoverOpener, rankPlanning2CarryoverCandidates, evaluatePlanning2CarryoverRule, planning2CarryoverProblem, evaluatePlanning2CandidateFollowUpRules };
+if (typeof module !== "undefined") module.exports = { isPlanning2RelevantWorkday, previousPlanning2RelevantWorkday, nextPlanning2RelevantWorkday, planning2CarryoverRolePriority, isPlanning2ExplicitCarryoverOpener, getPlanning20855History, rankPlanning2CarryoverCandidates, evaluatePlanning2CarryoverRule, planning2CarryoverProblem, evaluatePlanning2CandidateFollowUpRules };
