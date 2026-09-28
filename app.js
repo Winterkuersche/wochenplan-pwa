@@ -2873,6 +2873,7 @@ function renderTeamSetup() {
   state.employees.forEach((emp, idx) => {
     const row = document.createElement("div");
     row.className = "teamRow";
+    row.dataset.employeeId = String(emp.id);
 
     const primary = document.createElement("div");
     primary.className = "teamRowPrimary";
@@ -2898,6 +2899,15 @@ function renderTeamSetup() {
       saveAppStateDebounced();
       renderAllViews();
     });
+    nameInput.setAttribute("aria-label", `Name, Position ${idx + 1}`);
+
+    const nameControl = document.createElement("div");
+    nameControl.className = "teamNameControl";
+    const positionNumber = document.createElement("span");
+    positionNumber.className = "teamPositionNumber";
+    positionNumber.textContent = `${idx + 1} ·`;
+    positionNumber.setAttribute("aria-label", `Position ${idx + 1}`);
+    nameControl.append(positionNumber, nameInput);
 
     const roleSel = document.createElement("select");
     ROLE_OPTIONS.forEach((role) => {
@@ -3166,7 +3176,18 @@ serviceBonusInput.addEventListener("change", () => {
     moveUpButton.type = "button"; moveUpButton.textContent = "↑ Hoch"; moveUpButton.disabled = idx === 0;
     const moveDownButton = document.createElement("button");
     moveDownButton.type = "button"; moveDownButton.textContent = "↓ Runter"; moveDownButton.disabled = idx === state.employees.length - 1;
-    const moveEmployee = (offset) => { if (!moveEmployeeInOrder(state.employees, emp.id, offset)) return; expandedTeamEmployeeId = emp.id; saveAppState(); renderAllViews(); };
+    const moveEmployee = (offset) => {
+      if (!moveEmployeeInOrder(state.employees, emp.id, offset)) return;
+      expandedTeamEmployeeId = emp.id;
+      saveAppState();
+      renderTeamSetup();
+      renderAllViews();
+      window.requestAnimationFrame(() => {
+        const movedRow = Array.from(teamListEl.querySelectorAll(".teamRow"))
+          .find((candidate) => candidate.dataset.employeeId === String(emp.id));
+        movedRow?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    };
     moveUpButton.addEventListener("click", () => moveEmployee(-1));
     moveDownButton.addEventListener("click", () => moveEmployee(1));
     orderControls.append(moveUpButton, moveDownButton);
@@ -3199,7 +3220,7 @@ serviceBonusInput.addEventListener("change", () => {
     });
 
     primary.append(
-      labeledField("Name", nameInput), labeledField("Rolle", roleSel),
+      labeledField("Name", nameControl), labeledField("Rolle", roleSel),
       labeledField("Wochen-Soll", targetInput), activeFromField, activeToField,
       toggleDetailsButton
     );
