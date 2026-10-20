@@ -206,6 +206,51 @@ select {
   display: none;
 }
 
+/* Data actions have one home; keep the existing IDs for the mobile menu. */
+#topToolbar > #btnExportBackup,
+#topToolbar > #btnImportBackup { display: none; }
+
+#btnDataPanel { font-weight: 700; }
+.dataStatus { border: 0; background: transparent; color: #80611b; font-size: .8rem; }
+.dataStatus[data-mode="synced"] { color: #26704a; }
+.storageProblem { padding: 18px; margin-bottom: 18px; border: 1px solid #d69a3a; border-radius: 16px; background: #fff3db; color: #563700; }
+.dataDialog { box-sizing: border-box; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 24px; overflow-y: auto; border: 1px solid var(--border); border-radius: 24px; background: var(--panel, #fff); color: inherit; }
+.dataDialog::backdrop { background: rgba(18, 28, 43, .55); }
+.dataDialogHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.dataDialogHeader h2 { margin: 4px 0 0; font-size: 1.6rem; }
+.dataDialogHeader > button { flex-shrink: 0; }
+.dataEyebrow { margin: 0; font-size: .65rem; font-weight: 800; letter-spacing: .14em; color: #637389; }
+.dataIntro { color: #5a6675; line-height: 1.5; margin: 18px 0; }
+.dataCard { padding: 20px; border: 1px solid var(--border, #dce2ea); border-radius: 16px; margin: 16px 0; }
+.dataCard h3 { font-size: 1.05rem; margin: 0 0 12px; }
+.dataCard p { line-height: 1.5; overflow-wrap: anywhere; }
+.dataCard .small { margin: 7px 0; }
+.dataActions { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 16px; }
+.dataDialog button { min-height: 44px; white-space: normal; }
+.dataDialog button:disabled { opacity: .5; cursor: default; }
+.dataDialog .dataPrimary { background: #234f77; border-color: #234f77; color: #fff; }
+.dataRecovery { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border, #dce2ea); }
+.dataRecovery summary { cursor: pointer; font-weight: 600; min-height: 32px; }
+.cloudSignIn label, .dataActions label { display: flex; flex-direction: column; gap: 7px; font-size: .85rem; font-weight: 600; }
+.cloudSignIn { display: grid; gap: 14px; margin-top: 18px; }
+.cloudSignIn input, #cloudHistorySelect { box-sizing: border-box; width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border, #ccd5df); border-radius: 10px; font-size: 16px; background: var(--panel, white); color: inherit; }
+.dataSignOut { margin-top: 18px; font-size: .8rem; }
+.dataActionMessage { color: #9b3e22; font-weight: 600; overflow-wrap: anywhere; }
+body.dark .dataDialog { color: #f1f1f1; }
+body.dark .dataIntro, body.dark .dataEyebrow { color: #b8c4d4; }
+body.dark .dataStatus { color: #e7c477; }
+body.dark .dataStatus[data-mode="synced"] { color: #89d6ac; }
+body.dark .dataDialog input, body.dark #cloudHistorySelect { background: #232831; }
+body.dark .dataActionMessage { color: #ffbba7; }
+@media (max-width: 640px) {
+  .dataDialog { padding: 18px; }
+  .dataCard { padding: 16px; }
+  .dataActions > button { flex: 1 1 180px; }
+  #topToolbar > #btnSaveMaster { display: none; }
+  #topToolbar > .dataStatus { flex: 1 1 100%; text-align: left; order: 3; padding: 0; min-height: 24px; }
+  #topToolbar > #backupInfo { display: none; }
+}
+
 .mobileMoreMenu {
   position: absolute;
   right: 0;

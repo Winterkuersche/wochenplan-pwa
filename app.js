@@ -49,6 +49,11 @@ const BACKUP_META_KEY = "wochenplan_backup_meta_v1";
 const BACKUP_MEP_CALIBRATION_KEY = "mep-calibration";
 const LAST_SAVED_AT_KEY = "wochenplan_last_saved_at_v1";
 const AUTOSAVE_DELAY_MS = 600;
+const localDataStore = window.WochenplanStorage.create({
+  storage: () => window.localStorage,
+  keys: { master: MASTER_KEY, plan: PLAN_KEY, ui: UI_KEY, savedAt: LAST_SAVED_AT_KEY,
+    theme: "wochenplan_dark", calibration: BACKUP_MEP_CALIBRATION_KEY }
+});
 let currentDayIndex = 0;
 let autoSaveTimerId = null;
 let saveStatusTimerId = null;
@@ -1242,27 +1247,16 @@ function isEmployeeActiveInMonth(employee, yearMonth) {
 
 /* ========= STORAGE ========= */
 function loadJson(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
+  return localDataStore.readJson(key, fallback);
 }
 
 function saveJson(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch {
-    return false;
-  }
+  return localDataStore.writeJson(key, value);
 }
 
 function defaultUiState() {
   return {
-    teamCollapsed: false,
+    teamCollapsed: true,
     currentView: "week",
     mepAnonymized: false
   };
@@ -1328,8 +1322,9 @@ function refreshSaveStatusLabel() {
   }
 }
 
-function saveMasterData() {
-  return saveJson(MASTER_KEY, {
+function saveMasterData(options) {
+  const snapshotOnly = options?.snapshotOnly === true;
+  const payload = {
     employees: state.employees.map((emp) => ({
       id: emp.id,
       name: emp.name,
@@ -1351,38 +1346,46 @@ function saveMasterData() {
       activeToMonth: normalizeYearMonth(emp.activeToMonth),
       manualMonthActualMinutes: normalizeManualMonthActualMinutes(emp.manualMonthActualMinutes)
     }))
-  });
+  };
+  return snapshotOnly ? payload : saveJson(MASTER_KEY, payload);
 }
 
-function savePlanData() {
-  return saveJson(PLAN_KEY, {
+function savePlanData(options) {
+  const snapshotOnly = options?.snapshotOnly === true;
+  const payload = {
     weekFrom: state.weekFrom,
     weekTo: state.weekTo,
     schedule: state.schedule || {},
     absences: state.absences || [],
     salesByDate: state.salesByDate || {},
     monthlyPlanBaselines: normalizeMonthlyPlanBaselines(state.monthlyPlanBaselines)
-  });
+  };
+  return snapshotOnly ? payload : saveJson(PLAN_KEY, payload);
 }
 
 function saveAppState() {
   const savedAt = new Date().toISOString();
-  const masterSaved = saveMasterData();
-  const planSaved = savePlanData();
-  const uiSaved = saveUiState();
-  const savedAtPersisted = saveJson(LAST_SAVED_AT_KEY, savedAt);
+  const result = localDataStore.writeBatch({
+    [MASTER_KEY]: saveMasterData({ snapshotOnly: true }),
+    [PLAN_KEY]: savePlanData({ snapshotOnly: true }),
+    [UI_KEY]: uiState,
+    [LAST_SAVED_AT_KEY]: savedAt
+  });
 
-  if (masterSaved && planSaved && uiSaved && savedAtPersisted) {
+  if (result.ok) {
     lastSavedAt = savedAt;
-    updateSaveStatus("Gespeichert", { hideAfterMs: 2500 });
+    updateSaveStatus("Auf diesem Gerät gespeichert", { hideAfterMs: 2500 });
+    window.dispatchEvent(new CustomEvent("wochenplan:saved"));
     return true;
   }
 
-  updateSaveStatus("Speichern fehlgeschlagen", { isError: true, hideAfterMs: 4000 });
+  updateSaveStatus(result.error, { isError: true });
+  window.dispatchEvent(new CustomEvent("wochenplan:storage-error"));
   return false;
 }
 
 function saveAppStateDebounced() {
+  updateSaveStatus("Änderungen werden gespeichert …");
   if (autoSaveTimerId) {
     clearTimeout(autoSaveTimerId);
   }
@@ -1394,6 +1397,9 @@ function saveAppStateDebounced() {
 }
 
 function flushPendingAutoSave() {
+  if (overviewRevenueDebounceTimerId) {
+    saveOverviewRevenueFromEditor({ source: "debounce", showValidationErrors: false });
+  }
   if (!autoSaveTimerId) return;
   clearTimeout(autoSaveTimerId);
   autoSaveTimerId = null;
@@ -1409,14 +1415,14 @@ function loadAppState() {
     schedule: validatedSchedule,
     report: scheduleValidationReport
   } = validateNormalizedSchedule(normalizedSchedule, { logWarnings: true });
-  const shouldPersistNormalizedSchedule = JSON.stringify(rawPlan.schedule || {}) !== JSON.stringify(validatedSchedule);
-
-  if (shouldPersistNormalizedSchedule) {
-    saveJson(PLAN_KEY, {
-      ...rawPlan,
-      schedule: validatedSchedule
-    });
+  const originalEntryCount = Object.values(rawPlan.schedule || {}).reduce((sum, day) => sum + Object.keys(day || {}).length, 0);
+  const loadedEntryCount = Object.values(validatedSchedule).reduce((sum, day) => sum + Object.keys(day).length, 0);
+  if (loadedEntryCount < originalEntryCount) {
+    localDataStore.protect("Nicht alle gespeicherten Einträge konnten geladen werden. Automatisches Speichern ist zum Schutz der Originaldaten angehalten.");
   }
+
+  // Persist normalization only through the next journaled save. The original
+  // input must remain recoverable if a migration changes or drops entries.
 
   return {
     ui: loadUiState(),
@@ -2464,23 +2470,19 @@ function updateBackupInfoLabel() {
 }
 
 function collectFullBackupSnapshot() {
-  const planData = loadJson(PLAN_KEY, defaultPlanState());
-  if (planData && typeof planData === "object") {
-    delete planData.salesByDate;
-  }
-
+  const savedTheme = loadJson("wochenplan_dark", null);
   return {
-    backupVersion: 1,
+    backupVersion: 2,
     app: {
       name: APP_META.name,
       version: APP_META.version
     },
     createdAt: new Date().toISOString(),
     storage: {
-      [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
-      [PLAN_KEY]: planData,
-      [UI_KEY]: loadUiState(),
-      ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
+      [MASTER_KEY]: saveMasterData({ snapshotOnly: true }),
+      [PLAN_KEY]: savePlanData({ snapshotOnly: true }),
+      [UI_KEY]: { ...uiState },
+      ["wochenplan_dark"]: savedTheme === null ? null : String(savedTheme),
       [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
     }
   };
@@ -2498,7 +2500,8 @@ function triggerBackupDownload(snapshot, filename = `wochenplan-backup-${formatI
   a.click();
   a.remove();
 
-  URL.revokeObjectURL(url);
+  // WebKit may start reading the blob after the synthetic click returns.
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function collectPlanning2TransferSnapshot() {
@@ -2547,8 +2550,18 @@ async function exportPlanning2Transfer() {
 
 function exportBackup() {
   try {
-    saveAppState();
-
+    if (localDataStore.problemKind === "stale") {
+      triggerBackupDownload(collectFullBackupSnapshot(), `wochenplan-offene-aenderungen-${formatIsoDateForFileName()}.json`);
+      alert("Deine offenen Änderungen wurden als Datei gesichert. Lade diese Ansicht neu, bevor du weiterplanst.");
+      return;
+    }
+    if (localDataStore.blocked) {
+      triggerBackupDownload(localDataStore.exportRaw(), `wochenplan-rohdaten-${formatIsoDateForFileName()}.json`);
+      alert("Die unveränderten Rohdaten wurden zur Rettung exportiert. Diese Datei bitte aufbewahren.");
+      return;
+    }
+    // Include the in-memory state even when a full device cannot save it.
+    flushPendingAutoSave();
     const snapshot = collectFullBackupSnapshot();
     triggerBackupDownload(snapshot);
 
@@ -2563,13 +2576,17 @@ function exportBackup() {
   }
 }
 
-function importBackupFromObject(backupData) {
+function importBackupFromObject(backupData, options) {
+  options = options || {};
   const validationResult = validateAndNormalizeBackupData(backupData);
   if (validationResult.error || !validationResult.backup) {
     throw new Error(validationResult.error || "Die Sicherungsdatei ist ungültig.");
   }
 
   const normalizedBackup = validationResult.backup;
+  if (!localDataStore.blocked && autoSaveTimerId && !saveAppState()) {
+    throw new Error("Offene Änderungen konnten nicht gesichert werden. Bitte zuerst als Datei exportieren.");
+  }
   const storage = normalizedBackup.storage;
   const normalizedMaster = {
     ...defaultMasterState(),
@@ -2590,60 +2607,28 @@ function importBackupFromObject(backupData) {
     absences: normalizeAbsences(normalizedPlanInput.absences || []),
     monthlyPlanBaselines: normalizeMonthlyPlanBaselines(normalizedPlanInput.monthlyPlanBaselines)
   };
-  delete normalizedPlan.salesByDate;
-  const normalizedUi = sanitizeUiState(storage[UI_KEY], defaultUiState);
-
-  const preImportSnapshot = {
-    savedAt: new Date().toISOString(),
-    source: "pre-import",
-    storage: {
-      [MASTER_KEY]: loadJson(MASTER_KEY, defaultMasterState()),
-      [PLAN_KEY]: (() => {
-        const planData = loadJson(PLAN_KEY, defaultPlanState());
-        if (planData && typeof planData === "object") {
-          delete planData.salesByDate;
-        }
-        return planData;
-      })(),
-      [UI_KEY]: loadUiState(),
-      ["wochenplan_dark"]: localStorage.getItem("wochenplan_dark"),
-      [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
-    }
-  };
-
-  saveJson(BACKUP_INTERNAL_KEY, preImportSnapshot);
-  saveJson(LAST_BACKUP_BEFORE_IMPORT_KEY, preImportSnapshot);
-
-  const masterSaved = saveJson(MASTER_KEY, normalizedMaster);
-  const planSaved = saveJson(PLAN_KEY, normalizedPlan);
-  const uiSaved = saveJson(UI_KEY, normalizedUi);
-
-  try {
-    if (storage["wochenplan_dark"] === "true" || storage["wochenplan_dark"] === "false") {
-      localStorage.setItem("wochenplan_dark", storage["wochenplan_dark"]);
-    } else {
-      localStorage.removeItem("wochenplan_dark");
-    }
-
-    if (storage[BACKUP_MEP_CALIBRATION_KEY] && typeof storage[BACKUP_MEP_CALIBRATION_KEY] === "object") {
-      saveJson(BACKUP_MEP_CALIBRATION_KEY, storage[BACKUP_MEP_CALIBRATION_KEY]);
-    } else {
-      localStorage.removeItem(BACKUP_MEP_CALIBRATION_KEY);
-    }
-  } catch {
-    // continue: core backup data is already restored as far as possible
-  }
-
-  if (!masterSaved || !planSaved || !uiSaved) {
-    throw new Error("Die Sicherungsdaten konnten nicht vollständig gespeichert werden.");
-  }
+  const beforeCount = getBackupSummary(normalizedBackup).entries;
+  const afterCount = Object.values(validatedSchedule).reduce((count, day) => count + Object.keys(day).length, 0);
+  if (afterCount < beforeCount) throw new Error("Einträge könnten nicht vollständig übernommen werden. Der Import wurde abgebrochen; die Originaldatei bleibt erhalten.");
+  const normalizedUi = options.preserveUi ? uiState : sanitizeUiState(storage[UI_KEY], defaultUiState);
+  const result = localDataStore.writeBatch({
+    [MASTER_KEY]: normalizedMaster,
+    [PLAN_KEY]: normalizedPlan,
+    [UI_KEY]: normalizedUi,
+    [LAST_SAVED_AT_KEY]: new Date().toISOString(),
+    ["wochenplan_dark"]: storage["wochenplan_dark"] ?? undefined,
+    [BACKUP_MEP_CALIBRATION_KEY]: storage[BACKUP_MEP_CALIBRATION_KEY] ?? undefined
+  }, { allowRecovery: true, source: options.source || "import" });
+  if (!result.ok) throw new Error(result.error);
+  if (autoSaveTimerId) clearTimeout(autoSaveTimerId);
+  autoSaveTimerId = null;
 
   saveJson(BACKUP_META_KEY, {
-    lastExportAt: normalizedBackup.createdAt || new Date().toISOString(),
+    ...loadJson(BACKUP_META_KEY, {}),
     lastImportAt: new Date().toISOString()
   });
 
-  window.location.reload();
+  if (options.reload !== false) window.location.reload();
 }
 
 function handleBackupImportFile(file) {
@@ -2654,7 +2639,11 @@ function handleBackupImportFile(file) {
     try {
       const text = typeof reader.result === "string" ? reader.result : "";
       const parsed = JSON.parse(text);
-
+      const validation = validateAndNormalizeBackupData(parsed);
+      if (validation.error) throw new Error(validation.error);
+      const summary = getBackupSummary(validation.backup);
+      const when = formatDateTimeForDisplay(parsed.createdAt || parsed.savedAt);
+      if (!confirm(`Sicherung vom ${when}\n${summary.employees} Mitarbeitende · ${summary.shifts} Schichten\nZeitraum: ${summary.firstDate || "–"} bis ${summary.lastDate || "–"}\n\nDiesen Stand übernehmen? Der bisherige lokale Stand wird zur Wiederherstellung aufbewahrt.`)) return;
       importBackupFromObject(parsed);
     } catch (error) {
       const message = error instanceof Error
@@ -4054,14 +4043,7 @@ document.getElementById("btnExportPlanning2")?.addEventListener("click", async (
 
 btnImportBackupEl?.addEventListener("click", () => {
   if (!backupFileInputEl) return;
-
-  flushPendingAutoSave();
-  saveAppState();
-
-  if (!confirm("Der aktuelle Stand wird überschrieben. Import jetzt durchführen?")) {
-    return;
-  }
-
+  // Choose and inspect first. Do not overwrite unreadable data with defaults.
   backupFileInputEl.value = "";
   backupFileInputEl.click();
 });
@@ -4176,6 +4158,10 @@ window.addEventListener("pageshow", () => {
   scheduleResponsiveViewRefresh({ force: true });
 }, { passive: true });
 window.addEventListener("beforeunload", () => {
+  flushPendingAutoSave();
+});
+
+window.addEventListener("pagehide", () => {
   flushPendingAutoSave();
 });
 
