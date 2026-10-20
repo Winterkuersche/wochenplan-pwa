@@ -108,3 +108,38 @@ test('backup normalization and restore envelope preserve multiple monthly baseli
   assert.deepEqual(JSON.parse(JSON.stringify(restoredPlan.monthlyPlanBaselines)), baselines);
   assert.deepEqual(Object.keys(restoredPlan.monthlyPlanBaselines), ['2026-09', '2026-10']);
 });
+
+test('backup normalization preserves sales and optional MEP calibration', () => {
+  const backup = { storage: {
+    wochenplan_master_v1: { employees: [] }, wochenplan_plan_v1: { salesByDate: { '2026-10-20': 450 } }, wochenplan_ui_v1: {},
+    'mep-calibration': { x: 42 }
+  } };
+  const result = ctx.validateAndNormalizeBackupData(backup);
+  assert.equal(result.error, '');
+  assert.equal(result.backup.storage.wochenplan_plan_v1.salesByDate['2026-10-20'], 450);
+  assert.equal(result.backup.storage['mep-calibration'].x, 42);
+});
+
+test('backup validation rejects array-shaped plan and UI containers', () => {
+  for (const key of ['wochenplan_plan_v1', 'wochenplan_ui_v1']) {
+    const backup = { storage: { wochenplan_master_v1: { employees: [] }, wochenplan_plan_v1: {}, wochenplan_ui_v1: {} } };
+    backup.storage[key] = [];
+    assert.notEqual(ctx.validateBackupData(backup), '');
+  }
+});
+
+test('backup validation rejects malformed schedule and absences instead of importing an empty plan', () => {
+  for (const plan of [{ schedule: [] }, { schedule: null }, { absences: {} }]) {
+    assert.notEqual(ctx.validateBackupData({ master: { employees: [] }, plan, ui: {} }), '');
+  }
+});
+
+test('backup preview counts working shifts separately from vacation and off entries', () => {
+  const summary = ctx.getBackupSummary({ master: { employees: [{ id: 'one' }] }, plan: { schedule: {
+    '2026-10-20': { one: { type: 'shift' }, two: { type: 'vacation' } }, '2026-10-21': { one: { type: 'off' } }
+  } }, ui: {} });
+  assert.equal(summary.shifts, 1);
+  assert.equal(summary.entries, 3);
+  assert.equal(summary.firstDate, '2026-10-20');
+  assert.equal(summary.lastDate, '2026-10-21');
+});

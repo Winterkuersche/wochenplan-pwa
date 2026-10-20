@@ -27,14 +27,10 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 
 <div>
 <h1>Wochenplan</h1>
-<div class="small">Mo-Sa · Stammdaten + 5 Ansichten</div>
+<div class="small">Dein Team. Deine Woche.</div>
 </div>
 
 <div class="viewSwitch" id="viewSwitch">
-
-<button id="btnViewDay" class="viewBtn">
-Urlaub
-</button>
 
 <button id="btnViewWeek" class="viewBtn active">
 Wochenplan
@@ -42,6 +38,10 @@ Wochenplan
 
 <button id="btnViewMonth" class="viewBtn">
 Monat
+</button>
+
+<button id="btnViewDay" class="viewBtn">
+Urlaub
 </button>
 
 <button id="btnViewOverview" class="viewBtn">
@@ -97,12 +97,15 @@ Noch frei
 
 <div id="topToolbar" class="toolbar compactToolbar">
 
+<button id="btnDataPanel" type="button" aria-haspopup="dialog" aria-controls="dataDialog">Daten &amp; Sicherung</button>
+<button id="dataStatus" type="button" class="dataStatus" aria-label="Speicherstatus und Sicherungen öffnen">Nur auf diesem Gerät</button>
+
 <button id="btnToggleTeam">
 Team ausblenden
 </button>
 
 <button id="btnSaveMaster">
-Stammdaten speichern
+Jetzt speichern
 </button>
 
 <div class="mobileMoreWrap">
@@ -156,6 +159,75 @@ Drucken / PDF
 </div>
 
 </header>
+
+<section id="storageProblem" class="storageProblem hidden no-print" role="alert">
+  <strong>Deine gespeicherten Daten brauchen Aufmerksamkeit</strong>
+  <p id="storageProblemText"></p>
+  <button id="btnStorageHelp" type="button">Sicherung &amp; Wiederherstellung öffnen</button>
+</section>
+
+<dialog id="dataDialog" class="dataDialog no-print" aria-labelledby="dataDialogTitle">
+  <div class="dataDialogHeader">
+    <div><p class="dataEyebrow">DEINE PLANUNG</p><h2 id="dataDialogTitle">Daten &amp; Sicherung</h2></div>
+    <button id="btnCloseData" type="button" aria-label="Daten und Sicherung schließen">Schließen</button>
+  </div>
+  <p class="dataIntro">Ein Plan für Safari, Home-Bildschirm-App und Laptop. Verbinde sie über dasselbe Konto.</p>
+  <section class="dataCard" aria-labelledby="dataLocalTitle">
+    <h3 id="dataLocalTitle">Auf diesem Gerät</h3>
+    <strong id="dataLocalSummary"></strong>
+    <p id="dataLocalDate" class="small"></p>
+    <p id="dataLocalSaved" class="small"></p>
+    <p id="dataLocalContext" class="small"></p>
+    <div class="dataActions">
+      <button id="btnDataExport" type="button" class="dataPrimary">Sicherung herunterladen</button>
+      <button id="btnDataImport" type="button">Sicherung importieren</button>
+    </div>
+    <details class="dataRecovery"><summary>Lokalen Stand wiederherstellen</summary>
+      <p class="small">Der vorherige Stand wird auf diesem Gerät aufbewahrt. Eine heruntergeladene oder Online-Sicherung schützt zusätzlich vor dem Verlust des Gerätespeichers.</p>
+      <div class="dataActions">
+        <button id="btnRestoreLocal" type="button" disabled>Vorherigen Stand wiederherstellen</button>
+        <button id="btnRawExport" type="button">Rohdaten zur Rettung sichern</button>
+      </div>
+    </details>
+  </section>
+  <section class="dataCard" aria-labelledby="cloudTitle">
+    <h3 id="cloudTitle">Auch online sichern</h3>
+    <p id="cloudMessage" role="status" aria-live="polite">Melde dich auf beiden Geräten mit demselben Konto an.</p>
+    <form id="cloudSignIn" class="cloudSignIn">
+      <label for="cloudEmail">E-Mail<input id="cloudEmail" type="email" autocomplete="username" inputmode="email" required></label>
+      <label for="cloudPassword">Passwort<input id="cloudPassword" type="password" autocomplete="current-password" minlength="8" required></label>
+      <div class="dataActions">
+        <button id="btnCloudLogin" type="submit" class="dataPrimary" data-network>Anmelden</button>
+        <button id="btnCloudRegister" type="button" data-network>Konto erstellen</button>
+      </div>
+      <p class="small">Beim ersten Mal „Konto erstellen“ wählen und die E-Mail bestätigen. Dein Plan wird erst hochgeladen, wenn du ihn auswählst.</p>
+      <button id="btnCloudResetPassword" type="button" data-network>Passwort vergessen?</button>
+    </form>
+    <form id="cloudRecovery" class="cloudSignIn hidden">
+      <label for="cloudNewPassword">Neues Passwort<input id="cloudNewPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button type="submit" class="dataPrimary" data-network>Neues Passwort speichern</button>
+    </form>
+    <div id="cloudSignedIn" class="hidden">
+      <p id="cloudAccount" class="small"></p>
+      <p id="cloudRemoteSummary" class="small"></p>
+      <div class="dataActions">
+        <button id="btnCloudUpload" type="button" class="dataPrimary" data-network>Jetzt online sichern</button>
+        <button id="btnCloudDownload" type="button" data-network>Online-Stand übernehmen</button>
+        <button id="btnCloudRefresh" type="button" data-network>Stand abgleichen</button>
+      </div>
+      <details class="dataRecovery"><summary>Online-Sicherungsverlauf</summary>
+        <p class="small">Frühere Stände als Datei herunterladen und bei Bedarf importieren.</p>
+        <button id="btnCloudHistory" type="button" data-network>Sicherungen anzeigen</button>
+        <div id="cloudHistoryActions" class="dataActions hidden">
+          <label for="cloudHistorySelect">Gesicherter Stand<select id="cloudHistorySelect"></select></label>
+          <button id="btnCloudHistoryExport" type="button" data-network>Als Datei herunterladen</button>
+        </div>
+      </details>
+      <button id="btnCloudSignOut" type="button" class="dataSignOut" data-network>Auf diesem Gerät abmelden</button>
+    </div>
+  </section>
+  <p id="dataActionMessage" class="dataActionMessage" role="status" aria-live="polite"></p>
+</dialog>
 
 <section id="mobileErrorPanel" class="mobileErrorPanel hidden no-print" role="status" aria-live="assertive">
   <div class="mobileErrorPanelHeader">
@@ -769,33 +841,33 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-09-28-1"></script>
-<script src="./holidays.js?v=2026-09-28-1"></script>
-<script src="./time-utils.js?v=2026-09-28-1"></script>
-<script src="./employee-availability.js?v=2026-09-28-1"></script>
-<script src="./shift-rules.js?v=2026-09-28-1"></script>
-<script src="./date-utils.js?v=2026-09-28-1"></script>
-<script src="./shift-utils.js?v=2026-09-28-1"></script>
-<script src="./status-utils.js?v=2026-09-28-1"></script>
-<script src="./contract-models.js?v=2026-09-28-1"></script>
-<script src="./absences.js?v=2026-09-28-1"></script>
-<script src="./planning2-domain-helpers.js?v=2026-09-28-1"></script>
-<script src="./planning2-carryover.js?v=2026-09-28-1"></script>
-<script src="./planning2-mutation-packages.js?v=2026-09-28-1"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-09-28-1"></script>
-<script src="./planning2-data-adapter.js?v=2026-09-28-1"></script>
-<script src="./vacation-utils.js?v=2026-09-28-1"></script>
-<script src="./day-resolution.js?v=2026-09-28-1"></script>
-<script src="./month-engine.js?v=2026-09-28-1"></script>
-<script src="./daily-staffing.js?v=2026-09-28-1"></script>
-<script src="./day-view.js?v=2026-09-28-1"></script>
-<script src="./week-view.js?v=2026-09-28-1"></script>
-<script src="./mep-view.js?v=2026-09-28-1"></script>
-<script src="./month-view.js?v=2026-09-28-1"></script>
-<script src="./balance-utils.js?v=2026-09-28-1"></script>
-<script src="./monthly-plan-baselines.js?v=2026-09-28-1"></script>
-<script src="./backup-utils.js?v=2026-09-28-1"></script>
-<script src="./manual-month-utils.js?v=2026-09-28-1"></script>
+<script src="./version.js?v=2026-10-20-1"></script>
+<script src="./holidays.js?v=2026-10-20-1"></script>
+<script src="./time-utils.js?v=2026-10-20-1"></script>
+<script src="./employee-availability.js?v=2026-10-20-1"></script>
+<script src="./shift-rules.js?v=2026-10-20-1"></script>
+<script src="./date-utils.js?v=2026-10-20-1"></script>
+<script src="./shift-utils.js?v=2026-10-20-1"></script>
+<script src="./status-utils.js?v=2026-10-20-1"></script>
+<script src="./contract-models.js?v=2026-10-20-1"></script>
+<script src="./absences.js?v=2026-10-20-1"></script>
+<script src="./planning2-domain-helpers.js?v=2026-10-20-1"></script>
+<script src="./planning2-carryover.js?v=2026-10-20-1"></script>
+<script src="./planning2-mutation-packages.js?v=2026-10-20-1"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-10-20-1"></script>
+<script src="./planning2-data-adapter.js?v=2026-10-20-1"></script>
+<script src="./vacation-utils.js?v=2026-10-20-1"></script>
+<script src="./day-resolution.js?v=2026-10-20-1"></script>
+<script src="./month-engine.js?v=2026-10-20-1"></script>
+<script src="./daily-staffing.js?v=2026-10-20-1"></script>
+<script src="./day-view.js?v=2026-10-20-1"></script>
+<script src="./week-view.js?v=2026-10-20-1"></script>
+<script src="./mep-view.js?v=2026-10-20-1"></script>
+<script src="./month-view.js?v=2026-10-20-1"></script>
+<script src="./balance-utils.js?v=2026-10-20-1"></script>
+<script src="./monthly-plan-baselines.js?v=2026-10-20-1"></script>
+<script src="./backup-utils.js?v=2026-10-20-1"></script>
+<script src="./manual-month-utils.js?v=2026-10-20-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -807,12 +879,17 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-09-28-1"></script>
-<script src="./app-orchestration.js?v=2026-09-28-1"></script>
-<script src="./employee-order.js?v=2026-09-28-1"></script>
-<script src="./planning2-manual-tools.js?v=2026-09-28-1"></script>
-<script src="./planning2-live.js?v=2026-09-28-1"></script>
-<script src="./app.js?v=2026-09-28-1"></script>
+<script src="./pdf-export.js?v=2026-10-20-1"></script>
+<script src="./app-orchestration.js?v=2026-10-20-1"></script>
+<script src="./employee-order.js?v=2026-10-20-1"></script>
+<script src="./planning2-manual-tools.js?v=2026-10-20-1"></script>
+<script src="./planning2-live.js?v=2026-10-20-1"></script>
+<script src="./storage-utils.js?v=2026-10-20-1"></script>
+<script src="./cloud-config.js?v=2026-10-20-1"></script>
+<script src="./vendor/supabase-2.118.0.js?v=2026-09-28-1"></script>
+<script src="./cloud-sync.js?v=2026-10-20-1"></script>
+<script src="./app.js?v=2026-10-20-1"></script>
+<script src="./data-panel.js?v=2026-10-20-1"></script>
 
 
 <script>
@@ -840,6 +917,7 @@ if ("serviceWorker" in navigator) {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (refreshing) return;
         refreshing = true;
+        if (typeof flushPendingAutoSave === "function") flushPendingAutoSave();
         window.location.reload();
       });
     } catch (err) {

@@ -2,7 +2,18 @@
   "name": "wochenplan-pwa",
   "private": true,
   "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tools/browser-data-smoke.js && node tools/browser-cloud-smoke.js",
+    "vendor:supabase": "node tools/vendor-supabase.js",
+    "sync:asset-version": "node tools/sync-index-script-version.js",
+    "check:all": "npm test && npm run check:globals && npm run check:sw",
     "check:sw": "node tools/check-sw-precache-assets.js",
     "check:globals": "node tools/check-global-helper-collisions.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
   }
 }

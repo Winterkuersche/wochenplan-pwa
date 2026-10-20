@@ -7,6 +7,9 @@ function getNormalizedStoragePayload(storageLike = {}) {
     [UI_KEY]: storageLike[UI_KEY] ?? storageLike.ui ?? storageLike.uiState ?? null,
     wochenplan_dark: storageLike.wochenplan_dark
   };
+  if (Object.prototype.hasOwnProperty.call(storageLike, "mep-calibration")) {
+    normalizedStorage["mep-calibration"] = storageLike["mep-calibration"];
+  }
 
   if (!normalizedStorage[MASTER_KEY] && !normalizedStorage[PLAN_KEY] && !normalizedStorage[UI_KEY]) {
     return null;
@@ -50,21 +53,43 @@ function validateBackupData(backup, options = {}) {
   }
 
   const master = normalizedBackup.storage[MASTER_KEY];
-  if (!master || typeof master !== "object" || !Array.isArray(master.employees)) {
+  if (!master || typeof master !== "object" || Array.isArray(master) || !Array.isArray(master.employees)) {
     return "Die Stammdaten in der Sicherungsdatei sind ungültig.";
   }
 
   const plan = normalizedBackup.storage[PLAN_KEY];
-  if (!plan || typeof plan !== "object") {
+  if (!plan || typeof plan !== "object" || Array.isArray(plan)) {
     return "Die Planungsdaten in der Sicherungsdatei sind ungültig.";
+  }
+  if (plan.schedule !== undefined && (!plan.schedule || typeof plan.schedule !== "object" || Array.isArray(plan.schedule))) {
+    return "Die Schichten in der Sicherungsdatei sind ungültig.";
+  }
+  if (plan.absences !== undefined && !Array.isArray(plan.absences)) {
+    return "Die Abwesenheiten in der Sicherungsdatei sind ungültig.";
   }
 
   const ui = normalizedBackup.storage[UI_KEY];
-  if (!ui || typeof ui !== "object") {
+  if (!ui || typeof ui !== "object" || Array.isArray(ui)) {
     return "Die Einstellungen in der Sicherungsdatei sind ungültig.";
   }
 
   return "";
+}
+
+function getBackupSummary(backup) {
+  const storage = normalizeBackupPayload(backup)?.storage || {};
+  const plan = storage[PLAN_KEY] || {};
+  const schedule = plan.schedule || {};
+  const dates = Object.keys(schedule).filter((date) => Object.keys(schedule[date] || {}).length).sort();
+  let entries = 0;
+  let shifts = 0;
+  dates.forEach((date) => Object.values(schedule[date] || {}).forEach((entry) => {
+    if (!entry || typeof entry !== "object") return;
+    entries += 1;
+    if (entry.type === "shift" || entry.status === "work" || entry.status === "shift") shifts += 1;
+  }));
+  return { employees: storage[MASTER_KEY]?.employees?.length || 0, entries, shifts,
+    absences: plan.absences?.length || 0, firstDate: dates[0] || "", lastDate: dates[dates.length - 1] || "" };
 }
 
 function validateAndNormalizeBackupData(backup) {
