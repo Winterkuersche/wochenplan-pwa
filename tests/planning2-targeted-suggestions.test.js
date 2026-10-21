@@ -126,3 +126,13 @@ test('apply path revalidates fresh state, stores one undo snapshot, and uses ato
   assert.match(apply, /planning2Data\.savePlan\(prepared\.plan\)/);
   assert.match(apply, /nicht mehr aktuell/);
 });
+
+test('a candidate rejected by final package simulation is not offered as actionable', () => {
+  const service = createPlanning2TargetedSuggestionService({
+    generateCandidates: () => ({ candidates: [candidate('blocked'),candidate('allowed')], rejected: [] }),
+    generatePackages: () => ({ packages: [] }), rankCandidates: values => values,
+    simulatePackage: (_context, value) => ({ valid: value.candidateId !== 'blocked', coverageFacts: {} })
+  });
+  const result=service.request({days:[targetDay]},problem);
+  assert.deepEqual(result.suggestions.map(value=>value.candidateId),['allowed']);
+});

@@ -6,7 +6,7 @@ const {chromium, webkit} = require('playwright');
 const day='2026-10-20';
 const fixture={backupVersion:2,storage:{
  wochenplan_master_v10:{employees:[{id:'a',name:'Test Alpha',roleKey:'TZ20',target:'20:00',manualMonthActualMinutes:{'2026-10':600}},{id:'b',name:'Test Beta',roleKey:'TZ20',target:'20:00'},{id:'c',name:'Test Gamma',roleKey:'GFB',target:'9:30'}]},
- wochenplan_plan_v10:{weekFrom:'2026-10-19',weekTo:'2026-10-25',schedule:{[day]:{a:{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0},b:{type:'shift',code:'L5',start:'14:00',end:'19:00',minutes:300,pause:0}}},absences:[],salesByDate:{[day]:500},monthlyPlanBaselines:{}},
+ wochenplan_plan_v10:{weekFrom:'2026-10-19',weekTo:'2026-10-25',schedule:{[day]:{a:{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0},b:{type:'shift',code:'L5',start:'14:00',end:'19:00',minutes:300,pause:0}},'2026-10-23':Object.fromEntries(['a','b','c'].map(id=>[id,{type:'off',status:'off',code:'FR',label:'FR',minutes:0}]))},absences:[],salesByDate:{[day]:500},monthlyPlanBaselines:{}},
  wochenplan_ui_v10:{currentView:'week',teamCollapsed:true}}};
 async function main(){
  const root=process.cwd(),server=http.createServer((req,res)=>{
@@ -50,7 +50,7 @@ async function main(){
   assert.equal(await page.locator('#planningSuggestionsToggle').getAttribute('aria-pressed'),'false');
   assert.equal(await page.locator('[data-targeted-day]').count(),0);await page.locator('#planningSuggestionsToggle').click();
   const revisionBeforeSuggestions=JSON.stringify(await read());
-  await page.locator('[data-targeted-day]').first().click();assert.equal(await page.locator('#targetedSuggestionsOverlay').isVisible(),true);
+  await page.locator('[data-targeted-day="'+day+'"]').first().click();assert.equal(await page.locator('#targetedSuggestionsOverlay').isVisible(),true);
   assert.equal(JSON.stringify(await read()),revisionBeforeSuggestions,'requesting suggestions must never change the plan');
   const suggested=page.locator('[data-targeted-apply]');
   assert.ok(await suggested.count()>0,'The synthetic future week must offer an eligible change');
@@ -75,7 +75,7 @@ async function main(){
   await offline.route('https://**/*',route=>route.abort());
   const offlinePage=await offline.newPage();offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
   await offlinePage.goto(url);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-  await offlinePage.evaluate(()=>navigator.serviceWorker.ready.then(()=>true));
+  await offlinePage.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.active),null,{timeout:20000});
   await offlinePage.reload();await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true&&Boolean(navigator.serviceWorker.controller));
   await offlinePage.locator('#btnDataPanel').click();
   await Promise.all([offlinePage.waitForEvent('load'),offlinePage.locator('#backupFileInput').setInputFiles({name:'offline-synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);

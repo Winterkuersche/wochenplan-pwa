@@ -26,8 +26,8 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
    Ein Eintrag führt zum betroffenen Tag oder Stundenkonto.
 6. **Vorschläge:** „Vorschläge auf Abruf“ aktiviert die vorhandene Pipeline nur für
    die laufende Sitzung. Erst ein Klick auf eine konkrete Besetzungslücke startet
-   die Berechnung. Es werden höchstens drei Vorschläge angeboten. Anfordern
-   verändert keine Daten. Übernahme prüft den aktuellen Plan erneut, verwendet den
+   die Berechnung. Es werden höchstens drei Vorschläge angeboten. Kandidaten, die die abschließende Paketsimulation ablehnt, werden nicht angeboten.
+   Anfordern verändert keine Daten. Übernahme prüft den aktuellen Plan erneut, verwendet den
    zentralen Speicherweg und lässt sich zurücknehmen. Keine Hintergrundoptimierung.
 
 ## Nachweise
@@ -45,7 +45,7 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
   Speichern durch die Filialverwaltung und Übernahme auf einem zweiten Testgerät.
 - Bestehende fachliche Vorschlags-, Rechte-, Revisions- und Pakettests bleiben bestehen.
 
-Lokaler Stand vor GitHub-Browserprüfung: 544 Tests bestanden; Helper-, Precache-,
+Lokaler Stand vor GitHub-Browserprüfung: 545 Tests bestanden; Helper-, Precache-,
 Syntax- und Versionsprüfung erfolgreich. Browserinstallation wurde durch die
 lokale Freigabeprüfung blockiert; Chromium/WebKit werden in GitHub Actions geprüft.
 Die echte SV-Abnahme und ein realer Service-Worker-Updatewechsel bleiben gesondert

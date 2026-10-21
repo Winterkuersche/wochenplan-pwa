@@ -107,9 +107,10 @@
       const toSuggestion = candidate => {
         const mutations = [...(candidate.mutations || []), ...(candidate.requiredFollowUpMutations || [])];
         const simulation = typeof simulatePackage === "function" ? simulatePackage(targetContext, { ...candidate, packageType: "TARGETED_CANDIDATE", mutations }) : null;
+        if (simulation?.valid === false) return null;
         return candidateAsPackage(candidate, simulation);
       };
-      const rankedCandidates = rankCandidates ? rankCandidates(valid).map(toSuggestion) : valid.map(toSuggestion);
+      const rankedCandidates = (rankCandidates ? rankCandidates(valid) : valid).map(toSuggestion).filter(Boolean);
       const rankedPackages = rankPackages ? rankPackages(validPackages) : validPackages;
       const combined = [...rankedPackages, ...rankedCandidates].map((item, stableIndex) => ({ ...item, targetedRankingFacts: centralRankingFacts(item), targetedStableIndex: stableIndex }));
       if (typeof compareCentralFacts === "function") combined.sort((left, right) => compareCentralFacts(left.targetedRankingFacts, right.targetedRankingFacts) || left.targetedStableIndex - right.targetedStableIndex);
