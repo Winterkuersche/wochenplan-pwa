@@ -46,11 +46,12 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
   Speichern durch die Filialverwaltung und Übernahme auf einem zweiten Testgerät.
 - Bestehende fachliche Vorschlags-, Rechte-, Revisions- und Pakettests bleiben bestehen.
 
-Lokaler Stand vor GitHub-Browserprüfung: 547 Tests bestanden; Helper-, Precache-,
-Syntax- und Versionsprüfung erfolgreich. Browserinstallation wurde durch die
-lokale Freigabeprüfung blockiert; Chromium/WebKit werden in GitHub Actions geprüft.
-Die echte SV-Abnahme und ein realer Service-Worker-Updatewechsel bleiben gesondert
-zu protokollieren. Der isolierte Browserlauf verwendet ausschließlich künstliche Daten.
+Geprüfter Quellstand: `b372a42559e661f012d29c989ed10ba5f8afe460`. [CI-Nachweis](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39606813341):
+547 Tests, Chromium, WebKit, Helper-, Precache- und Wartungsprüfung erfolgreich.
+Der Browserlauf prüft auch einen tatsächlichen Offline-Start, eine offline
+vorgenommene Wochenplanänderung und erneutes Öffnen mit aktivem Service Worker.
+Die echte SV-Abnahme und der Updatewechsel mit offenem Entwurf auf dem iPhone
+bleiben separat zu protokollieren. Alle technischen Tests nutzen synthetische Daten.
 
 Der zusätzliche echte Offline-Lauf deckte außerdem einen WebKit-Fehler bei
 externen Ressourcen auf. Der Service Worker behandelt jetzt ausschließlich

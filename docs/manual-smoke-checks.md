@@ -4,10 +4,11 @@ Stand: 21. Oktober 2026. Aktuelle Ergebnisse und offene Aufgaben:
 [stability-checklist.md](stability-checklist.md).
 
 Playwright ist eingerichtet. `npm run test:browser` führt Daten-, persönlichen
-Online- und Filial-Smoke aus; GitHub prüft Chromium und WebKit. Die Daten stammen
+Online-, Filial- und Planning-Smoke aus; GitHub prüft Chromium und WebKit. Die Daten stammen
 ausschließlich aus synthetischen Fixtures, externe Dienste werden abgefangen.
-Die Online-Smokes verändern den Plan bisher per `saveAppState()`; sie bestätigen
-noch nicht den Speicherweg aller tatsächlichen Wochenplan-Schaltflächen.
+Die Online-Smokes bearbeiten eine Schicht über den sichtbaren Wocheneditor.
+`tools/browser-planning-smoke.js` ergänzt die übrigen produktiven Wochenplan-Eingaben
+und prüft Stundenkonto, Hinweise, Vorschläge, Rücknahme sowie Fehlerfälle.
 
 Die folgenden Abläufe ergänzen die Automation. Sie gelten erst nach protokollierter
 Ausführung mit Commit, Browser/Gerät, Auslöser und Ergebnis als bestanden.
@@ -61,7 +62,8 @@ als eigene Geräteprüfung protokollieren.
 5. Veralteten Tab und einen absichtlich fehlschlagenden Speichervorgang testen:
    neuere Daten dürfen nicht still ersetzt werden.
 
-Dieser Ablauf ist wegen des dokumentierten Planning-2-Speicherwegs offen.
+Die genannten Wochenplan-Eingaben sind mit V9.10 in Chromium und WebKit automatisiert
+geprüft. Eine Wiederholung auf dem echten iPhone bleibt als Geräteabnahme sinnvoll.
 
 ## F. Service Worker: echter Offline-Start und Update
 
@@ -76,7 +78,8 @@ oder für diese Prüfung verändern.
 5. Bei einem späteren Code-/Cache-Update einen offenen Entwurf erhalten und den
    Versionswechsel mit neuer Cache-Kennung prüfen.
 
-Die drei aktuellen Browser-Smokes setzen `serviceWorkers: 'block'`. Ihre grünen
-Ergebnisse bestätigen daher keinen erfolgreichen Ablauf F. Externe PDF-Bibliotheken
+Die drei Daten-/Online-Smokes setzen `serviceWorkers: 'block'`. Der zusätzliche
+Planning-Smoke verwendet für Offline-Start und erneutes Öffnen `serviceWorkers: 'allow'`.
+Der echte Updatewechsel aus Schritt 5 bleibt als eigene Geräteprüfung offen. Externe PDF-Bibliotheken
 liegen bewusst außerhalb des lokalen Precache; PDF-/MEP-Ausgaben werden im
 vorliegenden Auftrag nicht verändert oder erneut abgenommen.

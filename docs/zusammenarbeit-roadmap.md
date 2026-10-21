@@ -1,7 +1,7 @@
 # Wochenplan: Ablauf für Zusammenarbeit und Wartung
 
-Stand: 21. Oktober 2026. Veröffentlicht: V9.9.3 über PR #425.
-Codegrundlage: `a44677fe6d922af168cd38ddab3eb05fa6a47ff4`.
+Stand: 21. Oktober 2026. Releasebasis: V9.10 über PR #427.
+Geprüfter Quellstand: `b372a42559e661f012d29c989ed10ba5f8afe460`.
 Aktuelle technische Befunde: [stability-checklist.md](stability-checklist.md).
 
 Dieses Dokument führt die Einrichtung und gemeinsame Abnahme. V9.9.3 ist veröffentlicht,
@@ -194,8 +194,9 @@ in Sheets ist deshalb nicht automatisch eine funktionierende Triggerkette.
 
 Nächster gemeinsamer Schritt: Am 22. Oktober 2026 bei der Arbeit die SV gezielt einladen und
 den Plan auf beiden Geräten vergleichen. Die Oberfläche ist auf einen Filialplan
-vereinfacht und der Teamzugang ist eingerichtet. Den offenen Speicherweg des neuen
-Wochenplaners vor einer vollständigen Abnahme gemäß Stabilitätscheckliste korrigieren.
+vereinfacht und der Teamzugang ist eingerichtet. Der Speicherweg des neuen
+Wochenplaners ist in V9.10 korrigiert und mit synthetischen Daten einschließlich
+Chromium, WebKit und Offline-Start geprüft. Die reale SV-Abnahme bleibt offen.
 Keine Einladungsnachrichten automatisch versenden.
 
 Technische Ergebnisse und offene Einrichtung: siehe `docs/collaboration-release.md`.

@@ -2,7 +2,8 @@
 
 Stand abgeglichen am 21. Oktober 2026. Dies ist eine Entwicklungsskizze für
 automatische Vorschläge, keine Aussage über fehlende manuelle Schichtfunktionen.
-Die produktive Vorschlagsoberfläche ist in `planning2-live.js` deaktiviert.
+V9.10 stellt problembezogene Vorschläge nach ausdrücklichem Einschalten und Abruf bereit;
+die laufende Planung startet keine Hintergrundoptimierung.
 Aktuelle Prioritäten: [stability-checklist.md](stability-checklist.md).
 
 ## Frei/leer → Arbeit

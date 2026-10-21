@@ -18,14 +18,12 @@ nicht aufgrund dieser älteren Liste erneut gebaut.
 | Plan-/Ist-Abweichungen warnen | Stunden-/Besetzungs-/Frei-/Öffnerhinweise und Basisplanabweichungen vorhanden. | Fachlich begründete Schwellen für zusätzliche Plan-/Ist-Warnungen festlegen; vorhandene Hinweise bündeln. |
 | KPI-Widget Monatsabschluss | Stunden, Umsätze und Produktivität sind bereits in bestehenden Ansichten dargestellt. | Eine kompakte gemeinsame Abschlussübersicht statt zusätzlicher paralleler Rechenwege. |
 
-## Reihenfolge für weitere Arbeit
+## Nach dem Abgleich umgesetzte Arbeit
 
-1. Den abweichenden Speicherweg des neuen Wochenplaners korrigieren und über echte
-   Schaltflächen prüfen. Vorhandene grüne Online-Tests verwenden bisher den zentralen Speicherweg.
-2. Mobile Bedienung vereinfachen: tägliche Planung, Zusammenarbeit und seltene
-   Wiederherstellungsaktionen leichter auffindbar machen.
-3. Stundenherkunft verständlich erklären und gezieltes Rückgängigmachen erleichtern.
-4. Planungsvorschläge erst fachlich und technisch abnehmen. Im aktuellen
-   `planning2-live.js` sind sie mit `PLANNING2_SUGGESTIONS_ENABLED=false` deaktiviert.
+Die sechs priorisierten Schritte (Speicherweg, mobile Verwaltung, Stundenherkunft,
+Rücknahme, gebündelte Hinweise und Vorschläge auf Abruf) sind mit V9.10 umgesetzt.
+Nachweise und Grenzen stehen in [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
+Die optionale CSV-Erweiterung und weitere Ideen aus der Tabelle sind damit nicht
+als umgesetzt markiert; sie bleiben ein Ideenbestand.
 
 MEP-Tabelle sowie Druck-/PDF-Ergebnis bleiben gemäß Nutzerauftrag unverändert.
