@@ -46,8 +46,13 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
   Speichern durch die Filialverwaltung und Übernahme auf einem zweiten Testgerät.
 - Bestehende fachliche Vorschlags-, Rechte-, Revisions- und Pakettests bleiben bestehen.
 
-Lokaler Stand vor GitHub-Browserprüfung: 546 Tests bestanden; Helper-, Precache-,
+Lokaler Stand vor GitHub-Browserprüfung: 547 Tests bestanden; Helper-, Precache-,
 Syntax- und Versionsprüfung erfolgreich. Browserinstallation wurde durch die
 lokale Freigabeprüfung blockiert; Chromium/WebKit werden in GitHub Actions geprüft.
 Die echte SV-Abnahme und ein realer Service-Worker-Updatewechsel bleiben gesondert
 zu protokollieren. Der isolierte Browserlauf verwendet ausschließlich künstliche Daten.
+
+Der zusätzliche echte Offline-Lauf deckte außerdem einen WebKit-Fehler bei
+externen Ressourcen auf. Der Service Worker behandelt jetzt ausschließlich
+same-origin-GET-Anfragen; optionale CDNs und API-Verbindungen bleiben vollständig
+beim Browser. Die App hält dafür keine externen Bibliotheken im Cache vor.
