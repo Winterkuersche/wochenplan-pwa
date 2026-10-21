@@ -66,7 +66,7 @@ async function main(){
   await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
   console.log('Shared deputy adopted');
-  await b.page.locator('#btnCloseData').click();
+  if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
   await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F5');
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();

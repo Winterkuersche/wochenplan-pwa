@@ -37,7 +37,7 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
 - `tests/hour-breakdown.test.js`: Kategorien, Monatsgrenzen, manueller Nullwert,
   Ersatz statt Addition und direkte Datumsparser-Regression.
 - `tools/browser-planning-smoke.js`: sichtbare Editor-/Favorit-/Mehrfach-/Tausch-/
-  Verschiebe-/Basisplan-Aktionen, Rücknahme, Stunden, Hinweise, Vorschlagsabruf,
+  Verschiebe-/Basisplan-Aktionen, Rücknahme, Stunden, Hinweise, Vorschlagsabruf/-übernahme mit Rücknahme,
   veralteter Editor, Speicherfehler sowie Offline-Start und erneutes Öffnen mit
   tatsächlich aktivem Service Worker.
 - Persönlicher und gemeinsamer Online-Smoke ändern jetzt eine Schicht über den
@@ -45,7 +45,7 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
   Speichern durch die Filialverwaltung und Übernahme auf einem zweiten Testgerät.
 - Bestehende fachliche Vorschlags-, Rechte-, Revisions- und Pakettests bleiben bestehen.
 
-Lokaler Stand vor GitHub-Browserprüfung: 542 Tests bestanden; Helper-, Precache-,
+Lokaler Stand vor GitHub-Browserprüfung: 544 Tests bestanden; Helper-, Precache-,
 Syntax- und Versionsprüfung erfolgreich. Browserinstallation wurde durch die
 lokale Freigabeprüfung blockiert; Chromium/WebKit werden in GitHub Actions geprüft.
 Die echte SV-Abnahme und ein realer Service-Worker-Updatewechsel bleiben gesondert

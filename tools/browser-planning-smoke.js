@@ -23,6 +23,7 @@ async function main(){
   await context.route('https://**/*',route=>route.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('dialog',dialog=>dialog.accept());
   const ready=()=>page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await page.clock.setFixedTime(new Date('2026-10-01T08:00:00Z'));
   await page.goto(url);await ready();
   await page.locator('#btnDataPanel').click();
   await Promise.all([page.waitForEvent('load'),page.locator('#backupFileInput').setInputFiles({name:'synthetic-planning.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await ready();
@@ -51,7 +52,11 @@ async function main(){
   const revisionBeforeSuggestions=JSON.stringify(await read());
   await page.locator('[data-targeted-day]').first().click();assert.equal(await page.locator('#targetedSuggestionsOverlay').isVisible(),true);
   assert.equal(JSON.stringify(await read()),revisionBeforeSuggestions,'requesting suggestions must never change the plan');
-  await page.locator('#closeTargetedSuggestions').click();await page.locator('#planningSuggestionsToggle').click();
+  const suggested=page.locator('[data-targeted-apply]');
+  assert.ok(await suggested.count()>0,'The synthetic future week must offer an eligible change');
+  await suggested.first().click();assert.notEqual(JSON.stringify(await read()),revisionBeforeSuggestions,'accepting a suggestion must persist it');
+  await page.locator('#planningUndo').click();assert.equal(JSON.stringify(await read()),revisionBeforeSuggestions);
+  await page.locator('#planningSuggestionsToggle').click();
   await page.locator('#btnDataPanel').click();await page.locator('[data-data-target="cloudTitle"]').click();
   assert.equal(await page.locator('#cloudTitle').evaluate(el=>document.activeElement===el),true);await page.locator('#btnCloseData').click();
   // Same-browser stale editor: a newer journaled save must not be lost.
