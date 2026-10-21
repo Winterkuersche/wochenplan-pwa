@@ -1,7 +1,7 @@
 # Aktuelle Stabilitäts- und Abnahmecheckliste
 
-Stand: 21. Oktober 2026. Codegrundlage: V9.9.3, main
-`a44677fe6d922af168cd38ddab3eb05fa6a47ff4`.
+Stand: 21. Oktober 2026. Codegrundlage: V9.10, geprüft am Commit
+`b372a42559e661f012d29c989ed10ba5f8afe460` (PR #427).
 
 Diese Datei ist die aktuelle technische Checkliste. Den Einrichtungsfortschritt
 führt [zusammenarbeit-roadmap.md](zusammenarbeit-roadmap.md). Frühere Sprint-Gates
@@ -21,68 +21,58 @@ Bedienweg, alle Geräte oder den gesamten Funktionsbereich.
 - [x] Import → Export → erneutes Öffnen, Rohdatenrettung, defekte Daten und ein
   veralteter Tab werden im Browser geprüft (`tools/browser-data-smoke.js`).
 - [x] Persönlicher und gemeinsamer Online-Abgleich sind mit synthetischen Konten
-  geprüft. Die Browsertests lösen Planänderungen dort über `saveAppState()` aus;
-  das ist kein Nachweis für alle Schaltflächen des neuen Wochenplaners.
+  geprüft. Beide Online-Smokes bearbeiten eine Schicht über den sichtbaren Wocheneditor.
+  Der zusätzliche Planning-Smoke prüft Favorit, Mehrfachplanung, Tauschen/Verschieben,
+  Basisplan, Rücknahme, Stunden, Hinweise und Vorschlagsübernahme.
 - [x] Serverseitige Rechte, Revisionen, Vertretungsablauf, Vorschläge und Rücknahmen
   sind lokal in PostgreSQL getestet (`tests/collaboration-database.test.js`).
 - [x] Der Service Worker ist in `index.html` registriert. Der Precache-Prüfer
   bestätigt alle 41 lokalen HTML-Assets; Cache-Verhalten besitzt Regressionstests.
 - [x] Keine doppelten globalen Helper-Namen: aktueller lokaler Prüflauf mit
-  584 Top-Level-Helpern in 42 Dateien. Dies ist keine vollständige Duplikatanalyse.
-- [x] Am genannten main-Commit sind [Tests einschließlich Chromium/WebKit](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122404),
-  [Helper](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122422),
-  [Precache](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122426),
-  [Pages](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122609)
-  und [Live-Prüfung](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122409) erfolgreich.
+  590 Top-Level-Helpern in 42 Dateien. Dies ist keine vollständige Duplikatanalyse.
+- [x] Am genannten Quellstand bestehen [547 Tests und alle vier Browser-Smokes
+  in Chromium und WebKit](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39606813341).
+  Helper-, Precache-, Syntax- und Versionsprüfung sind ebenfalls erfolgreich.
+  Deployment und Live-Prüfung werden nach dem Merge gesondert nachgewiesen.
 
-## Vorrangig offen: Speicherweg des neuen Wochenplaners
+## Wochenplanung und Komfortfunktionen in V9.10
 
-- [ ] **P1: Planning 2 an den zentralen, journalgesicherten Speicherweg anbinden.**
-  `planning2-data-adapter.js:49–51` schreibt den Plan direkt in localStorage.
-  `planning2-live.js:8` meldet anschließend nur `planning2:plan-saved`;
-  `app.js:3749–3757` liest und rendert, erzeugt aber kein zentrales
-  `wochenplan:saved`. Erst dieses Signal startet in `data-panel.js` die automatische
-  Online-Sicherung. Der Tausch-/Verschiebepfad in `planning2-live.js:126` ruft
-  sogar nur den Adapter auf, ohne das Planning-2-Signal.
-- [ ] Alle produktiven Eingaben einschließlich Favorit, Mehrfachplanung,
-  Tauschen/Verschieben und Monatsbasisplan über denselben Speicherabschluss führen.
-  Erst nach erfolgreichem Speichern Erfolg anzeigen und Online-Abgleich anstoßen.
-- [ ] Regressionen für den tatsächlichen Bedienweg ergänzen: Änderung über eine
-  Wochenplan-Schaltfläche → lokaler Rückweg → Online-Revision → zweites Gerät.
-  Zusätzlich veralteter Tab, fehlgeschlagene Speicherung und Tausch/Verschieben.
+Die priorisierten sechs Aufgaben sind im Quellstand umgesetzt. Umfang und
+Nachweise stehen in [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
 
-Nachweis vom 21.10.2026: Lokaler synthetischer Aufruf der unveränderten
-`saveProductivePlan`-Funktion und des zugehörigen App-Listeners änderte den Plan,
-legte kein Journal an und erzeugte kein `wochenplan:saved`. Der nächste zentrale
-Schreibversuch wurde als veralteter Stand abgewiesen. Der Listener wurde dabei
-mit isolierten Render-/Normalisierungsfunktionen geprüft; ein echter Browserlauf
-über diese Wochenplan-Schaltflächen ist noch offen. Dies ist keine Prüfung von
-Produktionsplänen und kein Nachweis eines bereits eingetretenen Datenverlusts.
+- [x] Zentraler Speicherabschluss für produktive Wochenplan-Eingaben mit Journal,
+  Fehlermeldung, Stale-Tab-Prüfung und Online-Signal; synthetische Regressionen bestanden.
+- [x] Schnellnavigation für mobile Verwaltung, Stundenaufschlüsselung, geschützte
+  einmalige Rücknahme und gebündelte Wochenhinweise implementiert.
+- [x] Vorschläge nur nach ausdrücklichem Einschalten und problembezogenem Abruf;
+  Übernahme validiert den frischen Plan und speichert über den zentralen Abschluss.
+- [x] Chromium-/WebKit-Prüfung dieses Quellstands abgeschlossen ([CI](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39606813341)).
+  Die Online-Smokes bedienen jetzt den tatsächlichen Wocheneditor. Der neue
+  Planning-Smoke prüft zusätzlich Favorit, Mehrfachplanung, Tauschen/Verschieben,
+  Basisplan, Rücknahme, Fehlerfälle und echten Offline-Start.
 
 ## Verbleibende praktische Abnahme
 
 - [ ] Echte SV-Einladung, zwei Geräte, aktive und beendete Vertretung gemeinsam prüfen.
 - [ ] Passwort-Wiederherstellung mit dem eigenen Konto praktisch prüfen.
-- [ ] Direkte Datumsparser-Regression ergänzen: `fromIsoDate` muss beispielsweise
-  `2026-02-30` und `2025-02-29` ablehnen und `2024-02-29` annehmen.
-  Die vorhandenen Schaltjahrtests prüfen bisher das Monatsraster.
+- [x] Direkte Datumsparser-Regression: ungültige Tage und gültiger Schalttag
+  sind in `tests/hour-breakdown.test.js` geprüft.
 - [ ] Monatszellen und Abwesenheits-Trim/Split über die echte Oberfläche prüfen;
   Ablauf siehe [manual-smoke-checks.md](manual-smoke-checks.md).
-- [ ] Offline-Start und Updatewechsel mit tatsächlich aktivem Service Worker
-  im Browser prüfen. Die drei bestehenden Browser-Smokes blockieren Service Worker;
-  Unit- und Asset-Prüfungen ersetzen diesen Lauf nicht.
+- [x] Offline-Start, Wochenplan-Eingabe und erneutes Öffnen mit aktivem Service Worker
+  sind im Planning-Browserlauf für Chromium und WebKit geprüft.
+- [ ] Einen echten Updatewechsel mit offenem Entwurf zusätzlich auf dem iPhone prüfen.
 - [ ] Ersten automatischen externen Sicherungslauf kontrollieren. Einrichtung
   und einmaliger echter Rücklese-/Wiederherstellungstest sind bereits bestätigt.
 - [ ] Aufbewahrung der externen Sicherungen und des Änderungsverlaufs festlegen;
   bis dahin keine vorhandenen externen Sicherungen automatisch löschen.
 
-## Grenzen dieses Dokumentationsabgleichs
+## Prüfgrenzen
 
-Der aktuelle lokale Lauf meldete 531 bestandene Tests und einen nicht ausführbaren
-Datenbanktest, weil `@electric-sql/pglite` in dieser lokalen Umgebung fehlt.
-Das ist kein vollständig bestandener lokaler Lauf. Chromium und WebKit sind lokal
-nicht installiert; für den genannten Commit liegen die oben verlinkten
-GitHub-Ergebnisse vor. Ein grüner älterer Commit gilt nicht als Ergebnis neuer Änderungen.
+547 lokale Tests bestehen einschließlich des Datenbanktests; GitHub prüft
+zusätzlich Chromium und WebKit. Alle technischen Browserläufe verwenden
+synthetische Daten und fangen externe Dienste ab. Sie ersetzen die noch offene
+reale SV-/iPhone-Abnahme und den Updatewechsel mit offenem Entwurf nicht.
 
 MEP-Tabelle, Druckgeometrie und PDF-/Druckausgabe sind durch diesen Auftrag
 unverändert zu lassen. Ihre bestehenden Abnahmeregeln bleiben in

@@ -1,4 +1,4 @@
-# Daten & Sicherung – bestehende Speichermechanismen bis V9.9.3
+# Daten & Sicherung – Speichermechanismen in V9.10
 
 Der Bereich **Daten & Sicherung** zeigt den Speicher dieses Browsers bzw. dieser
 Home-Bildschirm-App und den Online-Status getrennt an. Bestehende v10-Daten und
@@ -7,11 +7,11 @@ oder Sitzungsdaten im Repository abgelegt.
 
 ## Geltungsbereich und aktueller Befund
 
-Dieses Dokument beschreibt den zentralen Speicher-/Abgleichspfad. Der neue
-Wochenplaner besitzt derzeit einen direkten localStorage-Schreibweg, der Journal
-und zentrales Speichersignal umgeht. Deshalb gelten die unten beschriebenen
-Schutzmechanismen noch nicht nachgewiesen für jede Planning-2-Bedienaktion.
-Befund und fehlende Bedienwegtests: [stability-checklist.md](stability-checklist.md).
+Seit V9.10 verwendet auch der neue Wochenplaner den zentralen Speicherabschluss
+mit Journal, Stale-Tab-Prüfung und Online-Signal. Editor, Favorit, Mehrfachplanung,
+Tauschen/Verschieben, Basisplan und Vorschlagsübernahme sind über ihre sichtbaren
+Bedienelemente geprüft. Umfang und Grenzen: [filial-alltag-v9.10.md](filial-alltag-v9.10.md)
+und [stability-checklist.md](stability-checklist.md).
 
 Seit V9.9.3 steht ein Filialplan im Mittelpunkt. Bei eingerichteter Mitgliedschaft
 öffnet die Filiale automatisch; TL und SV verwenden eigene Konten. Die folgenden

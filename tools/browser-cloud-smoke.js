@@ -1,3 +1,4 @@
+const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Real browser SDK against a synthetic, intercepted Supabase HTTP API.
 // No external request, email, real account or personal plan is used.
 const fs=require('fs'),http=require('http'),path=require('path'),assert=require('assert/strict');
@@ -34,6 +35,12 @@ async function device(){
  await p.goto(url);await p.waitForFunction(()=>window.__APP_BOOT_OK__===true);return{c,p};
 }
 async function mode(p,name){await p.waitForFunction(name=>document.querySelector('#dataStatus').dataset.mode===name,name,{timeout:10000});console.log('MODE',name);}
+async function editWeek(p,code){
+ if(await p.locator('#dataDialog').isVisible())await p.locator('#btnCloseData').click();
+ await p.locator('#weeks button').filter({hasText:'19.10'}).click();
+ await p.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();
+ await choosePlanningQuickShift(p,code);
+}
 async function login(p){await p.locator('#btnDataPanel').click();await p.locator('#cloudEmail').fill(user.email);await p.locator('#cloudPassword').fill('Synthetic-Password-123');await p.locator('#btnCloudLogin').click();}
 try{
  const a=await device();console.log('device A booted');
@@ -44,8 +51,8 @@ try{
  const b=await device();await login(b.p);await mode(b.p,'choose');
  await Promise.all([b.p.waitForEvent('load'),b.p.locator('#btnCloudDownload').click()]);await b.p.waitForFunction(()=>window.__APP_BOOT_OK__===true);assert.equal(await b.p.evaluate(()=>getBackupSummary(collectFullBackupSnapshot()).shifts),1);console.log('B adopted');
  await mode(b.p,'synced');
- await a.p.evaluate(()=>{state.schedule['2026-10-20']['test-one']=buildEarlyShiftEntry('F5');saveAppState()});await mode(a.p,'synced');assert.equal(doc.revision,2);console.log('A autosaved');
- await b.p.evaluate(()=>{state.schedule['2026-10-20']['test-one']=buildEarlyShiftEntry('F6');saveAppState()});await mode(b.p,'choose');
+ await editWeek(a.p,'F5');await mode(a.p,'synced');assert.equal(doc.revision,2);console.log('A autosaved');
+ await editWeek(b.p,'F6');await mode(b.p,'choose');
  assert.equal(doc.revision,2);assert.equal(doc.payload.storage.wochenplan_plan_v10.schedule['2026-10-20']['test-one'].code,'F5');
  console.log(JSON.stringify({realSdkMockApiBrowser:'passed',apiRequests:api.length}));
 }catch(e){

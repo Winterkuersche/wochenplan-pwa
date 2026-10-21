@@ -144,7 +144,7 @@
       finally { render(controller.status); }
     }
     controller=root.WochenplanCollaboration.create({ ...options, projectRef:options.config.projectRef,storage:localStorage,
-      onChange:render,onContextChange:()=>{options.cloud.resetLink();events=[];pageBefore=null;preview=null;el("sharedCompare").classList.add("hidden");el("sharedEvents").replaceChildren();} });
+      onChange:render,onContextChange:()=>{root.WochenplanPlanning?.invalidateUndo();options.cloud.resetLink();events=[];pageBefore=null;preview=null;el("sharedCompare").classList.add("hidden");el("sharedEvents").replaceChildren();} });
     const on=(id,work)=>el(id).addEventListener("click",()=>run(work));
     el("sharedBranchSelect").addEventListener("change",()=>run(async()=>{
       if(!confirm("Filiale wechseln? Dein Geräte-Stand bleibt erhalten. Offene Änderungen vorher als Datei sichern.")) {render(controller.status);return;}

@@ -25,6 +25,7 @@
 
   function renderCloud(status) {
     if (shared && shared.status.user?.id !== status.user?.id) {
+      window.WochenplanPlanning?.invalidateUndo();
       void shared.setUser(status.user).then(() => {
         if (shared.personalActive) return cloud.refresh();
       }).catch(showError);
@@ -65,6 +66,26 @@
       if (cloud) renderCloud(cloud.status);
     }
   }
+
+  dialog.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-data-target]");
+    if (!button) return;
+    const target = element(button.dataset.dataTarget);
+    if (!target || target.classList.contains("hidden") || target.closest(".hidden")) {
+      element("dataActionMessage").textContent = "Dieser Bereich ist nach der Anmeldung beziehungsweise mit Filialverwaltung verfügbar.";
+      return;
+    }
+    if (target.tagName === "DETAILS") {
+      for (const section of element("sharedSelected").children) {
+        if (section.tagName === "DETAILS") section.open = section === target;
+      }
+      target.open = true;
+    }
+    target.scrollIntoView({ block: "start", behavior: "smooth" });
+    const focus = target.tagName === "DETAILS" ? target.querySelector("summary") : target;
+    focus.setAttribute("tabindex", "-1");
+    focus.focus({ preventScroll: true });
+  });
 
   function open() {
     try { renderLocal(); } catch (error) { showError(error); }

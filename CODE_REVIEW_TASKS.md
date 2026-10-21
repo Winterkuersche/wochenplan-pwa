@@ -7,12 +7,12 @@ Historische Funde bleiben nachvollziehbar, erzeugen aber keine zweite offene Lis
 | Früherer Punkt | Abgeglichener Status / Nachweis |
 | --- | --- |
 | 1. Uneinheitlicher Seitentitel | Erledigt. `index.html` nutzt den neutralen Titel „Wochenplan“; `app.js` setzt die sichtbare Version aus `APP_META`. Siehe `docs/versioning.md`. |
-| 2. Fehlende Offline-Assets | Erledigt für das Inventar. Der Precache-Prüfer bestätigt alle 41 lokalen HTML-Assets. Die Registrierung ist aktiv. Ein echter Offline-/Update-Browserlauf bleibt als eigener Punkt in der aktuellen Checkliste offen. |
+| 2. Fehlende Offline-Assets | Erledigt für das Inventar. Der Precache-Prüfer bestätigt alle 41 lokalen HTML-Assets. Die Registrierung ist aktiv. Ein echter Offline-Browserlauf besteht mit V9.10; der Updatewechsel auf dem iPhone bleibt separat offen. |
 | 3. Mo–Sa und Sonntag im MEP-Formular | Kein eigenständiger Lösch- oder Layoutauftrag. Die Planung bleibt Mo–Sa; das bestehende MEP-Formular einschließlich Druck-/Exportgestaltung bleibt gemäß Nutzerauftrag unverändert. |
-| 4. Abwesenheits- und Datumstests | Bereichsfälle sind in `tests/absences.test.js`, Monatsgrenzen/Schaltjahr in `tests/month-boundaries.test.js` abgedeckt. Direkte Tests von `fromIsoDate` für ungültige Tage sowie die zusätzliche Bedienprüfung bleiben offen. |
+| 4. Abwesenheits- und Datumstests | Bereichsfälle sind in `tests/absences.test.js`, Monatsgrenzen/Schaltjahr in `tests/month-boundaries.test.js` abgedeckt. Direkte Datumsparser-Tests sind in V9.10 ergänzt; die zusätzliche Abwesenheitsbedienprüfung bleibt offen. |
 
-Der neue Planning-2-Speicherbefund ist in der aktuellen Stabilitätscheckliste offen
-und wird durch die erledigten älteren Punkte nicht als behoben dargestellt.
+Der Planning-2-Speicherbefund ist in V9.10 behoben und über echte Bedienelemente
+geprüft. Nachweise und verbleibende Geräteabnahme stehen in der aktuellen Checkliste.
 
 ## Bestehende MEP-Vorgaben
 

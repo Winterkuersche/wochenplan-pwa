@@ -12,3 +12,16 @@
 @media(max-width:420px){#weekView .saveRow{display:grid;grid-template-columns:repeat(2,1fr)}#weekView .editorBalance{gap:4px;font-size:9px}}
 
 #weekView .transferFields{display:grid;gap:10px;margin:14px 0}#weekView .transferFields select{min-height:44px;border:1px solid #cdd4dc;border-radius:9px;padding:9px;background:inherit;color:inherit}#weekView .transferPreview{padding:10px;border-radius:10px;background:#f4f6f8;font-size:12px;line-height:1.5}#weekView #confirmTransfer:disabled{opacity:.45}
+
+@media screen {
+  #weekView .planningActions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  #weekView .planningActions button { min-height:44px; border:1px solid #cdd4dc; border-radius:10px; background:inherit; color:inherit; }
+  #weekView .planningActions button:disabled { opacity:.45; }
+  #weekView .hoursDetailButton { display:block; width:100%; border:0; padding:4px 0; background:transparent; color:inherit; cursor:pointer; text-align:left; min-height:44px; }
+  #weekView .planningWarnings { margin:8px 0; padding:8px 10px; border:1px solid #d8b970; border-radius:10px; }
+  #weekView .planningWarnings summary { min-height:32px; cursor:pointer; }
+  #weekView #planningWarningList { display:grid; gap:6px; }
+  #weekView #planningWarningList button { min-height:44px; text-align:left; border:1px solid #cdd4dc; border-radius:8px; padding:8px; background:inherit; color:inherit; }
+  #weekView .toast { max-width:calc(100vw - 24px); font-size:12px; }
+  #weekView .toast button { min-height:44px; margin-left:8px; border:0; border-radius:6px; padding:8px; }
+}

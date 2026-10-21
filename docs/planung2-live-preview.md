@@ -22,10 +22,10 @@ Der genaue Mechanismus steht in [planung2-preview.md](planung2-preview.md).
 ## Aktueller Funktionsumfang
 
 Die produktive App nutzt manuelle Schichteingaben und Besetzungshinweise.
-Automatische Planungsvorschläge sind in `planning2-live.js` derzeit über
-`PLANNING2_SUGGESTIONS_ENABLED=false` deaktiviert. Kandidatengeneratoren im
-Quelltext und ihre Tests sind daher kein Nachweis einer freigegebenen
-Vorschlagsoberfläche.
+V9.10 bietet „Vorschläge auf Abruf“. Die Oberfläche startet mit ausgeschalteten
+Vorschlägen; nach dem Einschalten wird nur für eine ausdrücklich gewählte
+Besetzungslücke gerechnet. Übernahme und Rücknahme sind im Browser geprüft.
+Einzelheiten: [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
 
 Aktuelle Fehler und Abnahmepunkte werden in
 [stability-checklist.md](stability-checklist.md) geführt. MEP-Tabelle und ihre

@@ -51,7 +51,8 @@ test('Planning 2 live uses only productive adapter data and publishes saves to t
   assert.match(live, /createPlanning2DataAdapter\(localStorage\)/);
   assert.match(live, /planning2Data\.readMaster\(\)/);
   assert.match(live, /planning2Data\.readPlan\(\)/);
-  assert.match(live, /planning2Data\.savePlan\(plan\)/);
+  assert.match(live, /WochenplanPlanning\.save\(plan,expectedPlan\)/);
+  assert.doesNotMatch(live, /planning2Data\.savePlan\(/);
   assert.match(live, /planning2:plan-saved/);
   assert.match(app, /addEventListener\("planning2:plan-saved"/);
   assert.match(app, /addEventListener\("planning2:plan-saved"[^]*?state = refreshed\.state[^]*?renderAllViews\(\)/);
@@ -206,7 +207,7 @@ test('productive UI derives red week tabs from the existing coverage and carryov
 });
 
 test('productive suggestion controls are centrally paused without deleting the A-D implementation', () => {
-  assert.match(live, /const PLANNING2_SUGGESTIONS_ENABLED=false/);
+  assert.match(live, /let PLANNING2_SUGGESTIONS_ENABLED=false/);
   const renderStart = live.indexOf('function render()');
   const renderEnd = live.indexOf("document.getElementById('weeks').onclick", renderStart);
   const renderBody = live.slice(renderStart, renderEnd);

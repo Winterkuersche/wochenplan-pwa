@@ -146,3 +146,14 @@ test('SW: a failed cache write does not reject a successful network response', a
   await Promise.all(lifetime);
   assert.deepEqual(writes, ['fresh application']);
 });
+
+
+test('SW: foreign fonts, scripts and APIs bypass the app worker, including offline', () => {
+  let networkCalls=0,cacheCalls=0,interceptions=0;
+  const listeners=loadSwContext({fetchImpl:()=>{networkCalls++;return Promise.reject(Error('offline'))},
+    cachesImpl:{match:async()=>{cacheCalls++;return undefined}}});
+  for(const url of ['https://fonts.googleapis.com/style.css','https://cdn.example.invalid/pdf.js','https://api.example.invalid/rest/v1/plans']){
+    listeners.fetch({request:{method:'GET',url,destination:'script'},respondWith:()=>{interceptions++}});
+  }
+  assert.equal(interceptions,0);assert.equal(networkCalls,0);assert.equal(cacheCalls,0);
+});

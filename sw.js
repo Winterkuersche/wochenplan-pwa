@@ -97,6 +97,9 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const requestUrl = new URL(event.request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
+  // Let the browser handle optional CDNs and API traffic directly. An offline
+  // foreign request has no app-cache fallback and must not resolve to undefined.
+  if (!isSameOrigin) return;
   const isNavigationRequest = event.request.mode === "navigate";
   const isStaticAssetRequest = isSameOrigin && ["script", "style", "image", "font"].includes(event.request.destination);
 

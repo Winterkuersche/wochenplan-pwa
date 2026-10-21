@@ -1,7 +1,7 @@
 const APP_META = {
   name: "Wochenplan",
-  version: "V9.9.3",
-  assetVersion: "2026-10-21-5",
-  cacheName: "wochenplan-cache-v63",
+  version: "V9.10",
+  assetVersion: "2026-10-21-6",
+  cacheName: "wochenplan-cache-v64",
   stateKey: "schleswig-holstein"
 };

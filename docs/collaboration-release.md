@@ -1,6 +1,11 @@
-# V9.9 bis V9.9.3: gemeinsame Filialplanung und Speicher-Korrekturen
+# V9.9 bis V9.10: gemeinsame Filialplanung und Speicher-Korrekturen
 
 ## Aktueller Status
+
+V9.10 ergänzt den zentralen Speicherweg des Wochenplaners, sichere Rücknahme,
+mobile Verwaltung, Stundenkonto, Hinweise und Vorschläge auf Abruf. Technischer
+Nachweis: 547 Tests und Chromium/WebKit am Quellstand `b372a42`;
+Details: [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
 
 V9.9.3 ist seit dem 21. Oktober 2026 über PR #425 veröffentlicht
 (main `a44677fe6d922af168cd38ddab3eb05fa6a47ff4`): ein Filialplan statt der Auswahl zwischen persönlicher

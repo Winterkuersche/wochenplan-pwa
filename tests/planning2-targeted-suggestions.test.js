@@ -37,7 +37,7 @@ test('candidate pipeline receives only the requested day and bounded settings', 
   const { service, calls } = harness([candidate('a')]);
   const result = service.request({ days: [otherDay, targetDay] }, problem);
   assert.deepEqual(calls[0].days.map(day => day.isoDate), [problem.isoDate]);
-  assert.equal(calls[0].enableExistingShiftMutations, true);
+  assert.equal(calls[0].enableExistingShiftMutations, false);
   assert.equal(result.generationFacts.bounded, true);
   assert.equal(result.generationFacts.candidateCap, 48);
 });
@@ -125,4 +125,14 @@ test('apply path revalidates fresh state, stores one undo snapshot, and uses ato
   assert.match(apply, /planning2OptimizationUndo=clone\(plan\)/);
   assert.match(apply, /planning2Data\.savePlan\(prepared\.plan\)/);
   assert.match(apply, /nicht mehr aktuell/);
+});
+
+test('a candidate rejected by final package simulation is not offered as actionable', () => {
+  const service = createPlanning2TargetedSuggestionService({
+    generateCandidates: () => ({ candidates: [candidate('blocked'),candidate('allowed')], rejected: [] }),
+    generatePackages: () => ({ packages: [] }), rankCandidates: values => values,
+    simulatePackage: (_context, value) => ({ valid: value.candidateId !== 'blocked', coverageFacts: {} })
+  });
+  const result=service.request({days:[targetDay]},problem);
+  assert.deepEqual(result.suggestions.map(value=>value.candidateId),['allowed']);
 });

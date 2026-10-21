@@ -56,6 +56,7 @@ const localDataStore = window.WochenplanStorage.create({
 });
 let currentDayIndex = 0;
 let autoSaveTimerId = null;
+let planning2UndoState = null;
 let saveStatusTimerId = null;
 let overviewRevenueSaveStatusTimerId = null;
 let overviewRevenueDebounceTimerId = null;
@@ -1364,6 +1365,7 @@ function savePlanData(options) {
 }
 
 function saveAppState() {
+  planning2UndoState = null;
   const savedAt = new Date().toISOString();
   const result = localDataStore.writeBatch({
     [MASTER_KEY]: saveMasterData({ snapshotOnly: true }),
@@ -1383,6 +1385,53 @@ function saveAppState() {
   window.dispatchEvent(new CustomEvent("wochenplan:storage-error"));
   return false;
 }
+
+// Planning 2 uses exactly the same journal, stale-tab check and online signal.
+function planning2PlanSignature(plan) {
+  const value = { ...plan, schedule: plan?.schedule || {}, absences: plan?.absences || [], monthlyPlanBaselines: plan?.monthlyPlanBaselines || {} };
+  delete value.weekFrom;
+  delete value.weekTo;
+  const canonical = item => Array.isArray(item) ? item.map(canonical)
+    : item && typeof item === "object" ? Object.fromEntries(Object.keys(item).sort().map(key => [key, canonical(item[key])])) : item;
+  return JSON.stringify(canonical(value));
+}
+
+function commitPlanning2Plan(plan, expectedPlan) {
+  flushPendingAutoSave();
+  const current = JSON.parse(localStorage.getItem(PLAN_KEY) || "{}");
+  if (expectedPlan && planning2PlanSignature(current) !== planning2PlanSignature(expectedPlan)) {
+    throw new Error("Der Plan wurde inzwischen geändert. Öffne den Eintrag erneut.");
+  }
+  const previous = state;
+  const before = localStorage.getItem(PLAN_KEY) === null ? savePlanData({ snapshotOnly: true }) : current;
+  state = { ...state, ...plan };
+  if (!saveAppState()) {
+    state = previous;
+    throw new Error(saveStatusMessage || "Speichern fehlgeschlagen. Der bisherige Stand bleibt erhalten.");
+  }
+  planning2UndoState = { before, plan: localStorage.getItem(PLAN_KEY), master: localStorage.getItem(MASTER_KEY) };
+  return true;
+}
+
+function canUndoPlanning2Plan() {
+  return Boolean(planning2UndoState) && !localDataStore.blocked && !autoSaveTimerId
+    && localStorage.getItem(PLAN_KEY) === planning2UndoState.plan
+    && localStorage.getItem(MASTER_KEY) === planning2UndoState.master;
+}
+
+function undoPlanning2Plan() {
+  if (!canUndoPlanning2Plan()) throw new Error("Seitdem wurde weitergeplant. Die Änderung kann hier nicht mehr zurückgenommen werden.");
+  const previous = state;
+  const undo = planning2UndoState;
+  state = { ...state, ...undo.before };
+  if (!saveAppState()) {
+    state = previous;
+    throw new Error(saveStatusMessage || "Rücknahme konnte nicht gespeichert werden.");
+  }
+  return true;
+}
+
+window.WochenplanPlanning = { save: commitPlanning2Plan, undo: undoPlanning2Plan, canUndo: canUndoPlanning2Plan, invalidateUndo: () => { planning2UndoState = null; } };
 
 function saveAppStateDebounced() {
   updateSaveStatus("Änderungen werden gespeichert …");
@@ -2041,6 +2090,59 @@ function getEmployeeActualMinutesForMonth(employee, yearMonth = state.activeMont
   return getEffectiveMonthActualMinutes(employee, yearMonth, plannedMinutes);
 }
 
+// The detail view explains the existing account calculations; it does not
+// introduce a second source of targets, credits or manual actual hours.
+function getEmployeeHourBreakdown(employee, yearMonth) {
+  const planned = getEmployeeAccountMinutesForMonth(employee, yearMonth);
+  const target = getEmployeeContractTargetMinutesPerMonth(employee);
+  const actual = getEmployeeActualMinutesForMonth(employee, yearMonth);
+  let work = 0, external = 0, credited = 0;
+  const dates = new Set(getWeeksForYearMonth(yearMonth).flat().map(day => day.iso).filter(day => day?.startsWith(yearMonth)));
+  for (const isoDate of dates) {
+    const entry = getResolvedEntryForEmployeeOnIso(employee, isoDate);
+    const minutes = Math.max(0, entry?.minutesForMonth || 0);
+    if (entry?.type === "shift") work += minutes;
+    else if (entry?.type === "external-help") external += minutes;
+    else credited += minutes;
+  }
+  const months = collectRelevantYearMonthsUntilActiveMonthBalance({
+    activeYearMonth: yearMonth, scheduleIsoDates: Object.keys(state.schedule || {}),
+    absences: state.absences || [], manualMonthActualMinutes: employee.manualMonthActualMinutes || {},
+    historyStartMonth: BALANCE_HISTORY_START_MONTH
+  });
+  const carry = months.filter(month => month < yearMonth).reduce((sum, month) =>
+    sum + getEmployeeActualMinutesForMonth(employee, month) - target, 0);
+  return { planned, target, actual, work, external, credited, carry, difference: actual - target,
+    manual: getManualMonthActualMinutes(employee, yearMonth), gfb: isGfbEmployee(employee) };
+}
+
+function openEmployeeHourBreakdown(employeeId, yearMonth = state.activeMonth) {
+  const employee = state.employees.find(person => String(person.id) === String(employeeId));
+  if (!employee || !normalizeYearMonth(yearMonth)) return;
+  const detail = getEmployeeHourBreakdown(employee, yearMonth);
+  document.getElementById("hourBreakdownTitle").textContent = "Stundenkonto · " + employee.name;
+  document.getElementById("hourBreakdownMonth").textContent = yearMonth;
+  const values = document.getElementById("hourBreakdownValues");
+  values.replaceChildren();
+  const rows = [["Monatssoll", minutesToHM(detail.target)], ["Arbeit in der Filiale", minutesToHM(detail.work)],
+    ["Aushilfe in anderer Filiale", minutesToHM(detail.external)], ["Zeitgutschriften (z. B. Urlaub/Krank/Feiertag)", minutesToHM(detail.credited)],
+    ["Planbasierte Kontostunden", minutesToHM(detail.planned)]];
+  if (detail.manual !== null) rows.push(["Manuelles Monats-Ist (ersetzt den Planwert)", minutesToHM(detail.manual)]);
+  rows.push(["Verwendete Kontostunden", minutesToHM(detail.actual)], ["Differenz im Monat", formatSignedMinutes(detail.difference)]);
+  if (detail.gfb) rows.push(["Restliches Monatskontingent", minutesToHM(Math.max(0, detail.target - detail.actual))]);
+  else rows.push(["Übertrag aus Vormonaten seit 01/2026", formatSignedMinutes(detail.carry)], ["Saldo bis einschließlich dieses Monats", formatSignedMinutes(detail.carry + detail.difference)]);
+  for (const [label, value] of rows) {
+    const term = document.createElement("dt"), description = document.createElement("dd");
+    term.textContent = label; description.textContent = value; values.append(term, description);
+  }
+  document.getElementById("hourBreakdownExplanation").textContent = detail.manual !== null
+    ? "Das manuelle Monats-Ist ersetzt die gesamte planbasierte Monatszeit. Es wird nicht zusätzlich addiert."
+    : "Die Kontostunden folgen dem gespeicherten Plan und den bestehenden Zeitgutschriften. Noch geplante Tage sind darin enthalten.";
+  document.getElementById("hourBreakdownDialog").showModal();
+}
+window.WochenplanHours = { open: openEmployeeHourBreakdown };
+document.getElementById("closeHourBreakdown").addEventListener("click", () => document.getElementById("hourBreakdownDialog").close());
+
 function parseManualHoursToMinutes(value) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -2542,6 +2644,7 @@ function exportBackup() {
 }
 
 function importBackupFromObject(backupData, options) {
+  planning2UndoState = null;
   options = options || {};
   const validationResult = validateAndNormalizeBackupData(backupData);
   if (validationResult.error || !validationResult.backup) {
