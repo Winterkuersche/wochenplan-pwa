@@ -45,6 +45,14 @@ async function main() {
     const url = `http://127.0.0.1:${server.address().port}/`;
     const ready = () => page.waitForFunction(() => window.__APP_BOOT_OK__ === true);
     await page.goto(url); await ready();
+    assert.equal(await page.locator('#dataDialog').isVisible(), false);
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await page.locator('#btnDataPanel').click();
+      assert.equal(await page.locator('#dataDialog').isVisible(), true);
+      await page.locator('#btnCloseData').click();
+      assert.equal(await page.locator('#dataDialog').isVisible(), false);
+      assert.equal(await page.locator('#dataDialog').evaluate((dialog) => dialog.getClientRects().length), 0);
+    }
     await page.locator('#btnDataPanel').click();
     assert.equal(await page.locator('#dataDialog').isVisible(), true);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
