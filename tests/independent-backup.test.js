@@ -22,6 +22,10 @@ test('truncated or missing plan content never counts as a successful backup', ()
   const invalid = fixture(); delete invalid.storage.wochenplan_plan_v10;
   assert.throws(() => verifyBackupBytes(bytes(invalid)), /Planungsdaten/);
 });
+test('an unset theme and absent optional calibration remain restorable', () => {
+  const data = fixture(); data.storage.wochenplan_dark = null; delete data.storage['mep-calibration'];
+  assert.equal(verifyBackupBytes(bytes(data)).restored, true);
+});
 test('shared archive history stays in the original file and has an explicit count', () => {
   const data = fixture(); data.sharedArchive = { format: 'wochenplan-filialarchiv-v1', events: [{ id: 1, kind: 'created' }] };
   const encoded = bytes(data); assert.equal(verifyBackupBytes(encoded).archiveEvents, 1);

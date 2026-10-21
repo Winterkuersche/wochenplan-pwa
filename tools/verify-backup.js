@@ -26,7 +26,7 @@ function verifyBackupBytes(bytes, expectedSha256) {
   if (reopened.blocked) throw Error(reopened.error);
   for (const [key, value] of Object.entries(validated.backup.storage)) {
     if (value === undefined) continue;
-    const actual = key === keys.theme ? storage.getItem(key) : reopened.readJson(key, null);
+    const actual = key === keys.theme && value !== null ? storage.getItem(key) : reopened.readJson(key, null);
     const expected = key === keys.theme && value !== null ? String(value) : value;
     assert.deepEqual(actual === null ? null : JSON.parse(JSON.stringify(actual)), expected === null ? null : JSON.parse(JSON.stringify(expected)), `Wiederherstellung unterscheidet sich: ${key}`);
   }
