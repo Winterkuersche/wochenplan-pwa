@@ -1,14 +1,24 @@
-# V9.9: gemeinsame Filialplanung – Umsetzung und Abnahme
+# V9.9 bis V9.9.2: gemeinsame Filialplanung und Speicher-Korrekturen
 
 ## Aktueller Status
 
-V9.9 wurde am 21.10.2026 über PR #419 veröffentlicht (Merge `620261d56ca999442a93183de87c2208d41b10c9`).
-Persönlicher Login, E-Mail-Bestätigung und Übernahme in die Home-App wurden bestätigt.
-Die reale gemeinsame TL/SV-Bedienung auf dem iPhone bleibt offen.
-V9.9.1 ergänzt einen vor dem Schreibaufruf geprüften Kontextwechsel-Schutz: Ein alter
-Filialentwurf darf nach einem Kontowechsel während der Prüfsummenberechnung nicht
-in die inzwischen ausgewählte Filiale geschrieben werden. Der Regressionstest stellt
-den zuvor möglichen falschen Schreibaufruf mit verzögerter Web-Crypto-Berechnung nach.
+V9.9 wurde am 21. Oktober 2026 mit PR #419 in `main` übernommen und über
+GitHub Pages veröffentlicht. Persönlicher Login, E-Mail-Bestätigung, erster
+Online-Upload und die bewusste Übernahme in die Home-Bildschirm-App wurden mit
+Stephan geprüft. Die reale Bedienung der gemeinsamen Filiale mit der SV bleibt
+als gesonderter Praxistest offen.
+
+V9.9.1 wurde über PR #423 übernommen. Sie prüft nach der asynchronen
+Prüfsummenberechnung nochmals den Konto-/Filialkontext, bevor ein Entwurf zum
+Server gesendet wird. Ein Regressionstest verzögert Web Crypto, wechselt Konto
+und Filiale und verlangt null Schreibaufrufe des alten Entwurfs.
+
+Die Tests für den veröffentlichten Funktionsstand V9.9 sind erfolgreich: 516
+Node-Tests sowie Chromium-/WebKit-Browserabläufe. Die veröffentlichte Seite
+wurde zusätzlich in einem frischen mobilen Chromium-Kontext geöffnet:
+V9.9 und Filialmodule geladen, Dialog dreimal vollständig geschlossen,
+kein horizontaler Überlauf und keine JavaScript-Laufzeitfehler. Diese Prüfung
+verwendet keine Anmeldung und schreibt keine Produktionsdaten.
 
 ## Enthaltene Abläufe
 
@@ -120,24 +130,47 @@ Codeblöcke und nicht direkt referenzierte Skripte sind Hinweise zur Bewertung.
 Aktueller Hinweis: `planning2.js` wird in keinem HTML direkt referenziert; vor
 Entfernung müssen die vorhandenen Vorschau-/Transferwege geprüft werden.
 
-`docs/maintenance-reviewer.md` ist der begrenzte Auftrag für eine zusätzliche
-KI-Prüfung. Zwei zusätzliche ChatGPT-Aufgaben sind eingerichtet: PR-Ereignisse und wöchentliche Wartung.
-Sie lesen ausschließlich Quelltext und synthetische Tests über GitHub, berichten in ChatGPT
-und schreiben keine Änderungen. Sie verwenden keine zusätzliche Modell-API.
-Ein leeres oder noch ausstehendes Ergebnis gilt nicht als bestandene Prüfung.
-Die unabhängige Sicherung ist ein eigener Ablauf und hat andere Zugriffe;
-sie wird ausdrücklich nicht durch die Nur-Code-Prüfer erledigt.
+`docs/maintenance-reviewer.md` enthält den begrenzten Auftrag für die zusätzliche
+KI-Prüfung. Zwei ChatGPT-Aufgaben wurden eingerichtet: ein GitHub-Auslöser für
+neue prüfbereite PRs/Commits und eine Wartungsprüfung montags morgens in
+Europe/Berlin. Sie verwenden die bestehende GitHub-Verbindung, lesen Quellcode
+und berichten in ChatGPT. Es wird kein externer Modell-API-Zugang eingerichtet.
+Die Grenzen sind Auftragsvorgaben, kein finanzielles API-Ausgabenlimit.
+Der erste Probelauf lieferte keinen lesbaren Bericht und wurde nicht als Erfolg
+gewertet. Nach präzisierter Ausgabevorgabe lieferte der zweite Lauf einen
+vollständigen Bericht mit geprüftem Commit, tatsächlichen CI-Ergebnissen und
+zwei anhand synthetischer Daten reproduzierten Offline-Fehlern. Er erkannte auch,
+dass `main` während seiner Analyse weitergerückt war, und begrenzte seine Aussage
+auf den tatsächlich gelesenen Stand.
+
+## Korrekturen in V9.9.2
+
+- Nach fehlgeschlagenem Offline-Speichern wird ein Filialentwurf beim nächsten
+  erfolgreichen Abgleich erneut eingeplant, wenn die Serverbasis unverändert
+  und die aktuelle Bearbeitung erlaubt ist. Fremde neue Revisionen führen weiter
+  zum Vergleich; abgelaufene Rechte belassen den Entwurf ohne automatischen Upload.
+- HTTP-Fehlerantworten überschreiben keine funktionierenden Offline-Dateien.
+  Erfolgreiche Cache-Schreibvorgänge werden an die Ereignislaufzeit gebunden;
+  ein Cache-/Quota-Fehler verwirft keine erfolgreiche Netzwerkantwort.
+- Fünf Regressionstests ergänzen Wiederverbindung, Revisions-/Rechtegrenzen,
+  „HTTP 503, danach offline“ und fehlgeschlagenes Cache-Schreiben.
+- App-/Asset-Version und Offline-Cache werden zusammen erhöht.
+
+`Published app check` prüft nach einer erfolgreichen Pages-Veröffentlichung
+die tatsächlich ausgelieferten Assets in einem anonymen mobilen Browser.
+Der Checkout ist an den veröffentlichten Commit gebunden. Externe Anfragen und
+Schreibzugriffe sind blockiert; es werden keine persönlichen Pläne verwendet.
 
 ## Offene gemeinsame Abnahme und Einrichtung
 
-- [x] Aktuelle Dateisicherung und bewusste Auswahl des Online-Ausgangsstands bestätigt.
-- [x] Echter persönlicher Konto-Login, E-Mail-Bestätigung und Geräteübernahme bestätigt.
-- [ ] Passwort-Wiederherstellung und zusätzliche Schichtstichproben am echten Gerät bestätigen.
+- [x] Aktuelle Sicherung und gewünschter Ausgangsstand mit Stephan festgelegt.
+- [x] Echter persönlicher Konto-Login, E-Mail-Bestätigung, erster Upload und Übernahme in die Home-Bildschirm-App.
+- [ ] Passwort-Wiederherstellung mit Stephan praktisch prüfen.
 - [ ] TL/SV-Bedienung und Darstellung auf iPhone in Safari und Home-Bildschirm-App.
-- [ ] Externes Sicherungsziel und Turnus auswählen; automatischen Export dort einrichten und Wiederherstellung testen.
-- [x] Zusätzliche KI-Prüfaufträge begrenzt eingerichtet (PR-Ereignis und wöchentliche Wartung).
-- [x] V9.9 auf ausdrücklichen Nutzerauftrag veröffentlicht; CI und Pages-Deployment erfolgreich.
-- [ ] Externer Export mit echten Daten und Drive-Ziel noch freizugeben. Lokaler Ablauf: `docs/independent-backup.md`.
+- [ ] Gewünschtes separates Google-Konto verbinden; automatischen Export dort einrichten und Wiederherstellung testen. Die bisherige Shop-Verbindung wird dafür nicht verwendet.
+- [x] Zusätzliche KI-Prüfung über verbundene ChatGPT-Aufgaben begrenzt einrichten.
+- [x] Ersten lesbaren KI-Prüfbericht kontrollieren; beide reproduzierten Offline-Befunde in V9.9.2 mit Regressionstests bearbeiten. Der separate Kontowechsel-Befund wurde in V9.9.1 korrigiert.
+- [x] V9.9 nach geprüftem persönlichem Anmelde-/Übernahmetest und ausdrücklichem Veröffentlichungsauftrag übernehmen und veröffentlichen; TL/SV-Praxistest bleibt offen.
 
 ## Rückweg
 

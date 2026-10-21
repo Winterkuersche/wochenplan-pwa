@@ -4,12 +4,13 @@ const {loadScripts}=require('./test-helpers');
 const payload=code=>({backupVersion:2,storage:{wochenplan_master_v10:{employees:[{id:'one'}]},wochenplan_plan_v10:{schedule:{'2026-10-19':{one:{code}}},absences:[]},wochenplan_ui_v10:{}}});
 function setup(t,{editable=true,crypto=webcrypto}={}) {
  const ctx=loadScripts(['cloud-sync.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
- let local=payload('F4'),writes=0,adopted=null,beforeSave=null;
+ let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false;
  const record={id:'b',name:'Test',revision:1,payload:payload('F4'),can_edit:editable,can_publish:editable,owner:editable};
  const map=new Map();
  const c=ctx.WochenplanCollaboration.create({projectRef:'test',storage:{getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)},
  getSnapshot:()=>local,applySnapshot:v=>adopted=v,delayMs:100000,
  client:{rpc:async(_,args)=>{
+  if(offline)throw Error('offline');
   const {p_action:a,p_args:p}=args;
   if(a==='list')return{data:[{id:'b',name:'Test'}]};
   if(a==='read')return{data:structuredClone(record)};
@@ -23,7 +24,7 @@ function setup(t,{editable=true,crypto=webcrypto}={}) {
   throw Error(a);
  }}});
  t.after(()=>c.dispose());
- return{c,record,map,ctx,set:code=>{local=payload(code);},beforeSave:fn=>beforeSave=fn,get writes(){return writes;},get adopted(){return adopted;}};
+ return{c,record,map,ctx,set:code=>{local=payload(code);},offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,get writes(){return writes;},get adopted(){return adopted;}};
 }
 test('shared selection never uploads a differing local plan by itself',async t=>{
  const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});await f.c.select('b');assert.equal(f.c.status.mode,'compare');
@@ -80,4 +81,28 @@ test('opening a shared refresh preserves a queued automatic save',async t=>{
  await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.c.scheduleSave();assert.equal(timers.size,1);
  await f.c.refresh();assert.equal(timers.size,1,'refresh must reschedule the pending write');
  const written=new Promise(resolve=>f.beforeSave(resolve));[...timers.values()][0]();await written;assert.equal(f.writes,1);
+});
+test('failed shared saves resume after reconnect when their server base is unchanged',async t=>{
+ const f=setup(t),timers=new Map();let next=0;
+ f.ctx.setTimeout=fn=>{timers.set(++next,fn);return next;};f.ctx.clearTimeout=id=>timers.delete(id);
+ await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.offline(true);
+ await assert.rejects(f.c.save(),/offline/);assert.equal(f.writes,0);assert.equal(timers.size,0);
+ f.offline(false);await f.c.refresh();assert.equal(timers.size,1,'reconnect must retry an unsaved draft');
+ const written=new Promise(resolve=>f.beforeSave(resolve));[...timers.values()][0]();await written;
+ assert.equal(f.writes,1);assert.equal(f.record.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+});
+test('reconnect does not retry a failed shared save over another device revision',async t=>{
+ const f=setup(t),timers=new Map();let next=0;
+ f.ctx.setTimeout=fn=>{timers.set(++next,fn);return next;};f.ctx.clearTimeout=id=>timers.delete(id);
+ await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.offline(true);
+ await assert.rejects(f.c.save(),/offline/);f.offline(false);f.record.revision++;f.record.payload=payload('F6');
+ await f.c.refresh();assert.equal(f.c.status.mode,'compare');assert.equal(timers.size,0);assert.equal(f.writes,0);
+ assert.equal(f.record.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F6');assert.equal(f.adopted,null);
+});
+test('reconnect keeps a failed shared save as a draft after editing rights expire',async t=>{
+ const f=setup(t),timers=new Map();let next=0;
+ f.ctx.setTimeout=fn=>{timers.set(++next,fn);return next;};f.ctx.clearTimeout=id=>timers.delete(id);
+ await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.offline(true);
+ await assert.rejects(f.c.save(),/offline/);f.offline(false);f.record.can_edit=false;
+ await f.c.refresh();assert.equal(f.c.status.mode,'draft');assert.equal(timers.size,0);assert.equal(f.writes,0);assert.equal(f.adopted,null);
 });
