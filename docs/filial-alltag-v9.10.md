@@ -18,6 +18,7 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
    Kontofunktionen. GFB zeigt sein Monatskontingent statt eines Übertragskontos.
 4. **Rückgängig:** Letzte Wochenplanänderung über den Knopf oder direkt im Hinweis
    zurücknehmen. Die Rücknahme speichert regulär und kann online abgeglichen werden.
+   Schichtmenüs schließen vor der nächsten Eingabe, damit Favoriten erreichbar bleiben.
    Zwischenzeitliche Plan-/Teamänderung, offener Autosave, Import und Kontextwechsel
    verhindern eine Rücknahme über einen veralteten Stand. Einmalige Rücknahme;
    kein persistenter zweiter Planbestand und kein zusätzliches Änderungsjournal.
@@ -45,7 +46,7 @@ MEP-Formular, MEP-CSS, Druckgeometrie und PDF-Export bleiben unverändert.
   Speichern durch die Filialverwaltung und Übernahme auf einem zweiten Testgerät.
 - Bestehende fachliche Vorschlags-, Rechte-, Revisions- und Pakettests bleiben bestehen.
 
-Lokaler Stand vor GitHub-Browserprüfung: 545 Tests bestanden; Helper-, Precache-,
+Lokaler Stand vor GitHub-Browserprüfung: 546 Tests bestanden; Helper-, Precache-,
 Syntax- und Versionsprüfung erfolgreich. Browserinstallation wurde durch die
 lokale Freigabeprüfung blockiert; Chromium/WebKit werden in GitHub Actions geprüft.
 Die echte SV-Abnahme und ein realer Service-Worker-Updatewechsel bleiben gesondert

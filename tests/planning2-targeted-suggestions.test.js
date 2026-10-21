@@ -37,7 +37,7 @@ test('candidate pipeline receives only the requested day and bounded settings', 
   const { service, calls } = harness([candidate('a')]);
   const result = service.request({ days: [otherDay, targetDay] }, problem);
   assert.deepEqual(calls[0].days.map(day => day.isoDate), [problem.isoDate]);
-  assert.equal(calls[0].enableExistingShiftMutations, true);
+  assert.equal(calls[0].enableExistingShiftMutations, false);
   assert.equal(result.generationFacts.bounded, true);
   assert.equal(result.generationFacts.candidateCap, 48);
 });

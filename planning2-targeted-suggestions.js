@@ -84,7 +84,7 @@
       const problemId = problemIdFor(problem);
       const targetDay = (context.days || []).find(day => day.isoDate === problem.isoDate);
       if (!targetDay) return { problem: clone(problem), suggestions: [], externalHelp: null, generationFacts: { bounded: true, candidateCount: 0 } };
-      const targetContext = { ...context, days: [targetDay], enableExistingShiftMutations: true, packageTopK: Math.min(6, Number(options.packageTopK) || 6) };
+      const targetContext = { ...context, days: [targetDay], enableExistingShiftMutations: false, packageTopK: Math.min(6, Number(options.packageTopK) || 6) };
       const evaluation = generate(targetContext);
       const cap = Math.max(1, Number(options.candidateCap) || DEFAULT_CANDIDATE_CAP);
       const valid = (evaluation.candidates || []).filter(candidate => candidate.constraintResults?.allowed !== false && targetsProblem(candidate, problemId, problem)).slice(0, cap);
@@ -106,7 +106,7 @@
       const validPackages = (packages.packages || []).filter(item => item.valid !== false && targetsProblem(item, problemId, problem));
       const toSuggestion = candidate => {
         const mutations = [...(candidate.mutations || []), ...(candidate.requiredFollowUpMutations || [])];
-        const simulation = typeof simulatePackage === "function" ? simulatePackage(targetContext, { ...candidate, packageType: "TARGETED_CANDIDATE", mutations }) : null;
+        const simulation = typeof simulatePackage === "function" ? simulatePackage(context, { ...candidate, packageType: "TARGETED_CANDIDATE", mutations }) : null;
         if (simulation?.valid === false) return null;
         return candidateAsPackage(candidate, simulation);
       };

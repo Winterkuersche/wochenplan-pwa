@@ -46,6 +46,13 @@ async function main(){
   await page.locator('#createBaseline').click();assert.ok((await read()).monthlyPlanBaselines['2026-10']);await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
   await page.locator('#grid [data-hours-person="a"]').click();assert.equal(await page.locator('#hourBreakdownDialog').isVisible(),true);
   assert.match(await page.locator('#hourBreakdownValues').innerText(),/10:00/);assert.match(await page.locator('#hourBreakdownExplanation').innerText(),/ersetzt/);await page.locator('#closeHourBreakdown').click();
+  // An eligible future gap with a closing team and next-day opener already in place.
+  const proposalFixture=structuredClone(fixture), proposalPlan=proposalFixture.storage.wochenplan_plan_v10;
+  proposalPlan.schedule[day].b={type:'shift',code:'G',start:'08:55',end:'19:10',minutes:540,pause:70};
+  proposalPlan.schedule[day].c={type:'shift',code:'L4',start:'15:00',end:'19:10',minutes:240,pause:10};
+  proposalPlan.schedule['2026-10-21']={b:{type:'shift',code:'F4',start:'08:55',end:'12:55',minutes:240,pause:0}};
+  await page.locator('#btnDataPanel').click();
+  await Promise.all([page.waitForEvent('load'),page.locator('#backupFileInput').setInputFiles({name:'synthetic-proposals.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(proposalFixture))})]);await ready();await week();
   await page.locator('#planningWarnings summary').click();assert.ok(await page.locator('#planningWarningList button').count()>0);
   assert.equal(await page.locator('#planningSuggestionsToggle').getAttribute('aria-pressed'),'false');
   assert.equal(await page.locator('[data-targeted-day]').count(),0);await page.locator('#planningSuggestionsToggle').click();
