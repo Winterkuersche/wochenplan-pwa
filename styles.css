@@ -215,6 +215,8 @@ select {
 .dataStatus[data-mode="synced"] { color: #26704a; }
 .storageProblem { padding: 18px; margin-bottom: 18px; border: 1px solid #d69a3a; border-radius: 16px; background: #fff3db; color: #563700; }
 .dataDialog { box-sizing: border-box; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 24px; overflow-y: auto; border: 1px solid var(--border); border-radius: 24px; background: var(--panel, #fff); color: inherit; }
+/* Keep the generic .no-print display rule from exposing a closed dialog. */
+.dataDialog:not([open]) { display: none; }
 .dataDialog::backdrop { background: rgba(18, 28, 43, .55); }
 .dataDialogHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .dataDialogHeader h2 { margin: 4px 0 0; font-size: 1.6rem; }
