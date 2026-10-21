@@ -16,7 +16,7 @@ function setup(t,{editable=true}={}) {
   if(a==='save'){
    if(!record.can_edit)return{error:{code:'42501',message:'READ_ONLY'}};
    if(record.revision!==p.expected_revision)return{error:{code:'40001',message:'REVISION_CONFLICT'}};
-   writes++;record.revision++;record.payload=p.payload;if(beforeSave)beforeSave();return{data:{revision:record.revision}};
+   writes++;record.revision++;record.payload=p.payload;if(beforeSave)await beforeSave();return{data:{revision:record.revision}};
   }
   if(a==='propose')return{data:{revision:record.revision}};
   if(a==='compare')return{data:{revision:record.revision,changes:[]}};
@@ -50,4 +50,18 @@ test('Berlin delegation day boundaries include complete days and DST transitions
 test('explicit replacement is pinned to the preview and rejects a changed local draft',async t=>{
  const f=setup(t);await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');const preview=await f.c.compare();
  f.set('F6');await assert.rejects(f.c.save('',true,preview),/seit der Vorschau/);assert.equal(f.writes,0);
+});
+test('a completed shared request cannot attach its result to a signed-out account',async t=>{
+ const f=setup(t);await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.beforeSave(()=>f.c.setUser(null));
+ await assert.rejects(f.c.save(),/Konto oder der Planungsbereich/);assert.equal(f.c.status.user,null);assert.equal(f.c.status.mode,'signed-out');
+});
+test('view-only saves do not create repeated shared revisions or audit events',async t=>{
+ const f=setup(t);await f.c.setUser({id:'u'});await f.c.select('b');await f.c.save();assert.equal(f.writes,0);
+});
+test('opening a shared refresh preserves a queued automatic save',async t=>{
+ const f=setup(t),timers=new Map();let next=0;
+ f.ctx.setTimeout=fn=>{timers.set(++next,fn);return next;};f.ctx.clearTimeout=id=>timers.delete(id);
+ await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.c.scheduleSave();assert.equal(timers.size,1);
+ await f.c.refresh();assert.equal(timers.size,1,'refresh must reschedule the pending write');
+ const written=new Promise(resolve=>f.beforeSave(resolve));[...timers.values()][0]();await written;assert.equal(f.writes,1);
 });

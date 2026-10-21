@@ -17,11 +17,13 @@
   }
   function create(options) {
     const state = { user: null, branches: [], branch: null, selected: null, mode: "signed-out", message: "Bitte zuerst anmelden.", busy: false };
-    let epoch = 0, timer = null, linked = false, disposed = false;
+    let epoch = 0, timer = null, linked = false, disposed = false, dirtyDuringWork = false;
     const fingerprint = root.WochenplanCloud.fingerprint;
+    const snapshot = () => JSON.parse(JSON.stringify(options.getSnapshot()));
     const prefix = () => `wochenplan_shared_v1:${options.projectRef}:${state.user.id}`;
     const notify = () => options.onChange?.({ ...state });
     const cancel = () => { if (timer) clearTimeout(timer); timer = null; };
+    function resumePending() { const pending=dirtyDuringWork;dirtyDuringWork=false;if(pending&&linked)scheduleSave(); }
     function setMode(mode, message) { state.mode = mode; state.message = message; notify(); }
     function metadata() { try { return JSON.parse(options.storage.getItem(prefix() + ":" + state.selected) || "null"); } catch (_) { return null; } }
     function remember(revision, signature) { options.storage.setItem(prefix() + ":" + state.selected, JSON.stringify({ revision, signature })); linked = true; }
@@ -51,7 +53,7 @@
     async function refresh() {
       if (!state.user || state.busy || disposed) return;
       const thisEpoch = epoch;
-      state.busy = true; cancel(); notify();
+      state.busy = true; dirtyDuringWork=dirtyDuringWork||Boolean(timer); cancel(); notify();
       try {
         const branches = await call("list");
         if (epoch !== thisEpoch) return;
@@ -60,18 +62,18 @@
         else setMode("personal", "Du kannst eine Filiale anlegen oder einer Einladung folgen.");
       } catch (error) {
         if (epoch === thisEpoch) { linked = false; setMode("offline", error.message); }
-      } finally { if (epoch === thisEpoch) { state.busy = false; notify(); } }
+      } finally { if (epoch === thisEpoch) { state.busy = false; notify(); resumePending(); } }
     }
     async function setUser(user) {
       if (state.user?.id === user?.id || disposed) return;
-      epoch++; cancel(); linked = false;
+      epoch++; cancel(); linked = false; dirtyDuringWork = false;
       state.user = user; state.branch = null; state.branches = []; state.busy = false;
       state.selected = user ? options.storage.getItem(prefix() + ":selected") : null;
       notify();
       if (user) await refresh(); else setMode("signed-out", "Bitte zuerst anmelden.");
     }
     async function select(id) {
-      epoch++; cancel(); linked = false; state.busy = false; state.branch = null;
+      epoch++; cancel(); linked = false; dirtyDuringWork=false; state.busy = false; state.branch = null;
       state.selected = id || null;
       options.onContextChange?.();
       if (id) options.storage.setItem(prefix() + ":selected", id); else options.storage.removeItem(prefix() + ":selected");
@@ -80,10 +82,10 @@
     async function exclusive(work) {
       if (!state.user || state.busy) throw new Error("Bitte warten, bis der Abgleich abgeschlossen ist.");
       const thisEpoch = epoch;
-      state.busy = true; cancel(); notify();
-      try { return await work(thisEpoch); }
+      state.busy = true; dirtyDuringWork=dirtyDuringWork||Boolean(timer); cancel(); notify();
+      try { const result=await work(thisEpoch); if(epoch!==thisEpoch) throw new Error("Das Konto oder der Planungsbereich wurde gewechselt. Bitte erneut prüfen."); return result; }
       catch (error) { if (epoch === thisEpoch) { linked = false; setMode("attention", error.message); } throw error; }
-      finally { if (epoch === thisEpoch) { state.busy = false; notify(); } }
+      finally { if (epoch === thisEpoch) { state.busy = false; notify(); resumePending(); } }
     }
     async function establish(action, args) {
       const id = await exclusive(async () => (await call(action, args)).id);
@@ -93,8 +95,10 @@
     async function save(reason = "", explicit = false, preview = null) {
       return exclusive(async (thisEpoch) => {
         if (!state.branch || (!linked && !(explicit && preview))) throw new Error("Bitte zuerst den Filialplan vergleichen und die Übernahme bestätigen.");
-        const payload = options.getSnapshot();
+        const payload = snapshot();
         const signature = await fingerprint(payload);
+        const previous=metadata();
+        if(!explicit&&previous?.revision===state.branch.revision&&previous.signature===signature){setMode("synced",state.branch.can_edit?"Gemeinsamer Plan ist aktuell.":"Du darfst ansehen und Vorschläge vorbereiten.");return;}
         if (preview && preview.signature !== signature) throw new Error("Dein Entwurf hat sich seit der Vorschau geändert. Bitte erneut vergleichen.");
         const result = await call("save", { payload, reason, expected_revision: preview?.revision ?? state.branch.revision });
         if (epoch !== thisEpoch) return;
@@ -105,6 +109,7 @@
     function scheduleSave() {
       cancel();
       if (!state.selected || !state.branch || !state.user) return;
+      if(state.busy){dirtyDuringWork=true;return;}
       setMode("draft", state.branch.can_edit ? "Lokale Änderungen: Online-Sicherung folgt …" : "Lokaler Vorschlag: noch nicht im gemeinsamen Plan.");
       if (!linked || !state.branch.can_edit) return;
       timer = setTimeout(() => { timer = null; if (!state.busy) void save().then(() => { if (state.mode === "draft") scheduleSave(); }).catch(() => {}); }, options.delayMs ?? 1500);
@@ -112,9 +117,10 @@
     async function adopt() {
       return exclusive(async (thisEpoch) => {
         const remote = await call("read");
+        const signature = await fingerprint(remote.payload);
         if (epoch !== thisEpoch) return;
         options.applySnapshot(remote.payload);
-        try { remember(remote.revision, await fingerprint(remote.payload)); }
+        try { remember(remote.revision, signature); }
         finally { options.reload?.(); }
       });
     }
@@ -125,7 +131,7 @@
     async function history(args = {}) { return exclusive(() => call("history", args)); }
     async function compare() {
       return exclusive(async () => {
-        const payload = options.getSnapshot();
+        const payload = snapshot();
         return { ...await call("compare", { payload }), signature: await fingerprint(payload) };
       });
     }
@@ -144,9 +150,9 @@
       });
     }
     return { setUser, select, refresh, save, scheduleSave, adopt, perform, history, compare, archive,
-      create: (name, display_name) => establish("create", { name, display_name, payload: options.getSnapshot() }),
+      create: (name, display_name) => establish("create", { name, display_name, payload: snapshot() }),
       join: (token, display_name) => establish("accept_invite", { token, display_name }),
-      propose: (reason) => perform("propose", { payload: options.getSnapshot(), reason }),
+      propose: (reason) => perform("propose", { payload: snapshot(), reason }),
       dispose() { disposed = true; epoch++; cancel(); },
       get status() { return { ...state }; }, get active() { return Boolean(state.selected); }
     };

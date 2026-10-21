@@ -100,8 +100,8 @@ keine echten Einladungen oder E-Mails verschickt und keine Testkonten behalten.
 Der Hosted-Test und die Sicherheitsprüfung wurden nach Einrichtung ausgeführt.
 
 Chromium wurde lokal geprüft. Der lokale WebKit-Download war nicht verfügbar;
-die neue GitHub-Matrix muss deshalb WebKit zusätzlich prüfen. Ein bestandener
-WebKit-Lauf ersetzt den realen iPhone-Test nicht.
+Chromium und WebKit wurden anschließend in der GitHub-Matrix erfolgreich geprüft.
+Ein bestandener WebKit-Lauf ersetzt den realen iPhone-Test nicht.
 
 ## Wartung und Grenzen
 
