@@ -1,4 +1,4 @@
-# Unabhängige Sicherung: vorbereiteter Ablauf
+# Unabhängige Sicherung: eingerichtet, erster automatischer Lauf offen
 
 Status am 21.10.2026: separates Zielkonto verifiziert, privater Sicherungsordner
 angelegt und erster echter Export erfolgreich zurückgelesen. Dateigröße und
@@ -79,5 +79,7 @@ mit künstlichen Daten in einer getrennten Browserinstanz.
   Die Sicherungsaufgabe muss vor jedem Schreiben Zielkonto und Zielordner prüfen.
 - Geplanter Turnus: täglich am Abend in Europe/Berlin. Bis zur geprüften
   Aufbewahrung keine vorhandenen Sicherungen automatisch löschen.
-- Ersten automatischen Lauf kontrollieren. Die technische Einzelkonto-/Teamablage
-  soll in der Bedienung keine parallelen privaten und gemeinsamen Planungsbereiche bilden.
+- Ersten automatischen Lauf kontrollieren. Die Oberfläche von V9.9.3 nutzt einen
+  Filialplan; die frühere Auswahl zwischen privatem und gemeinsamem Plan entfällt.
+- Aktuelle offene Punkte nur in `docs/stability-checklist.md` beziehungsweise
+  Einrichtungsfortschritt in `docs/zusammenarbeit-roadmap.md` weiterführen.

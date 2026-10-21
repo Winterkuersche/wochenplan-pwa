@@ -1,5 +1,10 @@
 # Gezielte Wartungsprüfung vom 21.10.2026
 
+Historischer Bericht zum unten genannten Commit. Seine damaligen offenen
+Einrichtungen und Testgrenzen sind keine aktuelle Aufgabenliste. Aktueller Stand:
+[stability-checklist.md](stability-checklist.md) und
+[zusammenarbeit-roadmap.md](zusammenarbeit-roadmap.md).
+
 Geprüfter main-Commit: `73b94b8be8c5e745ea4186ce553e2cdb8b7aa4ad`.
 Kein vorheriger abgeschlossener Bericht dieser Aufgabe war verfügbar.
 
