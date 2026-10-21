@@ -1,27 +1,50 @@
 name: Published app check
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ['pages build and deployment']
-    types: [completed]
+  push:
+    branches: [main]
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: published-app-check
   cancel-in-progress: true
 jobs:
   published:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
+      - name: Wait for the matching Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node <<'JS'
+          async function main() {
+            const { GITHUB_REPOSITORY: repo, GITHUB_SHA: sha, GH_TOKEN: token } = process.env;
+            const url = `https://api.github.com/repos/${repo}/actions/runs?head_sha=${sha}&per_page=50`;
+            for (let attempt = 0; attempt < 60; attempt++) {
+              const response = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' } });
+              if (!response.ok) throw Error(`Deployment lookup failed: HTTP ${response.status}`);
+              const { workflow_runs: runs } = await response.json();
+              const pages = runs.find(run => run.name === 'pages build and deployment');
+              if (pages?.status === 'completed') {
+                if (pages.conclusion !== 'success') throw Error(`Pages deployment: ${pages.conclusion}`);
+                console.log(`Pages deployment ${pages.id} succeeded for ${sha}`);
+                return;
+              }
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            throw Error('No successful Pages deployment for this commit within five minutes.');
+          }
+          main().catch(error => { console.error(error.message); process.exitCode = 1; });
+          JS
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run test:live
