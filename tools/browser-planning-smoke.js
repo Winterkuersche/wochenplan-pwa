@@ -83,7 +83,10 @@ async function main(){
   const offlinePage=await offline.newPage();offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
   await offlinePage.goto(url);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await offlinePage.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.active),null,{timeout:20000});
-  await offlinePage.reload();await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true&&Boolean(navigator.serviceWorker.controller));
+  // The app reloads itself on the initial controllerchange. Do not start a
+  // competing navigation before that reload has settled (especially WebKit).
+  await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true&&Boolean(navigator.serviceWorker.controller));
+  await offlinePage.waitForLoadState('networkidle');
   await offlinePage.locator('#btnDataPanel').click();
   await Promise.all([offlinePage.waitForEvent('load'),offlinePage.locator('#backupFileInput').setInputFiles({name:'offline-synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await offline.setOffline(true);await offlinePage.reload();await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
