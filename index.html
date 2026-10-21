@@ -165,13 +165,14 @@ Drucken / PDF
   <p id="storageProblemText"></p>
   <button id="btnStorageHelp" type="button">Sicherung &amp; Wiederherstellung öffnen</button>
 </section>
+<section id="sharedPlanNotice" class="sharedPlanNotice hidden no-print" role="status" aria-live="polite"></section>
 
 <dialog id="dataDialog" class="dataDialog no-print" aria-labelledby="dataDialogTitle">
   <div class="dataDialogHeader">
     <div><p class="dataEyebrow">DEINE PLANUNG</p><h2 id="dataDialogTitle">Daten &amp; Sicherung</h2></div>
     <button id="btnCloseData" type="button" aria-label="Daten und Sicherung schließen">Schließen</button>
   </div>
-  <p class="dataIntro">Ein Plan für Safari, Home-Bildschirm-App und Laptop. Verbinde sie über dasselbe Konto.</p>
+  <p class="dataIntro">Dein Konto verbindet deine Geräte. Eine gemeinsame Filiale verbindet dich mit deiner Vertretung.</p>
   <section class="dataCard" aria-labelledby="dataLocalTitle">
     <h3 id="dataLocalTitle">Auf diesem Gerät</h3>
     <strong id="dataLocalSummary"></strong>
@@ -210,12 +211,12 @@ Drucken / PDF
     <div id="cloudSignedIn" class="hidden">
       <p id="cloudAccount" class="small"></p>
       <p id="cloudRemoteSummary" class="small"></p>
-      <div class="dataActions">
+      <div id="personalCloudActions" class="dataActions">
         <button id="btnCloudUpload" type="button" class="dataPrimary" data-network>Jetzt online sichern</button>
         <button id="btnCloudDownload" type="button" data-network>Online-Stand übernehmen</button>
         <button id="btnCloudRefresh" type="button" data-network>Stand abgleichen</button>
       </div>
-      <details class="dataRecovery"><summary>Online-Sicherungsverlauf</summary>
+      <details id="personalCloudHistory" class="dataRecovery"><summary>Persönlicher Online-Sicherungsverlauf</summary>
         <p class="small">Frühere Stände als Datei herunterladen und bei Bedarf importieren.</p>
         <button id="btnCloudHistory" type="button" data-network>Sicherungen anzeigen</button>
         <div id="cloudHistoryActions" class="dataActions hidden">
@@ -224,6 +225,72 @@ Drucken / PDF
         </div>
       </details>
       <button id="btnCloudSignOut" type="button" class="dataSignOut" data-network>Auf diesem Gerät abmelden</button>
+    </div>
+  </section>
+  <section id="collaborationPanel" class="dataCard hidden" aria-labelledby="sharedTitle">
+    <h3 id="sharedTitle">Gemeinsame Filiale</h3>
+    <p id="sharedMessage" role="status" aria-live="polite"></p>
+    <label>Filiale<select id="sharedBranchSelect"><option value="">Persönliche Planung</option></select></label>
+    <details id="sharedSetup"><summary>Filiale anlegen oder Einladung annehmen</summary>
+      <label>Dein Anzeigename<input id="sharedDisplayName" maxlength="80" autocomplete="name"></label>
+      <label>Filialname<input id="sharedBranchName" maxlength="100" placeholder="Meine Filiale"></label>
+      <button id="btnSharedCreate" type="button" data-network>Mit diesem Plan Filiale anlegen</button>
+      <label>Einladungscode oder Einladungslink<input id="sharedInviteToken" autocomplete="off"></label>
+      <button id="btnSharedJoin" type="button" data-network>Einladung annehmen</button>
+    </details>
+    <div id="sharedSelected" class="hidden">
+      <p id="sharedSummary" class="small"></p>
+      <div class="dataActions">
+        <button id="btnSharedRefresh" type="button" data-network>Filialstand prüfen</button>
+        <button id="btnSharedAdopt" type="button" data-network>Filialplan auf dieses Gerät übernehmen</button>
+        <button id="btnSharedSave" type="button" class="dataPrimary" data-network>Änderungen vor Übernahme vergleichen</button>
+      </div>
+      <div id="sharedCompare" class="hidden">
+        <h4>Diese Änderungen würden übernommen</h4>
+        <div id="sharedCompareChanges"></div>
+        <button id="btnSharedConfirmSave" type="button" class="dataPrimary" data-network>Geprüfte Änderungen im Filialplan speichern</button>
+      </div>
+      <p class="small">Änderungen ohne Bearbeitungsrecht bleiben lokale Vorschläge. Sichere offene Änderungen vor dem Übernehmen eines anderen Standes als Datei.</p>
+      <label>Grund für Änderung oder Vorschlag<input id="sharedReason" maxlength="500"></label>
+      <button id="btnSharedPropose" type="button" data-network>Lokale Änderungen als Vorschlag einreichen</button>
+      <details id="sharedOwner" class="hidden"><summary>Einladungen und Vertretung verwalten</summary>
+        <button id="btnSharedInvite" type="button" data-network>Einladungslink erstellen</button>
+        <label>Einladungslink zum Kopieren<input id="sharedInviteLink" readonly></label>
+        <div id="sharedInvites"></div>
+        <label>Vertretung<select id="sharedMember"></select></label>
+        <label>Beginn<input id="sharedGrantFrom" type="date"></label>
+        <label>Letzter Vertretungstag<input id="sharedGrantTo" type="date"></label>
+        <label class="sharedCheckbox"><input id="sharedCanPublish" type="checkbox">Darf auch Wochenstände freigeben</label>
+        <button id="btnSharedGrant" type="button" data-network>Vertretung freigeben</button>
+        <div id="sharedGrants"></div>
+        <button id="btnSharedRemoveMember" type="button" data-network>Zugang dieser Person beenden</button>
+        <p class="small">Vor jeder Vertretungsfreigabe wird ein Sicherungsstand angelegt. Ohne deine Freigabe werden keine zusätzlichen Rechte erteilt.</p>
+      </details>
+      <details id="sharedActivity"><summary>Änderungen und Vorschläge</summary>
+        <div id="sharedProposals"></div>
+        <label>Person<select id="sharedActorFilter"><option value="">Alle</option></select></label>
+        <label>Woche ab Montag<input id="sharedHistoryWeek" type="date"></label>
+        <label class="sharedCheckbox"><input id="sharedSinceVisit" type="checkbox" checked>Seit dem letzten Öffnen dieser Übersicht</label>
+        <button id="btnSharedHistory" type="button" data-network>Änderungen anzeigen</button>
+        <button id="btnSharedHistoryOlder" type="button" class="hidden" data-network>Ältere Änderungen laden</button>
+        <div id="sharedEvents"></div>
+      </details>
+      <details><summary>Wochenfreigaben</summary>
+        <label>Woche ab Montag<input id="sharedPublishWeek" type="date"></label>
+        <button id="btnSharedPublish" type="button" data-network>Aktuellen Online-Wochenstand freigeben</button>
+        <div id="sharedPublications"></div>
+      </details>
+      <details><summary>Sicherungsstände und unabhängige Kopie</summary>
+        <label>Bezeichnung<input id="sharedCheckpointName" maxlength="100" placeholder="Vor Urlaubsvertretung"></label>
+        <button id="btnSharedCheckpoint" type="button" data-network>Benannten Stand sichern</button>
+        <label>Sicherungsstand<select id="sharedSnapshotSelect"></select></label>
+        <div class="dataActions">
+          <button id="btnSharedSnapshotExport" type="button" data-network>Stand als Sicherungsdatei herunterladen</button>
+          <button id="btnSharedRestore" type="button" data-network>Filialplan wiederherstellen</button>
+          <button id="btnSharedArchive" type="button" data-network>Filialarchiv mit Verlauf herunterladen</button>
+        </div>
+        <p class="small">Die Datei außerhalb dieses Gerätes aufbewahren. Ein regelmäßiger automatischer Export benötigt noch ein eingerichtetes Sicherungsziel.</p>
+      </details>
     </div>
   </section>
   <p id="dataActionMessage" class="dataActionMessage" role="status" aria-live="polite"></p>
@@ -841,33 +908,34 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-10-21-1"></script>
-<script src="./holidays.js?v=2026-10-21-1"></script>
-<script src="./time-utils.js?v=2026-10-21-1"></script>
-<script src="./employee-availability.js?v=2026-10-21-1"></script>
-<script src="./shift-rules.js?v=2026-10-21-1"></script>
-<script src="./date-utils.js?v=2026-10-21-1"></script>
-<script src="./shift-utils.js?v=2026-10-21-1"></script>
-<script src="./status-utils.js?v=2026-10-21-1"></script>
-<script src="./contract-models.js?v=2026-10-21-1"></script>
-<script src="./absences.js?v=2026-10-21-1"></script>
-<script src="./planning2-domain-helpers.js?v=2026-10-21-1"></script>
-<script src="./planning2-carryover.js?v=2026-10-21-1"></script>
-<script src="./planning2-mutation-packages.js?v=2026-10-21-1"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-10-21-1"></script>
-<script src="./planning2-data-adapter.js?v=2026-10-21-1"></script>
-<script src="./vacation-utils.js?v=2026-10-21-1"></script>
-<script src="./day-resolution.js?v=2026-10-21-1"></script>
-<script src="./month-engine.js?v=2026-10-21-1"></script>
-<script src="./daily-staffing.js?v=2026-10-21-1"></script>
-<script src="./day-view.js?v=2026-10-21-1"></script>
-<script src="./week-view.js?v=2026-10-21-1"></script>
-<script src="./mep-view.js?v=2026-10-21-1"></script>
-<script src="./month-view.js?v=2026-10-21-1"></script>
-<script src="./balance-utils.js?v=2026-10-21-1"></script>
-<script src="./monthly-plan-baselines.js?v=2026-10-21-1"></script>
-<script src="./backup-utils.js?v=2026-10-21-1"></script>
-<script src="./manual-month-utils.js?v=2026-10-21-1"></script>
+<script src="./version.js?v=2026-10-21-2"></script>
+<script src="./holidays.js?v=2026-10-21-2"></script>
+<script src="./time-utils.js?v=2026-10-21-2"></script>
+<script src="./employee-availability.js?v=2026-10-21-2"></script>
+<script src="./shift-rules.js?v=2026-10-21-2"></script>
+<script src="./date-utils.js?v=2026-10-21-2"></script>
+<script src="./shift-utils.js?v=2026-10-21-2"></script>
+<script src="./status-utils.js?v=2026-10-21-2"></script>
+<script src="./contract-models.js?v=2026-10-21-2"></script>
+<script src="./absences.js?v=2026-10-21-2"></script>
+<script src="./planning2-domain-helpers.js?v=2026-10-21-2"></script>
+<script src="./planning2-carryover.js?v=2026-10-21-2"></script>
+<script src="./planning2-mutation-packages.js?v=2026-10-21-2"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-10-21-2"></script>
+<script src="./planning2-data-adapter.js?v=2026-10-21-2"></script>
+<script src="./vacation-utils.js?v=2026-10-21-2"></script>
+<script src="./day-resolution.js?v=2026-10-21-2"></script>
+<script src="./month-engine.js?v=2026-10-21-2"></script>
+<script src="./daily-staffing.js?v=2026-10-21-2"></script>
+<script src="./day-view.js?v=2026-10-21-2"></script>
+<script src="./week-view.js?v=2026-10-21-2"></script>
+<script src="./mep-view.js?v=2026-10-21-2"></script>
+<script src="./month-view.js?v=2026-10-21-2"></script>
+<script src="./balance-utils.js?v=2026-10-21-2"></script>
+<script src="./monthly-plan-baselines.js?v=2026-10-21-2"></script>
+<script src="./backup-utils.js?v=2026-10-21-2"></script>
+<script src="./backup-io.js?v=2026-10-21-2"></script>
+<script src="./manual-month-utils.js?v=2026-10-21-2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -879,17 +947,19 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-10-21-1"></script>
-<script src="./app-orchestration.js?v=2026-10-21-1"></script>
-<script src="./employee-order.js?v=2026-10-21-1"></script>
-<script src="./planning2-manual-tools.js?v=2026-10-21-1"></script>
-<script src="./planning2-live.js?v=2026-10-21-1"></script>
-<script src="./storage-utils.js?v=2026-10-21-1"></script>
-<script src="./cloud-config.js?v=2026-10-21-1"></script>
-<script src="./vendor/supabase-2.118.0.js?v=2026-09-28-1"></script>
-<script src="./cloud-sync.js?v=2026-10-21-1"></script>
-<script src="./app.js?v=2026-10-21-1"></script>
-<script src="./data-panel.js?v=2026-10-21-1"></script>
+<script src="./pdf-export.js?v=2026-10-21-2"></script>
+<script src="./app-orchestration.js?v=2026-10-21-2"></script>
+<script src="./employee-order.js?v=2026-10-21-2"></script>
+<script src="./planning2-manual-tools.js?v=2026-10-21-2"></script>
+<script src="./planning2-live.js?v=2026-10-21-2"></script>
+<script src="./storage-utils.js?v=2026-10-21-2"></script>
+<script src="./cloud-config.js?v=2026-10-21-2"></script>
+<script src="./vendor/supabase-2.118.0.js?v=2026-10-21-2"></script>
+<script src="./cloud-sync.js?v=2026-10-21-2"></script>
+<script src="./collaboration.js?v=2026-10-21-2"></script>
+<script src="./app.js?v=2026-10-21-2"></script>
+<script src="./data-panel.js?v=2026-10-21-2"></script>
+<script src="./collaboration-panel.js?v=2026-10-21-2"></script>
 
 
 <script>

@@ -44,6 +44,7 @@
     }
 
     async function refresh() {
+      if (options.isPersonalActive?.() === false) return;
       if (!status.user || status.busy) return;
       const currentEpoch = epoch;
       saveAgain = saveAgain || Boolean(timer);
@@ -90,6 +91,7 @@
     }
 
     async function save({ overwrite = false } = {}) {
+      if (options.isPersonalActive?.() === false) return false;
       cancel();
       if (!status.user || (!linked && !overwrite)) return false;
       if (status.busy) { saveAgain = true; return false; }
@@ -143,6 +145,7 @@
     }
 
     function scheduleSave() {
+      if (options.isPersonalActive?.() === false) return;
       if (!status.user || !linked) return;
       if (status.busy) { saveAgain = true; return; }
       cancel();
@@ -251,8 +254,9 @@
       return data.payload;
     }
 
+    function resetLink() { epoch += 1; cancel(); linked = false; saveAgain = false; status.busy = false; if (status.user) options.storage.removeItem(key()); }
     function dispose() { epoch += 1; cancel(); subscription?.unsubscribe(); }
-    return { start, refresh, save, adopt, scheduleSave, signIn, signUp, signOut, resetPassword, updatePassword, history, getRevision, dispose,
+    return { start, refresh, save, adopt, scheduleSave, signIn, signUp, signOut, resetPassword, updatePassword, history, getRevision, resetLink, dispose,
       get status() { return { ...status }; } };
   }
 

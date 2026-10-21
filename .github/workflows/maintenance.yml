@@ -1,0 +1,26 @@
+name: Wartung und Abhängigkeiten
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 5 * * 1'
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: maintenance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check:maintenance -- --report maintenance-report.md
+      - name: Bericht am Lauf ablegen
+        if: always()
+        run: test ! -f maintenance-report.md || cat maintenance-report.md >> "$GITHUB_STEP_SUMMARY"
+      - run: npm audit --omit=dev --audit-level=high

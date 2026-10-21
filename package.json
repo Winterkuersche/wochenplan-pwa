@@ -3,7 +3,9 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tools/browser-data-smoke.js && node tools/browser-cloud-smoke.js",
+    "test:browser": "node tools/browser-data-smoke.js && node tools/browser-cloud-smoke.js && node tools/browser-collaboration-smoke.js",
+    "test:collaboration": "node --test tests/collaboration-*.test.js",
+    "check:maintenance": "node tools/check-maintenance.js",
     "vendor:supabase": "node tools/vendor-supabase.js",
     "sync:asset-version": "node tools/sync-index-script-version.js",
     "check:all": "npm test && npm run check:globals && npm run check:sw",
@@ -14,6 +16,7 @@
     "@supabase/supabase-js": "2.118.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
     "playwright": "1.62.1"
   }
 }

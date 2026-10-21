@@ -2469,41 +2469,6 @@ function updateBackupInfoLabel() {
   }
 }
 
-function collectFullBackupSnapshot() {
-  const savedTheme = loadJson("wochenplan_dark", null);
-  return {
-    backupVersion: 2,
-    app: {
-      name: APP_META.name,
-      version: APP_META.version
-    },
-    createdAt: new Date().toISOString(),
-    storage: {
-      [MASTER_KEY]: saveMasterData({ snapshotOnly: true }),
-      [PLAN_KEY]: savePlanData({ snapshotOnly: true }),
-      [UI_KEY]: { ...uiState },
-      ["wochenplan_dark"]: savedTheme === null ? null : String(savedTheme),
-      [BACKUP_MEP_CALIBRATION_KEY]: loadJson(BACKUP_MEP_CALIBRATION_KEY, null)
-    }
-  };
-}
-
-function triggerBackupDownload(snapshot, filename = `wochenplan-backup-${formatIsoDateForFileName()}.json`) {
-  const payload = JSON.stringify(snapshot, null, 2);
-  const blob = new Blob([payload], { type: "application/json;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  // WebKit may start reading the blob after the synthetic click returns.
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
 function collectPlanning2TransferSnapshot() {
   const planData = loadJson(PLAN_KEY, defaultPlanState());
   if (planData && typeof planData === "object") {

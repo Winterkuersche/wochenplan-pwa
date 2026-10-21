@@ -25,7 +25,7 @@ function readAppMeta() {
 function syncIndexScriptVersions(assetVersion) {
   const html = fs.readFileSync(indexFile, 'utf8');
   const updatedHtml = html.replace(
-    /(<script\s+src=")\.\/([a-z0-9-]+\.js)(\?v=[^"]*)?("\s*><\/script>)/gi,
+    /(<script\s+src=")\.\/([a-z0-9./-]+\.js)(\?v=[^"]*)?("\s*><\/script>)/gi,
     `$1./$2?v=${assetVersion}$4`
   );
 

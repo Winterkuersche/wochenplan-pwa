@@ -1,0 +1,311 @@
+-- Shared planning is additive: the original personal documents stay unchanged.
+-- All tables are private. The only Data API entry is the authenticated invoker
+-- wrapper; its private implementation explicitly authorizes every operation.
+begin;
+create schema if not exists wochenplan_private;
+revoke all on schema wochenplan_private from public, anon;
+grant usage on schema wochenplan_private to authenticated;
+
+create table wochenplan_private.branches (
+ id uuid primary key default gen_random_uuid(),
+ name text not null check (length(name) between 1 and 100),
+ owner_id uuid not null references auth.users(id), created_at timestamptz not null default now()
+);
+create index on wochenplan_private.branches(owner_id);
+create table wochenplan_private.members (
+ branch_id uuid not null references wochenplan_private.branches(id),
+ user_id uuid not null references auth.users(id), display_name text not null check(length(display_name) between 1 and 80),
+ active boolean not null default true, primary key(branch_id,user_id)
+);
+create index on wochenplan_private.members(user_id,branch_id);
+create table wochenplan_private.plans (
+ branch_id uuid primary key references wochenplan_private.branches(id),
+ revision bigint not null default 1, payload jsonb not null,
+ updated_at timestamptz not null default now()
+);
+create table wochenplan_private.events (
+ id bigint generated always as identity primary key,
+ branch_id uuid not null references wochenplan_private.branches(id),
+ revision bigint, actor_id uuid not null references auth.users(id), actor_name text not null,
+ kind text not null, reason text not null default '', changes jsonb not null default '[]',
+ created_at timestamptz not null default now()
+);
+create index on wochenplan_private.events(branch_id,id desc);
+create index on wochenplan_private.events(actor_id);
+create table wochenplan_private.snapshots (
+ id uuid primary key default gen_random_uuid(), branch_id uuid not null references wochenplan_private.branches(id),
+ revision bigint not null, label text not null, payload jsonb not null,
+ actor_id uuid not null references auth.users(id), created_at timestamptz not null default now()
+);
+create index on wochenplan_private.snapshots(branch_id,created_at desc);
+create index on wochenplan_private.snapshots(actor_id);
+create table wochenplan_private.delegations (
+ id uuid primary key default gen_random_uuid(), branch_id uuid not null references wochenplan_private.branches(id),
+ user_id uuid not null references auth.users(id), starts_at timestamptz not null,
+ ends_at timestamptz not null, can_publish boolean not null default false,
+ revoked_at timestamptz, check(ends_at > starts_at), check(ends_at <= starts_at + interval '180 days')
+);
+create index on wochenplan_private.delegations(branch_id,user_id,ends_at);
+create index on wochenplan_private.delegations(user_id);
+create table wochenplan_private.invites (
+ id uuid primary key default gen_random_uuid(), branch_id uuid not null references wochenplan_private.branches(id),
+ token_hash text not null unique, expires_at timestamptz not null, used_at timestamptz, revoked_at timestamptz
+);
+create index on wochenplan_private.invites(branch_id);
+create table wochenplan_private.proposals (
+ id uuid primary key default gen_random_uuid(), branch_id uuid not null references wochenplan_private.branches(id),
+ author_id uuid not null references auth.users(id), author_name text not null,
+ reason text not null, changes jsonb not null,
+ status text not null default 'pending' check(status in ('pending','accepted','rejected')),
+ created_at timestamptz not null default now(), decided_at timestamptz
+);
+create index on wochenplan_private.proposals(branch_id,created_at desc);
+create index on wochenplan_private.proposals(author_id);
+create table wochenplan_private.publications (
+ branch_id uuid not null references wochenplan_private.branches(id), week_start date not null,
+ revision bigint not null, payload jsonb not null, actor_id uuid not null references auth.users(id),
+ actor_name text not null, published_at timestamptz not null default now(), primary key(branch_id,week_start),
+ check(extract(isodow from week_start)=1)
+);
+create index on wochenplan_private.publications(actor_id);
+
+-- No direct client table access, even if the schema is accidentally exposed.
+do $$ declare t text; begin
+ foreach t in array array['branches','members','plans','events','snapshots','delegations','invites','proposals','publications'] loop
+  execute format('alter table wochenplan_private.%I enable row level security',t);
+  execute format('revoke all on wochenplan_private.%I from public, anon, authenticated',t);
+  execute format('create policy "RPC only" on wochenplan_private.%I as restrictive for all to authenticated using (false) with check (false)',t);
+ end loop;
+end $$;
+
+create function wochenplan_private.clean_payload(p jsonb) returns jsonb
+language plpgsql immutable security invoker set search_path='' as $$
+declare master jsonb:=p->'storage'->'wochenplan_master_v10'; plan jsonb:=p->'storage'->'wochenplan_plan_v10'; day_record record;
+begin
+ if (jsonb_typeof(master->'employees')='array' and jsonb_typeof(plan)='object'
+     and jsonb_typeof(plan->'schedule')='object' and jsonb_typeof(plan->'absences')='array'
+     and octet_length(p::text)<=4194304) is not true then
+  raise exception 'INVALID_PLAN' using errcode='22023';
+ end if;
+ for day_record in select key,value from jsonb_each(plan->'schedule') loop
+  if day_record.key !~ '^\d{4}-\d{2}-\d{2}$' or jsonb_typeof(day_record.value)<>'object' then raise exception 'INVALID_PLAN' using errcode='22023'; end if;
+  if to_char(day_record.key::date,'YYYY-MM-DD')<>day_record.key then raise exception 'INVALID_PLAN' using errcode='22023'; end if;
+  if exists(select 1 from jsonb_each(day_record.value) e where jsonb_typeof(e.value)<>'object') then raise exception 'INVALID_PLAN' using errcode='22023'; end if;
+ end loop;
+ return jsonb_build_object('backupVersion',2,'storage',jsonb_build_object(
+  'wochenplan_master_v10',master,'wochenplan_plan_v10',plan-'weekFrom'-'weekTo','wochenplan_ui_v10','{}'::jsonb));
+end $$;
+
+create function wochenplan_private.diff(a jsonb,b jsonb,p text[] default '{}') returns jsonb
+language plpgsql immutable security invoker set search_path='' as $$
+declare result jsonb:='[]'; k text;
+begin
+ if a is not distinct from b then return result; end if;
+ -- One shift is one atomic change, so reverting a shift never builds a mixed entry.
+ if jsonb_typeof(a)='object' and jsonb_typeof(b)='object'
+    and not (cardinality(p)=5 and p[3]='schedule') then
+  for k in select key from (select jsonb_object_keys(a) key union select jsonb_object_keys(b) key) keys order by key loop
+   result:=result || wochenplan_private.diff(a->k,b->k,p||k);
+  end loop;
+  return result;
+ end if;
+ return jsonb_build_array(jsonb_build_object('path',to_jsonb(p),'before',a,'after',b,
+   'before_exists',a is not null,'after_exists',b is not null));
+end $$;
+
+create function wochenplan_private.apply_changes(current_payload jsonb,changes jsonb,reverse_change boolean default false)
+returns jsonb language plpgsql immutable security invoker set search_path='' as $$
+declare c jsonb; path text[]; expected jsonb; desired jsonb; expected_exists boolean; desired_exists boolean; result jsonb:=current_payload;
+begin
+ if jsonb_typeof(changes)<>'array' or jsonb_array_length(changes)=0 then raise exception 'EMPTY_CHANGE'; end if;
+ for c in select value from jsonb_array_elements(changes) loop
+  select array_agg(value order by ord) into path from jsonb_array_elements_text(c->'path') with ordinality as p(value,ord);
+  if cardinality(path)<2 or path[1]<>'storage' then raise exception 'INVALID_CHANGE'; end if;
+  expected:=c->case when reverse_change then 'after' else 'before' end;
+  desired:=c->case when reverse_change then 'before' else 'after' end;
+  expected_exists:=(c->>case when reverse_change then 'after_exists' else 'before_exists' end)::boolean;
+  desired_exists:=(c->>case when reverse_change then 'before_exists' else 'after_exists' end)::boolean;
+  if ((result #> path) is not null) is distinct from expected_exists or
+     (expected_exists and (result #> path) is distinct from expected) then raise exception 'CHANGE_CONFLICT' using errcode='40001'; end if;
+  if desired_exists then result:=jsonb_set(result,path,desired,true); else result:=result #- path; end if;
+  if desired_exists and (result #> path) is distinct from desired then raise exception 'CHANGE_CONFLICT' using errcode='40001'; end if;
+ end loop;
+ return wochenplan_private.clean_payload(result);
+end $$;
+
+create function wochenplan_private.api(p_action text,p_args jsonb) returns jsonb
+language plpgsql security definer set search_path='' as $$
+<<wp_api>>
+declare uid uuid:=auth.uid(); bid uuid; b wochenplan_private.branches;
+ pl wochenplan_private.plans; member wochenplan_private.members; item jsonb;
+ prop wochenplan_private.proposals; inv wochenplan_private.invites;
+ ev wochenplan_private.events; snap wochenplan_private.snapshots;
+ actor text; owner boolean; editable boolean; publishable boolean; result jsonb; payload jsonb;
+ changes jsonb; token text; expected bigint; stamp timestamptz:=clock_timestamp(); ws date;
+begin
+ if uid is null then raise exception 'LOGIN_REQUIRED' using errcode='42501'; end if;
+ if octet_length(p_args::text)>4300000 then raise exception 'REQUEST_TOO_LARGE'; end if;
+ if p_action='list' then
+  return coalesce((select jsonb_agg(jsonb_build_object('id',br.id,'name',br.name,'owner',br.owner_id=uid) order by br.created_at)
+   from wochenplan_private.branches br join wochenplan_private.members m on m.branch_id=br.id
+   where m.user_id=uid and m.active),'[]');
+ end if;
+ if p_action='create' then
+  payload:=wochenplan_private.clean_payload(p_args->'payload');
+  insert into wochenplan_private.branches(name,owner_id) values(trim(p_args->>'name'),uid) returning * into b;
+  insert into wochenplan_private.members(branch_id,user_id,display_name) values(b.id,uid,trim(p_args->>'display_name')) returning * into member;
+  insert into wochenplan_private.plans(branch_id,payload) values(b.id,payload);
+  insert into wochenplan_private.snapshots(branch_id,revision,label,payload,actor_id) values(b.id,1,'Ausgangsstand',payload,uid);
+  insert into wochenplan_private.events(branch_id,revision,actor_id,actor_name,kind) values(b.id,1,uid,member.display_name,'created');
+  return jsonb_build_object('id',b.id);
+ end if;
+ if p_action='accept_invite' then
+  select * into inv from wochenplan_private.invites where token_hash=encode(sha256(convert_to(p_args->>'token','UTF8')),'hex') for update;
+  if not found or inv.used_at is not null or inv.revoked_at is not null or inv.expires_at<=stamp then raise exception 'INVITE_INVALID'; end if;
+  select * into b from wochenplan_private.branches where id=inv.branch_id;
+  if b.owner_id=uid then raise exception 'ALREADY_OWNER'; end if;
+  insert into wochenplan_private.members(branch_id,user_id,display_name) values(b.id,uid,trim(p_args->>'display_name'))
+   on conflict(branch_id,user_id) do update set active=true,display_name=excluded.display_name returning * into member;
+  update wochenplan_private.invites set used_at=stamp where id=inv.id;
+  insert into wochenplan_private.events(branch_id,actor_id,actor_name,kind) values(b.id,uid,member.display_name,'joined');
+  return jsonb_build_object('id',b.id);
+ end if;
+ bid:=(p_args->>'branch_id')::uuid;
+ -- Serialize permissions and writes per branch, including revocations and grants.
+ select * into b from wochenplan_private.branches where id=bid for update;
+ stamp:=clock_timestamp();
+ select * into member from wochenplan_private.members where branch_id=bid and user_id=uid and active;
+ if b.id is null or member.user_id is null then raise exception 'ACCESS_DENIED' using errcode='42501'; end if;
+ actor:=member.display_name; owner:=b.owner_id=uid;
+ editable:=owner or exists(select 1 from wochenplan_private.delegations d where d.branch_id=bid and d.user_id=uid
+  and d.revoked_at is null and d.starts_at<=stamp and d.ends_at>stamp);
+ publishable:=owner or exists(select 1 from wochenplan_private.delegations d where d.branch_id=bid and d.user_id=uid
+  and d.revoked_at is null and d.starts_at<=stamp and d.ends_at>stamp and d.can_publish);
+ select * into pl from wochenplan_private.plans where branch_id=bid;
+
+ if p_action='read' then
+  return jsonb_build_object('id',bid,'name',b.name,'owner',owner,'can_edit',editable,'can_publish',publishable,
+   'revision',pl.revision,'payload',pl.payload,'updated_at',pl.updated_at,'server_time',stamp,
+   'members',(select jsonb_agg(jsonb_build_object('id',m.user_id,'name',m.display_name,'owner',m.user_id=b.owner_id,'active',m.active)) from wochenplan_private.members m where m.branch_id=bid),
+   'delegations',coalesce((select jsonb_agg(to_jsonb(d)) from wochenplan_private.delegations d where d.branch_id=bid and d.revoked_at is null and d.ends_at>stamp),'[]'),
+   'invites',case when owner then coalesce((select jsonb_agg(jsonb_build_object('id',i.id,'expires_at',i.expires_at)) from wochenplan_private.invites i where i.branch_id=bid and i.used_at is null and i.revoked_at is null and i.expires_at>stamp),'[]') else '[]'::jsonb end,
+   'proposals',coalesce((select jsonb_agg(to_jsonb(p) order by p.created_at desc) from wochenplan_private.proposals p where p.branch_id=bid and (owner or p.author_id=uid)),'[]'),
+   'snapshots',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'label',s.label,'revision',s.revision,'created_at',s.created_at) order by s.created_at desc) from wochenplan_private.snapshots s where s.branch_id=bid),'[]'),
+   'publications',coalesce((select jsonb_agg(jsonb_build_object('week_start',p.week_start,'revision',p.revision,'published_at',p.published_at,'actor_name',p.actor_name,
+    'changed',exists(select 1 from jsonb_array_elements(wochenplan_private.diff(p.payload,pl.payload)) c
+      where case when c->'path'->>2='schedule' and c->'path'->>3 is not null
+        then (c->'path'->>3)::date between p.week_start and p.week_start+6 else true end))) from wochenplan_private.publications p where p.branch_id=bid),'[]'));
+ end if;
+ if p_action='history' then
+  return coalesce((select jsonb_agg(to_jsonb(e) order by e.id desc) from
+   (select * from wochenplan_private.events where branch_id=bid and id>coalesce((p_args->>'after_id')::bigint,0)
+     and id<coalesce((p_args->>'before_id')::bigint,9223372036854775807) order by id desc limit 100) e),'[]');
+ end if;
+ if p_action='compare' then
+  return jsonb_build_object('revision',pl.revision,'changes',wochenplan_private.diff(pl.payload,wochenplan_private.clean_payload(p_args->'payload')));
+ end if;
+ if p_action='snapshot' then
+  select * into snap from wochenplan_private.snapshots where id=(p_args->>'id')::uuid and branch_id=bid;
+  if not found then raise exception 'SNAPSHOT_MISSING'; end if;
+  return to_jsonb(snap);
+ end if;
+
+ if p_action in ('invite','revoke_invite','grant','revoke_grant','remove_member','decide_proposal') and not owner then
+  raise exception 'OWNER_REQUIRED' using errcode='42501';
+ end if;
+ if p_action='invite' then
+  token:=gen_random_uuid()::text||gen_random_uuid()::text;
+  insert into wochenplan_private.invites(branch_id,token_hash,expires_at) values(bid,encode(sha256(convert_to(token,'UTF8')),'hex'),stamp+interval '7 days');
+  result:=jsonb_build_object('token',token,'expires_at',stamp+interval '7 days');
+ elsif p_action='revoke_invite' then
+  update wochenplan_private.invites set revoked_at=stamp where branch_id=bid and id=(p_args->>'id')::uuid;
+ elsif p_action='grant' then
+  if not exists(select 1 from wochenplan_private.members m where m.branch_id=bid and m.user_id=(p_args->>'user_id')::uuid and m.active and m.user_id<>b.owner_id) then raise exception 'MEMBER_MISSING'; end if;
+  insert into wochenplan_private.snapshots(branch_id,revision,label,payload,actor_id) values(bid,pl.revision,'Vor Vertretungsfreigabe',pl.payload,uid);
+  insert into wochenplan_private.delegations(branch_id,user_id,starts_at,ends_at,can_publish)
+   values(bid,(p_args->>'user_id')::uuid,(p_args->>'starts_at')::timestamptz,(p_args->>'ends_at')::timestamptz,coalesce((p_args->>'can_publish')::boolean,false));
+ elsif p_action='revoke_grant' then
+  p_args:=p_args||jsonb_build_object('user_id',(select d.user_id from wochenplan_private.delegations d where d.branch_id=bid and d.id=(p_args->>'id')::uuid));
+  update wochenplan_private.delegations set revoked_at=stamp where branch_id=bid and id=(p_args->>'id')::uuid;
+ elsif p_action='remove_member' then
+  if (p_args->>'user_id')::uuid=b.owner_id then raise exception 'OWNER_CANNOT_BE_REMOVED'; end if;
+  update wochenplan_private.members set active=false where branch_id=bid and user_id=(p_args->>'user_id')::uuid;
+  update wochenplan_private.delegations set revoked_at=stamp where branch_id=bid and user_id=(p_args->>'user_id')::uuid and revoked_at is null;
+ elsif p_action='propose' then
+  if length(trim(coalesce(p_args->>'reason','')))=0 then raise exception 'REASON_REQUIRED'; end if;
+  if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+  changes:=wochenplan_private.diff(pl.payload,wochenplan_private.clean_payload(p_args->'payload'));
+  if jsonb_array_length(changes)=0 then raise exception 'EMPTY_CHANGE'; end if;
+  insert into wochenplan_private.proposals(branch_id,author_id,author_name,reason,changes)
+   values(bid,uid,actor,left(p_args->>'reason',500),changes);
+ elsif p_action='decide_proposal' then
+  select * into prop from wochenplan_private.proposals where id=(p_args->>'id')::uuid and branch_id=bid for update;
+  if not found or prop.status<>'pending' then raise exception 'PROPOSAL_MISSING'; end if;
+  if p_args->>'decision' not in ('accepted','rejected') then raise exception 'INVALID_DECISION'; end if;
+  if p_args->>'decision'='accepted' then
+   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+   payload:=wochenplan_private.apply_changes(pl.payload,prop.changes);
+  end if;
+  update wochenplan_private.proposals set status=p_args->>'decision',decided_at=stamp where id=prop.id;
+  p_args:=p_args||jsonb_build_object('reason','Vorschlag von '||prop.author_name||': '||prop.reason);
+ elsif p_action in ('save','restore','revert') then
+  if not editable then raise exception 'READ_ONLY' using errcode='42501'; end if;
+  if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+  if p_action='save' then payload:=wochenplan_private.clean_payload(p_args->'payload');
+  elsif p_action='restore' then
+   if not owner then raise exception 'OWNER_REQUIRED' using errcode='42501'; end if;
+   select s.payload into payload from wochenplan_private.snapshots s where s.branch_id=bid and s.id=(p_args->>'id')::uuid;
+   if payload is null then raise exception 'SNAPSHOT_MISSING'; end if;
+  else
+   if not owner then raise exception 'OWNER_REQUIRED' using errcode='42501'; end if;
+   select * into ev from wochenplan_private.events where branch_id=bid and id=(p_args->>'id')::bigint and revision is not null;
+   if not found then raise exception 'EVENT_MISSING'; end if;
+   payload:=wochenplan_private.apply_changes(pl.payload,ev.changes,true);
+  end if;
+ elsif p_action='publish' then
+  if not publishable then raise exception 'PUBLISH_DENIED' using errcode='42501'; end if;
+  if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+  ws:=(p_args->>'week_start')::date;
+  insert into wochenplan_private.publications(branch_id,week_start,revision,payload,actor_id,actor_name)
+   values(bid,ws,pl.revision,pl.payload,uid,actor) on conflict(branch_id,week_start) do update set
+    revision=excluded.revision,payload=excluded.payload,actor_id=excluded.actor_id,actor_name=excluded.actor_name,published_at=stamp;
+ elsif p_action='checkpoint' then
+  if not owner then raise exception 'OWNER_REQUIRED' using errcode='42501'; end if;
+  insert into wochenplan_private.snapshots(branch_id,revision,label,payload,actor_id)
+   values(bid,pl.revision,left(coalesce(nullif(trim(p_args->>'label'),''),'Sicherungsstand'),100),pl.payload,uid);
+ else raise exception 'UNKNOWN_ACTION';
+ end if;
+
+ if payload is not null then
+  changes:=wochenplan_private.diff(pl.payload,payload);
+  if jsonb_array_length(changes)>0 then
+   -- Preserve a full recovery point for every successful plan change.
+   insert into wochenplan_private.snapshots(branch_id,revision,label,payload,actor_id)
+    values(bid,pl.revision,'Vor Änderung '||(pl.revision+1),pl.payload,uid);
+   update wochenplan_private.plans set payload=wp_api.payload,revision=pl.revision+1,updated_at=stamp where branch_id=bid;
+   pl.revision:=pl.revision+1;
+   -- Keep named checkpoints, latest ten automatic snapshots and the first
+   -- automatic snapshot on the latest thirty days that had changes.
+   delete from wochenplan_private.snapshots s where s.branch_id=bid and s.label like 'Vor Änderung %'
+    and s.id not in (select r.id from (select id from wochenplan_private.snapshots where branch_id=bid and label like 'Vor Änderung %' order by revision desc,id desc limit 10) r
+     union select d.id from (select distinct on ((created_at at time zone 'UTC')::date) id,created_at
+       from wochenplan_private.snapshots where branch_id=bid and label like 'Vor Änderung %'
+       order by (created_at at time zone 'UTC')::date desc,revision asc,created_at asc,id asc limit 30) d);
+  end if;
+ end if;
+ insert into wochenplan_private.events(branch_id,revision,actor_id,actor_name,kind,reason,changes)
+  values(bid,case when payload is not null then pl.revision else null end,uid,actor,p_action,
+   left(coalesce(p_args->>'reason',''),500),case when p_action in ('grant','revoke_grant','remove_member','revoke_invite','publish','checkpoint') then
+     jsonb_build_array(jsonb_build_object('action',p_action,'details',p_args-'payload'-'token'-'expected_revision'))
+     else coalesce(changes,'[]') end);
+ return coalesce(result,jsonb_build_object('revision',pl.revision));
+end $$;
+
+-- Explicit revocations include helpers: callers cannot use them as an alternate API.
+revoke all on all functions in schema wochenplan_private from public,anon,authenticated;
+grant execute on function wochenplan_private.api(text,jsonb) to authenticated;
+create function public.wochenplan_collaboration(p_action text,p_args jsonb default '{}') returns jsonb
+language sql security invoker set search_path='' as $$ select wochenplan_private.api(p_action,p_args); $$;
+revoke all on function public.wochenplan_collaboration(text,jsonb) from public,anon;
+grant execute on function public.wochenplan_collaboration(text,jsonb) to authenticated;
+commit;

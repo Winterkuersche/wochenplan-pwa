@@ -238,6 +238,15 @@ select {
 .cloudSignIn input, #cloudHistorySelect { box-sizing: border-box; width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--border, #ccd5df); border-radius: 10px; font-size: 16px; background: var(--panel, white); color: inherit; }
 .dataSignOut { margin-top: 18px; font-size: .8rem; }
 .dataActionMessage { color: #9b3e22; font-weight: 600; overflow-wrap: anywhere; }
+.sharedPlanNotice { padding: 12px 16px; margin: 14px 0; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); overflow-wrap: anywhere; }
+#collaborationPanel label { display: grid; gap: 6px; margin: 12px 0; font-size: .9rem; }
+#collaborationPanel input, #collaborationPanel select { width: 100%; min-width: 0; min-height: 44px; padding: 9px; font-size: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: inherit; }
+#collaborationPanel details { margin: 20px 0; border-top: 1px solid var(--border); padding-top: 12px; }
+#collaborationPanel summary { cursor: pointer; font-weight: 600; min-height: 36px; }
+#collaborationPanel .sharedCheckbox { display: flex; align-items: center; gap: 10px; }
+#collaborationPanel input[type="checkbox"] { width: 22px; min-height: 22px; }
+.sharedEvent { border-bottom: 1px solid var(--border); padding: 12px 0; overflow-wrap: anywhere; }
+.sharedEvent pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; max-height: 220px; overflow-y: auto; }
 body.dark .dataDialog { color: #f1f1f1; }
 body.dark .dataIntro, body.dark .dataEyebrow { color: #b8c4d4; }
 body.dark .dataStatus { color: #e7c477; }
