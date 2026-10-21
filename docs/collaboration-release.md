@@ -140,3 +140,10 @@ keine Rückabwicklung darf gemeinsame Pläne oder den Verlauf löschen.
 Ein Filialarchiv kann in einer getrennten Testinstanz als normale Planung
 importiert werden. Ältere App-Versionen unterstützen die neuen Filialrechte
 nicht; bis zur Fehlerbehebung keine parallele gemeinsame Bearbeitung vornehmen.
+
+Lokale Tab-Grenze: Der synchrone localStorage-Schutz erkennt einen veralteten
+Editor, sobald die Änderung im zweiten Browserprozess sichtbar ist. Er ist keine
+atomare Datenbanktransaktion zwischen zwei exakt gleichzeitig offline schreibenden
+Tabs. Die gemeinsame Online-Planung schützt solche Schreibkonflikte mit der
+serverseitigen Revision. Der Browser-Test wartet deshalb ausdrücklich auf die
+Sichtbarkeit der neueren lokalen Speicherung, bevor er den alten Editor prüft.

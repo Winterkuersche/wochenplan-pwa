@@ -120,6 +120,10 @@ async function main() {
     second.on('dialog', (dialog) => dialog.accept());
     await second.goto(url); await second.waitForFunction(() => window.__APP_BOOT_OK__ === true);
     assert.equal(await page.evaluate(() => { state.schedule['2026-10-20']['test-one'] = buildEarlyShiftEntry('F5'); return saveAppState(); }), true, 'The first tab must save before testing a stale second tab');
+    // Cross-process storage propagation is asynchronous, particularly in
+    // WebKit. This case tests a stale editor after the newer write is visible;
+    // same-instant shared writes are tested separately against server revisions.
+    await second.waitForFunction(() => JSON.parse(localStorage.getItem('wochenplan_plan_v10')).schedule['2026-10-20']['test-one'].code === 'F5');
     const staleSave = await second.evaluate(() => { state.schedule['2026-10-20']['test-one'] = buildEarlyShiftEntry('F6'); return saveAppState(); });
     assert.equal(staleSave, false);
     await second.locator('#btnDataPanel').click();
