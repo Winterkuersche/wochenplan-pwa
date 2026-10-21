@@ -2,6 +2,14 @@
 
 ## Aktueller Status
 
+Vorbereitet als V9.9.3: ein Filialplan statt der Auswahl zwischen persönlicher
+Planung und gemeinsamer Filiale. Eine einzelne zugeordnete Filiale wird nach
+Anmeldung auch auf einem neuen Gerät automatisch ausgewählt. Abweichende lokale
+Entwürfe werden weiterhin ausdrücklich verglichen und übernommen. Solange die
+Mitgliedschaft noch ungeklärt oder nicht erreichbar ist, darf kein zusätzlicher
+Einzelkonto-Plan gelesen oder beschrieben werden. Vorhandene Daten und frühere
+Sicherungen bleiben erhalten; die serverseitigen Rechte und Revisionen gelten weiter.
+
 V9.9 wurde am 21. Oktober 2026 mit PR #419 in `main` übernommen und über
 GitHub Pages veröffentlicht. Persönlicher Login, E-Mail-Bestätigung, erster
 Online-Upload und die bewusste Übernahme in die Home-Bildschirm-App wurden mit
@@ -167,7 +175,7 @@ Schreibzugriffe sind blockiert; es werden keine persönlichen Pläne verwendet.
 - [x] Echter persönlicher Konto-Login, E-Mail-Bestätigung, erster Upload und Übernahme in die Home-Bildschirm-App.
 - [ ] Passwort-Wiederherstellung mit Stephan praktisch prüfen.
 - [ ] TL/SV-Bedienung und Darstellung auf iPhone in Safari und Home-Bildschirm-App.
-- [ ] Gewünschtes separates Google-Konto verbinden; automatischen Export dort einrichten und Wiederherstellung testen. Die bisherige Shop-Verbindung wird dafür nicht verwendet.
+- [x] Gewünschtes separates Google-Konto verifiziert, privaten Export zurückgelesen und im echten App-Import nach erneutem Öffnen geprüft. Tägliche Sicherungsaufgabe aktiviert; erster automatischer Lauf steht noch aus. Die Shop-Verbindung wird nicht verwendet.
 - [x] Zusätzliche KI-Prüfung über verbundene ChatGPT-Aufgaben begrenzt einrichten.
 - [x] Ersten lesbaren KI-Prüfbericht kontrollieren; beide reproduzierten Offline-Befunde in V9.9.2 mit Regressionstests bearbeiten. Der separate Kontowechsel-Befund wurde in V9.9.1 korrigiert.
 - [x] V9.9 nach geprüftem persönlichem Anmelde-/Übernahmetest und ausdrücklichem Veröffentlichungsauftrag übernehmen und veröffentlichen; TL/SV-Praxistest bleibt offen.

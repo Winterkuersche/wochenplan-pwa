@@ -20,6 +20,7 @@ async function device(){
   if(u.pathname==='/auth/v1/token')return send(200,{access_token:token,refresh_token:'synthetic-refresh',token_type:'bearer',expires_in:3600,expires_at:now+3600,user});
   if(u.pathname==='/auth/v1/user')return send(200,user);
   if(u.pathname==='/auth/v1/logout')return send(204,null);
+  if(u.pathname==='/rest/v1/rpc/wochenplan_collaboration'&&q.postDataJSON().p_action==='list')return send(200,[]);
   if(u.pathname==='/rest/v1/wochenplan_documents'){
    if(q.method()==='GET')return send(200,doc?[doc]:[]);
    const v=q.postDataJSON();

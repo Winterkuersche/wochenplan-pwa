@@ -53,7 +53,7 @@
       notify();
       try {
         const remote = await readRemote();
-        if (currentEpoch !== epoch) return;
+        if (currentEpoch !== epoch || options.isPersonalActive?.() === false) return;
         status.remote = remote;
         if (!remote) {
           linked = false;
@@ -63,7 +63,7 @@
         const remoteSignature = await fingerprint(remote.payload);
         let localSignature = null;
         try { localSignature = await fingerprint(snapshot()); } catch (_) { /* unreadable local data may still be restored */ }
-        if (currentEpoch !== epoch) return;
+        if (currentEpoch !== epoch || options.isPersonalActive?.() === false) return;
         if (localSignature === remoteSignature) {
           remember(remote, remoteSignature);
           message("synced", "Auf diesem Gerät und online gespeichert");
@@ -103,7 +103,7 @@
       try {
         const payload = snapshot();
         const signature = await fingerprint(payload);
-        if (currentEpoch !== epoch) return false;
+        if (currentEpoch !== epoch || options.isPersonalActive?.() === false) return false;
         const previous = link();
         if (remote && previous?.revision === remote.revision && previous.signature === signature) {
           message("synced", "Auf diesem Gerät und online gespeichert");
@@ -154,11 +154,12 @@
     }
 
     async function adopt() {
+      if (options.isPersonalActive?.() === false) return false;
       if (!status.remote || !status.user || status.busy) return false;
       const record = status.remote;
       const currentEpoch = epoch;
       const signature = await fingerprint(record.payload);
-      if (currentEpoch !== epoch) return false;
+      if (currentEpoch !== epoch || options.isPersonalActive?.() === false) return false;
       cancel();
       // applySnapshot is synchronous and journaled. Only mark this revision
       // linked if writing to the device actually succeeded.

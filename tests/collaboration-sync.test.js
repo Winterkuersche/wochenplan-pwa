@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {webcrypto}=require('node:crypto');
 const {loadScripts}=require('./test-helpers');
 const payload=code=>({backupVersion:2,storage:{wochenplan_master_v10:{employees:[{id:'one'}]},wochenplan_plan_v10:{schedule:{'2026-10-19':{one:{code}}},absences:[]},wochenplan_ui_v10:{}}});
-function setup(t,{editable=true,crypto=webcrypto}={}) {
+function setup(t,{editable=true,crypto=webcrypto,branches=[{id:'b',name:'Test'}],beforeList=null}={}) {
  const ctx=loadScripts(['cloud-sync.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
  let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false;
  const record={id:'b',name:'Test',revision:1,payload:payload('F4'),can_edit:editable,can_publish:editable,owner:editable};
@@ -12,7 +12,7 @@ function setup(t,{editable=true,crypto=webcrypto}={}) {
  client:{rpc:async(_,args)=>{
   if(offline)throw Error('offline');
   const {p_action:a,p_args:p}=args;
-  if(a==='list')return{data:[{id:'b',name:'Test'}]};
+  if(a==='list'){if(beforeList)await beforeList();return{data:structuredClone(branches)};}
   if(a==='read')return{data:structuredClone(record)};
   if(a==='save'){
    if(!record.can_edit)return{error:{code:'42501',message:'READ_ONLY'}};
@@ -24,8 +24,32 @@ function setup(t,{editable=true,crypto=webcrypto}={}) {
   throw Error(a);
  }}});
  t.after(()=>c.dispose());
- return{c,record,map,ctx,set:code=>{local=payload(code);},offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,get writes(){return writes;},get adopted(){return adopted;}};
+ return{c,record,map,ctx,set:code=>{local=payload(code);},setBranches:value=>branches=value,offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,get writes(){return writes;},get adopted(){return adopted;}};
 }
+test('a fresh device selects its sole workplace without replacing its local draft',async t=>{
+ const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});
+ assert.equal(f.c.status.selected,'b');assert.equal(f.c.status.mode,'compare');assert.equal(f.c.personalActive,false);
+ assert.equal(f.writes,0);assert.equal(f.adopted,null);
+ await assert.rejects(f.c.select(''),/Filiale auswählen/);
+ assert.equal(f.c.status.selected,'b');
+});
+test('the existing single-account plan is available only before a team workplace exists',async t=>{
+ const f=setup(t,{branches:[]});await f.c.setUser({id:'u'});assert.equal(f.c.personalActive,true);
+ f.setBranches([{id:'b',name:'Test'}]);await f.c.refresh();
+ assert.equal(f.c.status.selected,'b');assert.equal(f.c.personalActive,false);assert.equal(f.writes,0);
+});
+test('a pending or failed membership lookup cannot activate another online plan',async t=>{
+ let entered,release;const started=new Promise(r=>entered=r),gate=new Promise(r=>release=r);
+ const f=setup(t,{branches:[],beforeList:async()=>{entered();await gate;}});
+ const signingIn=f.c.setUser({id:'u'});await started;assert.equal(f.c.personalActive,false);
+ release();await signingIn;assert.equal(f.c.personalActive,true);
+ f.offline(true);await f.c.refresh();assert.equal(f.c.personalActive,false);assert.equal(f.c.status.mode,'offline');
+});
+test('multiple existing workplaces require an explicit choice and never a personal fallback',async t=>{
+ const f=setup(t,{branches:[{id:'b',name:'Test'},{id:'other',name:'Andere'}]});await f.c.setUser({id:'u'});
+ assert.equal(f.c.status.mode,'choose-branch');assert.equal(f.c.status.selected,null);assert.equal(f.c.personalActive,false);
+ await f.c.select('b');assert.equal(f.c.status.selected,'b');assert.equal(f.writes,0);
+});
 test('shared selection never uploads a differing local plan by itself',async t=>{
  const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});await f.c.select('b');assert.equal(f.c.status.mode,'compare');
  await assert.rejects(f.c.save(),/vergleichen/);assert.equal(f.writes,0);assert.equal(f.adopted,null);

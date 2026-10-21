@@ -10,7 +10,7 @@ const payload = (code = 'F4') => ({ backupVersion: 2, createdAt: '2026-10-20', s
 } });
 
 function server(initial = null) {
-  return { record: initial ? { revision: 1, payload: initial, updated_at: '2026-10-20' } : null, writes: 0, unavailable: false, beforeResult: null };
+  return { record: initial ? { revision: 1, payload: initial, updated_at: '2026-10-20' } : null, reads: 0, writes: 0, unavailable: false, beforeResult: null };
 }
 function client(db) {
   const user = { id: 'test-user', email: 'test@example.invalid' };
@@ -27,7 +27,7 @@ function client(db) {
       insert(value) { action = 'insert'; values = value; return query; },
       async maybeSingle() {
         if (db.unavailable) throw Error('offline');
-        if (action === 'read') return { data: structuredClone(db.record) };
+        if (action === 'read') { db.reads++; return { data: structuredClone(db.record) }; }
         if (action === 'insert' && db.record) return { error: { code: '23505' } };
         if (action === 'update' && filters.revision !== db.record?.revision) return { data: null, error: { code: 'PGRST116', details: 'The result contains 0 rows' } };
         db.writes += 1;
@@ -40,11 +40,11 @@ function client(db) {
     return query;
   } };
 }
-function controller(t, db, initial = payload()) {
-  const ctx = loadScripts(['cloud-sync.js'], { crypto: webcrypto, TextEncoder, Uint8Array });
+function controller(t, db, initial = payload(), options = {}) {
+  const ctx = loadScripts(['cloud-sync.js'], { crypto: options.crypto || webcrypto, TextEncoder, Uint8Array });
   const map = new Map(); let current = initial; let adopted = null;
   const c = ctx.WochenplanCloud.create({ client: client(db), storage: { getItem: (k) => map.get(k) ?? null, setItem: (k, v) => map.set(k, v) },
-    projectRef: 'test', getSnapshot: () => current, applySnapshot: (value) => { adopted = value; }, delayMs: 100000 });
+    projectRef: 'test', isPersonalActive: options.isPersonalActive, getSnapshot: () => current, applySnapshot: (value) => { adopted = value; }, delayMs: 100000 });
   t.after(() => c.dispose());
   return { c, map, set(value) { current = value; }, get adopted() { return adopted; }, fingerprint: ctx.WochenplanCloud.fingerprint };
 }
@@ -54,6 +54,22 @@ test('first connection never uploads a local plan without selecting it', async (
   assert.equal(c.status.mode, 'first-upload');
   assert.equal(await c.save(), false);
   assert.equal(db.writes, 0);
+});
+
+test('membership lookup and an existing workplace block legacy reads and uploads', async t => {
+  const db=server(payload());const f=controller(t,db,payload(),{isPersonalActive:()=>false});
+  await f.c.start();assert.equal(db.reads,0);assert.equal(await f.c.save({overwrite:true}),false);assert.equal(db.writes,0);
+});
+
+test('selecting the workplace during a legacy fingerprint prevents a write or import', async t => {
+  let active=true,hold=false,entered,release;
+  let started,gate;
+  const crypto={subtle:{digest:async(...args)=>{if(hold){hold=false;entered();await gate;}return webcrypto.subtle.digest(...args);}}};
+  const db=server(payload());const f=controller(t,db,payload(),{crypto,isPersonalActive:()=>active});await f.c.start();f.set(payload('F6'));
+  started=new Promise(r=>entered=r);gate=new Promise(r=>release=r);hold=true;
+  const saving=f.c.save();await started;active=false;release();assert.equal(await saving,false);assert.equal(db.writes,0);
+  active=true;started=new Promise(r=>entered=r);gate=new Promise(r=>release=r);hold=true;
+  const adopting=f.c.adopt();await started;active=false;release();assert.equal(await adopting,false);assert.equal(f.adopted,null);
 });
 
 test('different local and online plans require a choice; neither is overwritten', async (t) => {

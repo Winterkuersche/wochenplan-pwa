@@ -24,13 +24,14 @@ async function main(){
    const user={id:ids[index],email:`synthetic-${index}@example.invalid`,aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
    const now=Math.floor(Date.now()/1000),token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:user.id,role:'authenticated',aud:'authenticated',iat:now,exp:now+3600})).toString('base64url')+'.c3ludGhldGlj';
    const context=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
+   const personalRequests=[];
    await context.route('https://**/*',r=>r.abort());
    await context.route('https://zrosdhfxnwolxemqqvok.supabase.co/**',async route=>{
     const req=route.request(),u=new URL(req.url());
     const send=(status,body)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
     if(u.pathname==='/auth/v1/token')return send(200,{access_token:token,refresh_token:'synthetic',expires_in:3600,token_type:'bearer',user});
     if(u.pathname==='/auth/v1/user')return send(200,user);
-    if(u.pathname==='/rest/v1/wochenplan_documents')return send(200,[]);
+    if(u.pathname==='/rest/v1/wochenplan_documents'){personalRequests.push(req.method());return send(200,[]);}
     if(u.pathname==='/rest/v1/rpc/wochenplan_collaboration'){
      const task=queue.then(async()=>{
       try{
@@ -44,7 +45,7 @@ async function main(){
    });
    const page=await context.newPage();pages.push(page);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
    await page.goto(url);await page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-   return {page,context,user};
+   return {page,context,user,personalRequests};
   }
   async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
   const a=await device(0),b=await device(1);
@@ -57,6 +58,9 @@ async function main(){
   const invite=await a.page.locator('#sharedInviteLink').inputValue();
   await login(b);await b.page.locator('#sharedSetup>summary').click();await b.page.locator('#sharedDisplayName').fill('SV Test');await b.page.locator('#sharedInviteToken').fill(invite);await b.page.locator('#btnSharedJoin').click();
   await b.page.locator('#sharedSummary').filter({hasText:'Ansehen und Vorschläge'}).waitFor();assert.equal(await b.page.locator('#btnSharedSave').isDisabled(),true);
+  assert.equal(await b.page.locator('#sharedBranchPicker').isVisible(),false);
+  assert.equal(await b.page.locator('#personalCloudActions').isVisible(),false);
+  assert.equal(await b.page.locator('#sharedSetup').isVisible(),false);
   console.log('Shared deputy joined');
   await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
@@ -75,6 +79,16 @@ async function main(){
   await b.page.locator('#btnSharedRefresh').click();await b.page.locator('#sharedSummary').filter({hasText:'Vertretung darf bearbeiten'}).waitFor();
   await a.page.locator('#sharedGrants').getByRole('button',{name:'Freigabe beenden'}).click();await b.page.locator('#btnSharedRefresh').click();await b.page.locator('#sharedSummary').filter({hasText:'Ansehen und Vorschläge'}).waitFor();
   assert.equal(await b.page.locator('#btnSharedSave').isDisabled(),true);
+  // A new device knows only its account, with no cached branch selection.
+  // Membership resolves before any legacy account-plan read or write.
+  const fresh=await device(1);await login(fresh);
+  await fresh.page.locator('#sharedSummary').filter({hasText:'Ansehen und Vorschläge'}).waitFor();
+  assert.equal(await fresh.page.locator('#sharedBranchPicker').isVisible(),false);
+  assert.equal(await fresh.page.locator('#personalCloudActions').isVisible(),false);
+  assert.equal(await fresh.page.locator('#sharedSetup').isVisible(),false);
+  assert.equal(await fresh.page.locator('#sharedBranchSelect option').filter({hasText:'Persönliche Planung'}).count(),0);
+  assert.deepEqual(fresh.personalRequests,[]);
+  await fresh.context.close();
   // The independent archive is a valid standard backup, including attributed history.
   await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
   const downloadPromise=a.page.waitForEvent('download');await a.page.locator('#btnSharedArchive').click();

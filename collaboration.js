@@ -16,7 +16,7 @@
       || "Die Filialverbindung ist gerade nicht verfügbar. Deine Änderungen bleiben auf diesem Gerät.";
   }
   function create(options) {
-    const state = { user: null, branches: [], branch: null, selected: null, mode: "signed-out", message: "Bitte zuerst anmelden.", busy: false };
+    const state = { user: null, branches: [], branch: null, selected: null, resolved: false, mode: "signed-out", message: "Bitte zuerst anmelden.", busy: false };
     let epoch = 0, timer = null, linked = false, disposed = false, dirtyDuringWork = false;
     const fingerprint = root.WochenplanCloud.fingerprint;
     const snapshot = () => JSON.parse(JSON.stringify(options.getSnapshot()));
@@ -56,13 +56,23 @@
     async function refresh() {
       if (!state.user || state.busy || disposed) return;
       const thisEpoch = epoch;
-      state.busy = true; dirtyDuringWork=dirtyDuringWork||Boolean(timer); cancel(); notify();
+      state.busy = true; state.resolved = false; dirtyDuringWork=dirtyDuringWork||Boolean(timer); cancel(); notify();
       try {
         const branches = await call("list");
         if (epoch !== thisEpoch) return;
         state.branches = branches;
+        // One branch is the user's workplace, including on a new device.
+        // Selecting it never imports or overwrites a differing device draft.
+        if (!state.selected && branches.length === 1) {
+          state.selected = branches[0].id;
+          options.storage.setItem(prefix() + ":selected", state.selected);
+          options.onContextChange?.();
+        }
+        state.resolved = true;
         if (state.selected) await inspect(await call("read"), thisEpoch);
-        else setMode("personal", "Du kannst eine Filiale anlegen oder einer Einladung folgen.");
+        else setMode(branches.length ? "choose-branch" : "setup", branches.length
+          ? "Bitte deine Filiale auswählen. Dein Geräte-Stand bleibt erhalten."
+          : "Du planst für deine Filiale. Richte den Teamzugang ein, um denselben Plan mit deiner Vertretung zu nutzen.");
       } catch (error) {
         if (epoch === thisEpoch) { linked = false; setMode("offline", error.message); }
       } finally { if (epoch === thisEpoch) { state.busy = false; notify(); resumePending(); } }
@@ -70,12 +80,13 @@
     async function setUser(user) {
       if (state.user?.id === user?.id || disposed) return;
       epoch++; cancel(); linked = false; dirtyDuringWork = false;
-      state.user = user; state.branch = null; state.branches = []; state.busy = false;
+      state.user = user; state.branch = null; state.branches = []; state.busy = false; state.resolved = false;
       state.selected = user ? options.storage.getItem(prefix() + ":selected") : null;
-      notify();
+      setMode(user ? "loading" : "signed-out", user ? "Deine Filialverbindung wird geprüft …" : "Bitte zuerst anmelden.");
       if (user) await refresh(); else setMode("signed-out", "Bitte zuerst anmelden.");
     }
     async function select(id) {
+      if (!id && (state.selected || state.branches.length)) throw new Error("Bitte deine Filiale auswählen.");
       epoch++; cancel(); linked = false; dirtyDuringWork=false; state.busy = false; state.branch = null;
       state.selected = id || null;
       options.onContextChange?.();
@@ -160,7 +171,10 @@
       join: (token, display_name) => establish("accept_invite", { token, display_name }),
       propose: (reason) => perform("propose", { payload: snapshot(), reason }),
       dispose() { disposed = true; epoch++; cancel(); },
-      get status() { return { ...state }; }, get active() { return Boolean(state.selected); }
+      get status() { return { ...state }; }, get active() { return Boolean(state.selected); },
+      // Until membership lookup completes, no legacy single-account writes
+      // may run. A failed lookup must not open a second online destination.
+      get personalActive() { return Boolean(state.user && state.resolved && !state.busy && !state.selected && !state.branches.length); }
     };
   }
   root.WochenplanCollaboration = Object.freeze({ create, explain });

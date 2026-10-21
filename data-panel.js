@@ -24,7 +24,11 @@
   }
 
   function renderCloud(status) {
-    if (shared) void shared.setUser(status.user).catch(showError);
+    if (shared && shared.status.user?.id !== status.user?.id) {
+      void shared.setUser(status.user).then(() => {
+        if (shared.personalActive) return cloud.refresh();
+      }).catch(showError);
+    }
     const signedIn = Boolean(status.user);
     element("cloudSignIn").classList.toggle("hidden", signedIn);
     element("cloudSignedIn").classList.toggle("hidden", !signedIn || status.recovering);
@@ -40,6 +44,13 @@
     const remoteSummary = status.remote ? getBackupSummary(status.remote.payload) : null;
     element("cloudRemoteSummary").textContent = remoteSummary
       ? `Online: ${remoteSummary.shifts} Schichten · Stand ${formatDateTimeForDisplay(status.remote.updated_at)}` : "";
+    shared?.refreshView();
+  }
+
+  async function refreshOnline() {
+    if (!cloud) return;
+    if (shared) await shared.refresh();
+    if (!shared || shared.personalActive) await cloud.refresh();
   }
 
   async function action(work) {
@@ -58,7 +69,7 @@
   function open() {
     try { renderLocal(); } catch (error) { showError(error); }
     if (!dialog.open) dialog.showModal();
-    if (cloud) void action(() => shared?.active ? shared.refresh() : cloud.refresh());
+    if (cloud) void action(refreshOnline);
   }
 
   element("btnDataPanel").addEventListener("click", open);
@@ -116,7 +127,7 @@
       if (remote && cloud.status.mode === "choose") {
         if (!confirm(`Den Online-Stand vom ${formatDateTimeForDisplay(remote.updated_at)} durch diesen Geräte-Stand ersetzen? Der bisherige Online-Stand bleibt im Sicherungsverlauf.`)) return;
       } else if (cloud.status.mode === "first-upload") {
-        if (!confirm("Diesen Plan erstmals in deinem persönlichen Online-Konto speichern? Danach werden Änderungen automatisch online gesichert.")) return;
+        if (!confirm("Diesen Filialplan erstmals online sichern? Danach werden Änderungen automatisch online gesichert.")) return;
       }
       await cloud.save({ overwrite: true });
     });
@@ -165,9 +176,9 @@
     element("storageProblem").classList.remove("hidden");
     element("storageProblemText").textContent = localDataStore.error || saveStatusMessage;
   });
-  window.addEventListener("online", () => { if (shared?.active) void shared.refresh(); else if (cloud) void cloud.refresh(); });
+  window.addEventListener("online", () => { void refreshOnline().catch(showError); });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && cloud) void (shared?.active ? shared.refresh() : cloud.refresh());
+    if (document.visibilityState === "visible" && cloud) void refreshOnline().catch(showError);
   });
 
   window.addEventListener("load", async () => {
@@ -182,7 +193,7 @@
       const client = window.supabase.createClient(config.url, config.publishableKey);
       cloud = window.WochenplanCloud.create({
         client, projectRef: config.projectRef, storage: window.localStorage,
-        isPersonalActive: () => !shared?.active,
+        isPersonalActive: () => shared?.personalActive === true,
         redirectUrl: config.redirectUrl,
         getSnapshot: () => {
           if (localDataStore.blocked) throw new Error(localDataStore.error);
