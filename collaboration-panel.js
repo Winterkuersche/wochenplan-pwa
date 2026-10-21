@@ -1,0 +1,193 @@
+(function (root) {
+  "use strict";
+  // Date inputs are whole calendar days in Germany, including DST changes.
+  function berlinBoundary(date, nextDay = false) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Bitte Beginn und letzten Vertretungstag auswählen.");
+    const [y,m,d] = date.split("-").map(Number);
+    const target = Date.UTC(y,m-1,d + (nextDay ? 1 : 0));
+    let guess = target;
+    const formatter = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23" });
+    for (let i=0;i<3;i++) {
+      const p=Object.fromEntries(formatter.formatToParts(new Date(guess)).map(v=>[v.type,v.value]));
+      const displayed=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second);
+      guess += target-displayed;
+    }
+    return new Date(guess).toISOString();
+  }
+  function mount(options) {
+    const el = id => document.getElementById(id);
+    const panel = el("collaborationPanel");
+    let controller, current, events = [], pageBefore = null, visitAfter = 0, preview = null;
+    const fmt = value => value ? new Intl.DateTimeFormat("de-DE", { timeZone:"Europe/Berlin", dateStyle:"short", timeStyle:"short" }).format(new Date(value)) : "";
+    const message = text => { el("dataActionMessage").textContent = text; };
+    const clear = id => el(id).replaceChildren();
+    function paragraph(parent, text) { const p=document.createElement("p"); p.textContent=text; parent.append(p); return p; }
+    function button(parent, text, handler) {
+      const b=document.createElement("button"); b.type="button"; b.textContent=text; b.disabled=Boolean(current?.busy);
+      b.addEventListener("click",()=>run(handler)); parent.append(b); return b;
+    }
+    function setOptions(id, values, placeholder) {
+      const select=el(id), previous=select.value;
+      select.replaceChildren();
+      for (const [value,text] of [...(placeholder ? [["",placeholder]] : []),...values]) {
+        const option=document.createElement("option"); option.value=value; option.textContent=text; select.append(option);
+      }
+      if (Array.from(select.options).some(o=>o.value===previous)) select.value=previous;
+    }
+    const kinds={created:"Filiale angelegt",joined:"Beigetreten",save:"Plan geändert",propose:"Vorschlag eingereicht",decide_proposal:"Vorschlag entschieden",grant:"Vertretung freigegeben",revoke_grant:"Vertretung beendet",remove_member:"Zugang beendet",invite:"Einladung erstellt",revoke_invite:"Einladung widerrufen",revert:"Änderung zurückgenommen",restore:"Stand wiederhergestellt",publish:"Woche freigegeben",checkpoint:"Sicherungsstand angelegt"};
+    function changes(parent, list) {
+      for(const c of list || []) {
+        if(c.action) {
+          const d=c.details||{},name=current?.branch?.members.find(m=>m.id===d.user_id)?.name||"Mitglied";
+          const text=c.action==="grant"?`${name}: ${fmt(d.starts_at)} bis ${fmt(d.ends_at)}${d.can_publish?" · mit Wochenfreigabe":""}`
+            :c.action==="remove_member"?`Zugang von ${name} beendet`
+            :c.action==="revoke_grant"?`Vertretungsrechte von ${name} beendet`
+            :c.action==="publish"?`Woche ab ${d.week_start}`
+            :c.action==="checkpoint"?(d.label||"Sicherungsstand"):(kinds[c.action]||c.action);
+          paragraph(parent,text);continue;
+        }
+        const path=c.path || [];
+        const employees=current?.branch?.payload?.storage?.wochenplan_master_v10?.employees || [];
+        let title=path.slice(2).join(" / ");
+        if(path[2]==="schedule") title=`${path[3] || "Planung"} · ${employees.find(e=>e.id===path[4])?.name || path[4] || "Tag"}`;
+        if(path[1]==="wochenplan_master_v10") title="Teamdaten · "+path.slice(2).join(" / ");
+        const detail=document.createElement("details"),summary=document.createElement("summary");
+        const shift=v => v && typeof v==="object" && (v.start || v.code) ? `${v.code || "Schicht"} ${v.start || ""}–${v.end || ""}` : null;
+        summary.textContent=title+(shift(c.before)||shift(c.after)?` · ${shift(c.before)||"leer"} → ${shift(c.after)||"leer"}`:"");
+        detail.append(summary);
+        const before=document.createElement("pre");before.textContent=`Vorher: ${JSON.stringify(c.before,null,2)}\nNachher: ${JSON.stringify(c.after,null,2)}`;
+        detail.append(before);parent.append(detail);
+      }
+    }
+    function renderEvents() {
+      clear("sharedEvents");
+      const actor=el("sharedActorFilter").value, week=el("sharedHistoryWeek").value;
+      const end=week ? new Date(Date.parse(week+"T12:00:00Z")+6*86400000).toISOString().slice(0,10) : null;
+      const filtered=events.filter(e=>(!actor||e.actor_id===actor)&&(!el("sharedSinceVisit").checked||e.id>visitAfter)&&
+        (!week||!e.changes.length||e.changes.some(c=>!c.path||c.path[2]!=="schedule"||(c.path[3]>=week&&c.path[3]<=end))));
+      if(!filtered.length) paragraph(el("sharedEvents"),"Keine passenden Änderungen in den geladenen Einträgen.");
+      for(const event of filtered) {
+        const card=document.createElement("article");card.className="sharedEvent";
+        paragraph(card,`${event.actor_name} · ${fmt(event.created_at)} · ${kinds[event.kind]||event.kind}`);
+        if(event.reason) paragraph(card,event.reason);
+        changes(card,event.changes);
+        if(current.branch.owner && event.revision && event.changes.length) button(card,"Diese Änderung zurücknehmen",async()=>{
+          if(confirm("Diese Änderung zurücknehmen? Spätere Änderungen werden vorher auf Überschneidungen geprüft.")) {
+            await controller.perform("revert",{id:event.id}); message("Rücknahme online gespeichert. Bitte den Filialplan auf dieses Gerät übernehmen.");
+          }
+        });
+        el("sharedEvents").append(card);
+      }
+    }
+    function render(status) {
+      current=status;
+      panel.classList.toggle("hidden",!status.user);
+      el("sharedMessage").textContent=status.message;
+      el("personalCloudActions").classList.toggle("hidden",Boolean(status.selected));
+      el("personalCloudHistory").classList.toggle("hidden",Boolean(status.selected));
+      el("cloudRemoteSummary").classList.toggle("hidden",Boolean(status.selected));
+      el("sharedSelected").classList.toggle("hidden",!status.branch);
+      el("sharedPlanNotice").classList.toggle("hidden",!status.selected);
+      if(status.selected) {
+        el("sharedPlanNotice").textContent=`${status.branch?.name||"Gemeinsame Filiale"} · ${status.message}`;
+        el("dataStatus").textContent=status.mode==="synced"?"Filialplan aktuell":"Filialplan prüfen";
+        el("dataStatus").dataset.mode=status.mode;
+      }
+      setOptions("sharedBranchSelect",status.branches.map(b=>[b.id,b.name]),"Persönliche Planung");
+      el("sharedBranchSelect").value=status.selected||"";
+      panel.querySelectorAll("button[data-network]").forEach(b=>{b.disabled=status.busy;});
+      el("sharedBranchSelect").disabled=status.busy;
+      if(!status.branch) return;
+      const branch=status.branch;
+      el("sharedSummary").textContent=`${branch.name} · Stand ${branch.revision} · ${fmt(branch.updated_at)} · ${branch.owner?"Filialverwaltung":branch.can_edit?"Vertretung darf bearbeiten":"Ansehen und Vorschläge"}`;
+      el("sharedOwner").classList.toggle("hidden",!branch.owner);
+      el("btnSharedSave").disabled=status.busy||!branch.can_edit;
+      el("btnSharedConfirmSave").disabled=status.busy||!branch.can_edit;
+      el("btnSharedPublish").disabled=status.busy||!branch.can_publish;
+      el("btnSharedCheckpoint").disabled=status.busy||!branch.owner;
+      el("btnSharedRestore").disabled=status.busy||!branch.owner;
+      setOptions("sharedMember",branch.members.filter(m=>m.active&&!m.owner).map(m=>[m.id,m.name]),"Person auswählen");
+      setOptions("sharedActorFilter",branch.members.map(m=>[m.id,m.name]),"Alle");
+      setOptions("sharedSnapshotSelect",branch.snapshots.map(s=>[s.id,`${s.label} · Stand ${s.revision} · ${fmt(s.created_at)}`]));
+      clear("sharedGrants");
+      for(const grant of branch.delegations) {
+        const p=paragraph(el("sharedGrants"),`${branch.members.find(m=>m.id===grant.user_id)?.name||"Mitglied"}: ${fmt(grant.starts_at)} bis ${fmt(grant.ends_at)}${grant.can_publish?" · darf Wochen freigeben":""}`);
+        button(p,"Freigabe beenden",()=>controller.perform("revoke_grant",{id:grant.id}));
+      }
+      clear("sharedInvites");
+      for(const invite of branch.invites) button(el("sharedInvites"),`Einladung bis ${fmt(invite.expires_at)} widerrufen`,()=>controller.perform("revoke_invite",{id:invite.id}));
+      clear("sharedProposals");
+      for(const proposal of branch.proposals) {
+        const card=document.createElement("article");card.className="sharedEvent";
+        paragraph(card,`${proposal.author_name}: ${proposal.reason} · ${proposal.status==="pending"?"offen":proposal.status==="accepted"?"angenommen":"abgelehnt"}`);
+        changes(card,proposal.changes);
+        if(branch.owner&&proposal.status==="pending") {
+          button(card,"Vorschlag annehmen",async()=>{if(confirm("Die angezeigten Änderungen in den Filialplan übernehmen?")) await controller.perform("decide_proposal",{id:proposal.id,decision:"accepted"});});
+          button(card,"Vorschlag ablehnen",()=>controller.perform("decide_proposal",{id:proposal.id,decision:"rejected"}));
+        }
+        el("sharedProposals").append(card);
+      }
+      clear("sharedPublications");
+      for(const pub of branch.publications) paragraph(el("sharedPublications"),`Woche ${pub.week_start} · ${pub.actor_name} · ${fmt(pub.published_at)} · ${pub.changed?"Seit Freigabe geändert":"Entspricht dem freigegebenen Stand"}`);
+    }
+    async function run(work) {
+      message("");
+      try { await work(); } catch(error) { message(error.message); }
+      finally { render(controller.status); }
+    }
+    controller=root.WochenplanCollaboration.create({ ...options, projectRef:options.config.projectRef,storage:localStorage,
+      onChange:render,onContextChange:()=>{options.cloud.resetLink();events=[];pageBefore=null;preview=null;el("sharedCompare").classList.add("hidden");el("sharedEvents").replaceChildren();} });
+    const on=(id,work)=>el(id).addEventListener("click",()=>run(work));
+    el("sharedBranchSelect").addEventListener("change",()=>run(async()=>{
+      if(!confirm("Planungsbereich wechseln? Dein Geräte-Stand bleibt erhalten. Offene Änderungen vorher als Datei sichern.")) {render(controller.status);return;}
+      await controller.select(el("sharedBranchSelect").value); if(!controller.active) await options.cloud.refresh();
+    }));
+    on("btnSharedCreate",async()=>{
+      if(!el("sharedBranchName").value.trim()||!el("sharedDisplayName").value.trim()) throw Error("Bitte Filialname und deinen Anzeigenamen eingeben.");
+      if(confirm("Diesen Geräte-Stand als gemeinsamen Filialplan anlegen? Eine vorherige Dateisicherung wird empfohlen.")) await controller.create(el("sharedBranchName").value.trim(),el("sharedDisplayName").value.trim());
+    });
+    on("btnSharedJoin",async()=>{
+      let token=el("sharedInviteToken").value.trim();
+      if(token.includes("#wp-invite=")) token=new URLSearchParams(token.split("#")[1]).get("wp-invite");
+      if(!token||!el("sharedDisplayName").value.trim()) throw Error("Bitte Einladung und deinen Anzeigenamen eingeben.");
+      await controller.join(token,el("sharedDisplayName").value.trim());el("sharedInviteToken").value="";sessionStorage.removeItem("wochenplan_pending_invite");
+    });
+    on("btnSharedRefresh",()=>controller.refresh());
+    on("btnSharedSave",async()=>{
+      if(!saveAppState()) throw Error("Bitte zuerst die lokale Sicherung prüfen.");
+      preview=await controller.compare();clear("sharedCompareChanges");changes(el("sharedCompareChanges"),preview.changes);
+      el("sharedCompare").classList.remove("hidden");
+      if(!preview.changes.length) paragraph(el("sharedCompareChanges"),"Gerät und Filialplan stimmen überein.");
+    });
+    on("btnSharedConfirmSave",async()=>{if(preview&&confirm("Die angezeigten Änderungen übernehmen?")){await controller.save(el("sharedReason").value,true,preview);preview=null;el("sharedCompare").classList.add("hidden");}});
+    on("btnSharedAdopt",async()=>{if(confirm("Aktuellen Filialplan übernehmen? Sichere deinen offenen Entwurf vorher als Datei. Der vorherige lokale Stand bleibt wiederherstellbar.")) await controller.adopt();});
+    on("btnSharedPropose",async()=>{if(!el("sharedReason").value.trim()) throw Error("Bitte einen Grund für deinen Vorschlag angeben.");await controller.propose(el("sharedReason").value.trim());message("Vorschlag eingereicht. Der gemeinsame Plan bleibt bis zur Annahme unverändert.");});
+    on("btnSharedInvite",async()=>{const invite=await controller.perform("invite");const url=new URL(location.href);url.hash="wp-invite="+invite.token;el("sharedInviteLink").value=url.href;el("sharedInviteLink").select();message("Link erstellt. Kopiere ihn und gib ihn persönlich an deine Vertretung weiter.");});
+    on("btnSharedGrant",()=>controller.perform("grant",{user_id:el("sharedMember").value,starts_at:berlinBoundary(el("sharedGrantFrom").value),ends_at:berlinBoundary(el("sharedGrantTo").value,true),can_publish:el("sharedCanPublish").checked}));
+    on("btnSharedRemoveMember",async()=>{if(confirm("Zugang dieser Person und ihre aktiven Vertretungsrechte beenden?")) await controller.perform("remove_member",{user_id:el("sharedMember").value});});
+    on("btnSharedPublish",async()=>{if(confirm("Den aktuellen Online-Stand dieser Woche als verbindlich kennzeichnen? Noch offene lokale Änderungen werden dabei nicht übernommen.")) await controller.perform("publish",{week_start:el("sharedPublishWeek").value});});
+    on("btnSharedCheckpoint",()=>controller.perform("checkpoint",{label:el("sharedCheckpointName").value}));
+    on("btnSharedSnapshotExport",async()=>{const snap=await controller.perform("snapshot",{id:el("sharedSnapshotSelect").value});triggerBackupDownload(snap.payload,`wochenplan-filialstand-${snap.revision}.json`);});
+    on("btnSharedRestore",async()=>{if(confirm("Den Filialplan durch den gewählten Sicherungsstand ersetzen? Der aktuelle Stand bleibt als Rückweg erhalten.")) await controller.perform("restore",{id:el("sharedSnapshotSelect").value});});
+    on("btnSharedArchive",async()=>{triggerBackupDownload(await controller.archive(),`wochenplan-filialarchiv-${new Date().toISOString().slice(0,10)}.json`);message("Archiv heruntergeladen. Bitte zusätzlich außerhalb dieses Gerätes aufbewahren.");});
+    async function loadHistory(older=false) {
+      if(!controller.status.selected) return;
+      const key=`wochenplan_visit:${options.config.projectRef}:${controller.status.user.id}:${controller.status.selected}`;
+      if(!older) {visitAfter=Number(localStorage.getItem(key)||0);events=[];pageBefore=null;}
+      const page=await controller.history(older?{before_id:pageBefore}:{});
+      events.push(...page);pageBefore=page.at(-1)?.id;
+      if(!older&&page.length) localStorage.setItem(key,String(page[0].id));
+      el("btnSharedHistoryOlder").classList.toggle("hidden",page.length<100);renderEvents();
+    }
+    on("btnSharedHistory",()=>loadHistory());on("btnSharedHistoryOlder",()=>loadHistory(true));
+    for(const id of ["sharedActorFilter","sharedHistoryWeek","sharedSinceVisit"]) el(id).addEventListener("change",renderEvents);
+    const token=new URLSearchParams(location.hash.slice(1)).get("wp-invite");
+    if(token) {sessionStorage.setItem("wochenplan_pending_invite",token);history.replaceState(null,"",location.pathname+location.search);}
+    el("sharedInviteToken").value=sessionStorage.getItem("wochenplan_pending_invite")||"";
+    if(el("sharedInviteToken").value) {el("sharedSetup").open=true;message("Einladung erkannt. Bitte zuerst anmelden und danach deinen Anzeigenamen eingeben.");}
+    el("sharedPublishWeek").value=state.weekFrom||"";
+    render(controller.status);
+    return controller;
+  }
+  root.WochenplanCollaborationPanel=Object.freeze({mount,berlinBoundary});
+})(typeof window === "undefined" ? globalThis : window);

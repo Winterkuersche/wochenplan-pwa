@@ -3,6 +3,7 @@
   const element = (id) => document.getElementById(id);
   const dialog = element("dataDialog");
   let cloud = null;
+  let shared = null;
   let uiBusy = false;
 
   function showError(error) {
@@ -23,6 +24,7 @@
   }
 
   function renderCloud(status) {
+    if (shared) void shared.setUser(status.user).catch(showError);
     const signedIn = Boolean(status.user);
     element("cloudSignIn").classList.toggle("hidden", signedIn);
     element("cloudSignedIn").classList.toggle("hidden", !signedIn || status.recovering);
@@ -56,7 +58,7 @@
   function open() {
     try { renderLocal(); } catch (error) { showError(error); }
     if (!dialog.open) dialog.showModal();
-    if (cloud) void action(() => cloud.refresh());
+    if (cloud) void action(() => shared?.active ? shared.refresh() : cloud.refresh());
   }
 
   element("btnDataPanel").addEventListener("click", open);
@@ -157,15 +159,15 @@
 
   window.addEventListener("wochenplan:saved", () => {
     renderLocal();
-    cloud?.scheduleSave();
+    if (shared?.active) shared.scheduleSave(); else cloud?.scheduleSave();
   });
   window.addEventListener("wochenplan:storage-error", () => {
     element("storageProblem").classList.remove("hidden");
     element("storageProblemText").textContent = localDataStore.error || saveStatusMessage;
   });
-  window.addEventListener("online", () => { if (cloud) void cloud.refresh(); });
+  window.addEventListener("online", () => { if (shared?.active) void shared.refresh(); else if (cloud) void cloud.refresh(); });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && cloud) void cloud.refresh();
+    if (document.visibilityState === "visible" && cloud) void (shared?.active ? shared.refresh() : cloud.refresh());
   });
 
   window.addEventListener("load", async () => {
@@ -180,6 +182,7 @@
       const client = window.supabase.createClient(config.url, config.publishableKey);
       cloud = window.WochenplanCloud.create({
         client, projectRef: config.projectRef, storage: window.localStorage,
+        isPersonalActive: () => !shared?.active,
         redirectUrl: config.redirectUrl,
         getSnapshot: () => {
           if (localDataStore.blocked) throw new Error(localDataStore.error);
@@ -187,6 +190,12 @@
         },
         applySnapshot: (payload) => importBackupFromObject(payload, { source: "cloud", preserveUi: true, reload: false }),
         reload: () => window.location.reload(), onChange: renderCloud
+      });
+      shared = window.WochenplanCollaborationPanel.mount({
+        client, cloud, config,
+        getSnapshot: () => { if (localDataStore.blocked) throw new Error(localDataStore.error); return collectFullBackupSnapshot(); },
+        applySnapshot: (payload) => importBackupFromObject(payload, { source: "shared", preserveUi: true, reload: false }),
+        reload: () => window.location.reload()
       });
       await cloud.start();
     } catch (_) {

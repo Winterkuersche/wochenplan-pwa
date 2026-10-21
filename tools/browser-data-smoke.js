@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
 
 const fixture = { backupVersion: 2, createdAt: '2026-10-20T10:00:00.000Z', storage: {
   wochenplan_master_v10: { employees: [{ id: 'test-one', name: 'Testperson', roleKey: 'TZ20', target: '20:00' }] },
@@ -34,7 +34,8 @@ async function main() {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
-    browser = await chromium.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined, args: ['--no-sandbox'] });
+    const engine = process.env.BROWSER_ENGINE === 'webkit' ? webkit : chromium;
+    browser = await engine.launch({ executablePath: process.env.BROWSER_EXECUTABLE || undefined, args: engine === chromium ? ['--no-sandbox'] : [] });
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
     // Export/import must work with every external library and network offline.
     await context.route('https://**/*', (route) => route.abort());
@@ -118,7 +119,11 @@ async function main() {
     second.on('pageerror', (error) => runtimeErrors.push(error.message));
     second.on('dialog', (dialog) => dialog.accept());
     await second.goto(url); await second.waitForFunction(() => window.__APP_BOOT_OK__ === true);
-    await page.evaluate(() => { state.schedule['2026-10-20']['test-one'] = buildEarlyShiftEntry('F5'); saveAppState(); });
+    assert.equal(await page.evaluate(() => { state.schedule['2026-10-20']['test-one'] = buildEarlyShiftEntry('F5'); return saveAppState(); }), true, 'The first tab must save before testing a stale second tab');
+    // Cross-process storage propagation is asynchronous, particularly in
+    // WebKit. This case tests a stale editor after the newer write is visible;
+    // same-instant shared writes are tested separately against server revisions.
+    await second.waitForFunction(() => JSON.parse(localStorage.getItem('wochenplan_plan_v10')).schedule['2026-10-20']['test-one'].code === 'F5');
     const staleSave = await second.evaluate(() => { state.schedule['2026-10-20']['test-one'] = buildEarlyShiftEntry('F6'); return saveAppState(); });
     assert.equal(staleSave, false);
     await second.locator('#btnDataPanel').click();

@@ -1,7 +1,7 @@
 // Real browser SDK against a synthetic, intercepted Supabase HTTP API.
 // No external request, email, real account or personal plan is used.
 const fs=require('fs'),http=require('http'),path=require('path'),assert=require('assert/strict');
-const {chromium}=require('playwright');
+const {chromium,webkit}=require('playwright');
 let doc=null;const api=[];const pages=[];
 const user={id:'00000000-0000-4000-8000-000000000101',email:'synthetic@example.invalid',aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
 const now=Math.floor(Date.now()/1000);
@@ -9,7 +9,8 @@ const token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base6
 async function main(){
 const server=http.createServer((req,res)=>{const f=path.join(process.cwd(),req.url.split('?')[0]==='/'?'index.html':req.url.split('?')[0]);fs.readFile(f,(e,b)=>{if(e){res.writeHead(404).end();return}res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':'text/html');res.end(b)})});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const url='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({executablePath:process.env.BROWSER_EXECUTABLE || undefined,args:['--no-sandbox']});
+const engine=process.env.BROWSER_ENGINE==='webkit'?webkit:chromium;
+const browser=await engine.launch({executablePath:process.env.BROWSER_EXECUTABLE || undefined,args:engine===chromium?['--no-sandbox']:[]});
 async function device(){
  const c=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
  await c.route('https://**/*',r=>r.abort());

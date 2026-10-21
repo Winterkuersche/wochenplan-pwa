@@ -1,0 +1,96 @@
+// Actual PostgreSQL + browser SDK, local synthetic identities only.
+const fs=require('node:fs'), http=require('node:http'), path=require('node:path'), assert=require('node:assert/strict');
+const { chromium, webkit }=require('playwright');
+const { PGlite }=require('@electric-sql/pglite');
+const ids=['20000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000002'];
+async function main(){
+ const db=new PGlite(); let browser,server;let queue=Promise.resolve();
+ const errors=[], pages=[];
+ try {
+  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+   grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;
+   insert into auth.users values ('${ids[0]}'),('${ids[1]}');`);
+  await db.exec(fs.readFileSync('supabase/collaboration-schema.sql','utf8'));
+  server=http.createServer((req,res)=>{
+   const root=process.cwd(),file=path.resolve(root,'.'+(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));
+   if(!file.startsWith(root+path.sep)||file.includes('/node_modules/')||file.includes('/.git/'))return res.writeHead(403).end();
+   fs.readFile(file,(err,body)=>{if(err)return res.writeHead(404).end();res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(body);});
+  });
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}/`;
+  const engine=process.env.BROWSER_ENGINE==='webkit'?webkit:chromium;
+  browser=await engine.launch({executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:engine===chromium?['--no-sandbox']:[]});
+  async function device(index){
+   const user={id:ids[index],email:`synthetic-${index}@example.invalid`,aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
+   const now=Math.floor(Date.now()/1000),token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:user.id,role:'authenticated',aud:'authenticated',iat:now,exp:now+3600})).toString('base64url')+'.c3ludGhldGlj';
+   const context=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
+   await context.route('https://**/*',r=>r.abort());
+   await context.route('https://zrosdhfxnwolxemqqvok.supabase.co/**',async route=>{
+    const req=route.request(),u=new URL(req.url());
+    const send=(status,body)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(body)});
+    if(u.pathname==='/auth/v1/token')return send(200,{access_token:token,refresh_token:'synthetic',expires_in:3600,token_type:'bearer',user});
+    if(u.pathname==='/auth/v1/user')return send(200,user);
+    if(u.pathname==='/rest/v1/wochenplan_documents')return send(200,[]);
+    if(u.pathname==='/rest/v1/rpc/wochenplan_collaboration'){
+     const task=queue.then(async()=>{
+      try{
+       await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[user.id]);await db.exec('set role authenticated');
+       const body=req.postDataJSON(),r=await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[body.p_action,JSON.stringify(body.p_args)]);
+       return {status:200,body:r.rows[0].data};
+      }catch(e){return {status:400,body:{code:e.code,message:e.message}};}
+     });queue=task.then(()=>{});const r=await task;return send(r.status,r.body);
+    }
+    return send(404,{message:'Unexpected synthetic route'});
+   });
+   const page=await context.newPage();pages.push(page);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+   await page.goto(url);await page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+   return {page,context,user};
+  }
+  async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
+  const a=await device(0),b=await device(1);
+  const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
+  await a.page.evaluate(b=>importBackupFromObject(b,{reload:false}),fixture);await a.page.reload();await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await login(a);await a.page.locator('#sharedSetup>summary').click();await a.page.locator('#sharedDisplayName').fill('TL Test');await a.page.locator('#sharedBranchName').fill('Testfiliale');await a.page.locator('#btnSharedCreate').click();
+  await a.page.locator('#sharedSummary').filter({hasText:'Filialverwaltung'}).waitFor();
+  console.log('Shared owner created');
+  await a.page.locator('#sharedOwner>summary').click();await a.page.locator('#btnSharedInvite').click();await a.page.waitForFunction(()=>document.getElementById('sharedInviteLink').value.includes('#wp-invite='));
+  const invite=await a.page.locator('#sharedInviteLink').inputValue();
+  await login(b);await b.page.locator('#sharedSetup>summary').click();await b.page.locator('#sharedDisplayName').fill('SV Test');await b.page.locator('#sharedInviteToken').fill(invite);await b.page.locator('#btnSharedJoin').click();
+  await b.page.locator('#sharedSummary').filter({hasText:'Ansehen und Vorschläge'}).waitFor();assert.equal(await b.page.locator('#btnSharedSave').isDisabled(),true);
+  console.log('Shared deputy joined');
+  await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
+  console.log('Shared deputy adopted');
+  await b.page.evaluate(()=>{state.schedule['2026-10-20']['test-one']=buildEarlyShiftEntry('F5');saveAppState();});
+  await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
+  await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
+  console.log('Shared proposal submitted');
+  await a.page.locator('#btnSharedRefresh').click();await a.page.locator('#sharedActivity>summary').click();await a.page.locator('#sharedProposals').getByText('SV Test: Vertretungsvorschlag',{exact:false}).waitFor();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Vorschlag annehmen'}).click();
+  await a.page.locator('#sharedSummary').filter({hasText:'Stand 2'}).waitFor();
+  await a.page.locator('#btnSharedRefresh').click();
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin'}).format(new Date());
+  await a.page.locator('#sharedMember').selectOption(ids[1]);await a.page.locator('#sharedGrantFrom').fill(today);await a.page.locator('#sharedGrantTo').fill(today);await a.page.locator('#btnSharedGrant').click();
+  await a.page.locator('#sharedGrants').getByRole('button',{name:'Freigabe beenden'}).waitFor();
+  await b.page.locator('#btnSharedRefresh').click();await b.page.locator('#sharedSummary').filter({hasText:'Vertretung darf bearbeiten'}).waitFor();
+  await a.page.locator('#sharedGrants').getByRole('button',{name:'Freigabe beenden'}).click();await b.page.locator('#btnSharedRefresh').click();await b.page.locator('#sharedSummary').filter({hasText:'Ansehen und Vorschläge'}).waitFor();
+  assert.equal(await b.page.locator('#btnSharedSave').isDisabled(),true);
+  // The independent archive is a valid standard backup, including attributed history.
+  await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
+  const downloadPromise=a.page.waitForEvent('download');await a.page.locator('#btnSharedArchive').click();
+  const downloaded=await downloadPromise,archive=JSON.parse(fs.readFileSync(await downloaded.path(),'utf8'));
+  assert.equal(archive.backupVersion,2);assert.ok(archive.sharedArchive.events.some(e=>e.kind==='decide_proposal'));
+  assert.equal(JSON.stringify(archive).includes('access_token'),false);assert.equal(JSON.stringify(archive).includes('refresh_token'),false);
+  assert.equal(await b.page.evaluate(data=>validateAndNormalizeBackupData(data).error,archive),'');
+  await b.page.evaluate(data=>importBackupFromObject(data,{reload:false}),archive);
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F5');
+  await b.page.locator('#btnDataPanel').click();
+  await b.page.locator('#btnCloseData').click();assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
+  assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  assert.deepEqual(errors,[]);
+  console.log('Shared browser/database flow passed: create → invite → join → adopt → propose → accept → delegate → revoke, mobile layout.');
+ }catch(error){for(const page of pages) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})));throw error;
+ }finally{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));await db.close();}
+}
+main().catch(e=>{console.error(e);process.exit(1);});
