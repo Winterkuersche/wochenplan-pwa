@@ -1,11 +1,12 @@
 # Unabhängige Sicherung: vorbereiteter Ablauf
 
-Status am 21.10.2026: lokale Prüfung vorhanden; externer Export noch nicht aktiviert.
-Der erste echte Export und der Rückweg aus Google Drive sind noch nicht geprüft.
-Der Nutzer hat die Einrichtung beauftragt und ein vom Shop getrenntes Google-Konto
-festgelegt. Die vorhandene Drive-Verbindung zeigt noch das Shop-Konto und wird
-deshalb nicht als Sicherungsziel verwendet. Der nächste erforderliche Schritt
-ist die Anmeldung mit dem gewünschten Konto in der ChatGPT-Verbindung.
+Status am 21.10.2026: separates Zielkonto verifiziert, privater Sicherungsordner
+angelegt und erster echter Export erfolgreich zurückgelesen. Dateigröße und
+Prüfsumme stimmen mit der Quelle überein. Der zurückgelesene Stand wurde zusätzlich
+im echten App-Import in einem isolierten Browser wiederhergestellt und nach
+erneutem Öffnen mit Team, Plan, Abwesenheiten, Umsätzen und Monatsdaten verglichen.
+Eine separate tägliche Sicherungsaufgabe am Abend ist aktiviert; ihr erster
+automatischer Lauf steht noch aus. Das Shop-Konto wird nicht verwendet.
 
 ## Ziel und Umfang
 
@@ -19,8 +20,10 @@ Vorgesehener Turnus: täglich; 30 geprüfte Tagesstände und 12 Monatsstände.
 Aufbewahrung erst nach erfolgreichem neuem Upload und Rücklesen anwenden.
 Nie andere Dateien oder den letzten brauchbaren Stand entfernen.
 
-Gesichert werden der persönliche Online-Plan und die vom Nutzer verwalteten
-Filialpläne. Jeder Plan bleibt eine normale Format-2-JSON-Datei, die sich über
+Gesichert wird die bestehende Filialplanung: bis zur Einrichtung des Teamzugangs
+der bisherige Online-Stand, danach die vom Nutzer verwalteten Filialpläne.
+Der frühere Einzelkonto-Stand bleibt als Rückweg erhalten und ist kein zweiter
+aktiver Planungsbereich. Jeder Plan bleibt eine normale Format-2-JSON-Datei, die sich über
 „Sicherung importieren“ wiederherstellen lässt. Ein Filialarchiv enthält zusätzlich
 den personenbezogenen Änderungsverlauf als Dokumentation. Der Import schreibt
 diesen Verlauf nicht als authentische Serverhistorie zurück.
@@ -67,12 +70,14 @@ Zählwerte aus und benötigt keine Netzwerkverbindung oder Anmeldedaten.
 Die Browserprüfung `tools/browser-data-smoke.js` prüft den App-Import zusätzlich
 mit künstlichen Daten in einer getrennten Browserinstanz.
 
-## Noch benötigte Einrichtung
+## Eingerichtet und noch offen
 
-- Gewünschtes separates Google-Konto verbinden und die Profiladresse verifizieren.
-- Ordner anlegen und Berechtigungen sowie echten Download-Rückweg prüfen.
-- Erst nach dem erfolgreichen Probelauf die separate Sicherungsaufgabe aktivieren.
+- Gewünschtes separates Google-Konto verbunden und Profiladresse verifiziert.
+- Privater Ordner sowie echter Download-Rückweg geprüft.
+- Separate Sicherungsaufgabe nach erfolgreichem Probelauf aktiviert.
   Die vorhandenen KI-Codeprüfer behalten ihre Sperre für Produktionsdaten und Drive.
   Die Sicherungsaufgabe muss vor jedem Schreiben Zielkonto und Zielordner prüfen.
 - Geplanter Turnus: täglich am Abend in Europe/Berlin. Bis zur geprüften
   Aufbewahrung keine vorhandenen Sicherungen automatisch löschen.
+- Ersten automatischen Lauf kontrollieren. Die technische Einzelkonto-/Teamablage
+  soll in der Bedienung keine parallelen privaten und gemeinsamen Planungsbereiche bilden.

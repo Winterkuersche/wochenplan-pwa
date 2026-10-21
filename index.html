@@ -172,7 +172,7 @@ Drucken / PDF
     <div><p class="dataEyebrow">DEINE PLANUNG</p><h2 id="dataDialogTitle">Daten &amp; Sicherung</h2></div>
     <button id="btnCloseData" type="button" aria-label="Daten und Sicherung schließen">Schließen</button>
   </div>
-  <p class="dataIntro">Dein Konto verbindet deine Geräte. Eine gemeinsame Filiale verbindet dich mit deiner Vertretung.</p>
+  <p class="dataIntro">Ein Filialplan für dich und deine Vertretung. Jede Person meldet sich mit ihrem eigenen Konto an.</p>
   <section class="dataCard" aria-labelledby="dataLocalTitle">
     <h3 id="dataLocalTitle">Auf diesem Gerät</h3>
     <strong id="dataLocalSummary"></strong>
@@ -192,7 +192,7 @@ Drucken / PDF
     </details>
   </section>
   <section class="dataCard" aria-labelledby="cloudTitle">
-    <h3 id="cloudTitle">Auch online sichern</h3>
+    <h3 id="cloudTitle">Anmeldung &amp; Online-Sicherung</h3>
     <p id="cloudMessage" role="status" aria-live="polite">Melde dich auf beiden Geräten mit demselben Konto an.</p>
     <form id="cloudSignIn" class="cloudSignIn">
       <label for="cloudEmail">E-Mail<input id="cloudEmail" type="email" autocomplete="username" inputmode="email" required></label>
@@ -216,7 +216,7 @@ Drucken / PDF
         <button id="btnCloudDownload" type="button" data-network>Online-Stand übernehmen</button>
         <button id="btnCloudRefresh" type="button" data-network>Stand abgleichen</button>
       </div>
-      <details id="personalCloudHistory" class="dataRecovery"><summary>Persönlicher Online-Sicherungsverlauf</summary>
+      <details id="personalCloudHistory" class="dataRecovery"><summary>Online-Sicherungsverlauf</summary>
         <p class="small">Frühere Stände als Datei herunterladen und bei Bedarf importieren.</p>
         <button id="btnCloudHistory" type="button" data-network>Sicherungen anzeigen</button>
         <div id="cloudHistoryActions" class="dataActions hidden">
@@ -228,13 +228,13 @@ Drucken / PDF
     </div>
   </section>
   <section id="collaborationPanel" class="dataCard hidden" aria-labelledby="sharedTitle">
-    <h3 id="sharedTitle">Gemeinsame Filiale</h3>
+    <h3 id="sharedTitle">Deine Filiale</h3>
     <p id="sharedMessage" role="status" aria-live="polite"></p>
-    <label>Filiale<select id="sharedBranchSelect"><option value="">Persönliche Planung</option></select></label>
-    <details id="sharedSetup"><summary>Filiale anlegen oder Einladung annehmen</summary>
+    <label id="sharedBranchPicker" class="hidden">Filiale<select id="sharedBranchSelect"><option value="">Filiale auswählen</option></select></label>
+    <details id="sharedSetup"><summary>Teamzugang einrichten</summary>
       <label>Dein Anzeigename<input id="sharedDisplayName" maxlength="80" autocomplete="name"></label>
       <label>Filialname<input id="sharedBranchName" maxlength="100" placeholder="Meine Filiale"></label>
-      <button id="btnSharedCreate" type="button" data-network>Mit diesem Plan Filiale anlegen</button>
+      <button id="btnSharedCreate" type="button" data-network>Diesen Filialplan gemeinsam nutzen</button>
       <label>Einladungscode oder Einladungslink<input id="sharedInviteToken" autocomplete="off"></label>
       <button id="btnSharedJoin" type="button" data-network>Einladung annehmen</button>
     </details>
@@ -908,34 +908,34 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-10-21-4"></script>
-<script src="./holidays.js?v=2026-10-21-4"></script>
-<script src="./time-utils.js?v=2026-10-21-4"></script>
-<script src="./employee-availability.js?v=2026-10-21-4"></script>
-<script src="./shift-rules.js?v=2026-10-21-4"></script>
-<script src="./date-utils.js?v=2026-10-21-4"></script>
-<script src="./shift-utils.js?v=2026-10-21-4"></script>
-<script src="./status-utils.js?v=2026-10-21-4"></script>
-<script src="./contract-models.js?v=2026-10-21-4"></script>
-<script src="./absences.js?v=2026-10-21-4"></script>
-<script src="./planning2-domain-helpers.js?v=2026-10-21-4"></script>
-<script src="./planning2-carryover.js?v=2026-10-21-4"></script>
-<script src="./planning2-mutation-packages.js?v=2026-10-21-4"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-10-21-4"></script>
-<script src="./planning2-data-adapter.js?v=2026-10-21-4"></script>
-<script src="./vacation-utils.js?v=2026-10-21-4"></script>
-<script src="./day-resolution.js?v=2026-10-21-4"></script>
-<script src="./month-engine.js?v=2026-10-21-4"></script>
-<script src="./daily-staffing.js?v=2026-10-21-4"></script>
-<script src="./day-view.js?v=2026-10-21-4"></script>
-<script src="./week-view.js?v=2026-10-21-4"></script>
-<script src="./mep-view.js?v=2026-10-21-4"></script>
-<script src="./month-view.js?v=2026-10-21-4"></script>
-<script src="./balance-utils.js?v=2026-10-21-4"></script>
-<script src="./monthly-plan-baselines.js?v=2026-10-21-4"></script>
-<script src="./backup-utils.js?v=2026-10-21-4"></script>
-<script src="./backup-io.js?v=2026-10-21-4"></script>
-<script src="./manual-month-utils.js?v=2026-10-21-4"></script>
+<script src="./version.js?v=2026-10-21-5"></script>
+<script src="./holidays.js?v=2026-10-21-5"></script>
+<script src="./time-utils.js?v=2026-10-21-5"></script>
+<script src="./employee-availability.js?v=2026-10-21-5"></script>
+<script src="./shift-rules.js?v=2026-10-21-5"></script>
+<script src="./date-utils.js?v=2026-10-21-5"></script>
+<script src="./shift-utils.js?v=2026-10-21-5"></script>
+<script src="./status-utils.js?v=2026-10-21-5"></script>
+<script src="./contract-models.js?v=2026-10-21-5"></script>
+<script src="./absences.js?v=2026-10-21-5"></script>
+<script src="./planning2-domain-helpers.js?v=2026-10-21-5"></script>
+<script src="./planning2-carryover.js?v=2026-10-21-5"></script>
+<script src="./planning2-mutation-packages.js?v=2026-10-21-5"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-10-21-5"></script>
+<script src="./planning2-data-adapter.js?v=2026-10-21-5"></script>
+<script src="./vacation-utils.js?v=2026-10-21-5"></script>
+<script src="./day-resolution.js?v=2026-10-21-5"></script>
+<script src="./month-engine.js?v=2026-10-21-5"></script>
+<script src="./daily-staffing.js?v=2026-10-21-5"></script>
+<script src="./day-view.js?v=2026-10-21-5"></script>
+<script src="./week-view.js?v=2026-10-21-5"></script>
+<script src="./mep-view.js?v=2026-10-21-5"></script>
+<script src="./month-view.js?v=2026-10-21-5"></script>
+<script src="./balance-utils.js?v=2026-10-21-5"></script>
+<script src="./monthly-plan-baselines.js?v=2026-10-21-5"></script>
+<script src="./backup-utils.js?v=2026-10-21-5"></script>
+<script src="./backup-io.js?v=2026-10-21-5"></script>
+<script src="./manual-month-utils.js?v=2026-10-21-5"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -947,19 +947,19 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-10-21-4"></script>
-<script src="./app-orchestration.js?v=2026-10-21-4"></script>
-<script src="./employee-order.js?v=2026-10-21-4"></script>
-<script src="./planning2-manual-tools.js?v=2026-10-21-4"></script>
-<script src="./planning2-live.js?v=2026-10-21-4"></script>
-<script src="./storage-utils.js?v=2026-10-21-4"></script>
-<script src="./cloud-config.js?v=2026-10-21-4"></script>
-<script src="./vendor/supabase-2.118.0.js?v=2026-10-21-4"></script>
-<script src="./cloud-sync.js?v=2026-10-21-4"></script>
-<script src="./collaboration.js?v=2026-10-21-4"></script>
-<script src="./app.js?v=2026-10-21-4"></script>
-<script src="./data-panel.js?v=2026-10-21-4"></script>
-<script src="./collaboration-panel.js?v=2026-10-21-4"></script>
+<script src="./pdf-export.js?v=2026-10-21-5"></script>
+<script src="./app-orchestration.js?v=2026-10-21-5"></script>
+<script src="./employee-order.js?v=2026-10-21-5"></script>
+<script src="./planning2-manual-tools.js?v=2026-10-21-5"></script>
+<script src="./planning2-live.js?v=2026-10-21-5"></script>
+<script src="./storage-utils.js?v=2026-10-21-5"></script>
+<script src="./cloud-config.js?v=2026-10-21-5"></script>
+<script src="./vendor/supabase-2.118.0.js?v=2026-10-21-5"></script>
+<script src="./cloud-sync.js?v=2026-10-21-5"></script>
+<script src="./collaboration.js?v=2026-10-21-5"></script>
+<script src="./app.js?v=2026-10-21-5"></script>
+<script src="./data-panel.js?v=2026-10-21-5"></script>
+<script src="./collaboration-panel.js?v=2026-10-21-5"></script>
 
 
 <script>

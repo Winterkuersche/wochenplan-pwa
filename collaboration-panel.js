@@ -83,17 +83,25 @@
       current=status;
       panel.classList.toggle("hidden",!status.user);
       el("sharedMessage").textContent=status.message;
-      el("personalCloudActions").classList.toggle("hidden",Boolean(status.selected));
-      el("personalCloudHistory").classList.toggle("hidden",Boolean(status.selected));
-      el("cloudRemoteSummary").classList.toggle("hidden",Boolean(status.selected));
+      const singleAccountPlan=status.resolved&&!status.busy&&!status.selected&&!status.branches.length;
+      el("personalCloudActions").classList.toggle("hidden",!singleAccountPlan);
+      el("personalCloudHistory").classList.toggle("hidden",!singleAccountPlan);
+      el("cloudRemoteSummary").classList.toggle("hidden",!singleAccountPlan);
+      el("sharedSetup").classList.toggle("hidden",!status.resolved||Boolean(status.selected)||Boolean(status.branches.length));
+      el("sharedBranchPicker").classList.toggle("hidden",status.branches.length<=1&&(!status.selected||!status.branches.length||status.branches.some(b=>b.id===status.selected)));
       el("sharedSelected").classList.toggle("hidden",!status.branch);
       el("sharedPlanNotice").classList.toggle("hidden",!status.selected);
+      if(status.user&&!singleAccountPlan) {
+        el("cloudMessage").textContent=status.message;
+        el("dataStatus").textContent=status.mode==="synced"?"Filialplan aktuell":"Filialplan prüfen";
+        el("dataStatus").dataset.mode=status.mode;
+      }
       if(status.selected) {
         el("sharedPlanNotice").textContent=`${status.branch?.name||"Gemeinsame Filiale"} · ${status.message}`;
         el("dataStatus").textContent=status.mode==="synced"?"Filialplan aktuell":"Filialplan prüfen";
         el("dataStatus").dataset.mode=status.mode;
       }
-      setOptions("sharedBranchSelect",status.branches.map(b=>[b.id,b.name]),"Persönliche Planung");
+      setOptions("sharedBranchSelect",status.branches.map(b=>[b.id,b.name]),status.branches.some(b=>b.id===status.selected)?null:"Filiale auswählen");
       el("sharedBranchSelect").value=status.selected||"";
       panel.querySelectorAll("button[data-network]").forEach(b=>{b.disabled=status.busy;});
       el("sharedBranchSelect").disabled=status.busy;
@@ -139,8 +147,8 @@
       onChange:render,onContextChange:()=>{options.cloud.resetLink();events=[];pageBefore=null;preview=null;el("sharedCompare").classList.add("hidden");el("sharedEvents").replaceChildren();} });
     const on=(id,work)=>el(id).addEventListener("click",()=>run(work));
     el("sharedBranchSelect").addEventListener("change",()=>run(async()=>{
-      if(!confirm("Planungsbereich wechseln? Dein Geräte-Stand bleibt erhalten. Offene Änderungen vorher als Datei sichern.")) {render(controller.status);return;}
-      await controller.select(el("sharedBranchSelect").value); if(!controller.active) await options.cloud.refresh();
+      if(!confirm("Filiale wechseln? Dein Geräte-Stand bleibt erhalten. Offene Änderungen vorher als Datei sichern.")) {render(controller.status);return;}
+      await controller.select(el("sharedBranchSelect").value);
     }));
     on("btnSharedCreate",async()=>{
       if(!el("sharedBranchName").value.trim()||!el("sharedDisplayName").value.trim()) throw Error("Bitte Filialname und deinen Anzeigenamen eingeben.");
@@ -187,6 +195,7 @@
     if(el("sharedInviteToken").value) {el("sharedSetup").open=true;message("Einladung erkannt. Bitte zuerst anmelden und danach deinen Anzeigenamen eingeben.");}
     el("sharedPublishWeek").value=state.weekFrom||"";
     render(controller.status);
+    controller.refreshView=()=>render(controller.status);
     return controller;
   }
   root.WochenplanCollaborationPanel=Object.freeze({mount,berlinBoundary});

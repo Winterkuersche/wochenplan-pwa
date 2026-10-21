@@ -4,8 +4,9 @@ Stand: 21. Oktober 2026. Veröffentlicht: V9.9 über PR #419.
 
 Dieses Dokument ist die abarbeitbare Aufgabenliste. V9.9 ist veröffentlicht,
 persönlicher Login und Übernahme in die Home-Bildschirm-App wurden bestätigt.
-Der reale TL/SV-Test sowie die unabhängige Sicherung über das gewünschte separate
-Google-Konto bleiben offen. Pro Schritt werden Ergebnis, Prüfung und nächster
+Der reale TL/SV-Test bleibt offen. Die unabhängige Sicherung über das gewünschte
+separate Google-Konto wurde einschließlich Rücklesen und echter App-Wiederherstellung
+geprüft; die tägliche Sicherungsaufgabe ist aktiviert. Pro Schritt werden Ergebnis, Prüfung und nächster
 Schritt festgehalten; ein neuer Chat kann hier anknüpfen.
 
 ## Ziel und vereinbarte Richtung
@@ -17,7 +18,12 @@ Schritt festgehalten; ein neuer Chat kann hier anknüpfen.
 - Sicherungsstände und gezieltes Rückgängigmachen schützen die Planung.
 - Wartungsprüfungen kontrollieren Änderungen und melden Auffälligkeiten.
 
-Persönliche Pläne können bewusst als gemeinsame Filiale kopiert werden. Lokale
+Die App wird ausschließlich für die Filiale verwendet. TL und SV arbeiten mit
+eigenen Anmeldungen an einem Filialplan; ein zusätzlicher privater Planungsbereich
+ist nicht gewünscht. Der Teamzugang baut auf dem vorhandenen Plan auf. Eine bereits
+zugeordnete einzelne Filiale wird nach Anmeldung automatisch ausgewählt, auch auf
+einem neuen Gerät. Ein abweichender Geräte-Entwurf wird dabei nicht automatisch ersetzt.
+Vorhandene frühere Online-Stände bleiben als Rückweg erhalten. Lokale
 Speicherung, Dateisicherungen, Online-Versionsverlauf und Konfliktschutz sind
 vorhanden. Die erste persönliche Online-Sicherung und Übernahme wurden geprüft.
 
@@ -125,14 +131,15 @@ Ergebnis: Es ist erkennbar, was verbindlich ist und was noch entschieden werden 
 - [x] Ersten vollständigen KI-Bericht kontrollieren; nach einem stillen Probelauf zweiter Lauf mit zwei reproduzierten Offline-Befunden. V9.9.2 ergänzt deren Korrektur und Regressionstests. V9.9.1 schützt zusätzlich den Kontowechsel während der Prüfsumme.
 - [x] Fehler des Prüflaufs selbst sichtbar machen; kein Ergebnis ist keine erfolgreiche Prüfung.
 - [x] Zielrichtung: separates Google-Konto für tägliche externe Sicherungen; manuelle iCloud-Exporte zusätzlich erhalten.
-- [ ] Richtige Google-Verbindung prüfen und separate Sicherung außerhalb der laufenden Datenbank einrichten. Shop-Konto dafür ausdrücklich ausgeschlossen.
-- [ ] Wiederherstellung aus dieser Kopie in einer Testumgebung durchführen.
+- [x] Richtige Google-Verbindung prüfen und separate Sicherung außerhalb der laufenden Datenbank einrichten. Shop-Konto dafür ausdrücklich ausgeschlossen.
+- [x] Wiederherstellung aus dieser Kopie in einer Testumgebung durchführen; echter App-Import und erneutes Öffnen zusätzlich bestätigt.
 
 Ergebnis: Wartungsbedarf wird sichtbar, Sicherung ist praktisch wiederherstellbar.
 Wartungs- und Browser-Workflows sowie Dependabot sind nach dem Merge aktiv.
 Die zusätzliche KI-Prüfung ist eingerichtet und hat einen vollständigen ersten
-Bericht geliefert. Die externe Sicherung wartet auf die Verbindung zum
-gewünschten separaten Google-Konto; bisher wurden keine Pläne in Drive abgelegt.
+Bericht geliefert. Die externe Sicherung liegt im geprüften separaten Google-Konto;
+Export und Download sind identisch und die echte App-Wiederherstellung ist bestätigt.
+Die separate tägliche Sicherungsaufgabe ist aktiv; ihr erster automatischer Lauf steht noch aus.
 Der lokale Sicherungsprüfer und der Ablauf stehen in `docs/independent-backup.md`.
 
 ## 8. Gemeinsamer Praxistest und Veröffentlichung
@@ -178,13 +185,12 @@ in Sheets ist deshalb nicht automatisch eine funktionierende Triggerkette.
 - [x] Schritt 4: Vertretungsrechte technisch umgesetzt; Grundregel: Freigabe ausschließlich durch TL.
 - [x] Schritt 5: Änderungsverlauf und Wiederherstellung technisch geprüft.
 - [x] Schritt 6: Vorschläge und Wochenfreigabe technisch geprüft; SV-Publikation ist ein ausdrückliches Zusatzrecht.
-- [ ] Schritt 7: Wartung und unabhängige Sicherung abgeschlossen.
+- [x] Schritt 7: Wartung und unabhängige Sicherung eingerichtet und praktisch geprüft; ersten automatischen Sicherungslauf noch kontrollieren.
 - [ ] Schritt 8: Gemeinsamer Praxistest und Veröffentlichung abgeschlossen.
 
-Nächster gemeinsamer Schritt: gewünschtes separates Google-Konto in ChatGPT
-verbinden und verifizieren; anschließend unabhängige Sicherung samt Wiederherstellung
-einrichten. Parallel V9.9 auf dem iPhone öffnen und gemeinsame Filiale praktisch
-prüfen; danach SV gezielt einladen. Keine Einladungsnachrichten automatisch versenden.
+Nächster gemeinsamer Schritt: Bedienung auf einen Filialplan vereinfachen,
+dann auf dem echten iPhone prüfen und den Teamzugang mit dem vorhandenen Plan
+einrichten; danach SV gezielt einladen. Keine Einladungsnachrichten automatisch versenden.
 
 Technische Ergebnisse und offene Einrichtung: siehe `docs/collaboration-release.md`.
 
