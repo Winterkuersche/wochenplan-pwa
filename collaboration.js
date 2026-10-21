@@ -97,6 +97,9 @@
         if (!state.branch || (!linked && !(explicit && preview))) throw new Error("Bitte zuerst den Filialplan vergleichen und die Übernahme bestätigen.");
         const payload = snapshot();
         const signature = await fingerprint(payload);
+        // Auth/context may change while Web Crypto is working. Never send the
+        // old draft through call(), which uses the currently selected branch.
+        if (epoch !== thisEpoch) return;
         const previous=metadata();
         if(!explicit&&previous?.revision===state.branch.revision&&previous.signature===signature){setMode("synced",state.branch.can_edit?"Gemeinsamer Plan ist aktuell.":"Du darfst ansehen und Vorschläge vorbereiten.");return;}
         if (preview && preview.signature !== signature) throw new Error("Dein Entwurf hat sich seit der Vorschau geändert. Bitte erneut vergleichen.");

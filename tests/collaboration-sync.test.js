@@ -2,8 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {webcrypto}=require('node:crypto');
 const {loadScripts}=require('./test-helpers');
 const payload=code=>({backupVersion:2,storage:{wochenplan_master_v10:{employees:[{id:'one'}]},wochenplan_plan_v10:{schedule:{'2026-10-19':{one:{code}}},absences:[]},wochenplan_ui_v10:{}}});
-function setup(t,{editable=true}={}) {
- const ctx=loadScripts(['cloud-sync.js','collaboration.js','collaboration-panel.js'],{crypto:webcrypto,TextEncoder,Uint8Array,Intl,Date});
+function setup(t,{editable=true,crypto=webcrypto}={}) {
+ const ctx=loadScripts(['cloud-sync.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
  let local=payload('F4'),writes=0,adopted=null,beforeSave=null;
  const record={id:'b',name:'Test',revision:1,payload:payload('F4'),can_edit:editable,can_publish:editable,owner:editable};
  const map=new Map();
@@ -54,6 +54,22 @@ test('explicit replacement is pinned to the preview and rejects a changed local 
 test('a completed shared request cannot attach its result to a signed-out account',async t=>{
  const f=setup(t);await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.beforeSave(()=>f.c.setUser(null));
  await assert.rejects(f.c.save(),/Konto oder der Planungsbereich/);assert.equal(f.c.status.user,null);assert.equal(f.c.status.mode,'signed-out');
+});
+test('switching accounts during fingerprinting cancels the old shared save before its RPC',async t=>{
+ let holdNext=false,entered,release;
+ const started=new Promise(resolve=>entered=resolve),gate=new Promise(resolve=>release=resolve);
+ const crypto={subtle:{digest:async(...args)=>{
+  if(holdNext){holdNext=false;entered();await gate;}
+  return webcrypto.subtle.digest(...args);
+ }}};
+ const f=setup(t,{crypto});await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');
+ holdNext=true;
+ const saving=assert.rejects(f.c.save(),/Konto oder der Planungsbereich/);
+ await started;await f.c.setUser({id:'other'});await f.c.select('other-branch');
+ release();await saving;
+ assert.equal(f.writes,0,'the previous account must not write its draft into the newly selected branch');
+ assert.equal(f.record.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F4');
+ assert.equal(f.c.status.user.id,'other');assert.equal(f.c.status.selected,'other-branch');
 });
 test('view-only saves do not create repeated shared revisions or audit events',async t=>{
  const f=setup(t);await f.c.setUser({id:'u'});await f.c.select('b');await f.c.save();assert.equal(f.writes,0);
