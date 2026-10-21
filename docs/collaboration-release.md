@@ -2,9 +2,13 @@
 
 ## Aktueller Status
 
-Technische Umsetzung im Entwicklungszweig `codex/shared-filial-planning`.
-V9.8.1 bleibt die veröffentlichte Version bis zur Abnahme.
-Der persönliche Login mit Stephan und der reale iPhone-Test sind noch offen.
+V9.9 wurde am 21.10.2026 über PR #419 veröffentlicht (Merge `620261d56ca999442a93183de87c2208d41b10c9`).
+Persönlicher Login, E-Mail-Bestätigung und Übernahme in die Home-App wurden bestätigt.
+Die reale gemeinsame TL/SV-Bedienung auf dem iPhone bleibt offen.
+V9.9.1 ergänzt einen vor dem Schreibaufruf geprüften Kontextwechsel-Schutz: Ein alter
+Filialentwurf darf nach einem Kontowechsel während der Prüfsummenberechnung nicht
+in die inzwischen ausgewählte Filiale geschrieben werden. Der Regressionstest stellt
+den zuvor möglichen falschen Schreibaufruf mit verzögerter Web-Crypto-Berechnung nach.
 
 ## Enthaltene Abläufe
 
@@ -117,18 +121,23 @@ Aktueller Hinweis: `planning2.js` wird in keinem HTML direkt referenziert; vor
 Entfernung müssen die vorhandenen Vorschau-/Transferwege geprüft werden.
 
 `docs/maintenance-reviewer.md` ist der begrenzte Auftrag für eine zusätzliche
-KI-Prüfung. Ein eigener, automatisch gestarteter KI-Lauf ist noch nicht aktiviert:
-Dafür fehlen die Auswahl einer ausführenden Agentenumgebung und deren Zugang.
-Normale Prüfungen benötigen diesen KI-Zugang nicht.
+KI-Prüfung. Zwei zusätzliche ChatGPT-Aufgaben sind eingerichtet: PR-Ereignisse und wöchentliche Wartung.
+Sie lesen ausschließlich Quelltext und synthetische Tests über GitHub, berichten in ChatGPT
+und schreiben keine Änderungen. Sie verwenden keine zusätzliche Modell-API.
+Ein leeres oder noch ausstehendes Ergebnis gilt nicht als bestandene Prüfung.
+Die unabhängige Sicherung ist ein eigener Ablauf und hat andere Zugriffe;
+sie wird ausdrücklich nicht durch die Nur-Code-Prüfer erledigt.
 
 ## Offene gemeinsame Abnahme und Einrichtung
 
-- [ ] Aktuelle Sicherung vom iPhone mit vollständigem Plan herunterladen.
-- [ ] Echter persönlicher Konto-Login, E-Mail-Bestätigung, Passwort-Wiederherstellung und Gerätewechsel.
+- [x] Aktuelle Dateisicherung und bewusste Auswahl des Online-Ausgangsstands bestätigt.
+- [x] Echter persönlicher Konto-Login, E-Mail-Bestätigung und Geräteübernahme bestätigt.
+- [ ] Passwort-Wiederherstellung und zusätzliche Schichtstichproben am echten Gerät bestätigen.
 - [ ] TL/SV-Bedienung und Darstellung auf iPhone in Safari und Home-Bildschirm-App.
 - [ ] Externes Sicherungsziel und Turnus auswählen; automatischen Export dort einrichten und Wiederherstellung testen.
-- [ ] Optionalen eigenen KI-Prüflauf auswählen und begrenzt einrichten.
-- [ ] Nach bestandener Abnahme die vorbereitete Version veröffentlichen.
+- [x] Zusätzliche KI-Prüfaufträge begrenzt eingerichtet (PR-Ereignis und wöchentliche Wartung).
+- [x] V9.9 auf ausdrücklichen Nutzerauftrag veröffentlicht; CI und Pages-Deployment erfolgreich.
+- [ ] Externer Export mit echten Daten und Drive-Ziel noch freizugeben. Lokaler Ablauf: `docs/independent-backup.md`.
 
 ## Rückweg
 
