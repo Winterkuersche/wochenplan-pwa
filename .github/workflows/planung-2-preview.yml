@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Planung 2
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: source
 
@@ -39,7 +39,7 @@ jobs:
           node --test tests/planning2-live-integration.test.js tests/planning2-preview-startup.test.js tests/planning2-preview-coverage.test.js tests/planning2-closing-autofix.test.js tests/time-logic.test.js
 
       - name: Preview-Repository auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Winterkuersche/wochenplan-pwa-preview
           token: ${{ secrets.PREVIEW_REPOSITORY_TOKEN }}
