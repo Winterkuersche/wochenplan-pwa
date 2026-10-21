@@ -1,3 +1,4 @@
+const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Actual week controls, synthetic data only. No external service or credentials.
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), http = require('node:http'), path = require('node:path');
@@ -29,7 +30,7 @@ async function main(){
   const cell=(id,date=day)=>page.locator(`.cell[data-eid="${id}"][data-day="${date}"]`);
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')));
   const before=await read();
-  await cell('a').click();await page.locator('[data-quick="F5"]').click();
+  await cell('a').click();await choosePlanningQuickShift(page,'F5');
   assert.equal((await read()).schedule[day].a.code,'F5');
   assert.equal(await page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('wochenplan_save_journal_v1')).previous.wochenplan_plan_v10).schedule['2026-10-20'].a.code),'F4');
   await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
@@ -55,11 +56,11 @@ async function main(){
   assert.equal(await page.locator('#cloudTitle').evaluate(el=>document.activeElement===el),true);await page.locator('#btnCloseData').click();
   // Same-browser stale editor: a newer journaled save must not be lost.
   await cell('a').click();await page.evaluate(()=>{state.salesByDate['2026-10-20']=900;saveAppState()});
-  await page.locator('[data-quick="F6"]').click();assert.equal((await read()).salesByDate[day],900);assert.equal((await read()).schedule[day].a.code,'F4');
+  await choosePlanningQuickShift(page,'F6');assert.equal((await read()).salesByDate[day],900);assert.equal((await read()).schedule[day].a.code,'F4');
   assert.match(await page.locator('#toast').innerText(),/inzwischen geändert/);await page.locator('#closeEditor').click();
   // Quota failure leaves editor open with no success toast and keeps all bytes.
   const safe=JSON.stringify(await read());await cell('a').click();await page.evaluate(()=>{window.__originalSet=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('Synthetic quota','QuotaExceededError')}});
-  await page.locator('[data-quick="F5"]').click();assert.equal(JSON.stringify(await read()),safe);assert.equal(await page.locator('#editorOverlay').isVisible(),true);
+  await choosePlanningQuickShift(page,'F5');assert.equal(JSON.stringify(await read()),safe);assert.equal(await page.locator('#editorOverlay').isVisible(),true);
   assert.match(await page.locator('#toast').innerText(),/Gerätespeicher|Speichern/);await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSet});await page.locator('#closeEditor').click();
   await page.reload();await ready();await week();assert.equal((await read()).salesByDate[day],900);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
@@ -74,7 +75,7 @@ async function main(){
   await offlinePage.locator('#btnDataPanel').click();
   await Promise.all([offlinePage.waitForEvent('load'),offlinePage.locator('#backupFileInput').setInputFiles({name:'offline-synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await offline.setOffline(true);await offlinePage.reload();await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-  await offlinePage.locator('#weeks button').filter({hasText:'19.10'}).click();await offlinePage.locator('.cell[data-eid="a"][data-day="2026-10-20"]').click();await offlinePage.locator('[data-quick="F5"]').click();
+  await offlinePage.locator('#weeks button').filter({hasText:'19.10'}).click();await offlinePage.locator('.cell[data-eid="a"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(offlinePage,'F5');
   await offlinePage.reload();await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await offlinePage.evaluate(()=>state.schedule['2026-10-20'].a.code),'F5');
   assert.deepEqual(errors,[]);await offline.close();

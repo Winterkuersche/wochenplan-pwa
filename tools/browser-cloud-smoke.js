@@ -1,3 +1,4 @@
+const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Real browser SDK against a synthetic, intercepted Supabase HTTP API.
 // No external request, email, real account or personal plan is used.
 const fs=require('fs'),http=require('http'),path=require('path'),assert=require('assert/strict');
@@ -38,7 +39,7 @@ async function editWeek(p,code){
  if(await p.locator('#dataDialog').isVisible())await p.locator('#btnCloseData').click();
  await p.locator('#weeks button').filter({hasText:'19.10'}).click();
  await p.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();
- await p.locator('[data-quick="'+code+'"]').click();
+ await choosePlanningQuickShift(p,code);
 }
 async function login(p){await p.locator('#btnDataPanel').click();await p.locator('#cloudEmail').fill(user.email);await p.locator('#cloudPassword').fill('Synthetic-Password-123');await p.locator('#btnCloudLogin').click();}
 try{

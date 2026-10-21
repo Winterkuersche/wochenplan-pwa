@@ -1388,10 +1388,12 @@ function saveAppState() {
 
 // Planning 2 uses exactly the same journal, stale-tab check and online signal.
 function planning2PlanSignature(plan) {
-  const value = { ...plan };
+  const value = { ...plan, schedule: plan?.schedule || {}, absences: plan?.absences || [], monthlyPlanBaselines: plan?.monthlyPlanBaselines || {} };
   delete value.weekFrom;
   delete value.weekTo;
-  return JSON.stringify(value);
+  const canonical = item => Array.isArray(item) ? item.map(canonical)
+    : item && typeof item === "object" ? Object.fromEntries(Object.keys(item).sort().map(key => [key, canonical(item[key])])) : item;
+  return JSON.stringify(canonical(value));
 }
 
 function commitPlanning2Plan(plan, expectedPlan) {
@@ -1401,7 +1403,7 @@ function commitPlanning2Plan(plan, expectedPlan) {
     throw new Error("Der Plan wurde inzwischen geändert. Öffne den Eintrag erneut.");
   }
   const previous = state;
-  const before = savePlanData({ snapshotOnly: true });
+  const before = localStorage.getItem(PLAN_KEY) === null ? savePlanData({ snapshotOnly: true }) : current;
   state = { ...state, ...plan };
   if (!saveAppState()) {
     state = previous;

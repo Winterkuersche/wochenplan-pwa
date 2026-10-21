@@ -1,3 +1,4 @@
+const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Actual PostgreSQL + browser SDK, local synthetic identities only.
 const fs=require('node:fs'), http=require('node:http'), path=require('node:path'), assert=require('node:assert/strict');
 const { chromium, webkit }=require('playwright');
@@ -67,7 +68,7 @@ async function main(){
   console.log('Shared deputy adopted');
   await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await b.page.locator('[data-quick="F5"]').click();
+  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F5');
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   console.log('Shared proposal submitted');
@@ -93,7 +94,7 @@ async function main(){
   await fresh.context.close();
   await Promise.all([a.page.waitForEvent('load'),a.page.locator('#btnSharedAdopt').click()]);await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await a.page.locator('[data-quick="F6"]').click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(a.page,'F6');
   await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedSummary').filter({hasText:'Stand 3'}).waitFor();
   await b.page.locator('#btnSharedRefresh').click();await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');

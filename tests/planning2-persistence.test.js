@@ -64,3 +64,14 @@ test('full-plan changes preserve sales and baselines through central save and ro
   changed.schedule['2026-10-20'].b=changed.schedule['2026-10-20'].a;delete changed.schedule['2026-10-20'].a;
   h.ctx.commitPlanning2Plan(changed,plan());assert.deepEqual(h.stored(),changed);h.ctx.undoPlanning2Plan();assert.deepEqual(h.stored(),plan());
 });
+
+test('undo preserves stored week metadata even when the current view selected a different week',()=>{
+  const h=harness(), changed=plan();h.ctx.state.weekFrom='2026-10-05';changed.schedule['2026-10-20'].a.end='14:00';
+  h.ctx.commitPlanning2Plan(changed,plan());h.ctx.undoPlanning2Plan();assert.deepEqual(h.stored(),plan());
+});
+test('semantically equal editor bases tolerate key order and missing optional baseline map',()=>{
+  const h=harness(), base=plan();delete base.monthlyPlanBaselines;
+  const reordered=Object.fromEntries(Object.entries(base).reverse());h.values.set(planKey,JSON.stringify(reordered));
+  h.ctx.localDataStore=h.ctx.window.WochenplanStorage.create({keys:{master:masterKey,plan:planKey,ui:'ui',savedAt:'savedAt'},storage:{getItem:key=>h.values.get(key)??null,setItem:(key,value)=>h.values.set(key,value),removeItem:key=>h.values.delete(key)}});
+  const next=plan();next.schedule['2026-10-20'].a.end='14:00';assert.equal(h.ctx.commitPlanning2Plan(next,plan()),true);
+});
