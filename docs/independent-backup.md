@@ -2,6 +2,10 @@
 
 Status am 21.10.2026: lokale Prüfung vorhanden; externer Export noch nicht aktiviert.
 Der erste echte Export und der Rückweg aus Google Drive sind noch nicht geprüft.
+Der Nutzer hat die Einrichtung beauftragt und ein vom Shop getrenntes Google-Konto
+festgelegt. Die vorhandene Drive-Verbindung zeigt noch das Shop-Konto und wird
+deshalb nicht als Sicherungsziel verwendet. Der nächste erforderliche Schritt
+ist die Anmeldung mit dem gewünschten Konto in der ChatGPT-Verbindung.
 
 ## Ziel und Umfang
 
@@ -31,6 +35,9 @@ den Dateiexport auf dem Gerät.
 1. Zielkonto prüfen, private Ordnerberechtigungen prüfen und bestehenden Tagesstand suchen.
 2. Zugelassenen Quellplan lesend exportieren; Quelle und Revision getrennt protokollieren.
    Keine Auth-Tabellen, Passwörter, Sitzungen, API-Schlüssel oder Einladungsgeheimnisse exportieren.
+   Große Ergebnisse vollständig programmgesteuert oder revisionsgebunden in Teile
+   lesen; abgeschnittene Daten niemals als Sicherung übernehmen. Wenn während des
+   Lesens die Revision wechselt, den Export wiederholen und eindeutig zuordnen.
 3. Die vollständige Datei lokal prüfen:
 
    ```sh
@@ -49,6 +56,9 @@ den Dateiexport auf dem Gerät.
 6. Erst wenn Prüfsumme und lokale Wiederherstellung stimmen, den Lauf als erfolgreich
    melden. Fehler oder abgeschnittene Ergebnisse deutlich melden. Keine produktiven
    Pläne durch den Wiederherstellungstest ersetzen.
+7. Den zurückgelesenen Stand zusätzlich im echten App-Import eines isolierten
+   Browser-Kontexts mit blockiertem Produktionsnetzwerk wiederherstellen. Team,
+   Schichten, Zeitbereich, Abwesenheiten und Monatsdaten vergleichen.
 
 Das Hilfsprogramm nutzt die Importvalidierung und den journalgesicherten
 Gerätespeicher der App in einer frischen lokalen Testinstanz. Es vergleicht alle
@@ -59,7 +69,10 @@ mit künstlichen Daten in einer getrennten Browserinstanz.
 
 ## Noch benötigte Einrichtung
 
-- Ersten lesenden Export echter Online-Daten und Ablage im bestätigten Drive-Konto freigeben.
+- Gewünschtes separates Google-Konto verbinden und die Profiladresse verifizieren.
 - Ordner anlegen und Berechtigungen sowie echten Download-Rückweg prüfen.
 - Erst nach dem erfolgreichen Probelauf die separate Sicherungsaufgabe aktivieren.
   Die vorhandenen KI-Codeprüfer behalten ihre Sperre für Produktionsdaten und Drive.
+  Die Sicherungsaufgabe muss vor jedem Schreiben Zielkonto und Zielordner prüfen.
+- Geplanter Turnus: täglich am Abend in Europe/Berlin. Bis zur geprüften
+  Aufbewahrung keine vorhandenen Sicherungen automatisch löschen.

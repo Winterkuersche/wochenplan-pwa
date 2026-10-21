@@ -1,11 +1,12 @@
 # Wochenplan: Ablauf für Zusammenarbeit und Wartung
 
-Stand: 21. Oktober 2026. V9.9 ist veröffentlicht; V9.9.1 ergänzt einen Schutz beim Kontowechsel.
+Stand: 21. Oktober 2026. Veröffentlicht: V9.9 über PR #419.
 
-Dieses Dokument ist die abarbeitbare Aufgabenliste. V9.9 wurde über PR #419 veröffentlicht.
-Persönliche Anmeldung und Übernahme des Online-Stands in die Home-App wurden vom Nutzer bestätigt.
-Realer TL/SV-Praxistest und automatische externe Sicherung bleiben offen. Technische Tests
-und tatsächliche Nutzerabnahme werden getrennt ausgewiesen.
+Dieses Dokument ist die abarbeitbare Aufgabenliste. V9.9 ist veröffentlicht,
+persönlicher Login und Übernahme in die Home-Bildschirm-App wurden bestätigt.
+Der reale TL/SV-Test sowie die unabhängige Sicherung über das gewünschte separate
+Google-Konto bleiben offen. Pro Schritt werden Ergebnis, Prüfung und nächster
+Schritt festgehalten; ein neuer Chat kann hier anknüpfen.
 
 ## Ziel und vereinbarte Richtung
 
@@ -16,10 +17,9 @@ und tatsächliche Nutzerabnahme werden getrennt ausgewiesen.
 - Sicherungsstände und gezieltes Rückgängigmachen schützen die Planung.
 - Wartungsprüfungen kontrollieren Änderungen und melden Auffälligkeiten.
 
-Die veröffentlichte App unterstützt persönliche Online-Pläne und gemeinsame Filialpläne.
-Lokale Speicherung, Dateisicherungen, Online-Verlauf, Konfliktschutz und Vertretungsrechte
-sind vorhanden. Die echte Anmeldung und Geräteübernahme wurden bestätigt;
-eine reale SV-Einladung wurde noch nicht bestätigt.
+Persönliche Pläne können bewusst als gemeinsame Filiale kopiert werden. Lokale
+Speicherung, Dateisicherungen, Online-Versionsverlauf und Konfliktschutz sind
+vorhanden. Die erste persönliche Online-Sicherung und Übernahme wurden geprüft.
 
 ## Reihenfolge und Abschlusskriterien
 
@@ -36,11 +36,11 @@ eine reale SV-Einladung wurde noch nicht bestätigt.
 
 ## 1. Ausgangsstand sichern und Anmeldung prüfen
 
-- [x] Auf dem Gerät mit der vollständigen Planung eine aktuelle Dateisicherung erstellen.
-- [x] Sicherungsdatum, Team- und Schichtanzahl vergleichen; gewünschter Ausgangsstand festlegen.
+- [x] Auf dem Gerät mit der vollständigen Planung eine aktuelle Dateisicherung erstellen; Nutzer bestätigt.
+- [x] Sicherungsdatum, Team- und Schichtanzahl vergleichen; Nutzer wählt den Stand mit 1.075 Schichten und trägt spätere Änderungen manuell nach.
 - [x] Persönliches Konto erstellen und Bestätigungs-E-Mail testen.
-- [x] Den geprüften Geräte-Stand ausdrücklich erstmals online übernehmen.
-- [x] Mit demselben Konto auf dem zweiten Gerät anmelden und den Online-Stand übernehmen.
+- [x] Den geprüften Geräte-Stand ausdrücklich erstmals online übernehmen; serverseitig geprüft.
+- [x] Mit demselben Konto im anderen Speicher-Kontext anmelden und den Online-Stand übernehmen; Home-Bildschirm-App bestätigt.
 - [ ] Team, mehrere konkrete Schichten und Zeitraum auf beiden Geräten vergleichen.
 - [ ] Passwort-Wiederherstellung prüfen, ohne den lokalen Plan zu ersetzen.
 
@@ -56,8 +56,8 @@ Persönliche Sicherungen, E-Mail-Adressen und Personaldaten gehören nicht in di
 - [x] Aus app.js schrittweise Zuständigkeiten auslagern; Planung nicht nebenbei neu schreiben.
 - [x] Klare Module für Speicherung/Abgleich, Filialzugriff, Verlauf und Oberfläche vorsehen.
 - [x] Browserprüfungen in GitHub ergänzen: Öffnen/Schließen, Speichern, Import/Export, Anmeldung mit Test-API, Gerätewechsel.
-- [x] Chromium und WebKit automatisch prüfen.
-- [ ] Gemeinsame TL/SV-Bedienung auf dem echten iPhone prüfen (siehe Schritt 8).
+- [x] Chromium und WebKit in der GitHub-Matrix prüfen; persönliche Anmeldung/Übernahme auf dem echten iPhone durchführen.
+- [ ] Neue gemeinsame Filialabläufe zusätzlich auf dem echten iPhone prüfen.
 - [x] Rückkehr zur vorherigen App-Version samt kompatiblem Datenstand dokumentieren.
 
 Ergebnis: Erweiterungen lassen sich außerhalb des laufenden Plans entwickeln und prüfen.
@@ -83,7 +83,7 @@ Ergebnis: Persönliche Zugänge greifen kontrolliert auf dieselbe Filiale zu.
 - [x] SV darf keine eigenen Rechte verlängern oder Filialmitglieder verwalten.
 - [x] Geöffnete Sitzung, Ablauf, vorzeitigen Entzug und Offline-Änderungen nach Ablauf testen.
 - [x] Abgewiesene lokale Änderungen als Entwurf erhalten und verständlich erklären.
-- [x] Standard festgelegt: Ohne ausdrückliche TL-Freigabe bleiben Änderungen Vorschläge; kein automatisches Notfallrecht.
+- [x] Grundregel für spontane Vertretung: ohne ausdrückliche TL-Freigabe kein direktes Schreibrecht; SV kann Vorschläge vorbereiten.
 
 Ergebnis: Freigaben gelten zuverlässig über Geräte und App-Neustarts hinweg.
 
@@ -108,7 +108,7 @@ Ergebnis: TL und SV können Änderungen erklären und nachvollziehbar korrigiere
 - [x] Vorschläge gegen inzwischen geänderte Schichten vor Übernahme erneut prüfen.
 - [x] Einen bewusst freigegebenen Wochenstand mit Datum/Version kennzeichnen.
 - [x] Änderungen nach Freigabe sichtbar vom freigegebenen Stand unterscheiden.
-- [x] Standard festgelegt: Wochenfreigabe bleibt ein separat zu erteilendes, zunächst ausgeschaltetes Zusatzrecht.
+- [x] Wochenfreigaben als separates, standardmäßig ausgeschaltetes Zusatzrecht vorsehen; TL entscheidet beim Erteilen der Vertretung.
 
 Ergebnis: Es ist erkennbar, was verbindlich ist und was noch entschieden werden muss.
 
@@ -118,22 +118,22 @@ Ergebnis: Es ist erkennbar, was verbindlich ist und was noch entschieden werden 
 - [x] Abhängigkeitsupdates und Sicherheitsmeldungen einrichten; Updates vor Übernahme testen.
 - [x] Prüfung auf verdächtig ähnliche Funktionen, ungenutzte Skripte und unpassende Asset-/Cache-Versionen ergänzen.
 - [x] Fundstellen mit Datei, Grund und Priorität melden; technische Ähnlichkeit ist noch kein Beweis für Doppelarbeit.
-- [x] Optionalen KI-Prüfer erst nach funktionierenden normalen Prüfungen ergänzen.
-- [x] Für KI-Prüfer Auftrag, ausführende Umgebung, Zugriffe, Laufzeit/Kostenlimit und Berichtsablage festlegen.
-- [x] Prüfer zunächst auf Quellcode und synthetische Testdaten begrenzen; keine Personaldaten erforderlich.
-- [x] Ergebnisse für denselben Commit zusammenfassen, wiederholte Meldungen vermeiden.
+- [x] Zusätzliche KI-Prüfung nach funktionierenden normalen Prüfungen als ChatGPT-Aufgaben einrichten.
+- [x] Auftrag, Ausführung über bestehende GitHub-Verbindung, Aufrufs-/Umfangsgrenzen und Bericht in ChatGPT festlegen; kein neuer externer API-Zugang.
+- [x] Prüfer auf Quellcode und synthetische Testdaten begrenzen; keine Produktionskonten oder Personaldatenzugriffe.
+- [x] Auftrag: Ergebnisse für denselben Commit zusammenfassen und wiederholte Meldungen vermeiden.
+- [x] Ersten vollständigen KI-Bericht kontrollieren; nach einem stillen Probelauf zweiter Lauf mit zwei reproduzierten Offline-Befunden. V9.9.2 ergänzt deren Korrektur und Regressionstests. V9.9.1 schützt zusätzlich den Kontowechsel während der Prüfsumme.
 - [x] Fehler des Prüflaufs selbst sichtbar machen; kein Ergebnis ist keine erfolgreiche Prüfung.
-- [ ] Separate Sicherung außerhalb der laufenden Datenbank einrichten; Ziel und Turnus mit Stephan festlegen.
+- [x] Zielrichtung: separates Google-Konto für tägliche externe Sicherungen; manuelle iCloud-Exporte zusätzlich erhalten.
+- [ ] Richtige Google-Verbindung prüfen und separate Sicherung außerhalb der laufenden Datenbank einrichten. Shop-Konto dafür ausdrücklich ausgeschlossen.
 - [ ] Wiederherstellung aus dieser Kopie in einer Testumgebung durchführen.
 
 Ergebnis: Wartungsbedarf wird sichtbar, Sicherung ist praktisch wiederherstellbar.
-Wartungs- und Browser-Workflows sowie Dependabot sind aktiv. Die zusätzlichen ChatGPT-Prüfaufträge
-für offene PRs und die wöchentliche Wartung sind eingerichtet: nur Quelltext und synthetische
-Daten, keine Schreibzugriffe, keine Produktionsdaten, höchstens 30 GitHub-Leseaufrufe
-und 5.000 geänderte Quelltextzeilen je Lauf. Keine zusätzlichen Modell-APIs.
-Ein erster gezielter Wartungsbericht liegt in `docs/maintenance-review-2026-10-21.md`.
-Der externe Sicherungsablauf ist lokal vorbereitet und getestet, aber nach blockierter
-Freigabeprüfung noch nicht mit echten Daten und Google Drive verbunden; siehe `docs/independent-backup.md`.
+Wartungs- und Browser-Workflows sowie Dependabot sind nach dem Merge aktiv.
+Die zusätzliche KI-Prüfung ist eingerichtet und hat einen vollständigen ersten
+Bericht geliefert. Die externe Sicherung wartet auf die Verbindung zum
+gewünschten separaten Google-Konto; bisher wurden keine Pläne in Drive abgelegt.
+Der lokale Sicherungsprüfer und der Ablauf stehen in `docs/independent-backup.md`.
 
 ## 8. Gemeinsamer Praxistest und Veröffentlichung
 
@@ -143,7 +143,7 @@ Freigabeprüfung noch nicht mit echten Daten und Google Drive verbunden; siehe `
 - [x] Vorschlag, Annahme, Rücknahme und Wiederherstellung vollständig durchspielen.
 - [ ] Auf dem echten iPhone in Safari und Home-Bildschirm-App prüfen.
 - [ ] Erst danach reale Filiale verbinden, SV persönlich einladen und Stand vergleichen.
-- [x] Veröffentlichung von V9.9 mit erfolgreichen Tests und Rückweg dokumentiert; reale SV-Abnahme bleibt offen.
+- [x] Veröffentlichung von V9.9 mit automatischen Prüfergebnissen und Rückweg dokumentieren; persönlicher Login und Übernahme bestätigt, neuer TL/SV-Praxistest weiter offen.
 
 ## Auslöser für Prüfungen und Agenten
 
@@ -172,8 +172,8 @@ in Sheets ist deshalb nicht automatisch eine funktionierende Triggerkette.
 ## Fortschritt
 
 - [x] Ausgangslage und Reihenfolge dokumentiert.
-- [x] Schritt 1: Dateisicherung, Konto und Übernahme in die Home-App bestätigt; zusätzliche Stichproben/Passwort-Rückweg bleiben separat offen.
-- [x] Schritt 2: Entwicklungsgrundlage einschließlich Chromium/WebKit abgeschlossen.
+- [x] Schritt 1: Sicherung, echter Anmeldetest und Übernahme bestätigt; Passwort-Wiederherstellung bleibt gesonderter Praxistest.
+- [x] Schritt 2: Entwicklungsgrundlage und Chromium-/WebKit-Prüfung abgeschlossen.
 - [x] Schritt 3: Gemeinsame Filiale technisch umgesetzt und mit synthetischen Konten geprüft.
 - [x] Schritt 4: Vertretungsrechte technisch umgesetzt; Grundregel: Freigabe ausschließlich durch TL.
 - [x] Schritt 5: Änderungsverlauf und Wiederherstellung technisch geprüft.
@@ -181,10 +181,10 @@ in Sheets ist deshalb nicht automatisch eine funktionierende Triggerkette.
 - [ ] Schritt 7: Wartung und unabhängige Sicherung abgeschlossen.
 - [ ] Schritt 8: Gemeinsamer Praxistest und Veröffentlichung abgeschlossen.
 
-Nächster Einrichtungsschritt: den vorbereiteten, lesenden Export und die Ablage im bestätigten
-Drive-Konto ausdrücklich freigeben, dann Upload/Rücklesen und Wiederherstellung praktisch prüfen.
-Die Freigabeprüfung hat Produktionszugriff und Ordneranlage mit Verweis auf den getrennten
-Nur-Code-Prüfauftrag blockiert. Reale TL/SV-Abnahme und persönliche Einladung bleiben offen.
+Nächster gemeinsamer Schritt: gewünschtes separates Google-Konto in ChatGPT
+verbinden und verifizieren; anschließend unabhängige Sicherung samt Wiederherstellung
+einrichten. Parallel V9.9 auf dem iPhone öffnen und gemeinsame Filiale praktisch
+prüfen; danach SV gezielt einladen. Keine Einladungsnachrichten automatisch versenden.
 
 Technische Ergebnisse und offene Einrichtung: siehe `docs/collaboration-release.md`.
 

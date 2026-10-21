@@ -44,6 +44,9 @@
         setMode("synced", remote.can_edit ? "Gemeinsamer Plan ist aktuell. Änderungen werden online gesichert." : "Du darfst ansehen und Vorschläge vorbereiten.");
       } else if (signature && previous?.revision === remote.revision && previous.signature === remoteSignature) {
         linked = true;
+        // A failed offline save has no remaining timer. Resume only after a
+        // read confirms the same base revision and current editing permission.
+        if (remote.can_edit) dirtyDuringWork = true;
         setMode("draft", remote.can_edit ? "Lokale Änderungen warten auf die Online-Sicherung." : "Lokaler Vorschlag: noch nicht im gemeinsamen Plan.");
       } else {
         linked = false;

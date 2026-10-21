@@ -103,14 +103,16 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Fremde Origins (CDN) bewusst nicht im App-Cache persistieren.
-        if (!isSameOrigin) return networkResponse;
+        // Never replace working offline assets with an HTTP error response.
+        // Foreign origins (CDN) also stay outside the application cache.
+        if (!isSameOrigin || !networkResponse.ok) return networkResponse;
 
         const responseClone = networkResponse.clone();
 
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
+        const cacheWrite = caches.open(CACHE_NAME)
+          .then((cache) => cache.put(event.request, responseClone))
+          .catch(() => {}); // A cache/quota error must not break a good response.
+        event.waitUntil?.(cacheWrite);
 
         return networkResponse;
       })
