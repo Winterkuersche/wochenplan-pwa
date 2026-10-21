@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const app = fs.readFileSync('app.js', 'utf8');
 const masterKey = 'wochenplan_master_v10', planKey = 'wochenplan_plan_v10';
 const plan = () => ({ weekFrom:'2026-10-19', schedule:{'2026-10-20':{a:{type:'shift',code:'F4',start:'09:00',end:'13:00'}}}, absences:[], salesByDate:{'2026-10-20':500}, monthlyPlanBaselines:{} });
-function harness() {
-  const values = new Map([[masterKey, JSON.stringify({ employees:[{id:'a'}] })],[planKey,JSON.stringify(plan())]]);
+function harness(initialPlan = plan()) {
+  const values = new Map([[masterKey, JSON.stringify({ employees:[{id:'a'}] })],[planKey,JSON.stringify(initialPlan)]]);
   let fail = false;
   const storage = {getItem:key=>values.get(key)??null,setItem:(key,value)=>{if(fail)throw Error('quota');values.set(key,value)},removeItem:key=>values.delete(key)};
   const events = [];
@@ -75,3 +75,26 @@ test('semantically equal editor bases tolerate key order and missing optional ba
   h.ctx.localDataStore=h.ctx.window.WochenplanStorage.create({keys:{master:masterKey,plan:planKey,ui:'ui',savedAt:'savedAt'},storage:{getItem:key=>h.values.get(key)??null,setItem:(key,value)=>h.values.set(key,value),removeItem:key=>h.values.delete(key)}});
   const next=plan();next.schedule['2026-10-20'].a.end='14:00';assert.equal(h.ctx.commitPlanning2Plan(next,plan()),true);
 });
+
+test('undo removes a newly created baseline when a legacy plan omitted its map',()=>{
+  const legacy=plan();delete legacy.monthlyPlanBaselines;
+  const h=harness(legacy), changed=plan();
+  changed.monthlyPlanBaselines={'2026-10':{marker:'new-baseline'}};
+  h.ctx.commitPlanning2Plan(changed,plan());
+  assert.ok(h.stored().monthlyPlanBaselines['2026-10']);
+  h.ctx.undoPlanning2Plan();
+  assert.deepEqual(h.stored(),{...legacy,monthlyPlanBaselines:{}});
+  assert.deepEqual(h.events,['wochenplan:saved','wochenplan:saved']);
+  assert.equal(h.ctx.canUndoPlanning2Plan(),false);
+  const journal=JSON.parse(h.values.get('wochenplan_save_journal_v1'));
+  assert.deepEqual(JSON.parse(journal.previous[planKey]),changed);
+});
+test('undo clears optional plan fields absent from the stored snapshot',()=>{
+  const legacy={weekFrom:'2026-10-19'}, h=harness(legacy), changed=plan();
+  changed.absences=[{employeeId:'a',type:'vacation',from:'2026-10-21',to:'2026-10-21'}];
+  changed.monthlyPlanBaselines={'2026-10':{marker:'new-baseline'}};
+  h.ctx.commitPlanning2Plan(changed);
+  h.ctx.undoPlanning2Plan();
+  assert.deepEqual(h.stored(),{weekFrom:'2026-10-19',schedule:{},absences:[],salesByDate:{},monthlyPlanBaselines:{}});
+});
+

@@ -1423,7 +1423,14 @@ function undoPlanning2Plan() {
   if (!canUndoPlanning2Plan()) throw new Error("Seitdem wurde weitergeplant. Die Änderung kann hier nicht mehr zurückgenommen werden.");
   const previous = state;
   const undo = planning2UndoState;
-  state = { ...state, ...undo.before };
+  // Legacy snapshots may omit optional plan fields. Replace them explicitly so
+  // values introduced by the undone edit cannot survive the state merge.
+  state = { ...state, ...undo.before,
+    schedule: undo.before.schedule || {},
+    absences: undo.before.absences || [],
+    salesByDate: undo.before.salesByDate || {},
+    monthlyPlanBaselines: undo.before.monthlyPlanBaselines || {}
+  };
   if (!saveAppState()) {
     state = previous;
     throw new Error(saveStatusMessage || "Rücknahme konnte nicht gespeichert werden.");
