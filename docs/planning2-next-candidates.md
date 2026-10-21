@@ -1,5 +1,10 @@
 # Planning 2: nächste Candidate-Ausbaustufen
 
+Stand abgeglichen am 21. Oktober 2026. Dies ist eine Entwicklungsskizze für
+automatische Vorschläge, keine Aussage über fehlende manuelle Schichtfunktionen.
+Die produktive Vorschlagsoberfläche ist in `planning2-live.js` deaktiviert.
+Aktuelle Prioritäten: [stability-checklist.md](stability-checklist.md).
+
 ## Frei/leer → Arbeit
 
 Ein eigener Generator sollte aus einem Unterbesetzungsproblem zulässige Schichtfenster ableiten und daraus zunächst **eine primäre Mutation** erzeugen. Er darf weder `schedule` noch Abwesenheiten ändern. Der bestehende Monats-/Wochen-Kontext liefert Basisplan, GFB-Monatsstatus, Sollstunden, Ganztagsfreigabe und Änderungsvorlauf. Dieselbe Constraint- und Follow-up-Pipeline prüft danach Coverage, freien Tag, Arbeitszeitgrenzen, 08:55/19:10 und Carryover. Ein hinzugefügter Arbeitstag wird als neutrales Baseline-Faktum (`workdayAdded`) erfasst; erst Apply materialisiert ihn.

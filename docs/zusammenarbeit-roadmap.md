@@ -1,8 +1,10 @@
 # Wochenplan: Ablauf für Zusammenarbeit und Wartung
 
-Stand: 21. Oktober 2026. Veröffentlicht: V9.9 über PR #419.
+Stand: 21. Oktober 2026. Veröffentlicht: V9.9.3 über PR #425.
+Codegrundlage: `a44677fe6d922af168cd38ddab3eb05fa6a47ff4`.
+Aktuelle technische Befunde: [stability-checklist.md](stability-checklist.md).
 
-Dieses Dokument ist die abarbeitbare Aufgabenliste. V9.9 ist veröffentlicht,
+Dieses Dokument führt die Einrichtung und gemeinsame Abnahme. V9.9.3 ist veröffentlicht,
 persönlicher Login und Übernahme in die Home-Bildschirm-App wurden bestätigt.
 Der reale TL/SV-Test bleibt offen. Die unabhängige Sicherung über das gewünschte
 separate Google-Konto wurde einschließlich Rücklesen und echter App-Wiederherstellung
@@ -149,8 +151,9 @@ Der lokale Sicherungsprüfer und der Ablauf stehen in `docs/independent-backup.m
 - [x] Einladungswiderruf, manipulierte Rechte und fremde Filiale testen.
 - [x] Vorschlag, Annahme, Rücknahme und Wiederherstellung vollständig durchspielen.
 - [ ] Auf dem echten iPhone in Safari und Home-Bildschirm-App prüfen.
-- [ ] Erst danach reale Filiale verbinden, SV persönlich einladen und Stand vergleichen.
-- [x] Veröffentlichung von V9.9 mit automatischen Prüfergebnissen und Rückweg dokumentieren; persönlicher Login und Übernahme bestätigt, neuer TL/SV-Praxistest weiter offen.
+- [x] Teamzugang mit dem vorhandenen Plan eingerichtet; Nutzer-Screenshots zeigen Filialverwaltung und Ausgangsstand. Dies bestätigt noch keinen Vergleich aller Planinhalte.
+- [ ] SV persönlich einladen und denselben Stand auf beiden Geräten vergleichen.
+- [x] V9.9.3 über PR #425 veröffentlicht; Tests, Chromium/WebKit, Deployment und Live-Prüfung am main-Commit erfolgreich. Neuer TL/SV-Praxistest bleibt offen.
 
 ## Auslöser für Prüfungen und Agenten
 
@@ -186,11 +189,14 @@ in Sheets ist deshalb nicht automatisch eine funktionierende Triggerkette.
 - [x] Schritt 5: Änderungsverlauf und Wiederherstellung technisch geprüft.
 - [x] Schritt 6: Vorschläge und Wochenfreigabe technisch geprüft; SV-Publikation ist ein ausdrückliches Zusatzrecht.
 - [x] Schritt 7: Wartung und unabhängige Sicherung eingerichtet und praktisch geprüft; ersten automatischen Sicherungslauf noch kontrollieren.
-- [ ] Schritt 8: Gemeinsamer Praxistest und Veröffentlichung abgeschlossen.
+- [x] Schritt 8a: Veröffentlichung von V9.9.3 einschließlich technischer Prüfungen abgeschlossen.
+- [ ] Schritt 8b: Gemeinsamer Praxistest mit der SV abgeschlossen.
 
-Nächster gemeinsamer Schritt: Bedienung auf einen Filialplan vereinfachen,
-dann auf dem echten iPhone prüfen und den Teamzugang mit dem vorhandenen Plan
-einrichten; danach SV gezielt einladen. Keine Einladungsnachrichten automatisch versenden.
+Nächster gemeinsamer Schritt: Am 22. Oktober 2026 bei der Arbeit die SV gezielt einladen und
+den Plan auf beiden Geräten vergleichen. Die Oberfläche ist auf einen Filialplan
+vereinfacht und der Teamzugang ist eingerichtet. Den offenen Speicherweg des neuen
+Wochenplaners vor einer vollständigen Abnahme gemäß Stabilitätscheckliste korrigieren.
+Keine Einladungsnachrichten automatisch versenden.
 
 Technische Ergebnisse und offene Einrichtung: siehe `docs/collaboration-release.md`.
 

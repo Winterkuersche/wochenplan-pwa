@@ -5,7 +5,7 @@ Auf kleinen Screens (max-width: 640px) ist die Top-Toolbar vereinfacht:
 - **Direkt sichtbar** bleiben die wichtigsten Aktionen:
   - Ansicht wechseln
   - Wochennavigation
-  - **Stammdaten speichern**
+  - **Daten & Sicherung** mit Speicherstatus
 - **Sekundäre Aktionen** sind im Button **„Mehr ▾“** gebündelt:
   - Team ein-/ausblenden
   - Aktuelle Woche leeren
@@ -13,6 +13,9 @@ Auf kleinen Screens (max-width: 640px) ist die Top-Toolbar vereinfacht:
   - Dark Mode wechseln
   - Drucken / PDF
   - MEP-Modus umschalten (wenn MEP-Ansicht aktiv)
+
+„Jetzt speichern“ ist mobil ausgeblendet; der Speicherstatus bleibt sichtbar.
+Auf dem Desktop ist der Knopf weiterhin vorhanden.
 
 ## Verhalten & Accessibility
 

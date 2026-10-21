@@ -1,9 +1,22 @@
-# Daten & Sicherung – V9.8
+# Daten & Sicherung – bestehende Speichermechanismen bis V9.9.3
 
 Der Bereich **Daten & Sicherung** zeigt den Speicher dieses Browsers bzw. dieser
 Home-Bildschirm-App und den Online-Status getrennt an. Bestehende v10-Daten und
 Sicherungen werden weiterverwendet. Es werden keine echten Personalplanungen
 oder Sitzungsdaten im Repository abgelegt.
+
+## Geltungsbereich und aktueller Befund
+
+Dieses Dokument beschreibt den zentralen Speicher-/Abgleichspfad. Der neue
+Wochenplaner besitzt derzeit einen direkten localStorage-Schreibweg, der Journal
+und zentrales Speichersignal umgeht. Deshalb gelten die unten beschriebenen
+Schutzmechanismen noch nicht nachgewiesen für jede Planning-2-Bedienaktion.
+Befund und fehlende Bedienwegtests: [stability-checklist.md](stability-checklist.md).
+
+Seit V9.9.3 steht ein Filialplan im Mittelpunkt. Bei eingerichteter Mitgliedschaft
+öffnet die Filiale automatisch; TL und SV verwenden eigene Konten. Die folgenden
+Schritte dokumentieren zusätzlich die frühere Einzelkonto-Ersteinrichtung und
+bleiben für Geräte ohne eingerichteten Teamzugang relevant.
 
 ## Erste Verbindung
 
@@ -41,8 +54,9 @@ Ansichtswechsel erzeugen keine neuen Cloud-Versionen.
   letzten dreißig UTC-Kalendertage, an denen gespeichert wurde. Das ist ein
   Anwendungsverlauf in derselben Datenbank, kein separates Provider-Backup.
 
-Die Datenbank enthält nach der Einrichtung keine automatisch hochgeladenen
-Nutzerdaten. Die Konto-Erstellung und die erste Planauswahl erfolgen in der App.
+Die technische Einrichtung lädt keine Nutzerdaten automatisch hoch.
+Konto-Erstellung und erste Planauswahl erfolgen bewusst in der App.
+Der tatsächliche Einrichtungsfortschritt steht in `docs/zusammenarbeit-roadmap.md`.
 
 ## Lokale Speicherung und Import
 
@@ -53,9 +67,9 @@ Der vorherige Datenstand bleibt über den Datenbereich wiederherstellbar;
 reine Ansichtswechsel verdrängen diesen Rückweg nicht.
 
 Fehlende Teilbestände, nicht lesbares JSON und beim Laden verworfene Einträge
-halten das automatische Speichern an. Ein zweiter veralteter Tab kann keine
-neuere Planung überschreiben. Sein noch offener Entwurf kann separat exportiert
-werden. Der Rohdatenexport enthält die originalen Speicherwerte und ältere
+halten im zentralen Speicherweg das automatische Speichern an. Ein zweiter
+veralteter Tab wird dort beim Schreiben gegen die geladenen Speicherwerte geprüft.
+Sein noch offener Entwurf kann separat exportiert werden. Der Rohdatenexport enthält die originalen Speicherwerte und ältere
 Plan-Schlüssel, aber keine Supabase-Anmeldetokens.
 
 Sicherungsformat 2 erhält Umsätze und MEP-Kalibrierung; Format 1 und bestehende

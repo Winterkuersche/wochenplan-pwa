@@ -1,8 +1,9 @@
-# V9.9 bis V9.9.2: gemeinsame Filialplanung und Speicher-Korrekturen
+# V9.9 bis V9.9.3: gemeinsame Filialplanung und Speicher-Korrekturen
 
 ## Aktueller Status
 
-Vorbereitet als V9.9.3: ein Filialplan statt der Auswahl zwischen persönlicher
+V9.9.3 ist seit dem 21. Oktober 2026 über PR #425 veröffentlicht
+(main `a44677fe6d922af168cd38ddab3eb05fa6a47ff4`): ein Filialplan statt der Auswahl zwischen persönlicher
 Planung und gemeinsamer Filiale. Eine einzelne zugeordnete Filiale wird nach
 Anmeldung auch auf einem neuen Gerät automatisch ausgewählt. Abweichende lokale
 Entwürfe werden weiterhin ausdrücklich verglichen und übernommen. Solange die
@@ -27,6 +28,11 @@ wurde zusätzlich in einem frischen mobilen Chromium-Kontext geöffnet:
 V9.9 und Filialmodule geladen, Dialog dreimal vollständig geschlossen,
 kein horizontaler Überlauf und keine JavaScript-Laufzeitfehler. Diese Prüfung
 verwendet keine Anmeldung und schreibt keine Produktionsdaten.
+
+Aktuelle Prüfgrenzen und der offene Speicherweg des neuen Wochenplaners stehen
+in [stability-checklist.md](stability-checklist.md). Die älteren Testzahlen in
+diesem Dokument gehören zu den jeweils genannten Releases. Der aktuelle main-Stand
+hat erfolgreiche GitHub-Prüfungen einschließlich Chromium, WebKit und Live-Prüfung.
 
 ## Enthaltene Abläufe
 

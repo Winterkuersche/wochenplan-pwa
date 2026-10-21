@@ -1,66 +1,82 @@
-# Manueller Smoke-Check (Release-Gate Sprint 2)
+# Ergänzende Bedien- und Offline-Prüfung
 
-Stand: 2026-03-29
+Stand: 21. Oktober 2026. Aktuelle Ergebnisse und offene Aufgaben:
+[stability-checklist.md](stability-checklist.md).
 
-## Ziel und Scope
+Playwright ist eingerichtet. `npm run test:browser` führt Daten-, persönlichen
+Online- und Filial-Smoke aus; GitHub prüft Chromium und WebKit. Die Daten stammen
+ausschließlich aus synthetischen Fixtures, externe Dienste werden abgefangen.
+Die Online-Smokes verändern den Plan bisher per `saveAppState()`; sie bestätigen
+noch nicht den Speicherweg aller tatsächlichen Wochenplan-Schaltflächen.
 
-Diese Schritte sind als **manueller Browser-Smoke** dokumentiert, weil im Repository kein Browser-E2E-Tooling (Playwright/Cypress) konfiguriert ist. Der vorhandene Smoke-Test `tests/smoke-e2e.test.js` läuft in Node und deckt Kernlogik, nicht DOM-Interaktion, ab.
+Die folgenden Abläufe ergänzen die Automation. Sie gelten erst nach protokollierter
+Ausführung mit Commit, Browser/Gerät, Auslöser und Ergebnis als bestanden.
+Ein Node-Test oder eine vorbereitete Anleitung ersetzt diesen Nachweis nicht.
 
-Die Flows **A–D sind manuelle Pflichtflows vor einem GO im Release-Gate** und gelten erst als erfüllt, wenn sie mit Datum/Ergebnis protokolliert wurden.
+## Vorbereitung
 
-Vorbereitung:
-1. App lokal starten/öffnen (`index.html` im Browser).
-2. Leeren Test-Datensatz nutzen oder frische Sicherung importieren.
-3. Nach jedem Flow einmal explizit speichern und Seite neu laden.
+1. Den zu prüfenden Commit in einer isolierten lokalen Instanz öffnen.
+2. Synthetische Daten und abgefangene Online-API verwenden; keine echten Konten,
+   Sitzungen, Einladungen oder Produktionspläne für technische Tests einsetzen.
+3. Änderungen über sichtbare Bedienelemente ausführen. Nicht durch direkte
+   JavaScript-Aufrufe ersetzen, wenn gerade der Bedienweg geprüft werden soll.
+4. Nach einem Speichervorgang neu öffnen und den gespeicherten Inhalt vergleichen.
 
-## Flow A: Monatszelle klicken -> Typ wählen -> speichern
+## A. Monatszelle bearbeiten
 
-1. In die Ansicht **Monat** wechseln.
-2. Eine leere Monatszelle anklicken.
-3. Im Auswahl-Dialog einen Typ wählen (z. B. Schicht/Status).
-4. Dialog bestätigen.
-5. Auf **Speichern** klicken.
-6. Seite neu laden.
-7. Erwartung: Eintrag bleibt in der Monatszelle erhalten.
+1. In „Monat“ eine Zelle öffnen, Schicht/Status wählen und bestätigen.
+2. Prüfen, ob der Eintrag und die Stundenberechnung passen.
+3. Neu öffnen und denselben Eintrag kontrollieren.
 
-## Flow B: Urlaub/Krank eintragen -> ändern/trimmen -> speichern
+## B. Urlaub/Krank ändern und teilen
 
-1. In die Ansicht **Urlaub** wechseln.
-2. Für eine Person Urlaub oder Krank von Datum A bis Datum B eintragen.
-3. Einen überlappenden Zeitraum bearbeiten/entfernen, so dass ein Trim oder Split entsteht.
-4. Speichern.
-5. Seite neu laden.
-6. Erwartung: Nur der bearbeitete Abschnitt ist verändert, nicht überlappende Intervalle bleiben bestehen.
+1. Einen mehrtägigen Urlaub oder Krank-Zeitraum eintragen.
+2. Einen mittleren Tag ändern beziehungsweise entfernen.
+3. Neu öffnen und beide verbleibenden Teilintervalle prüfen.
+4. Zusätzlich Beginn/Ende kürzen und vollständiges Entfernen durchspielen.
 
-## Flow C: Monats-Iststunden Dialog öffnen -> Bulk-Paste einfügen -> übernehmen -> speichern -> Reload prüfen
+Die Bereichslogik besitzt Unit-Tests; dieser Ablauf prüft die Anbindung der Oberfläche.
 
-1. In die **Monat**-Ansicht wechseln.
-2. Monats-Iststunden-Dialog öffnen.
-3. Mehrere Zeilen im Bulk-Format einfügen (z. B. `2026-01 120:00`, `2026-02 118:30`).
-4. Übernehmen bestätigen.
-5. Speichern.
-6. Seite neu laden.
-7. Erwartung: Die manuell gesetzten Monats-Iststunden sind weiterhin sichtbar (inkl. Marker/Tooltip).
+## C. Monats-Iststunden mehrfach erfassen
 
-## Flow D: Backup Export -> Import (aktuelles Format)
+1. „Monats-Iststunden“ öffnen und mehrere Zeilen wie `2026-01 120:00` einfügen.
+2. Eine fehlerhafte Zeile einfügen: Zeilennummer und blockierte Übernahme prüfen.
+3. Korrigieren, übernehmen und neu öffnen.
+4. Werte und Kennzeichnung als manuelle Monats-Iststunden kontrollieren.
 
-1. **Sicherung exportieren** ausführen (aktueller Datenstand).
-2. Optional Teständerung durchführen und speichern.
-3. **Sicherung importieren** mit der gerade exportierten Datei.
-4. Speichern.
-5. Seite neu laden.
-6. Erwartung: Datenstand entspricht dem exportierten Snapshot (Roundtrip erfolgreich).
+## D. Dateisicherung
 
-## Service Worker: temporär aktivieren und Offline prüfen (Testmodus)
+Import → Export → erneutes Öffnen, Vorzustand, beschädigte Daten und Rohdatenrettung
+sind in `tools/browser-data-smoke.js` automatisiert. Bei Änderungen am Import oder
+Gerätespeicher diesen Browserlauf erneut ausführen. Einen echten iPhone-Dateidialog
+als eigene Geräteprüfung protokollieren.
 
-Ohne riskanten Umbau, nur lokal/temporär:
-1. In `index.html` den aktuell auskommentierten Service-Worker-Block temporär aktivieren.
-2. Hard-Reload durchführen, damit Registrierung greift.
-3. DevTools -> Application -> Service Workers: Aktivierung kontrollieren.
-4. DevTools -> Network auf **Offline** setzen.
-5. Navigation in der App prüfen (z. B. Reload auf Monatsseite): `index.html`-Fallback muss greifen.
-6. Eine statische Datei mit Query testen (z. B. `app.js?v=...`): Asset-Fallback muss aus Cache laden.
-7. Optional API-ähnlichen Pfad testen: kein aggressives `ignoreSearch`-Fallback für nicht-statische Requests erwarten.
-8. Nach dem Test den SW-Block wieder auf den bisherigen Zustand zurücksetzen, falls kein produktiver Rollout geplant ist.
+## E. Tatsächliche Wochenplan-Eingaben und gemeinsamer Plan
 
-Dokumentationshinweis: Dieser Ablauf ist eine Testanleitung; im aktuellen Stand bleibt der SW absichtlich deaktiviert.
+1. Mit zwei synthetischen Testkonten denselben Filialplan öffnen.
+2. Im sichtbaren Wochenplaner eine Schicht über den Editor ändern.
+3. Lokale Speicherung, Journal/Rückweg, Online-Revision und Planinhalt am zweiten
+   Gerät kontrollieren; Erfolg erst nach tatsächlicher Speicherung anzeigen.
+4. Favorit, Mehrfachplanung, Tauschen/Verschieben und Monatsbasisplan ebenso prüfen.
+5. Veralteten Tab und einen absichtlich fehlschlagenden Speichervorgang testen:
+   neuere Daten dürfen nicht still ersetzt werden.
+
+Dieser Ablauf ist wegen des dokumentierten Planning-2-Speicherwegs offen.
+
+## F. Service Worker: echter Offline-Start und Update
+
+Die Registrierung in `index.html` ist aktiv. Keine Registrierung auskommentieren
+oder für diese Prüfung verändern.
+
+1. App lokal über HTTP öffnen, Registrierung/Aktivierung abwarten und neu laden,
+   bis der Service Worker die Seite kontrolliert.
+2. Netzwerk offline schalten, App neu öffnen und alle Planungsansichten aufrufen.
+3. Eine Teständerung offline vornehmen und nach erneutem Öffnen kontrollieren.
+4. Wieder online gehen und den ausstehenden Abgleich überprüfen.
+5. Bei einem späteren Code-/Cache-Update einen offenen Entwurf erhalten und den
+   Versionswechsel mit neuer Cache-Kennung prüfen.
+
+Die drei aktuellen Browser-Smokes setzen `serviceWorkers: 'block'`. Ihre grünen
+Ergebnisse bestätigen daher keinen erfolgreichen Ablauf F. Externe PDF-Bibliotheken
+liegen bewusst außerhalb des lokalen Precache; PDF-/MEP-Ausgaben werden im
+vorliegenden Auftrag nicht verändert oder erneut abgenommen.

@@ -1,69 +1,23 @@
-# Vorschläge aus Codebasis-Review
+# Abgleich früherer Code-Review-Aufgaben
 
-## 1) Aufgabe: Tippfehler/Versionsangabe im Seitentitel korrigieren
-**Fund:** In `index.html` steht im statischen `<title>` noch `Wochenplan V9`, während die App-Version zentral in `version.js` als `V9.2` gepflegt wird.
+Stand: 21. Oktober 2026, V9.9.3 (`a44677fe6d922af168cd38ddab3eb05fa6a47ff4`).
+Aktuelle technische Aufgaben: [docs/stability-checklist.md](docs/stability-checklist.md).
+Historische Funde bleiben nachvollziehbar, erzeugen aber keine zweite offene Liste.
 
-**Risiko/Nutzen:** Nutzer sehen je nach Stelle unterschiedliche Versionsstände (Browser-Tab vs. App-Header), was zu Verwirrung bei Fehlermeldungen und Support führen kann.
+| Früherer Punkt | Abgeglichener Status / Nachweis |
+| --- | --- |
+| 1. Uneinheitlicher Seitentitel | Erledigt. `index.html` nutzt den neutralen Titel „Wochenplan“; `app.js` setzt die sichtbare Version aus `APP_META`. Siehe `docs/versioning.md`. |
+| 2. Fehlende Offline-Assets | Erledigt für das Inventar. Der Precache-Prüfer bestätigt alle 41 lokalen HTML-Assets. Die Registrierung ist aktiv. Ein echter Offline-/Update-Browserlauf bleibt als eigener Punkt in der aktuellen Checkliste offen. |
+| 3. Mo–Sa und Sonntag im MEP-Formular | Kein eigenständiger Lösch- oder Layoutauftrag. Die Planung bleibt Mo–Sa; das bestehende MEP-Formular einschließlich Druck-/Exportgestaltung bleibt gemäß Nutzerauftrag unverändert. |
+| 4. Abwesenheits- und Datumstests | Bereichsfälle sind in `tests/absences.test.js`, Monatsgrenzen/Schaltjahr in `tests/month-boundaries.test.js` abgedeckt. Direkte Tests von `fromIsoDate` für ungültige Tage sowie die zusätzliche Bedienprüfung bleiben offen. |
 
-**Vorschlag:**
-- Entweder den statischen Titel in `index.html` auf den aktuellen Stand bringen,
-- oder den statischen Titel auf einen neutralen Wert setzen und nur noch per `APP_META` setzen lassen.
+Der neue Planning-2-Speicherbefund ist in der aktuellen Stabilitätscheckliste offen
+und wird durch die erledigten älteren Punkte nicht als behoben dargestellt.
 
-**Akzeptanzkriterien:**
-- Browser-Tab und App-Header zeigen denselben Versionsstand.
-- Es gibt nur noch eine zentrale Quelle für die sichtbare Version.
+## Bestehende MEP-Vorgaben
 
----
-
-## 2) Aufgabe: Programmierfehler im Service Worker (Offline-Fähigkeit) beheben
-**Fund:** `sw.js` cached nur einen Teil der JavaScript-Dateien. Mehrere Laufzeit-Abhängigkeiten (z. B. Utility-Module) fehlen in `APP_FILES`.
-
-**Risiko/Nutzen:** Bei Offline-Nutzung kann die App trotz gecachtem `index.html` nicht vollständig starten (fehlende Skripte/`ReferenceError`).
-
-**Vorschlag:**
-- `APP_FILES` vollständig um alle lokal geladenen JS-Dateien ergänzen,
-- optional Build-/Lint-Check ergänzen, der sicherstellt, dass alle in `index.html` referenzierten lokalen Assets im Precache enthalten sind.
-
-**Akzeptanzkriterien:**
-- Vollständiger Erstaufruf online, danach funktionaler Reload offline.
-- Keine fehlenden Script-Requests im Offline-Modus.
-
----
-
-## 3) Aufgabe: Kommentar-/Doku-Unstimmigkeit bereinigen
-**Fund:** Die UI kommuniziert in der Kopfzeile „Mo-Sa · Stammdaten + 4 Ansichten“, gleichzeitig existieren in der Formularansicht Spalten/Platzhalter für Sonntag (`So`, `mepDateSo`).
-
-**Risiko/Nutzen:** Der fachliche Geltungsbereich (6-Tage- vs. 7-Tage-Sicht) ist uneinheitlich und kann zu Fehlbedienung oder falschen Erwartungen führen.
-
-**Vorschlag:**
-- Fachlich entscheiden, ob Sonntag offiziell Teil der Planung ist,
-- danach UI-Text und Formulardarstellung konsistent ziehen (entweder Sonntag entfernen oder Texte auf Mo-So anpassen).
-
-**Akzeptanzkriterien:**
-- Keine widersprüchlichen Hinweise mehr zwischen Kopfzeile, Tabellen und Formularansicht.
-- Team kann den Geltungsbereich eindeutig benennen.
-
----
-
-## 4) Aufgabe: Tests verbessern (Regressionen bei Abwesenheitslogik verhindern)
-**Fund:** Es fehlen automatisierte Tests für kritische Randfälle in Datums- und Abwesenheitslogik (u. a. Bereichs-Abzug/Splitten von Abwesenheiten).
-
-**Risiko/Nutzen:** Kleine Änderungen an Datumslogik können unbemerkt falsche Urlaub-/Krankheitszeiträume erzeugen.
-
-**Vorschlag:**
-- Unit-Tests für `subtractRangeFromAbsenceEntry` ergänzen:
-  - komplette Überdeckung,
-  - Abschneiden am Anfang,
-  - Abschneiden am Ende,
-  - Split in zwei Teilzeiträume,
-  - kein Overlap.
-- Zusätzliche Datums-Tests (`fromIsoDate`) für ungültige Tage und Schaltjahrfälle.
-
-**Akzeptanzkriterien:**
-- Testfälle decken die genannten Randfälle reproduzierbar ab.
-- Bei Regressionen schlagen Tests deterministisch fehl.
-
----
+Der folgende Abschnitt bleibt als bestehende Layout-/Abnahmeregel unverändert.
+Er ist kein Auftrag, MEP-Tabelle, Druck oder Export im aktuellen Arbeitspaket umzubauen.
 
 ## 5) Aufgabe: MEP-Geometrie auf eine Autorität festlegen (CSS-only)
 **Entscheidung:** Für die MEP-Seitengeometrie gilt ausschließlich die feste CSS-Berechnung (mm-basierte Variablen). Die bisherige JS-Nachmessung und das nachträgliche Überschreiben von `--mep-table-height` / `--mep-subrow-height` entfallen vollständig.
