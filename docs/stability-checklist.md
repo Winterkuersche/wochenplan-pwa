@@ -35,29 +35,21 @@ Bedienweg, alle Geräte oder den gesamten Funktionsbereich.
   [Pages](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122609)
   und [Live-Prüfung](https://github.com/Winterkuersche/wochenplan-pwa/actions/runs/39590122409) erfolgreich.
 
-## Vorrangig offen: Speicherweg des neuen Wochenplaners
+## Wochenplanung und Komfortfunktionen in V9.10
 
-- [ ] **P1: Planning 2 an den zentralen, journalgesicherten Speicherweg anbinden.**
-  `planning2-data-adapter.js:49–51` schreibt den Plan direkt in localStorage.
-  `planning2-live.js:8` meldet anschließend nur `planning2:plan-saved`;
-  `app.js:3749–3757` liest und rendert, erzeugt aber kein zentrales
-  `wochenplan:saved`. Erst dieses Signal startet in `data-panel.js` die automatische
-  Online-Sicherung. Der Tausch-/Verschiebepfad in `planning2-live.js:126` ruft
-  sogar nur den Adapter auf, ohne das Planning-2-Signal.
-- [ ] Alle produktiven Eingaben einschließlich Favorit, Mehrfachplanung,
-  Tauschen/Verschieben und Monatsbasisplan über denselben Speicherabschluss führen.
-  Erst nach erfolgreichem Speichern Erfolg anzeigen und Online-Abgleich anstoßen.
-- [ ] Regressionen für den tatsächlichen Bedienweg ergänzen: Änderung über eine
-  Wochenplan-Schaltfläche → lokaler Rückweg → Online-Revision → zweites Gerät.
-  Zusätzlich veralteter Tab, fehlgeschlagene Speicherung und Tausch/Verschieben.
+Die priorisierten sechs Aufgaben sind im Quellstand umgesetzt. Umfang und
+Nachweise stehen in [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
 
-Nachweis vom 21.10.2026: Lokaler synthetischer Aufruf der unveränderten
-`saveProductivePlan`-Funktion und des zugehörigen App-Listeners änderte den Plan,
-legte kein Journal an und erzeugte kein `wochenplan:saved`. Der nächste zentrale
-Schreibversuch wurde als veralteter Stand abgewiesen. Der Listener wurde dabei
-mit isolierten Render-/Normalisierungsfunktionen geprüft; ein echter Browserlauf
-über diese Wochenplan-Schaltflächen ist noch offen. Dies ist keine Prüfung von
-Produktionsplänen und kein Nachweis eines bereits eingetretenen Datenverlusts.
+- [x] Zentraler Speicherabschluss für produktive Wochenplan-Eingaben mit Journal,
+  Fehlermeldung, Stale-Tab-Prüfung und Online-Signal; synthetische Regressionen bestanden.
+- [x] Schnellnavigation für mobile Verwaltung, Stundenaufschlüsselung, geschützte
+  einmalige Rücknahme und gebündelte Wochenhinweise implementiert.
+- [x] Vorschläge nur nach ausdrücklichem Einschalten und problembezogenem Abruf;
+  Übernahme validiert den frischen Plan und speichert über den zentralen Abschluss.
+- [ ] Chromium-/WebKit-Prüfung dieses neuen Quellstands in GitHub Actions abschließen.
+  Die Online-Smokes bedienen jetzt den tatsächlichen Wocheneditor. Der neue
+  Planning-Smoke prüft zusätzlich Favorit, Mehrfachplanung, Tauschen/Verschieben,
+  Basisplan, Rücknahme, Fehlerfälle und echten Offline-Start.
 
 ## Verbleibende praktische Abnahme
 

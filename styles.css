@@ -5149,3 +5149,20 @@ body.dark .mepTable th {
 }
 
 .teamOrderControls{display:flex;gap:8px}.teamOrderControls button{min-height:44px;min-width:88px;touch-action:manipulation}.teamOrderControls button:disabled{opacity:.45}
+
+/* Data management and hours explanation are screen-only; MEP geometry is unchanged. */
+@media screen {
+  .dataQuickNav { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+  .dataQuickNav button { flex:1 1 100px; min-height:44px; }
+  .dataDialogHeader { position:sticky; top:-24px; z-index:3; background:var(--panel, #fff); padding:8px 0; }
+  body.dark .dataDialogHeader { background:#1a1f26; }
+  .dataDialog details > summary { min-height:44px; padding:12px 0; cursor:pointer; box-sizing:border-box; }
+  .dataDialog details[open] { padding-bottom:12px; }
+  .dataDialog [id] { scroll-margin-top:80px; }
+  .hourBreakdownValues { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px 14px; }
+  .hourBreakdownValues dt { overflow-wrap:anywhere; }
+  .hourBreakdownValues dd { margin:0; font-weight:700; font-variant-numeric:tabular-nums; }
+  .hourBreakdownButton { display:block; min-height:32px; margin:4px auto; }
+}
+
+@media print { .hourBreakdownButton { display:none !important; } }

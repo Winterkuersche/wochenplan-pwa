@@ -329,7 +329,7 @@ function buildMonthEmployeeRow(emp, days, options = {}) {
       : "Monats-Iststunden planbasiert berechnet.";
 
     html += `
-      <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}${manualMarker}</td>
+      <td class="weekHoursCell" title="${monthActualTitle}">${minutesToHM(monthDisplayMinutes)}${manualMarker}<button type="button" class="hourBreakdownButton no-print" data-hours-person="${emp.id}" aria-label="Stundenkonto aufschlüsseln">Details</button></td>
       <td class="weekDeltaCell" title="${monthDeltaTitle}">${formatSignedMinutes(monthDifferenceMinutes)}</td>
       <td class="weekDeltaCell">${totalMinusMinutes > 0 ? `-${minutesToHM(totalMinusMinutes)}` : "0:00"}</td>
     `;
@@ -342,6 +342,9 @@ function buildMonthEmployeeRow(emp, days, options = {}) {
   return html;
 }
 function bindMonthCellActions(scopeEl = document) {
+  scopeEl.querySelectorAll?.("[data-hours-person]").forEach(button => {
+    button.addEventListener("click", () => openEmployeeHourBreakdown(button.dataset.hoursPerson));
+  });
   const tables = scopeEl?.querySelectorAll?.("table")?.length
     ? [...scopeEl.querySelectorAll("table")]
     : [document.getElementById("monthTable")].filter(Boolean);

@@ -65,7 +65,9 @@ async function main(){
   await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
   console.log('Shared deputy adopted');
-  await b.page.evaluate(()=>{state.schedule['2026-10-20']['test-one']=buildEarlyShiftEntry('F5');saveAppState();});
+  await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await b.page.locator('[data-quick="F5"]').click();
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   console.log('Shared proposal submitted');
@@ -89,6 +91,12 @@ async function main(){
   assert.equal(await fresh.page.locator('#sharedBranchSelect option').filter({hasText:'Persönliche Planung'}).count(),0);
   assert.deepEqual(fresh.personalRequests,[]);
   await fresh.context.close();
+  await Promise.all([a.page.waitForEvent('load'),a.page.locator('#btnSharedAdopt').click()]);await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await a.page.locator('[data-quick="F6"]').click();
+  await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedSummary').filter({hasText:'Stand 3'}).waitFor();
+  await b.page.locator('#btnSharedRefresh').click();await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');
   // The independent archive is a valid standard backup, including attributed history.
   await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
   const downloadPromise=a.page.waitForEvent('download');await a.page.locator('#btnSharedArchive').click();
@@ -98,7 +106,7 @@ async function main(){
   assert.equal(await b.page.evaluate(data=>validateAndNormalizeBackupData(data).error,archive),'');
   await b.page.evaluate(data=>importBackupFromObject(data,{reload:false}),archive);
   await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F5');
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');
   await b.page.locator('#btnDataPanel').click();
   await b.page.locator('#btnCloseData').click();assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
   assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

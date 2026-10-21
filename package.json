@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tools/browser-data-smoke.js && node tools/browser-cloud-smoke.js && node tools/browser-collaboration-smoke.js",
+    "test:browser": "node tools/browser-data-smoke.js && node tools/browser-cloud-smoke.js && node tools/browser-collaboration-smoke.js && node tools/browser-planning-smoke.js",
     "test:live": "node tools/browser-live-smoke.js",
     "test:collaboration": "node --test tests/collaboration-*.test.js",
     "check:maintenance": "node tools/check-maintenance.js",
