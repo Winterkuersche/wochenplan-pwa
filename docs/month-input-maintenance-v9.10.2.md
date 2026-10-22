@@ -18,12 +18,15 @@
   bleiben nach einer Verkürzung nicht als zusätzliche Abwesenheit zurück.
 - Im Monatsdialog kann Krank wieder zu Urlaub gewechselt werden. Zuvor
   setzte sich der alte Dialogtyp K gegen die neue Statusauswahl durch.
+- Löschen und Kürzen beziehen sich auf den ursprünglich geöffneten Eintrag,
+  auch nach einem noch ungespeicherten Statuswechsel. Eine zwischenzeitlich
+  geänderte Abwesenheit bleibt erhalten; der Dialog zeigt den Konflikt an.
 - Der Monatsweg synchronisiert die Urlaubseinträge vor der Neuberechnung
   der Urlaubszähler, sodass diese direkt zur Änderung passen.
 
 ## Prüfungen
 
-`npm run check:all` prüft 559 Tests, globale Helfer und das Precache-Inventar.
+`npm run check:all` prüft 565 Tests, globale Helfer und das Precache-Inventar.
 Die Wartungsprüfung prüft zusätzlich Syntax und Asset-Versionen.
 
 `tools/browser-month-smoke.js` läuft als Teil von `npm run test:browser` in der
@@ -36,7 +39,8 @@ Alle Anfragen außerhalb der lokalen Testinstanz werden blockiert. Geprüft werd
   Wocheneditor kürzen und den Zeitraum wieder verlängern.
 - Mittleren Tag im Wocheneditor entfernen; beide Restintervalle neu öffnen.
 - Über den bestehenden Monatsdialog ab einem Tag kürzen, einen ganzen
-  Restzeitraum löschen und zwischen Urlaub/Krank wechseln.
+  Restzeitraum löschen und zwischen Urlaub/Krank wechseln. Löschen/Kürzen
+  zusätzlich nach einer noch ungespeicherten Statusauswahl prüfen.
 - Nach jedem Schritt die gespeicherten Intervalle und fremde Schichten/Umsätze
   kontrollieren; alte Urlaubs-Schedule-Einträge und Laufzeitfehler ausschließen.
 

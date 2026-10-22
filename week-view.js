@@ -324,17 +324,23 @@ shiftDialogDelete?.addEventListener("click", () => {
   }
 
   if (type === "U" || type === "K") {
-    const absenceType = getAbsenceTypeFromDialogContext(type);
+    const previousAbsence = shiftDialogContext.previousAbsence;
+    if (!previousAbsence) {
+      closeShiftDialog();
+      return;
+    }
+    const absenceType = previousAbsence.type;
     const meta = getAbsenceTypeMeta(absenceType);
     const choice = confirm(meta.confirmDeleteMessage);
 
-    if (choice) {
-      removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, absenceType);
-    } else {
-      trimAbsenceEntryFromIso(emp.id, isoDate, absenceType);
+    try {
+      const changed = choice
+        ? removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, absenceType, previousAbsence)
+        : trimAbsenceEntryFromIso(emp.id, isoDate, absenceType, previousAbsence);
+      if (changed) closeShiftDialog();
+    } catch (error) {
+      alert(error.message);
     }
-
-    closeShiftDialog();
     return;
   }
 });
@@ -682,11 +688,13 @@ function minutesToHHMMInput(minutes) {
   return formatQuarterHourTime(Math.max(0, Number(minutes) || 0));
 }
 
-function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
+function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type, previousAbsence = null) {
   const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
-  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  const entry = previousAbsence
+    ? requireUnchangedAbsenceEntry(state.absences || [], employeeId, previousAbsence)
+    : getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 
   state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
@@ -694,11 +702,13 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   commitPlanChange();
   return true;
 }
-function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
+function trimAbsenceEntryFromIso(employeeId, isoDate, type, previousAbsence = null) {
   const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
-  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  const entry = previousAbsence
+    ? requireUnchangedAbsenceEntry(state.absences || [], employeeId, previousAbsence)
+    : getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 
   // Wenn der Eintrag genau an diesem Tag beginnt → komplett löschen

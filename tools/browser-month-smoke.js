@@ -110,7 +110,9 @@ async function run(context, url, width) {
     assert.equal((await read()).schedule['2026-10-21']?.a, undefined);
 
     // The established delete dialog distinguishes whole interval from trim.
-    await cell('20').click(); acceptDeletion = false;
+    await cell('20').click();
+    await page.locator('#shiftDialogAbsenceType').selectOption(type === 'sick' ? 'vacation' : 'sick');
+    acceptDeletion = false;
     await page.locator('#shiftDialogDelete').click(); acceptDeletion = true;
     await intervals([[type, '2026-10-19', '2026-10-19'], [type, '2026-10-22', '2026-10-24']]); await reload();
     await cell('19').click(); await page.locator('#shiftDialogDelete').click();
@@ -121,7 +123,9 @@ async function run(context, url, width) {
     await cell('23').click(); await page.locator('#shiftDialogAbsenceType').selectOption(replacement);
     await page.locator('#shiftDialogSave').click();
     await intervals([[replacement, '2026-10-22', '2026-10-24']]); await reload();
-    await cell('23').click(); await page.locator('#shiftDialogDelete').click();
+    await cell('23').click();
+    await page.locator('#shiftDialogAbsenceType').selectOption(type);
+    await page.locator('#shiftDialogDelete').click();
     await intervals([]); await reload();
     assert.equal((await read()).schedule['2026-10-23']?.a, undefined);
   }

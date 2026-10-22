@@ -208,6 +208,16 @@ function updateAbsenceEntry(absences, absenceId, updates) {
   });
 }
 
+function requireUnchangedAbsenceEntry(absences, employeeId, previousAbsence) {
+  const current = getAbsenceEntryById(absences, previousAbsence?.id);
+  const fields = ["id", "employeeId", "type", "from", "to", "note"];
+  if (!current || current.employeeId !== employeeId
+    || fields.some((field) => current[field] !== previousAbsence[field])) {
+    throw new Error("Die Abwesenheit wurde inzwischen geändert. Bitte erneut öffnen.");
+  }
+  return current;
+}
+
 // Editing an existing interval replaces that interval, rather than merging a
 // shorter range back into it. Both the month and week editors use this path.
 function prepareAbsenceRangeChange(absences, { employeeId, from, to, type, note = "", previousAbsence = null }) {
@@ -216,12 +226,7 @@ function prepareAbsenceRangeChange(absences, { employeeId, from, to, type, note 
   }
   let remaining = absences || [];
   if (previousAbsence) {
-    const current = getAbsenceEntryById(remaining, previousAbsence.id);
-    const fields = ["id", "employeeId", "type", "from", "to", "note"];
-    if (!current || current.employeeId !== employeeId
-      || fields.some((field) => current[field] !== previousAbsence[field])) {
-      throw new Error("Die Abwesenheit wurde inzwischen geändert. Bitte erneut öffnen.");
-    }
+    requireUnchangedAbsenceEntry(remaining, employeeId, previousAbsence);
     remaining = removeAbsenceEntry(remaining, previousAbsence.id);
   }
   return replaceAbsenceCoverage(remaining, employeeId, from, to, type, note);
