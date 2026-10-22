@@ -167,7 +167,7 @@ function getAbsenceTypeMeta(type) {
 }
 
 function getAbsenceTypeFromDialogContext(type) {
-  if (shiftDialogAbsenceType?.value === "sick") return "sick";
+  if (["vacation", "sick"].includes(shiftDialogAbsenceType?.value)) return shiftDialogAbsenceType.value;
   return type === "K" ? "sick" : "vacation";
 }
 
@@ -225,6 +225,7 @@ function updateAbsenceDialogTitle() {
 function openShiftDialog(type, context) {
   if (!shiftDialogOverlay) return;
   shiftDialogContext = context;
+  shiftDialogContext.previousAbsence = null;
   resetShiftDialogInputs(context.isoDate);
 
   shiftDialogLateFields.classList.add("hidden");
@@ -323,17 +324,23 @@ shiftDialogDelete?.addEventListener("click", () => {
   }
 
   if (type === "U" || type === "K") {
-    const absenceType = getAbsenceTypeFromDialogContext(type);
+    const previousAbsence = shiftDialogContext.previousAbsence;
+    if (!previousAbsence) {
+      closeShiftDialog();
+      return;
+    }
+    const absenceType = previousAbsence.type;
     const meta = getAbsenceTypeMeta(absenceType);
     const choice = confirm(meta.confirmDeleteMessage);
 
-    if (choice) {
-      removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, absenceType);
-    } else {
-      trimAbsenceEntryFromIso(emp.id, isoDate, absenceType);
+    try {
+      const changed = choice
+        ? removeAbsenceEntryForEmployeeOnIso(emp.id, isoDate, absenceType, previousAbsence)
+        : trimAbsenceEntryFromIso(emp.id, isoDate, absenceType, previousAbsence);
+      if (changed) closeShiftDialog();
+    } catch (error) {
+      alert(error.message);
     }
-
-    closeShiftDialog();
     return;
   }
 });
@@ -425,7 +432,16 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    const savedAbsence = setAbsence(emp.id, fromIso, toIso, absenceType, "", { commit: true });
+    const previousAbsence = shiftDialogContext.previousAbsence;
+    let savedAbsence;
+    try {
+      savedAbsence = setAbsence(emp.id, fromIso, toIso, absenceType, previousAbsence?.note || "", {
+        commit: true, previousAbsence
+      });
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
     if (!savedAbsence) {
       alert("Feiertage können nicht überschrieben werden.");
       return;
@@ -672,11 +688,13 @@ function minutesToHHMMInput(minutes) {
   return formatQuarterHourTime(Math.max(0, Number(minutes) || 0));
 }
 
-function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
+function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type, previousAbsence = null) {
   const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
-  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  const entry = previousAbsence
+    ? requireUnchangedAbsenceEntry(state.absences || [], employeeId, previousAbsence)
+    : getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 
   state.absences = (state.absences || []).filter((item) => item.id !== entry.id);
@@ -684,11 +702,13 @@ function removeAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type) {
   commitPlanChange();
   return true;
 }
-function trimAbsenceEntryFromIso(employeeId, isoDate, type) {
+function trimAbsenceEntryFromIso(employeeId, isoDate, type, previousAbsence = null) {
   const mutationDecision = decideMutationForIsoRange(isoDate, isoDate, "direct-day");
   if (!mutationDecision.allow) return false;
 
-  const entry = getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
+  const entry = previousAbsence
+    ? requireUnchangedAbsenceEntry(state.absences || [], employeeId, previousAbsence)
+    : getAbsenceEntryForEmployeeOnIso(employeeId, isoDate, type);
   if (!entry) return false;
 
   // Wenn der Eintrag genau an diesem Tag beginnt → komplett löschen
@@ -754,6 +774,7 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "U") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
     if (absence) {
+      context.previousAbsence = { ...absence };
       shiftDialogAbsenceType.value = "vacation";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;
@@ -763,6 +784,7 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "K") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
     if (absence) {
+      context.previousAbsence = { ...absence };
       shiftDialogAbsenceType.value = "sick";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;

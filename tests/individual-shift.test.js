@@ -92,7 +92,7 @@ test('individual checkout entry survives the normal save normalization path', ()
 });
 
 test('central Flex UI exposes 08:55 only for the manual early context', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const flexRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(flexRenderer, /context === "early"/);
@@ -101,7 +101,7 @@ test('central Flex UI exposes 08:55 only for the manual early context', () => {
 });
 
 test('automatic 08:55 pause restores its previous value without replacing a manual pause', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const flexRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(flexRenderer, /pauseBeforeAutomaticOpener = selects\.pause\.value/);
@@ -112,7 +112,7 @@ test('automatic 08:55 pause restores its previous value without replacing a manu
 });
 
 test('central Flex UI defaults its start based on the entry context', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const defaultStartHelper = source.match(/function getMonthFallbackFlexDefaultStartMinutes\(context\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(defaultStartHelper);
   const ctx = vm.createContext({});
@@ -124,7 +124,7 @@ test('central Flex UI defaults its start based on the entry context', () => {
 });
 
 test('central Flex UI defaults to six work hours, zero work minutes and no break', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const individualRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(individualRenderer, /key: "start"[^\n]+value: getMonthFallbackFlexDefaultStartMinutes\(context\)/);
@@ -135,7 +135,7 @@ test('central Flex UI defaults to six work hours, zero work minutes and no break
 });
 
 test('central Flex UI composes hour and minute selections for the central shift builder', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const individualRenderer = source.match(/function renderMonthFallbackFlexEditor[\s\S]*?\n\}/)?.[0] || '';
 
   assert.match(

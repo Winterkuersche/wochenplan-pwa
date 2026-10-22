@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
-const app = fs.readFileSync('app.js', 'utf8');
+const app = fs.readFileSync('app-storage.js', 'utf8') + '\n' + fs.readFileSync('app.js', 'utf8');
 const masterKey = 'wochenplan_master_v10', planKey = 'wochenplan_plan_v10';
 const plan = () => ({ weekFrom:'2026-10-19', schedule:{'2026-10-20':{a:{type:'shift',code:'F4',start:'09:00',end:'13:00'}}}, absences:[], salesByDate:{'2026-10-20':500}, monthlyPlanBaselines:{} });
 function harness(initialPlan = plan()) {

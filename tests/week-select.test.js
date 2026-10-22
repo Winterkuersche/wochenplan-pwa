@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
+const fs = require('node:fs');
+const vm = require('node:vm');
 
 class MockElement {
   constructor(tagName = 'div') {
@@ -153,6 +155,64 @@ function buildContext() {
     getAbsenceTypeMeta: () => ({ invalidRangeMessage: 'x', confirmDeleteMessage: 'x', title: 'x' }),
     getAbsenceTypeFromDialogContext: (v) => (v === 'K' ? 'sick' : 'vacation'),
     pad2: (value) => String(value).padStart(2, '0')
+  });
+}
+
+for (const [code, type] of [['U', 'vacation'], ['K', 'sick']]) {
+  for (const [from, to] of [['2026-10-20', '2026-10-23'], ['2026-10-19', '2026-10-22']]) {
+    test(`${type} dialog replaces the existing interval when its boundaries are shortened to ${from}–${to}`, () => {
+      const ctx = buildContext();
+      for (const file of ['date-utils.js', 'absences.js']) {
+        vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+      }
+      const app = fs.readFileSync('app.js', 'utf8');
+      vm.runInContext(app.slice(app.indexOf('function setAbsence('), app.indexOf('\nfunction removeAbsence(')), ctx);
+      ctx.resolveDayOverwriteDecision = () => ({ decision: 'allow' });
+      ctx.requestOverwriteConfirmation = () => true;
+      ctx.clearShiftCoverageForRange = () => {};
+      ctx.state.absences = [{ id: 'original', employeeId: 'e1', type, from: '2026-10-19', to: '2026-10-23', note: 'Testnotiz' }];
+      ctx.openShiftDialog(code, { emp: { id: 'e1' }, isoDate: '2026-10-21', type: code });
+      ctx.document.getElementById('shiftDialogAbsenceFrom').value = from;
+      ctx.document.getElementById('shiftDialogAbsenceTo').value = to;
+      ctx.document.getElementById('shiftDialogSave').dispatchEvent('click');
+      assert.deepEqual(JSON.parse(JSON.stringify(ctx.state.absences.map(entry => [entry.from, entry.to, entry.note]))), [[from, to, 'Testnotiz']]);
+    });
+  }
+}
+
+for (const [code, type] of [['U', 'vacation'], ['K', 'sick']]) {
+  for (const removeWhole of [true, false]) {
+    test(`${type} ${removeWhole ? 'deletion' : 'trim'} targets the opened interval after an unsaved status change`, () => {
+      const ctx = buildContext();
+      for (const file of ['date-utils.js', 'absences.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), ctx);
+      ctx.getShiftRuleByCode = () => ({ entryType: 'absence' });
+      const original = { id: 'original', employeeId: 'e1', type, from: '2026-10-19', to: '2026-10-23', note: 'Testnotiz' };
+      const other = { ...original, id: 'other', employeeId: 'e2' };
+      ctx.state.absences = [original, other];
+      let confirmation;
+      ctx.confirm = message => { confirmation = message; return removeWhole; };
+      ctx.openShiftDialog(code, { emp: { id: 'e1' }, isoDate: '2026-10-21', type: code });
+      ctx.document.getElementById('shiftDialogAbsenceType').value = type === 'sick' ? 'vacation' : 'sick';
+      ctx.document.getElementById('shiftDialogDelete').dispatchEvent('click');
+      const expected = removeWhole ? [other] : [{ ...original, to: '2026-10-20' }, other];
+      assert.deepEqual(JSON.parse(JSON.stringify(ctx.state.absences)), expected);
+      assert.match(confirmation, type === 'sick' ? /Krankmeldung/ : /Urlaub/);
+    });
+  }
+  test(`${type} deletion refuses an interval changed since the dialog opened`, () => {
+    const ctx = buildContext();
+    for (const file of ['date-utils.js', 'absences.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), ctx);
+    ctx.getShiftRuleByCode = () => ({ entryType: 'absence' });
+    ctx.state.absences = [{ id: 'original', employeeId: 'e1', type, from: '2026-10-19', to: '2026-10-23', note: '' }];
+    const alerts = [];
+    ctx.alert = message => alerts.push(message);
+    ctx.openShiftDialog(code, { emp: { id: 'e1' }, isoDate: '2026-10-21', type: code });
+    ctx.state.absences[0].to = '2026-10-24';
+    ctx.document.getElementById('shiftDialogDelete').dispatchEvent('click');
+    assert.equal(ctx.state.absences.length, 1);
+    assert.equal(ctx.state.absences[0].to, '2026-10-24');
+    assert.match(alerts[0], /inzwischen geändert/);
+    assert.equal(vm.runInContext('shiftDialogContext !== null', ctx), true);
   });
 }
 
