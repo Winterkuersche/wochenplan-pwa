@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const app = fs.readFileSync('app.js', 'utf8');
+const app = fs.readFileSync('app-storage.js', 'utf8') + '\n' + fs.readFileSync('app.js', 'utf8');
 const preview = fs.readFileSync('planung2-preview.html', 'utf8');
 
 function extract(name) {

@@ -36,6 +36,7 @@ const APP_FILES = [
   "./week-view.js",
   "./mep-view.js",
   "./month-view.js",
+  "./month-editor.js",
   "./balance-utils.js",
   "./monthly-plan-baselines.js",
   "./backup-utils.js",
@@ -51,6 +52,7 @@ const APP_FILES = [
   "./pdf-export.js",
   "./app-orchestration.js",
   "./employee-order.js",
+  "./app-storage.js",
   "./app.js"
 ];
 

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { loadScripts } = require('./test-helpers');
-const app = fs.readFileSync('app.js', 'utf8');
+const app = fs.readFileSync('app-storage.js', 'utf8') + '\n' + fs.readFileSync('app.js', 'utf8');
 function extract(name) { const start=app.indexOf(`function ${name}`); assert.notEqual(start,-1); const bodyStart=app.indexOf(') {',start)+2; let depth=0; for(let i=bodyStart;i<app.length;i+=1){if(app[i]==='{')depth+=1;else if(app[i]==='}'&&--depth===0)return app.slice(start,i+1)} throw Error(name); }
 function baseline(month) { return { month, createdAt: month, entries: {} }; }
 

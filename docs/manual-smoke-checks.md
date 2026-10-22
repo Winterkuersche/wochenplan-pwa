@@ -9,6 +9,11 @@ ausschließlich aus synthetischen Fixtures, externe Dienste werden abgefangen.
 Die Online-Smokes bearbeiten eine Schicht über den sichtbaren Wocheneditor.
 `tools/browser-planning-smoke.js` ergänzt die übrigen produktiven Wochenplan-Eingaben
 und prüft Stundenkonto, Hinweise, Vorschläge, Rücknahme sowie Fehlerfälle.
+Seit V9.10.2 führt `tools/browser-month-smoke.js` zusätzlich A und B über
+sichtbare Monats-/Wochenbedienelemente aus: Schicht/Frei, Stunden, Urlaub/Krank,
+Verkürzen/Verlängern, Trim/Split, Löschen, Statuswechsel und Wiederöffnen.
+Der Ablauf läuft bei mobiler und Desktop-Breite in Chromium sowie WebKit;
+maßgeblich ist das Ergebnis des jeweiligen Commit-Jobs.
 
 Die folgenden Abläufe ergänzen die Automation. Sie gelten erst nach protokollierter
 Ausführung mit Commit, Browser/Gerät, Auslöser und Ergebnis als bestanden.

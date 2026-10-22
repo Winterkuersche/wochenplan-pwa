@@ -157,7 +157,7 @@ function removeAbsenceCoverage(absences, employeeId, removeFromIso, removeToIso,
   });
 }
 
-function replaceAbsenceCoverage(absences, employeeId, fromIso, toIso, replacementType = null) {
+function replaceAbsenceCoverage(absences, employeeId, fromIso, toIso, replacementType = null, note = "") {
   if (!Array.isArray(absences)) return [];
   if (!employeeId || !fromIso || !toIso) return [...absences];
   if (!fromIsoDate(fromIso) || !fromIsoDate(toIso) || toIso < fromIso) return [...absences];
@@ -186,7 +186,7 @@ function replaceAbsenceCoverage(absences, employeeId, fromIso, toIso, replacemen
       type: normalizedReplacementType,
       from: fromIso,
       to: toIso,
-      note: ""
+      note
     });
   }
 
@@ -206,6 +206,25 @@ function updateAbsenceEntry(absences, absenceId, updates) {
 
     return createAbsenceEntry(merged) || entry;
   });
+}
+
+// Editing an existing interval replaces that interval, rather than merging a
+// shorter range back into it. Both the month and week editors use this path.
+function prepareAbsenceRangeChange(absences, { employeeId, from, to, type, note = "", previousAbsence = null }) {
+  if (!createAbsenceEntry({ employeeId, from, to, type, note })) {
+    throw new Error("Ungültiger Abwesenheitszeitraum.");
+  }
+  let remaining = absences || [];
+  if (previousAbsence) {
+    const current = getAbsenceEntryById(remaining, previousAbsence.id);
+    const fields = ["id", "employeeId", "type", "from", "to", "note"];
+    if (!current || current.employeeId !== employeeId
+      || fields.some((field) => current[field] !== previousAbsence[field])) {
+      throw new Error("Die Abwesenheit wurde inzwischen geändert. Bitte erneut öffnen.");
+    }
+    remaining = removeAbsenceEntry(remaining, previousAbsence.id);
+  }
+  return replaceAbsenceCoverage(remaining, employeeId, from, to, type, note);
 }
 
 function getAbsenceDisplayLabel(absenceType) {

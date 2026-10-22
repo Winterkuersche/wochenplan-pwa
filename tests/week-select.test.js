@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { loadScripts } = require('./test-helpers');
+const fs = require('node:fs');
+const vm = require('node:vm');
 
 class MockElement {
   constructor(tagName = 'div') {
@@ -154,6 +156,28 @@ function buildContext() {
     getAbsenceTypeFromDialogContext: (v) => (v === 'K' ? 'sick' : 'vacation'),
     pad2: (value) => String(value).padStart(2, '0')
   });
+}
+
+for (const [code, type] of [['U', 'vacation'], ['K', 'sick']]) {
+  for (const [from, to] of [['2026-10-20', '2026-10-23'], ['2026-10-19', '2026-10-22']]) {
+    test(`${type} dialog replaces the existing interval when its boundaries are shortened to ${from}–${to}`, () => {
+      const ctx = buildContext();
+      for (const file of ['date-utils.js', 'absences.js']) {
+        vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+      }
+      const app = fs.readFileSync('app.js', 'utf8');
+      vm.runInContext(app.slice(app.indexOf('function setAbsence('), app.indexOf('\nfunction removeAbsence(')), ctx);
+      ctx.resolveDayOverwriteDecision = () => ({ decision: 'allow' });
+      ctx.requestOverwriteConfirmation = () => true;
+      ctx.clearShiftCoverageForRange = () => {};
+      ctx.state.absences = [{ id: 'original', employeeId: 'e1', type, from: '2026-10-19', to: '2026-10-23', note: 'Testnotiz' }];
+      ctx.openShiftDialog(code, { emp: { id: 'e1' }, isoDate: '2026-10-21', type: code });
+      ctx.document.getElementById('shiftDialogAbsenceFrom').value = from;
+      ctx.document.getElementById('shiftDialogAbsenceTo').value = to;
+      ctx.document.getElementById('shiftDialogSave').dispatchEvent('click');
+      assert.deepEqual(JSON.parse(JSON.stringify(ctx.state.absences.map(entry => [entry.from, entry.to, entry.note]))), [[from, to, 'Testnotiz']]);
+    });
+  }
 }
 
 test('clearDayRange aborts entirely when mutation decision denies the range', () => {

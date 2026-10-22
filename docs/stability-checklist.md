@@ -9,6 +9,10 @@ sind historische Nachweise, keine zusätzlichen aktuellen Aufgabenlisten.
 Ein Haken nennt den nachgewiesenen Umfang; er bestätigt nicht automatisch jeden
 Bedienweg, alle Geräte oder den gesamten Funktionsbereich.
 
+V9.10.2 ergänzt die Aufteilung von Speicherung und Monatseditor sowie den
+synthetischen Browserablauf für Monatszellen und Abwesenheiten. Umfang,
+Korrekturen und Prüfgrenzen: [month-input-maintenance-v9.10.2.md](month-input-maintenance-v9.10.2.md).
+
 ## Belegter Stand
 
 - [x] Zeit-/Pausenregeln, Monatsgrenzen und Salden besitzen Regressionstests
@@ -57,8 +61,11 @@ Nachweise stehen in [filial-alltag-v9.10.md](filial-alltag-v9.10.md).
 - [ ] Passwort-Wiederherstellung mit dem eigenen Konto praktisch prüfen.
 - [x] Direkte Datumsparser-Regression: ungültige Tage und gültiger Schalttag
   sind in `tests/hour-breakdown.test.js` geprüft.
-- [ ] Monatszellen und Abwesenheits-Trim/Split über die echte Oberfläche prüfen;
-  Ablauf siehe [manual-smoke-checks.md](manual-smoke-checks.md).
+- [x] Monatszellen und Abwesenheits-Trim/Split besitzen mit V9.10.2 einen
+  Browserablauf über die echte Oberfläche (`tools/browser-month-smoke.js`),
+  einschließlich Verkürzen, Verlängern, Statuswechsel und erneutem Öffnen.
+  Der Nachweis für einen konkreten Commit erfordert dessen erfolgreiche
+  Chromium-/WebKit-Jobs; eine echte Geräteabnahme bleibt separat.
 - [x] Offline-Start, Wochenplan-Eingabe und erneutes Öffnen mit aktivem Service Worker
   sind im Planning-Browserlauf für Chromium und WebKit geprüft.
 - [ ] Einen echten Updatewechsel mit offenem Entwurf zusätzlich auf dem iPhone prüfen.

@@ -17,7 +17,7 @@ test('month fallback options use the complete central week selection source', ()
     'time-utils.js',
     'shift-rules.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], {
     document: buildSimpleDocumentStub()
   });
@@ -38,7 +38,7 @@ test('month fallback options use the complete central week selection source', ()
 });
 
 test('month planning menu groups early and late shifts around one Flex editor', () => {
-  const source = fs.readFileSync('month-view.js', 'utf8');
+  const source = fs.readFileSync('month-editor.js', 'utf8');
   const main = source.match(/function renderMonthFallbackMainLevel[\s\S]*?\n\}/)?.[0] || '';
   const early = source.match(/function renderMonthFallbackEarlyLevel[\s\S]*?\n\}/)?.[0] || '';
   const late = source.match(/function renderMonthFallbackLateLevel[\s\S]*?\n\}/)?.[0] || '';
@@ -67,7 +67,7 @@ test('month selections pass normalized dialog codes and apply F3-F6 directly', (
     'time-utils.js',
     'shift-rules.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     openShiftDialogForSelectValue(code, context) {
@@ -104,7 +104,7 @@ test('last month shift accepts only work and keeps a deep independent template',
     'time-utils.js',
     'shift-rules.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], { document: buildSimpleDocumentStub() });
   const fixed = {
     type: 'shift', status: 'work', code: 'F3', mode: 'early', start: '09:00', end: '15:00',
@@ -131,7 +131,7 @@ test('last month shift accepts only work and keeps a deep independent template',
 
 test('FLEX template retains manual pause and net minutes when cloned', () => {
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], { document: buildSimpleDocumentStub() });
   const flex = {
     type: 'shift', status: 'work', code: 'FLEX', shiftKey: 'FLEX', mode: 'flex',
@@ -161,7 +161,7 @@ test('FLEX template retains manual pause and net minutes when cloned', () => {
 test('last-shift quick action is rendered only after a valid work shift was remembered', () => {
   const env = buildInteractiveDocumentStub();
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], { document: env.doc });
   const emp = { id: 'emp-quick', name: 'Quick' };
 
@@ -178,7 +178,7 @@ test('month multi planning deeply clones one work template and applies it repeat
   const setShiftCalls = [];
   let renders = 0;
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     renderAllViews: () => { renders += 1; },
@@ -223,7 +223,7 @@ test('month multi planning skips every occupied resolved status and remains acti
   const resolvedByDate = new Map();
   const setShiftCalls = [];
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     renderAllViews: () => {},
@@ -261,7 +261,7 @@ test('month multi planning keeps its template after setShift failure', () => {
   const saved = [];
   let shouldSucceed = false;
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     renderAllViews: () => {},
@@ -294,7 +294,7 @@ test('stopping month multi planning restores the established normal cell click f
   const table = { querySelectorAll: () => [cell] };
   const scope = { querySelectorAll: (selector) => selector === 'table' ? [table] : [] };
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     state: { employees: [emp] },
@@ -321,7 +321,7 @@ test('successful month multi planning restores horizontal and vertical month scr
   const originalGetElementById = env.doc.getElementById.bind(env.doc);
   env.doc.getElementById = (id) => id === 'monthViewContent' ? content : originalGetElementById(id);
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     requestAnimationFrame: (callback) => callback(),
@@ -360,7 +360,7 @@ test('month multi planning restores scroll on a replacement container after rend
   env.doc.getElementById = (id) => id === 'monthViewContent' ? currentContent : originalGetElementById(id);
   const firstScrollEl = currentScrollEl;
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], {
     document: env.doc,
     requestAnimationFrame: (callback) => callback(),
@@ -397,7 +397,7 @@ test('month multi planning restores scroll on a replacement container after rend
 test('month multi planning cannot activate absences, external help, or an invalid template', () => {
   const env = buildInteractiveDocumentStub();
   const ctx = loadScripts([
-    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-view.js'
+    'status-utils.js', 'time-utils.js', 'shift-rules.js', 'month-engine.js', 'month-editor.js', 'month-view.js'
   ], { document: env.doc, renderAllViews: () => {} });
   const emp = { id: 'emp-invalid', name: 'Invalid' };
 
@@ -533,7 +533,7 @@ test('Escape closes month fallback dialog and restores previous focus', () => {
     'time-utils.js',
     'shift-rules.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], {
     document: env.doc
   });
@@ -566,7 +566,7 @@ test('month fallback dialog ignores non-focusable previous activeElement safely'
     'time-utils.js',
     'shift-rules.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], {
     document: env.doc
   });

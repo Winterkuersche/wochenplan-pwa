@@ -19,7 +19,7 @@ test('short week summaries expose compact visible text and complete accessible d
     'date-utils.js',
     'time-utils.js',
     'month-engine.js',
-    'month-view.js'
+    'month-editor.js', 'month-view.js'
   ], {
     document: {
       getElementById: () => null,

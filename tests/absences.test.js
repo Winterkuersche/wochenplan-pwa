@@ -542,7 +542,7 @@ test('setAbsence vacation/sick over holiday range succeeds, while direct holiday
   assert.equal(savedScheduleEntries.length, 0);
   assert.equal(removedShiftRanges.length, 0);
   assert.equal(clearedPlanDays.length, 6);
-  assert.equal(syncCalls.length, 0);
+  assert.deepEqual(syncCalls, [['emp_1'], ['emp_1']]);
   assert.equal(commits.length, 0);
 });
 

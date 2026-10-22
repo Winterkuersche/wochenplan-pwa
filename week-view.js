@@ -167,7 +167,7 @@ function getAbsenceTypeMeta(type) {
 }
 
 function getAbsenceTypeFromDialogContext(type) {
-  if (shiftDialogAbsenceType?.value === "sick") return "sick";
+  if (["vacation", "sick"].includes(shiftDialogAbsenceType?.value)) return shiftDialogAbsenceType.value;
   return type === "K" ? "sick" : "vacation";
 }
 
@@ -225,6 +225,7 @@ function updateAbsenceDialogTitle() {
 function openShiftDialog(type, context) {
   if (!shiftDialogOverlay) return;
   shiftDialogContext = context;
+  shiftDialogContext.previousAbsence = null;
   resetShiftDialogInputs(context.isoDate);
 
   shiftDialogLateFields.classList.add("hidden");
@@ -425,7 +426,16 @@ shiftDialogSave.addEventListener("click", () => {
       return;
     }
 
-    const savedAbsence = setAbsence(emp.id, fromIso, toIso, absenceType, "", { commit: true });
+    const previousAbsence = shiftDialogContext.previousAbsence;
+    let savedAbsence;
+    try {
+      savedAbsence = setAbsence(emp.id, fromIso, toIso, absenceType, previousAbsence?.note || "", {
+        commit: true, previousAbsence
+      });
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
     if (!savedAbsence) {
       alert("Feiertage können nicht überschrieben werden.");
       return;
@@ -754,6 +764,7 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "U") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "vacation");
     if (absence) {
+      context.previousAbsence = { ...absence };
       shiftDialogAbsenceType.value = "vacation";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;
@@ -763,6 +774,7 @@ function fillShiftDialogFromExisting(type, context) {
   if (type === "K") {
     const absence = getAbsenceEntryForEmployeeOnIso(emp.id, isoDate, "sick");
     if (absence) {
+      context.previousAbsence = { ...absence };
       shiftDialogAbsenceType.value = "sick";
       shiftDialogAbsenceFrom.value = absence.from;
       shiftDialogAbsenceTo.value = absence.to;
