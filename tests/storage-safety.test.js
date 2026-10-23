@@ -71,6 +71,12 @@ test('another tab changing a plan prevents a stale save', () => {
   assert.equal(second.problemKind, 'stale');
   assert.equal(JSON.parse(f.map.get('plan')).schedule['2026-10-20'].one.code, 'F6');
 });
+test('automatic adoption can detect a changed tab without writing or clearing its plan', () => {
+  const f = fixture(), first = f.create(), second = f.create();
+  assert.equal(second.isCurrent(), true); first.writeBatch(state('F6'));
+  const before = [...f.map]; assert.equal(second.isCurrent(), false);
+  assert.deepEqual([...f.map], before); assert.equal(second.blocked, false);
+});
 
 test('failure in a navigation-only save also restores its earlier raw plan', () => {
   const f = fixture(); const store = f.create(); const before = f.storage.getItem('plan');

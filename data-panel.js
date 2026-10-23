@@ -6,6 +6,23 @@
   let shared = null;
   let uiBusy = false;
 
+  function canApplySharedPlan() {
+    const focused = document.activeElement;
+    return !localDataStore.blocked && localDataStore.isCurrent() && !autoSaveTimerId && !overviewRevenueDebounceTimerId &&
+      !focused?.matches("input, select, textarea, [contenteditable=true]") &&
+      !document.querySelector(".dialogOverlay:not(.hidden), .overlay:not(.hidden), dialog[open]:not(#dataDialog)");
+  }
+
+  function applySharedPlan(payload) {
+    if (!canApplySharedPlan()) throw new Error("Offene Eingaben bleiben erhalten. Der neue Filialstand wartet auf den Abgleich.");
+    const view = { weekFrom: state.weekFrom, weekTo: state.weekTo, activeMonth: state.activeMonth };
+    importBackupFromObject(payload, { source: "shared-auto", preserveUi: true, preserveDeviceSettings: true, allowRecovery: false, reload: false });
+    state = { ...loadAppState().state, ...view };
+    renderAll();
+    window.Planning2Live?.render();
+    renderLocal();
+  }
+
   function showError(error) {
     element("dataActionMessage").textContent = error?.message || "Die Aktion konnte nicht abgeschlossen werden. Bitte erneut versuchen.";
   }
@@ -227,6 +244,8 @@
         client, cloud, config,
         getSnapshot: () => { if (localDataStore.blocked) throw new Error(localDataStore.error); return collectFullBackupSnapshot(); },
         applySnapshot: (payload) => importBackupFromObject(payload, { source: "shared", preserveUi: true, reload: false }),
+        applyRemoteSnapshot: applySharedPlan,
+        canAutoApply: canApplySharedPlan,
         reload: () => window.location.reload()
       });
       await cloud.start();

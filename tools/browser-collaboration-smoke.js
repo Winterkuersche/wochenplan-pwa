@@ -71,10 +71,38 @@ async function main(){
   await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F5');
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4');
+  assert.equal(await b.page.locator('#btnSharedProposalOverview').textContent(),'Offene Vorschläge (1)');
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await b.page.locator('#btnSharedProposalOverview').filter({hasText:'(1)'}).waitFor();
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
+  await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"] .sharedProposalMark').waitFor();
   console.log('Shared proposal submitted');
-  await a.page.locator('#btnSharedRefresh').click();await a.page.locator('#sharedActivity>summary').click();await a.page.locator('#sharedProposals').getByText('SV Test: Vertretungsvorschlag',{exact:false}).waitFor();
+  await a.page.locator('#btnSharedRefresh').click();await a.page.locator('#sharedProposalSection>summary').click();await a.page.locator('#sharedProposals').getByText('SV Test: Vertretungsvorschlag',{exact:false}).waitFor();
   await a.page.locator('#sharedProposals').getByRole('button',{name:'Vorschlag annehmen'}).click();
   await a.page.locator('#sharedSummary').filter({hasText:'Stand 2'}).waitFor();
+  assert.equal(await a.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F5');
+  await b.page.locator('#btnSharedProposalOverview').click();
+  await b.page.locator('#btnSharedRefresh').click();await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5');
+  assert.equal(await b.page.locator('#btnSharedProposalOverview').textContent(),'Offene Vorschläge (0)');
+  assert.equal(await b.page.locator('#sharedResolvedProposals').getByText('angenommen',{exact:false}).count(),1);
+  // Another proposal remains separate even while the owner changes the same cell.
+  await b.page.locator('#btnCloseData').click();
+  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F6');
+  await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Konflikttest');await b.page.locator('#btnSharedPropose').click();
+  await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
+  await a.page.locator('#btnCloseData').click();await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(a.page,'F4');
+  await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedMessage').filter({hasText:'aktuell'}).waitFor();
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals .sharedProposalConflict').waitFor();
+  assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:'Vorschlag annehmen'}).isDisabled(),true);
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Vorschlag ablehnen'}).click();
+  await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
+  assert.equal(await a.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
+  await b.page.locator('#btnSharedRefresh').click();await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4');
+  assert.equal(await b.page.locator('#sharedResolvedProposals').getByText('abgelehnt',{exact:false}).count(),1);
   await a.page.locator('#btnSharedRefresh').click();
   const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin'}).format(new Date());
   await a.page.locator('#sharedMember').selectOption(ids[1]);await a.page.locator('#sharedGrantFrom').fill(today);await a.page.locator('#sharedGrantTo').fill(today);await a.page.locator('#btnSharedGrant').click();
@@ -95,8 +123,10 @@ async function main(){
   await Promise.all([a.page.waitForEvent('load'),a.page.locator('#btnSharedAdopt').click()]);await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
   await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(a.page,'F6');
-  await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedSummary').filter({hasText:'Stand 3'}).waitFor();
-  await b.page.locator('#btnSharedRefresh').click();await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedMessage').filter({hasText:'aktuell'}).waitFor();
+  // No refresh/adopt click and no reload on the receiving device: the foreground
+  // interval must update both visible and stored plans on its own.
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F6',null,{timeout:25000});
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');
   // The independent archive is a valid standard backup, including attributed history.
   await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
@@ -112,7 +142,7 @@ async function main(){
   await b.page.locator('#btnCloseData').click();assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
   assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);
-  console.log('Shared browser/database flow passed: create → invite → join → adopt → propose → accept → delegate → revoke, mobile layout.');
+  console.log('Shared browser/database flow passed: durable separate proposals, reload, cell markers, accept, reject, conflict protection, automatic foreground updates, delegate/revoke and mobile layout.');
  }catch(error){for(const page of pages) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})));throw error;
  }finally{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));await db.close();}
 }

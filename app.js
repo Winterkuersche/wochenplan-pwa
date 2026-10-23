@@ -2442,9 +2442,9 @@ function importBackupFromObject(backupData, options) {
     [PLAN_KEY]: normalizedPlan,
     [UI_KEY]: normalizedUi,
     [LAST_SAVED_AT_KEY]: new Date().toISOString(),
-    ["wochenplan_dark"]: storage["wochenplan_dark"] ?? undefined,
-    [BACKUP_MEP_CALIBRATION_KEY]: storage[BACKUP_MEP_CALIBRATION_KEY] ?? undefined
-  }, { allowRecovery: true, source: options.source || "import" });
+    ["wochenplan_dark"]: options.preserveDeviceSettings ? loadJson("wochenplan_dark", null) ?? undefined : storage["wochenplan_dark"] ?? undefined,
+    [BACKUP_MEP_CALIBRATION_KEY]: options.preserveDeviceSettings ? loadJson(BACKUP_MEP_CALIBRATION_KEY, null) ?? undefined : storage[BACKUP_MEP_CALIBRATION_KEY] ?? undefined
+  }, { allowRecovery: options.allowRecovery !== false, source: options.source || "import" });
   if (!result.ok) throw new Error(result.error);
   if (autoSaveTimerId) clearTimeout(autoSaveTimerId);
   autoSaveTimerId = null;

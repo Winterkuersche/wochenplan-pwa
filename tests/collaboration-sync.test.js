@@ -2,29 +2,30 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {webcrypto}=require('node:crypto');
 const {loadScripts}=require('./test-helpers');
 const payload=code=>({backupVersion:2,storage:{wochenplan_master_v10:{employees:[{id:'one'}]},wochenplan_plan_v10:{schedule:{'2026-10-19':{one:{code}}},absences:[]},wochenplan_ui_v10:{}}});
-function setup(t,{editable=true,crypto=webcrypto,branches=[{id:'b',name:'Test'}],beforeList=null}={}) {
- const ctx=loadScripts(['cloud-sync.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
- let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false;
+function setup(t,{editable=true,crypto=webcrypto,branches=[{id:'b',name:'Test'}],beforeList=null,auto=false}={}) {
+ const ctx=loadScripts(['cloud-sync.js','collaboration-proposals.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
+ let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false,canApply=true,beforeRead=null,proposed=null;
  const record={id:'b',name:'Test',revision:1,payload:payload('F4'),can_edit:editable,can_publish:editable,owner:editable};
  const map=new Map();
  const c=ctx.WochenplanCollaboration.create({projectRef:'test',storage:{getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)},
  getSnapshot:()=>local,applySnapshot:v=>adopted=v,delayMs:100000,
+ ...(auto?{applyRemoteSnapshot:v=>{adopted=v;local=v;},canAutoApply:()=>canApply}:{}),
  client:{rpc:async(_,args)=>{
   if(offline)throw Error('offline');
   const {p_action:a,p_args:p}=args;
   if(a==='list'){if(beforeList)await beforeList();return{data:structuredClone(branches)};}
-  if(a==='read')return{data:structuredClone(record)};
+  if(a==='read'){if(beforeRead)await beforeRead();return{data:structuredClone(record)};}
   if(a==='save'){
    if(!record.can_edit)return{error:{code:'42501',message:'READ_ONLY'}};
    if(record.revision!==p.expected_revision)return{error:{code:'40001',message:'REVISION_CONFLICT'}};
    writes++;record.revision++;record.payload=p.payload;if(beforeSave)await beforeSave();return{data:{revision:record.revision}};
   }
-  if(a==='propose')return{data:{revision:record.revision}};
+  if(a==='propose'){proposed=p;return{data:{revision:record.revision}};}
   if(a==='compare')return{data:{revision:record.revision,changes:[]}};
   throw Error(a);
  }}});
  t.after(()=>c.dispose());
- return{c,record,map,ctx,set:code=>{local=payload(code);},setBranches:value=>branches=value,offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,get writes(){return writes;},get adopted(){return adopted;}};
+ return{c,record,map,ctx,set:code=>{local=payload(code);},setBranches:value=>branches=value,offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,beforeRead:fn=>beforeRead=fn,canApply:value=>canApply=value,get writes(){return writes;},get adopted(){return adopted;},get proposed(){return proposed;},get local(){return local;}};
 }
 test('a fresh device selects its sole workplace without replacing its local draft',async t=>{
  const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});
@@ -129,4 +130,52 @@ test('reconnect keeps a failed shared save as a draft after editing rights expir
  await f.c.setUser({id:'u'});await f.c.select('b');f.set('F5');f.offline(true);
  await assert.rejects(f.c.save(),/offline/);f.offline(false);f.record.can_edit=false;
  await f.c.refresh();assert.equal(f.c.status.mode,'draft');assert.equal(timers.size,0);assert.equal(f.writes,0);assert.equal(f.adopted,null);
+});
+
+test('clean linked devices follow newer shared plans without a reload or a write',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});
+ f.record.revision=2;f.record.payload=payload('F6');await f.c.refresh();
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F6');
+ assert.equal(f.c.status.mode,'synced');assert.equal(f.writes,0);
+});
+test('an open editor defers auto adoption until it is safe',async t=>{
+ const f=setup(t,{auto:true});await f.c.setUser({id:'u'});f.canApply(false);
+ f.record.revision=2;f.record.payload=payload('F6');await f.c.refresh();assert.equal(f.adopted,null);
+ f.canApply(true);await f.c.refresh();assert.equal(f.c.status.mode,'synced');assert.ok(f.adopted);
+});
+test('unsent local proposals survive newer remote changes and are never uploaded automatically',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});f.set('F5');
+ f.record.revision=2;f.record.payload=payload('F6');await f.c.refresh();
+ assert.equal(f.adopted,null);assert.equal(f.writes,0);
+ await assert.rejects(f.c.propose('Tausch'),/geändert/);assert.equal(f.proposed,null);
+});
+test('submission separates the proposal and restores the canonical shared plan',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});f.set('F5');
+ await f.c.propose('Tausch');
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F4');
+ assert.equal(f.c.status.mode,'synced');assert.equal(f.writes,0);
+ f.record.revision++;f.record.payload=payload('F6');await f.c.refresh();
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F6');
+});
+test('a stale proposal rebases only its own changes over unrelated newer work',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});f.set('F5');
+ f.record.revision=2;f.record.payload.storage.wochenplan_plan_v10.salesByDate={'2026-10-20':123};await f.c.refresh();
+ await f.c.propose('Tausch');assert.equal(f.proposed.expected_revision,2);
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.salesByDate['2026-10-20'],123);
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+});
+test('failed submission retains the full unsent draft',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});f.set('F5');f.offline(true);
+ await assert.rejects(f.c.propose('Tausch'),/offline/);assert.equal(f.adopted,null);assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+});
+test('local edits during a remote read prevent auto adoption',async t=>{
+ const f=setup(t,{auto:true});await f.c.setUser({id:'u'});f.record.revision=2;f.record.payload=payload('F6');
+ f.beforeRead(()=>f.set('F5'));await f.c.refresh();assert.equal(f.adopted,null);
+});
+test('typing another change during submission never discards the newer local draft',async t=>{
+ const f=setup(t,{auto:true,editable:false});await f.c.setUser({id:'u'});f.set('F5');
+ f.beforeRead(()=>{f.beforeRead(null);f.set('F6');});await f.c.propose('Tausch');
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F6');assert.equal(f.adopted,null);
 });

@@ -167,6 +167,7 @@
     }
 
     return { readJson, writeJson, writeBatch, getPrevious, exportRaw,
+      isCurrent() { try { return coreKeys.every(key => storage().getItem(key) === expected.get(key)); } catch (_) { return false; } },
       protect(reason) { problem = reason; problemKind = "migration"; },
       get problemKind() { return problemKind; },
       get blocked() { return Boolean(problem); }, get error() { return problem; } };

@@ -121,3 +121,42 @@ test('shared planning: actual Postgres authorization, atomic history, delegation
     t.diagnostic('Server enforced membership, expiring/revoked rights, CAS, immutable attributed events, publication and recovery.');
   } finally { await db.close(); }
 });
+
+test('proposals remain separately visible to owner/author across plan changes, rejection and acceptance', async () => {
+ const db=new PGlite();
+ try {
+  await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);
+   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+   grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;
+   insert into auth.users values('${owner}'),('${deputy}'),('${outsider}');`);
+  await db.exec(fs.readFileSync('supabase/collaboration-schema.sql','utf8'));
+  async function rpc(user,action,args={}) {
+   await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[user]);await db.exec('set role authenticated');
+   return (await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[action,JSON.stringify(args)])).rows[0].data;
+  }
+  const {id:branch_id}=await rpc(owner,'create',{name:'Test',display_name:'TL',payload:fixture()});
+  const args=extra=>({branch_id,...extra});
+  for (const user of [deputy,outsider]) {
+   const invite=await rpc(owner,'invite',args());await rpc(user,'accept_invite',{token:invite.token,display_name:'Testmitglied'});
+  }
+  const proposed=fixture();proposed.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.end='14:00';
+  await rpc(deputy,'propose',args({expected_revision:1,payload:proposed,reason:'Einzelvorschlag'}));
+  let plan=await rpc(owner,'read',args());const id=plan.proposals[0].id;
+  assert.deepEqual(plan.payload,fixture());assert.equal((await rpc(deputy,'read',args())).proposals[0].id,id);
+  assert.equal((await rpc(outsider,'read',args())).proposals.length,0);
+  await assert.rejects(rpc(deputy,'decide_proposal',args({id,decision:'accepted',expected_revision:1})),/OWNER_REQUIRED/);
+  const latest=fixture();latest.storage.wochenplan_plan_v10.salesByDate={'2026-10-20':400};
+  await rpc(owner,'save',args({payload:latest,expected_revision:1}));
+  plan=await rpc(deputy,'read',args());assert.equal(plan.proposals[0].status,'pending');assert.deepEqual(plan.payload,latest);
+  await rpc(owner,'decide_proposal',args({id,decision:'accepted',expected_revision:2}));
+  plan=await rpc(deputy,'read',args());assert.equal(plan.proposals[0].status,'accepted');assert.ok(plan.proposals[0].decided_at);
+  assert.equal(plan.payload.storage.wochenplan_plan_v10.salesByDate['2026-10-20'],400);
+  assert.equal(plan.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.end,'14:00');
+  const rejected=structuredClone(plan.payload);rejected.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.end='15:00';
+  await rpc(deputy,'propose',args({payload:rejected,reason:'Ablehnen',expected_revision:3}));
+  const pending=(await rpc(owner,'read',args())).proposals.find(p=>p.status==='pending');
+  await rpc(owner,'decide_proposal',args({id:pending.id,decision:'rejected'}));
+  const after=await rpc(deputy,'read',args());assert.deepEqual(after.payload,plan.payload);assert.equal(after.revision,3);
+  assert.equal(after.proposals.find(p=>p.id===pending.id).status,'rejected');
+ } finally {await db.close();}
+});
