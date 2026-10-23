@@ -9,6 +9,7 @@
     ITEM_ALREADY_DECIDED: "Diese Änderung wurde inzwischen entschieden. Bitte den Vorschlag aktualisieren.",
     PROPOSAL_MISSING: "Dieser Vorschlag wurde inzwischen vollständig entschieden. Bitte aktualisieren.",
     INVALID_SELECTION: "Bitte eine noch offene Änderung auswählen.",
+    DEPENDENT_CHANGE: "Diese Änderungen gehören zusammen: Für Schichten und Abwesenheiten muss die Person im Team stehen. Übernimm zuerst die zugehörigen Teamdaten oder alle zusammengehörigen Änderungen gemeinsam. Beim Entfernen zuerst ihre Einträge auflösen.",
     INVITE_INVALID: "Die Einladung ist abgelaufen, widerrufen oder bereits verwendet.",
     EMPTY_CHANGE: "Es gibt keine Änderungen zum Übernehmen.",
     PUBLISH_DENIED: "Du darfst diesen Wochenstand nicht freigeben.",

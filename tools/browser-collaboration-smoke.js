@@ -112,6 +112,7 @@ async function main(){
   assert.notEqual(await b.page.evaluate(()=>state.schedule['2026-10-21']?.['test-one']?.code),'F6');
   // Another proposal remains separate even while the owner changes the same cell.
   await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
   await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F6');
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Konflikttest');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();

@@ -16,6 +16,13 @@ derselben Stelle nicht übergehen. Ein Konflikt blockiert nur den betroffenen
 Eintrag und die vollständige Restübernahme. Andere konfliktfreie Punkte und
 die Ablehnung bleiben möglich. Zellmarkierungen zählen nur noch offene Punkte.
 
+Teilannahmen prüfen zusätzlich die Teamabhängigkeiten des gesamten Ergebnisses:
+Eine Schicht oder Abwesenheit kann nicht ohne zugehörigen Teameintrag angenommen
+werden. Auch das Entfernen einer Person bei verbleibenden Einträgen wird
+abgewiesen. Teamdaten lassen sich zuerst annehmen oder mit ihren zugehörigen
+Einträgen gemeinsam entscheiden. Ein abgewiesener Versuch verändert weder
+Planrevision, Vorschlagsentscheidungen, Sicherungen noch Verlauf.
+
 ## Server-Aktualisierung vor Aktivierung
 
 Der Code allein aktiviert die Einzelentscheidungen auf bestehenden Servern
@@ -64,7 +71,7 @@ gemischten Verlauf, Konfliktschutz und den weiterhin automatischen Abgleich.
 App-, Asset- und Cache-Version wurden zusammen erhöht. Druck/MEP und
 PDF-Berechnung sind unverändert.
 
-Lokal bestanden: 586 Tests unter `TZ=UTC` (wie in GitHub Actions), globale
+Lokal bestanden: 588 Tests unter `TZ=UTC` (wie in GitHub Actions), globale
 Helper-Prüfung, vollständiger SW-Precache und Wartungsprüfung. Der lokale
 Browserstart ist durch fehlende Playwright-Browserdateien blockiert; die
 Browsermatrix in GitHub Actions muss vor Veröffentlichung erfolgreich sein.

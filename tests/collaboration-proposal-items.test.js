@@ -90,6 +90,51 @@ test('item decisions enforce ownership, valid selections, stale/repeated decisio
   after = await rpc(owner, 'read', args());assert.equal(after.proposals[0].status, 'mixed');
  } finally { await db.close(); }
 });
+test('partial acceptance requires team dependencies and permits complete removal bundles', async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const proposed = fixture();
+  proposed.storage.wochenplan_master_v10.employees.push({ id: 'new-person', name: 'New synthetic colleague' });
+  proposed.storage.wochenplan_plan_v10.schedule['2026-10-19']['new-person'] = { code: 'F5' };
+  await rpc(deputy, 'propose', args({ expected_revision: 1, payload: proposed, reason: 'Neue Person und Schicht' }));
+  let before = await rpc(owner, 'read', args());const id = before.proposals[0].id;
+  const shift = before.proposals[0].changes.findIndex(c => c.path.at(-1) === 'new-person');
+  const team = before.proposals[0].changes.findIndex(c => c.path.at(-1) === 'employees');
+  const history = await rpc(owner, 'history', args());
+  await assert.rejects(rpc(owner, 'decide_proposal_items', args({ id, indices: [shift], decision: 'accepted', expected_revision: 1 })), /DEPENDENT_CHANGE/);
+  let plan = await rpc(deputy, 'read', args());
+  assert.deepEqual(plan.payload, before.payload);assert.equal(plan.revision, 1);
+  assert.deepEqual(plan.proposals, before.proposals);assert.deepEqual(plan.snapshots, before.snapshots);
+  assert.deepEqual(await rpc(owner, 'history', args()), history, 'dependency failure must be fully atomic');
+  await rpc(owner, 'decide_proposal_items', args({ id, indices: [team], decision: 'accepted', expected_revision: 1 }));
+  await rpc(owner, 'decide_proposal_items', args({ id, indices: [shift], decision: 'accepted', expected_revision: 2 }));
+  plan = await rpc(deputy, 'read', args());assert.equal(plan.proposals[0].status, 'accepted');
+  assert.equal(plan.payload.storage.wochenplan_plan_v10.schedule['2026-10-19']['new-person'].code, 'F5');
+  const removed = structuredClone(plan.payload);
+  removed.storage.wochenplan_master_v10.employees = removed.storage.wochenplan_master_v10.employees.filter(e => e.id !== 'new-person');
+  delete removed.storage.wochenplan_plan_v10.schedule['2026-10-19']['new-person'];
+  await rpc(deputy, 'propose', args({ expected_revision: 3, payload: removed, reason: 'Person samt Eintrag entfernen' }));
+  before = await rpc(owner, 'read', args());const removal = before.proposals.find(p => p.status === 'pending');
+  const removeTeam = removal.changes.findIndex(c => c.path.at(-1) === 'employees');
+  await assert.rejects(rpc(owner, 'decide_proposal_items', args({ id: removal.id, indices: [removeTeam], decision: 'accepted', expected_revision: 3 })), /DEPENDENT_CHANGE/);
+  await rpc(owner, 'decide_proposal', args({ id: removal.id, decision: 'accepted', expected_revision: 3 }));
+  plan = await rpc(deputy, 'read', args());assert.deepEqual(plan.payload, removed);assert.equal(plan.revision, 4);
+ } finally { await db.close(); }
+});
+test('absence dependencies are protected and a new person plus absence can be accepted together', async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const proposed = fixture();proposed.storage.wochenplan_master_v10.employees.push({ id: 'new-person', name: 'New synthetic colleague' });
+  proposed.storage.wochenplan_plan_v10.absences.push({ employeeId: 'new-person', from: '2026-10-19', to: '2026-10-20', type: 'vacation' });
+  await rpc(deputy, 'propose', args({ expected_revision: 1, payload: proposed, reason: 'Neue Person mit Urlaub' }));
+  let plan = await rpc(owner, 'read', args());const proposal = plan.proposals[0];
+  const absence = proposal.changes.findIndex(c => c.path.at(-1) === 'absences');
+  await assert.rejects(rpc(owner, 'decide_proposal_items', args({ id: proposal.id, indices: [absence], decision: 'accepted', expected_revision: 1 })), /DEPENDENT_CHANGE/);
+  await rpc(owner, 'decide_proposal_items', args({ id: proposal.id, indices: [0, 1], decision: 'accepted', expected_revision: 1 }));
+  plan = await rpc(deputy, 'read', args());assert.equal(plan.revision, 2);assert.equal(plan.proposals[0].status, 'accepted');
+  assert.equal(plan.payload.storage.wochenplan_plan_v10.absences[0].employeeId, 'new-person');
+ } finally { await db.close(); }
+});
 test('new-day proposals split into shifts and the non-destructive upgrade preserves legacy pending proposals', async () => {
  assert.equal(fs.readFileSync('supabase/proposal-items-upgrade.sql', 'utf8'), buildUpgrade());
  const { db, rpc, args } = await setup();
