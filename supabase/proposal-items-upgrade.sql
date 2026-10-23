@@ -191,16 +191,6 @@ begin
   if decision='accepted' then
    if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
    payload:=wochenplan_private.apply_changes(pl.payload,selected_changes);
-   -- Validate the complete resulting selection, not just its individual paths.
-   -- A shift/absence must not outlive the team record it depends on. Applying
-   -- all related items together is allowed, regardless of their path order.
-   if exists(select 1 from jsonb_each(payload->'storage'->'wochenplan_plan_v10'->'schedule') d,
-      lateral jsonb_object_keys(d.value) person(id)
-      where not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=person.id))
-      or exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_plan_v10'->'absences') a
-       where a ? 'employeeId' and not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=a->>'employeeId')) then
-    raise exception 'DEPENDENT_CHANGE' using errcode='23503';
-   end if;
   end if;
   proposal_status:=case
    when exists(select 1 from jsonb_array_elements(updated_changes) c where not c ? 'decision') then 'pending'
@@ -239,6 +229,15 @@ begin
  end if;
 
  if payload is not null then
+  -- Every plan update shares this invariant, including save, restore and revert.
+  -- Checking the final payload permits related changes in either path order.
+  if exists(select 1 from jsonb_each(payload->'storage'->'wochenplan_plan_v10'->'schedule') d,
+     lateral jsonb_object_keys(d.value) person(id)
+     where not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=person.id))
+     or exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_plan_v10'->'absences') a
+      where a ? 'employeeId' and not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=a->>'employeeId')) then
+   raise exception 'DEPENDENT_CHANGE' using errcode='23503';
+  end if;
   changes:=wochenplan_private.diff(pl.payload,payload);
   if jsonb_array_length(changes)>0 then
    -- Preserve a full recovery point for every successful plan change.

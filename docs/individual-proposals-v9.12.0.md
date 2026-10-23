@@ -22,6 +22,12 @@ werden. Auch das Entfernen einer Person bei verbleibenden Einträgen wird
 abgewiesen. Teamdaten lassen sich zuerst annehmen oder mit ihren zugehörigen
 Einträgen gemeinsam entscheiden. Ein abgewiesener Versuch verändert weder
 Planrevision, Vorschlagsentscheidungen, Sicherungen noch Verlauf.
+Die Prüfung greift zentral vor jeder Planaktualisierung, einschließlich direktem
+Speichern, Rücknahmen und Wiederherstellungen. Eine angenommene neue Person
+kann über den Verlauf erst entfernt werden, nachdem ihre später angenommenen
+Schichten beziehungsweise Abwesenheiten zurückgenommen wurden. Gültige
+vollständige Wiederherstellungen bleiben möglich; ungültige alte Sicherungsstände
+werden mit einer verständlichen Meldung abgewiesen.
 
 ## Server-Aktualisierung vor Aktivierung
 
@@ -71,7 +77,7 @@ gemischten Verlauf, Konfliktschutz und den weiterhin automatischen Abgleich.
 App-, Asset- und Cache-Version wurden zusammen erhöht. Druck/MEP und
 PDF-Berechnung sind unverändert.
 
-Lokal bestanden: 588 Tests unter `TZ=UTC` (wie in GitHub Actions), globale
+Lokal bestanden: 591 Tests unter `TZ=UTC` (wie in GitHub Actions), globale
 Helper-Prüfung, vollständiger SW-Precache und Wartungsprüfung. Der lokale
 Browserstart ist durch fehlende Playwright-Browserdateien blockiert; die
 Browsermatrix in GitHub Actions muss vor Veröffentlichung erfolgreich sein.

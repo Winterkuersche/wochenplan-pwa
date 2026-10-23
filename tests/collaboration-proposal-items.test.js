@@ -135,6 +135,50 @@ test('absence dependencies are protected and a new person plus absence can be ac
   assert.equal(plan.payload.storage.wochenplan_plan_v10.absences[0].employeeId, 'new-person');
  } finally { await db.close(); }
 });
+for (const relation of ['shift', 'absence']) test(`reverting a team acceptance preserves later accepted ${relation} dependencies atomically`, async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const proposed = fixture();proposed.storage.wochenplan_master_v10.employees.push({ id: 'new-person', name: 'New synthetic colleague' });
+  if (relation === 'shift') proposed.storage.wochenplan_plan_v10.schedule['2026-10-19']['new-person'] = { code: 'F5' };
+  else proposed.storage.wochenplan_plan_v10.absences.push({ employeeId: 'new-person', from: '2026-10-19', to: '2026-10-20', type: 'vacation' });
+  await rpc(deputy, 'propose', args({ payload: proposed, expected_revision: 1, reason: 'Zugehörige Änderungen' }));
+  let plan = await rpc(owner, 'read', args());const proposal = plan.proposals[0];
+  const team = proposal.changes.findIndex(c => c.path.at(-1) === 'employees'), entry = team === 0 ? 1 : 0;
+  await rpc(owner, 'decide_proposal_items', args({ id: proposal.id, indices: [team], decision: 'accepted', expected_revision: 1 }));
+  await rpc(owner, 'decide_proposal_items', args({ id: proposal.id, indices: [entry], decision: 'accepted', expected_revision: 2 }));
+  const before = await rpc(deputy, 'read', args()), history = await rpc(owner, 'history', args());
+  const teamEvent = history.find(e => e.kind === 'decide_proposal_items' && e.changes.some(c => c.path.at(-1) === 'employees'));
+  const entryEvent = history.find(e => e.kind === 'decide_proposal_items' && e.changes.some(c => c.path.at(-1) !== 'employees'));
+  await assert.rejects(rpc(owner, 'revert', args({ id: teamEvent.id, expected_revision: 3 })), /DEPENDENT_CHANGE/);
+  plan = await rpc(deputy, 'read', args());
+  assert.equal(plan.revision, 3);assert.deepEqual(plan.payload, before.payload);assert.deepEqual(plan.proposals, before.proposals);
+  assert.deepEqual(plan.snapshots, before.snapshots);assert.deepEqual(await rpc(owner, 'history', args()), history);
+  // Undoing in the safe order must remain available, without losing other staff.
+  await rpc(owner, 'revert', args({ id: entryEvent.id, expected_revision: 3 }));
+  await rpc(owner, 'revert', args({ id: teamEvent.id, expected_revision: 4 }));
+  plan = await rpc(deputy, 'read', args());assert.equal(plan.revision, 5);assert.deepEqual(plan.payload, fixture());
+ } finally { await db.close(); }
+});
+test('direct save and historical restore cannot bypass team dependencies; consistent restores still work', async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const invalid = fixture();invalid.storage.wochenplan_master_v10.employees = invalid.storage.wochenplan_master_v10.employees.filter(e => e.id !== 'b');
+  await assert.rejects(rpc(owner, 'save', args({ payload: invalid, expected_revision: 1 })), /DEPENDENT_CHANGE/);
+  // A pre-upgrade snapshot can contain an invalid relationship: refuse to
+  // install it rather than silently hide its schedule entries.
+  await db.exec('reset role');
+  const snapshot = (await db.query(`insert into wochenplan_private.snapshots(branch_id,revision,label,payload,actor_id)
+   values($1,1,'Synthetic legacy snapshot',$2,$3) returning id`, [args().branch_id, JSON.stringify(invalid), owner])).rows[0].id;
+  const before = await rpc(owner, 'read', args()), history = await rpc(owner, 'history', args());
+  await assert.rejects(rpc(owner, 'restore', args({ id: snapshot, expected_revision: 1 })), /DEPENDENT_CHANGE/);
+  let plan = await rpc(owner, 'read', args());assert.equal(plan.revision, 1);assert.deepEqual(plan.payload, before.payload);
+  assert.deepEqual(plan.snapshots, before.snapshots);assert.deepEqual(await rpc(owner, 'history', args()), history);
+  const consistent = fixture();consistent.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code = 'F6';
+  await rpc(owner, 'save', args({ payload: consistent, expected_revision: 1 }));
+  await rpc(owner, 'restore', args({ id: before.snapshots.find(s => s.label === 'Ausgangsstand').id, expected_revision: 2 }));
+  plan = await rpc(owner, 'read', args());assert.equal(plan.revision, 3);assert.deepEqual(plan.payload, fixture());
+ } finally { await db.close(); }
+});
 test('new-day proposals split into shifts and the non-destructive upgrade preserves legacy pending proposals', async () => {
  assert.equal(fs.readFileSync('supabase/proposal-items-upgrade.sql', 'utf8'), buildUpgrade());
  const { db, rpc, args } = await setup();
