@@ -18,6 +18,7 @@
   function create(options) {
     const state = { user: null, branches: [], branch: null, selected: null, resolved: false, mode: "signed-out", message: "Bitte zuerst anmelden.", busy: false };
     let epoch = 0, timer = null, linked = false, disposed = false, dirtyDuringWork = false;
+    let submittedSignature = null;
     const fingerprint = root.WochenplanCloud.fingerprint;
     const snapshot = () => JSON.parse(JSON.stringify(options.getSnapshot()));
     const prefix = () => `wochenplan_shared_v1:${options.projectRef}:${state.user.id}`;
@@ -26,7 +27,9 @@
     function resumePending() { const pending=dirtyDuringWork;dirtyDuringWork=false;if(pending&&linked)scheduleSave(); }
     function setMode(mode, message) { state.mode = mode; state.message = message; notify(); }
     function metadata() { try { return JSON.parse(options.storage.getItem(prefix() + ":" + state.selected) || "null"); } catch (_) { return null; } }
-    function remember(revision, signature) { options.storage.setItem(prefix() + ":" + state.selected, JSON.stringify({ revision, signature })); linked = true; }
+    function remember(revision, signature, payload) {
+      options.storage.setItem(prefix() + ":" + state.selected, JSON.stringify({ revision, signature, payload })); linked = true;
+    }
     async function call(action, args = {}) {
       const { data, error } = await options.client.rpc("wochenplan_collaboration", { p_action: action, p_args: { branch_id: state.selected, ...args } });
       if (error) { const e = new Error(explain(error)); e.code = error.code; e.serverMessage = error.message; throw e; }
@@ -39,8 +42,23 @@
       if (epoch !== thisEpoch) return;
       state.branch = remote;
       const previous = metadata();
+      // A clean, previously linked device may follow the shared plan. An open
+      // editor, pending local change or unknown/new-device base must never be replaced.
+      if (signature && signature !== remoteSignature && options.applyRemoteSnapshot &&
+          (signature === previous?.signature || signature === submittedSignature) &&
+          options.canAutoApply?.() !== false) {
+        const before = snapshot();
+        if (signature === await fingerprint(before) && epoch === thisEpoch &&
+            root.WochenplanProposals.equal(root.WochenplanProposals.clean(before), root.WochenplanProposals.clean(snapshot())) &&
+            options.canAutoApply?.() !== false) {
+          options.applyRemoteSnapshot(remote.payload);
+          signature = await fingerprint(snapshot());
+          if (epoch !== thisEpoch) return;
+          submittedSignature = null;
+        }
+      }
       if (signature === remoteSignature) {
-        remember(remote.revision, signature);
+        remember(remote.revision, signature, remote.payload);
         setMode("synced", remote.can_edit ? "Gemeinsamer Plan ist aktuell. Änderungen werden online gesichert." : "Du darfst ansehen und Vorschläge vorbereiten.");
       } else if (signature && previous?.revision === remote.revision && previous.signature === remoteSignature) {
         linked = true;
@@ -79,7 +97,7 @@
     }
     async function setUser(user) {
       if (state.user?.id === user?.id || disposed) return;
-      epoch++; cancel(); linked = false; dirtyDuringWork = false;
+      epoch++; cancel(); linked = false; dirtyDuringWork = false; submittedSignature = null;
       state.user = user; state.branch = null; state.branches = []; state.busy = false; state.resolved = false;
       state.selected = user ? options.storage.getItem(prefix() + ":selected") : null;
       setMode(user ? "loading" : "signed-out", user ? "Deine Filialverbindung wird geprüft …" : "Bitte zuerst anmelden.");
@@ -87,7 +105,7 @@
     }
     async function select(id) {
       if (!id && (state.selected || state.branches.length)) throw new Error("Bitte deine Filiale auswählen.");
-      epoch++; cancel(); linked = false; dirtyDuringWork=false; state.busy = false; state.branch = null;
+      epoch++; cancel(); linked = false; dirtyDuringWork=false; submittedSignature=null; state.busy = false; state.branch = null;
       state.selected = id || null;
       options.onContextChange?.();
       if (id) options.storage.setItem(prefix() + ":selected", id); else options.storage.removeItem(prefix() + ":selected");
@@ -119,7 +137,7 @@
         if (preview && preview.signature !== signature) throw new Error("Dein Entwurf hat sich seit der Vorschau geändert. Bitte erneut vergleichen.");
         const result = await call("save", { payload, reason, expected_revision: preview?.revision ?? state.branch.revision });
         if (epoch !== thisEpoch) return;
-        remember(result.revision, signature);
+        remember(result.revision, signature, payload);
         await inspect(await call("read"), thisEpoch);
       });
     }
@@ -137,13 +155,31 @@
         const signature = await fingerprint(remote.payload);
         if (epoch !== thisEpoch) return;
         options.applySnapshot(remote.payload);
-        try { remember(remote.revision, signature); }
+        try { remember(remote.revision, signature, remote.payload); }
         finally { options.reload?.(); }
       });
     }
     async function perform(action, args = {}) {
       const result = await exclusive(() => call(action, { expected_revision: state.branch?.revision, ...args }));
       await refresh(); return result;
+    }
+    async function propose(reason) {
+      return exclusive(async thisEpoch => {
+        const payload = snapshot(), signature = await fingerprint(payload), previous = metadata();
+        if (epoch !== thisEpoch) return;
+        if (!previous?.payload) throw new Error("Bitte zuerst den aktuellen Filialplan übernehmen. Dein Geräte-Entwurf bleibt erhalten.");
+        const changes = root.WochenplanProposals.diff(previous.payload, payload);
+        if (!changes.length) throw new Error("Es gibt keine Änderungen zum Vorschlagen.");
+        // Compose only the author's changes on today's plan, never an old full
+        // snapshot that could accidentally propose undoing somebody else's work.
+        const remote = await call("read");
+        if (epoch !== thisEpoch) return;
+        const proposed = root.WochenplanProposals.apply(remote.payload, changes);
+        await call("propose", { payload: proposed, reason, expected_revision: remote.revision });
+        if (epoch !== thisEpoch) return;
+        submittedSignature = signature;
+        await inspect(await call("read"), thisEpoch);
+      });
     }
     async function history(args = {}) { return exclusive(() => call("history", args)); }
     async function compare() {
@@ -169,7 +205,7 @@
     return { setUser, select, refresh, save, scheduleSave, adopt, perform, history, compare, archive,
       create: (name, display_name) => establish("create", { name, display_name, payload: snapshot() }),
       join: (token, display_name) => establish("accept_invite", { token, display_name }),
-      propose: (reason) => perform("propose", { payload: snapshot(), reason }),
+      propose,
       dispose() { disposed = true; epoch++; cancel(); },
       get status() { return { ...state }; }, get active() { return Boolean(state.selected); },
       // Until membership lookup completes, no legacy single-account writes

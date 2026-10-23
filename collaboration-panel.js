@@ -18,9 +18,31 @@
     const el = id => document.getElementById(id);
     const panel = el("collaborationPanel");
     let controller, current, events = [], pageBefore = null, visitAfter = 0, preview = null;
+    let pollTimer = null, disposed = false, proposalKey = "";
     const fmt = value => value ? new Intl.DateTimeFormat("de-DE", { timeZone:"Europe/Berlin", dateStyle:"short", timeStyle:"short" }).format(new Date(value)) : "";
     const message = text => { el("dataActionMessage").textContent = text; };
     const clear = id => el(id).replaceChildren();
+    function markProposalCells() {
+      const proposals = current?.branch?.proposals?.filter(p => p.status === "pending") || [];
+      for (const cell of document.querySelectorAll("#grid .cell[data-eid][data-day], #monthView .monthCellClickable[data-emp-id][data-iso]")) {
+        const count = proposals.filter(p => p.changes.some(c => root.WochenplanProposals.affectsCell(c, cell.dataset.day || cell.dataset.iso, cell.dataset.eid || cell.dataset.empId))).length;
+        let mark = cell.querySelector(".sharedProposalMark");
+        if (!count) { mark?.remove(); continue; }
+        if (!mark) { mark = document.createElement("span"); mark.className = "sharedProposalMark"; cell.append(mark); }
+        const label = `${count} offene${count === 1 ? "r Vorschlag" : " Vorschläge"}`;
+        if (mark.textContent !== label) mark.textContent = label;
+      }
+    }
+    function queueRefresh() {
+      if (pollTimer || disposed || !current?.user || document.hidden || navigator.onLine === false) return;
+      pollTimer = setTimeout(async () => {
+        pollTimer = null;
+        if (!disposed && !document.hidden && navigator.onLine !== false) await controller.refresh();
+        queueRefresh();
+      }, options.pollMs ?? 15000);
+    }
+    function pauseRefresh() { if (pollTimer) clearTimeout(pollTimer); pollTimer = null; }
+    function visibility() { if (document.hidden) pauseRefresh(); else queueRefresh(); }
     function paragraph(parent, text) { const p=document.createElement("p"); p.textContent=text; parent.append(p); return p; }
     function button(parent, text, handler) {
       const b=document.createElement("button"); b.type="button"; b.textContent=text; b.disabled=Boolean(current?.busy);
@@ -82,6 +104,9 @@
     function render(status) {
       current=status;
       panel.classList.toggle("hidden",!status.user);
+      el("btnSharedProposalOverview").classList.toggle("hidden", !status.branch);
+      if (!status.user) pauseRefresh(); else queueRefresh();
+      if (!status.branch) { proposalKey = ""; markProposalCells(); }
       el("sharedMessage").textContent=status.message;
       const singleAccountPlan=status.resolved&&!status.busy&&!status.selected&&!status.branches.length;
       el("personalCloudActions").classList.toggle("hidden",!singleAccountPlan);
@@ -124,17 +149,40 @@
       }
       clear("sharedInvites");
       for(const invite of branch.invites) button(el("sharedInvites"),`Einladung bis ${fmt(invite.expires_at)} widerrufen`,()=>controller.perform("revoke_invite",{id:invite.id}));
-      clear("sharedProposals");
+      const pending = branch.proposals.filter(p => p.status === "pending");
+      el("sharedProposalTitle").textContent = el("btnSharedProposalOverview").textContent = `Offene Vorschläge (${pending.length})`;
+      el("sharedDraftHint").textContent = !branch.can_edit && ["draft", "compare"].includes(status.mode)
+        ? "Du siehst einen eigenen Geräte-Entwurf. Er ist noch nicht verbindlich. Reiche ihn als Vorschlag ein; bis dahin wird er nicht durch neue Online-Stände ersetzt."
+        : "Eingereichte Vorschläge bleiben getrennt vom verbindlichen Plan gespeichert – bis zur Entscheidung und danach unter Erledigte Vorschläge.";
+      const nextKey = JSON.stringify([branch.proposals, branch.payload, branch.owner]);
+      if (nextKey !== proposalKey) {
+      proposalKey = nextKey;
+      clear("sharedProposals"); clear("sharedResolvedProposals");
+      if (!pending.length) paragraph(el("sharedProposals"), "Keine offenen Vorschläge.");
       for(const proposal of branch.proposals) {
         const card=document.createElement("article");card.className="sharedEvent";
-        paragraph(card,`${proposal.author_name}: ${proposal.reason} · ${proposal.status==="pending"?"offen":proposal.status==="accepted"?"angenommen":"abgelehnt"}`);
+        paragraph(card,`${proposal.author_name}: ${proposal.reason} · ${proposal.status==="pending"?"offen":proposal.status==="accepted"?"angenommen":"abgelehnt"} · ${fmt(proposal.created_at)}`);
+        if (proposal.decided_at) paragraph(card, `Entschieden am ${fmt(proposal.decided_at)}`);
         changes(card,proposal.changes);
+        const conflicts = proposal.status === "pending" ? root.WochenplanProposals.conflicts(branch.payload, proposal.changes) : [];
+        if (conflicts.length) {
+          paragraph(card, "Plan inzwischen geändert – bitte vergleichen. Dieser Vorschlag kann nicht unverändert übernommen werden.").className = "sharedProposalConflict";
+          for (const c of conflicts) {
+            const value = c.path.reduce((v, k) => v?.[k], branch.payload);
+            paragraph(card, `Aktueller Plan: ${JSON.stringify(value ?? null)}`);
+          }
+        }
         if(branch.owner&&proposal.status==="pending") {
-          button(card,"Vorschlag annehmen",async()=>{if(confirm("Die angezeigten Änderungen in den Filialplan übernehmen?")) await controller.perform("decide_proposal",{id:proposal.id,decision:"accepted"});});
+          const accept = button(card,"Vorschlag annehmen",async()=>{if(confirm("Die angezeigten Änderungen in den Filialplan übernehmen?")) await controller.perform("decide_proposal",{id:proposal.id,decision:"accepted"});});
+          accept.disabled = Boolean(conflicts.length);
+          accept.dataset.conflict = String(Boolean(conflicts.length));
           button(card,"Vorschlag ablehnen",()=>controller.perform("decide_proposal",{id:proposal.id,decision:"rejected"}));
         }
-        el("sharedProposals").append(card);
+        el(proposal.status === "pending" ? "sharedProposals" : "sharedResolvedProposals").append(card);
       }
+      }
+      el("sharedProposalSection").querySelectorAll("button").forEach(b => { b.disabled = status.busy || b.dataset.conflict === "true"; });
+      markProposalCells();
       clear("sharedPublications");
       for(const pub of branch.publications) paragraph(el("sharedPublications"),`Woche ${pub.week_start} · ${pub.actor_name} · ${fmt(pub.published_at)} · ${pub.changed?"Seit Freigabe geändert":"Entspricht dem freigegebenen Stand"}`);
     }
@@ -161,6 +209,10 @@
       await controller.join(token,el("sharedDisplayName").value.trim());el("sharedInviteToken").value="";sessionStorage.removeItem("wochenplan_pending_invite");
     });
     on("btnSharedRefresh",()=>controller.refresh());
+    el("btnSharedProposalOverview").addEventListener("click", () => {
+      el("btnDataPanel").click(); el("sharedProposalSection").open = true;
+      el("sharedProposalSection").scrollIntoView({ block: "start" });
+    });
     on("btnSharedSave",async()=>{
       if(!saveAppState()) throw Error("Bitte zuerst die lokale Sicherung prüfen.");
       preview=await controller.compare();clear("sharedCompareChanges");changes(el("sharedCompareChanges"),preview.changes);
@@ -169,7 +221,7 @@
     });
     on("btnSharedConfirmSave",async()=>{if(preview&&confirm("Die angezeigten Änderungen übernehmen?")){await controller.save(el("sharedReason").value,true,preview);preview=null;el("sharedCompare").classList.add("hidden");}});
     on("btnSharedAdopt",async()=>{if(confirm("Aktuellen Filialplan übernehmen? Sichere deinen offenen Entwurf vorher als Datei. Der vorherige lokale Stand bleibt wiederherstellbar.")) await controller.adopt();});
-    on("btnSharedPropose",async()=>{if(!el("sharedReason").value.trim()) throw Error("Bitte einen Grund für deinen Vorschlag angeben.");await controller.propose(el("sharedReason").value.trim());message("Vorschlag eingereicht. Der gemeinsame Plan bleibt bis zur Annahme unverändert.");});
+    on("btnSharedPropose",async()=>{if(!el("sharedReason").value.trim()) throw Error("Bitte einen Grund für deinen Vorschlag angeben.");if(!saveAppState()) throw Error("Bitte zuerst die lokale Sicherung prüfen.");await controller.propose(el("sharedReason").value.trim());el("sharedReason").value="";message("Vorschlag eingereicht und separat gespeichert. Der gemeinsame Plan bleibt bis zur Annahme unverändert.");});
     on("btnSharedInvite",async()=>{const invite=await controller.perform("invite");const url=new URL(location.href);url.hash="wp-invite="+invite.token;el("sharedInviteLink").value=url.href;el("sharedInviteLink").select();message("Link erstellt. Kopiere ihn und gib ihn persönlich an deine Vertretung weiter.");});
     on("btnSharedGrant",()=>controller.perform("grant",{user_id:el("sharedMember").value,starts_at:berlinBoundary(el("sharedGrantFrom").value),ends_at:berlinBoundary(el("sharedGrantTo").value,true),can_publish:el("sharedCanPublish").checked}));
     on("btnSharedRemoveMember",async()=>{if(confirm("Zugang dieser Person und ihre aktiven Vertretungsrechte beenden?")) await controller.perform("remove_member",{user_id:el("sharedMember").value});});
@@ -195,6 +247,15 @@
     if(el("sharedInviteToken").value) {el("sharedSetup").open=true;message("Einladung erkannt. Bitte zuerst anmelden und danach deinen Anzeigenamen eingeben.");}
     el("sharedPublishWeek").value=state.weekFrom||"";
     render(controller.status);
+    const observer = new MutationObserver(markProposalCells);
+    if (el("grid")) observer.observe(el("grid"), { childList: true, subtree: true });
+    if (el("monthView")) observer.observe(el("monthView"), { childList: true, subtree: true });
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("online", queueRefresh);
+    window.addEventListener("offline", pauseRefresh);
+    window.addEventListener("pagehide", pauseRefresh);
+    const dispose = controller.dispose;
+    controller.dispose = () => { disposed = true; pauseRefresh(); observer.disconnect(); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("online", queueRefresh); window.removeEventListener("offline", pauseRefresh); window.removeEventListener("pagehide", pauseRefresh); dispose(); };
     controller.refreshView=()=>render(controller.status);
     return controller;
   }
