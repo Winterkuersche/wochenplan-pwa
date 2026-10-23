@@ -50,5 +50,10 @@
     }
     return false;
   }
-  root.WochenplanProposals = Object.freeze({ equal, clean, diff: (a, b) => diff(clean(a), clean(b)), conflicts, apply, affectsCell });
+  function items(proposal) {
+    return (proposal.changes || []).map((change, index) => ({ change, index,
+      status: change.decision || (proposal.status === "pending" ? "pending" : proposal.status) }));
+  }
+  const pending = proposal => items(proposal).filter(item => item.status === "pending").map(item => item.change);
+  root.WochenplanProposals = Object.freeze({ equal, clean, diff: (a, b) => diff(clean(a), clean(b)), conflicts, apply, affectsCell, items, pending });
 })(typeof window === "undefined" ? globalThis : window);

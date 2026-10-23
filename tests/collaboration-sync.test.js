@@ -4,7 +4,7 @@ const {loadScripts}=require('./test-helpers');
 const payload=code=>({backupVersion:2,storage:{wochenplan_master_v10:{employees:[{id:'one'}]},wochenplan_plan_v10:{schedule:{'2026-10-19':{one:{code}}},absences:[]},wochenplan_ui_v10:{}}});
 function setup(t,{editable=true,crypto=webcrypto,branches=[{id:'b',name:'Test'}],beforeList=null,auto=false}={}) {
  const ctx=loadScripts(['cloud-sync.js','collaboration-proposals.js','collaboration.js','collaboration-panel.js'],{crypto,TextEncoder,Uint8Array,Intl,Date});
- let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false,canApply=true,beforeRead=null,proposed=null;
+ let local=payload('F4'),writes=0,adopted=null,beforeSave=null,offline=false,canApply=true,beforeRead=null,proposed=null,decision=null;
  const record={id:'b',name:'Test',revision:1,payload:payload('F4'),can_edit:editable,can_publish:editable,owner:editable};
  const map=new Map();
  const c=ctx.WochenplanCollaboration.create({projectRef:'test',storage:{getItem:k=>map.get(k)||null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)},
@@ -21,12 +21,21 @@ function setup(t,{editable=true,crypto=webcrypto,branches=[{id:'b',name:'Test'}]
    writes++;record.revision++;record.payload=p.payload;if(beforeSave)await beforeSave();return{data:{revision:record.revision}};
   }
   if(a==='propose'){proposed=p;return{data:{revision:record.revision}};}
+  if(a==='decide_proposal_items'){decision=p;return{data:{revision:record.revision}};}
   if(a==='compare')return{data:{revision:record.revision,changes:[]}};
   throw Error(a);
  }}});
  t.after(()=>c.dispose());
- return{c,record,map,ctx,set:code=>{local=payload(code);},setBranches:value=>branches=value,offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,beforeRead:fn=>beforeRead=fn,canApply:value=>canApply=value,get writes(){return writes;},get adopted(){return adopted;},get proposed(){return proposed;},get local(){return local;}};
+ return{c,record,map,ctx,set:code=>{local=payload(code);},setBranches:value=>branches=value,offline:value=>offline=value,beforeSave:fn=>beforeSave=fn,beforeRead:fn=>beforeRead=fn,canApply:value=>canApply=value,get writes(){return writes;},get adopted(){return adopted;},get proposed(){return proposed;},get decision(){return decision;},get local(){return local;}};
 }
+test('individual decisions fail closed on an old server and send stable item indices on a capable server',async t=>{
+ const f=setup(t);await f.c.setUser({id:'u'});
+ await assert.rejects(f.c.decideProposalItems('p',[1],'accepted'),/Server-Aktualisierung/);assert.equal(f.decision,null);
+ f.record.capabilities={proposal_items:true};await f.c.refresh();
+ await f.c.decideProposalItems('p',[1],'accepted');
+ assert.equal(f.decision.id,'p');assert.deepEqual(Array.from(f.decision.indices),[1]);
+ assert.equal(f.decision.expected_revision,1);assert.equal(f.decision.decision,'accepted');
+});
 test('a fresh device selects its sole workplace without replacing its local draft',async t=>{
  const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});
  assert.equal(f.c.status.selected,'b');assert.equal(f.c.status.mode,'compare');assert.equal(f.c.personalActive,false);

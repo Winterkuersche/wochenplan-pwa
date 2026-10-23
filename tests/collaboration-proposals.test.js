@@ -2,6 +2,16 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {loadScripts}=require('./test-helpers');
 const model=loadScripts(['collaboration-proposals.js']).WochenplanProposals;
 const payload=()=>({storage:{wochenplan_master_v10:{employees:[]},wochenplan_plan_v10:{schedule:{'2026-10-19':{a:{code:'F4',start:'09:00'}}},absences:[]},wochenplan_ui_v10:{}}});
+test('partially decided proposals keep stable indices and mark only their open entries',()=>{
+ const a=payload(),b=payload();b.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code='F5';
+ b.storage.wochenplan_plan_v10.schedule['2026-10-20']={a:{code:'F6'}};
+ const changes=model.diff(a,b);changes[0].decision='accepted';
+ const proposal={status:'pending',changes};
+ assert.deepEqual(Array.from(model.items(proposal),i=>i.index),[0,1]);assert.equal(model.pending(proposal).length,1);
+ assert.equal(model.pending(proposal).some(c=>model.affectsCell(c,'2026-10-19','a')),false);
+ assert.equal(model.pending(proposal).some(c=>model.affectsCell(c,'2026-10-20','a')),true);
+ assert.equal(model.pending({status:'accepted',changes:[{path:['legacy']}]}).length,0);
+});
 test('proposal shifts are atomic and ignore device view/week settings',()=>{
  const a=payload(),b=payload();b.storage.wochenplan_plan_v10.weekFrom='2026-10-01';b.storage.wochenplan_ui_v10={currentView:'month'};
  assert.equal(model.diff(a,b).length,0);b.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code='F5';
