@@ -34,10 +34,10 @@
       }
     }
     function queueRefresh() {
-      if (pollTimer || disposed || !current?.user || document.hidden || navigator.onLine === false) return;
+      if (pollTimer || disposed || !current?.user || !current.selected || document.hidden || navigator.onLine === false) return;
       pollTimer = setTimeout(async () => {
         pollTimer = null;
-        if (!disposed && !document.hidden && navigator.onLine !== false) await controller.refresh();
+        if (!disposed && current?.selected && !document.hidden && navigator.onLine !== false) await controller.refresh();
         queueRefresh();
       }, options.pollMs ?? 15000);
     }
@@ -105,7 +105,7 @@
       current=status;
       panel.classList.toggle("hidden",!status.user);
       el("btnSharedProposalOverview").classList.toggle("hidden", !status.branch);
-      if (!status.user) pauseRefresh(); else queueRefresh();
+      if (!status.user || !status.selected) pauseRefresh(); else queueRefresh();
       if (!status.branch) { proposalKey = ""; markProposalCells(); }
       el("sharedMessage").textContent=status.message;
       const singleAccountPlan=status.resolved&&!status.busy&&!status.selected&&!status.branches.length;

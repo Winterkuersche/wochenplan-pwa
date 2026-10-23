@@ -21,6 +21,9 @@ getrennt vom Plan; es ist keine Datenbankmigration erforderlich.
 - Ein neuer Online-Stand wird alle 15 Sekunden bei sichtbarer, verbundener App
   geprüft sowie beim Öffnen/Rückkehren und Wiederverbinden. Keine Push-Nachricht
   bei geschlossener App und kein kontinuierlicher Hintergrundbetrieb.
+- Der Intervallabgleich läuft ausschließlich bei ausgewählter gemeinsamer
+  Filiale. Im persönlichen Kontokontext bleibt die automatische Online-Sicherung
+  unabhängig davon aktiv; ein Kontowechsel beendet den vorherigen Intervalltimer.
 - Automatische Übernahme nur bei nachweislich sauberem, bereits abgeglichenem
   Gerät. Unversendete Geräte-Entwürfe, offene Eingaben, ein anderer schreibender
   Tab, Speicherfehler und unbekannte Stände auf neuen Geräten blockieren sie.
@@ -50,6 +53,8 @@ nicht gedruckt. Asset-Version 2026-10-23-1, Cache v67.
 Regressionsfälle: sauberes Empfangsgerät, offener Editor, unversendeter Entwurf,
 Offline-Fehler, Änderungen während Lesen/Einreichen, unabhängige und kollidierende
 Serveränderungen, Kontowechsel und bestehende Rechte-/Revisionsprüfungen.
+Zusätzliche Regressionstests prüfen die persönliche Online-Sicherung ohne
+Filialtimer, Kontowechsel sowie Pausen bei unsichtbarer/offline App.
 Lokales PostgreSQL (PGlite) verwendet ausschließlich synthetische Identitäten.
 Der Zwei-Geräte-Browsertest prüft separate Vorschläge nach Reload, Zellmarker,
 Annahme/Ablehnung, Konfliktmarkierung und den Empfang ohne Aktualisieren-Knopf.
