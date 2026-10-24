@@ -50,3 +50,37 @@ test('legacy Planning 2 test keys are ignored and never automatically migrated',
   assert.deepEqual(adapter.readPlan().schedule, {});
   assert.equal(storage.valuesByKey.has(PLAN_KEY), false);
 });
+
+test('saved departures refresh the visible future team without erasing historical shifts', () => {
+  const person = { id: 'a', name: 'Synthetic', activeFromMonth: '2026-07', activeToMonth: '' };
+  const storage = storageFixture({ [MASTER_KEY]: JSON.stringify({ employees: [person] }), [PLAN_KEY]: JSON.stringify({ schedule: { '2026-09-01': { a: { code: 'F4' } } }, absences: [] }) });
+  const adapter = createPlanning2DataAdapter(storage), events = new EventTarget();
+  const planBefore = storage.getItem(PLAN_KEY);
+  let visible = ['a'], refreshes = 0;
+  const stop = adapter.watchMasterChanges(events, () => {
+    refreshes++;
+    visible = adapter.readMaster().employees.filter(p => !p.activeToMonth || p.activeToMonth >= '2026-11').map(p => p.id);
+  });
+  person.activeToMonth = '2026-10';
+  storage.setItem(MASTER_KEY, JSON.stringify({ employees: [person] }));
+  events.dispatchEvent(new Event('wochenplan:saved'));
+  assert.deepEqual(visible, []); assert.equal(refreshes, 1);
+  assert.equal(storage.getItem(PLAN_KEY), planBefore);
+  events.dispatchEvent(new Event('wochenplan:saved')); assert.equal(refreshes, 1);
+  assert.equal(adapter.readMaster().employees[0].activeToMonth, '2026-10');
+  person.activeToMonth = '';
+  storage.setItem(MASTER_KEY, JSON.stringify({ employees: [person] }));
+  events.dispatchEvent(new Event('wochenplan:saved'));
+  assert.deepEqual(visible, ['a']);
+  stop(); events.dispatchEvent(new Event('wochenplan:saved')); assert.equal(refreshes, 2);
+});
+
+test('master changes from another tab refresh without reacting to plan-only storage events', () => {
+  const storage = storageFixture(), adapter = createPlanning2DataAdapter(storage), events = new EventTarget();
+  let refreshes = 0; adapter.watchMasterChanges(events, () => refreshes++);
+  storage.setItem(MASTER_KEY, JSON.stringify({ employees: [{ id: 'a', activeToMonth: '2026-10' }] }));
+  const notify = key => { const event = new Event('storage'); Object.defineProperty(event, 'key', { value: key }); events.dispatchEvent(event); };
+  notify(PLAN_KEY); assert.equal(refreshes, 0);
+  notify(MASTER_KEY); assert.equal(refreshes, 1);
+  notify(MASTER_KEY); assert.equal(refreshes, 1);
+});

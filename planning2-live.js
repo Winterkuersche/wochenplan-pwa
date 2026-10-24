@@ -321,5 +321,6 @@ function mountPlanning2(){
   let p=getTestPlan();if(p.weekFrom){let x=new Date(p.weekFrom+'T00:00:00');if(!isNaN(x)){d=new Date(x.getFullYear(),x.getMonth(),1)}}
   render();document.getElementById('planung2RuntimeStatus').hidden=true;
 }
+planning2Data.watchMasterChanges(window,()=>{if(mounted)render()});
 window.Planning2Live={mount:mountPlanning2,render};
 })();
