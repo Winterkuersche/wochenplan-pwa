@@ -202,11 +202,17 @@
     svg += label(824, 576, `${page.people.length} Personen`, 7, 'text-anchor="end"');
     return svg + "</svg>";
   }
-  function printDocument(model, holidays) {
+  function printDocument(model, holidays, returnUrl = "./index.html") {
     const pages = model.pages.map((_, index) => `<section class="sheet">${renderSheet(model, index, holidays)}</section>`).join("");
-    return `<!doctype html><html lang="de"><meta charset="utf-8"><title>Urlaubsplanung ${model.year}</title><style>
-      @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#e8e8e8}.sheet{width:297mm;height:210mm;background:white;margin:12px auto;break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}.sheet svg{display:block;width:100%;height:100%}button{display:block;margin:12px auto;padding:12px 24px;font:16px Arial}@media print{body{background:white}button{display:none}.sheet{margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-      </style><button type="button" onclick="window.print()">Drucken / als PDF sichern</button>${pages}</html>`;
+    const safeReturn = JSON.stringify(String(returnUrl)).replace(/</g, "\\u003c");
+    return `<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Urlaubsplanung ${model.year}</title><style>
+      @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#e8e8e8}.sheet{width:297mm;height:210mm;background:white;margin:12px auto;break-after:page;page-break-after:always}.sheet:last-of-type{break-after:auto;page-break-after:auto}.sheet svg{display:block;width:100%;height:100%}button{display:block;margin:12px auto;padding:12px 24px;font:16px Arial}.printActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:8px}.printActions button{margin:0}@media screen{.sheet{width:min(297mm,100%);height:auto;aspect-ratio:297/210}.sheet svg{height:auto}}@media print{body{background:white}button,.printActions{display:none}.sheet{margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+      </style><nav class="printActions" aria-label="Druckansicht"><button type="button" onclick="window.print()">Drucken / als PDF sichern</button><button id="returnToPlanner" type="button">Zurück zum Wochenplan</button></nav>${pages}<script>
+      document.getElementById("returnToPlanner").addEventListener("click", function () {
+        try { window.close(); } catch (error) { /* Navigation below is the fallback. */ }
+        setTimeout(function () { if (!window.closed) window.location.replace(${safeReturn}); }, 100);
+      });
+      </script></html>`;
   }
   return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, renderSheet, printDocument, layout };
 });

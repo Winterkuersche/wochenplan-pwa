@@ -112,6 +112,12 @@ async function run(context, url, width, engine) {
     assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 7, 'Seven groups must print on exactly seven A4 pages');
     await page.locator('.vacationCalendarPanel').screenshot({ path: 'test-results/vacation-calendar/input-desktop.png' });
   }
+  await printPage.emulateMedia({ media: 'screen' });
+  assert.equal(await printPage.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Export preview fits the screen');
+  await printPage.evaluate(() => { window.close = () => {}; }); // Exercise iOS-style close refusal.
+  await Promise.all([printPage.waitForURL(url + '/'), printPage.locator('#returnToPlanner').click()]);
+  await printPage.waitForFunction(() => window.__APP_BOOT_OK__ === true);
+  assert.equal(await printPage.evaluate(() => JSON.parse(localStorage.getItem('wochenplan_plan_v10')).vacationCalendar.requests.length), 13);
   await printPage.close();
   // Pending form input must block automatic shared adoption, even after focus leaves it.
   await page.locator('#vacationRequestFrom').fill('2027-08-01');
@@ -129,6 +135,56 @@ async function run(context, url, width, engine) {
   await page.reload(); await ready(); await page.locator('#btnViewDay').click();
   assert.equal((await read()).vacationCalendar.requests.length, 12);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  // Distribution: preview is transient, uses direct U cells, and protects manual wishes.
+  await page.locator('.vacationDistributionIntro > summary').click();
+  await page.evaluate(() => {
+    state.schedule['2027-01-04'] = { p0: { type: 'vacation', status: 'vacation', label: 'U' } };
+    saveAppState();
+  });
+  const beforeDistribution = await read();
+  await page.locator('#vacationDistributionOpen').click();
+  assert.equal(await page.locator('.vacationDistributionChoice').count(), 1);
+  assert.equal(await page.evaluate(() => window.WochenplanVacationCalendarPanel.hasOpenDraft()), true);
+  await page.locator('.vacationDistributionChoice input[type="number"]').fill('12');
+  await page.locator('#vacationDistributionGenerate').click();
+  assert.match(await page.locator('[data-distribution-summary="p0"]').innerText(), /12 \/ 12 Tage \(1 vorhanden, 11 neu\)/);
+  assert.deepEqual(await read(), beforeDistribution, 'Calculating a preview does not save or alter existing plans');
+  const fromInput = page.locator('.vacationDistributionRow input[type="date"]').first();
+  const originalFrom = await fromInput.inputValue();
+  await fromInput.fill('2028-01-01');
+  assert.equal(await page.locator('#vacationDistributionAdopt').isDisabled(), true);
+  await fromInput.fill(originalFrom);
+  assert.equal(await page.locator('#vacationDistributionAdopt').isDisabled(), false);
+  await page.locator('#vacationCalendarYear').fill('2026'); await page.locator('#vacationCalendarYear').blur();
+  assert.equal(await page.locator('#vacationCalendarYear').inputValue(), '2027');
+  await page.evaluate(() => { state.employees[0].name = 'Changed during preview'; });
+  await page.locator('#vacationDistributionAdopt').click();
+  assert.match(await page.locator('#vacationDistributionMessage').innerText(), /inzwischen geändert/);
+  assert.deepEqual(await read(), beforeDistribution);
+  await page.evaluate(() => {
+    state.employees[0].name = 'Person 0';
+    window.testWriteBatch = localDataStore.writeBatch;
+    localDataStore.writeBatch = () => ({ ok: false, error: 'Synthetic distribution failure' });
+  });
+  await page.locator('#vacationDistributionAdopt').click();
+  assert.match(await page.locator('#vacationDistributionMessage').innerText(), /Synthetic distribution failure/);
+  assert.deepEqual(await read(), beforeDistribution, 'Failed adoption preserves the saved calendar');
+  assert.equal(await page.locator('#vacationDistribution').isVisible(), true);
+  await page.evaluate(() => { localDataStore.writeBatch = window.testWriteBatch; delete window.testWriteBatch; });
+  await page.locator('#vacationDistributionAdopt').click();
+  assert.equal(await page.locator('#vacationDistribution').isVisible(), false);
+  const afterDistribution = await read();
+  assert.deepEqual(afterDistribution.vacationCalendar.requests.filter(item => item.employeeId !== 'p0'), beforeDistribution.vacationCalendar.requests);
+  assert.deepEqual(afterDistribution.schedule, beforeDistribution.schedule); assert.deepEqual(afterDistribution.absences, beforeDistribution.absences);
+  await page.locator('.vacationPerson[data-employee-id="p0"] summary').click();
+  await page.locator('.vacationPerson[data-employee-id="p0"]').getByRole('button', { name: /^Bearbeiten:/ }).first().click();
+  assert.equal(await page.locator('#vacationRequestFrom').inputValue(), originalFrom);
+  await page.locator('#vacationRequestTo').fill(originalFrom); await page.locator('#vacationRequestSave').click();
+  assert.equal((await read()).vacationCalendar.requests.find(item => item.employeeId === 'p0').to, originalFrom);
+  await page.reload(); await ready(); await page.locator('#btnViewDay').click();
+  await page.locator('.vacationDistributionIntro > summary').click(); await page.locator('#vacationDistributionOpen').click();
+  assert.equal(await page.locator('.vacationDistributionChoice').count(), 0, 'Adopted and then manually edited wishes are protected on the next run');
+  await page.locator('#vacationDistributionCancel').click();
   assert.deepEqual(errors, []);
   console.log(`Annual vacation calendar passed (${width}px): day counts, date picker year, CRUD, persistence, save failure, week edit, A4 pagination, print names, draft protection.`);
 }
