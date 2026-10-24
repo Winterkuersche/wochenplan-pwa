@@ -8,7 +8,7 @@
 
   function canApplySharedPlan() {
     const focused = document.activeElement;
-    return !localDataStore.blocked && localDataStore.isCurrent() && !autoSaveTimerId && !overviewRevenueDebounceTimerId &&
+    return !window.WochenplanVacationCalendarPanel?.hasOpenDraft() && !localDataStore.blocked && localDataStore.isCurrent() && !autoSaveTimerId && !overviewRevenueDebounceTimerId &&
       !focused?.matches("input, select, textarea, [contenteditable=true]") &&
       !document.querySelector(".dialogOverlay:not(.hidden), .overlay:not(.hidden), dialog[open]:not(#dataDialog)");
   }

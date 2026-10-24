@@ -64,6 +64,27 @@ test('partial decisions persist on both devices, reject exactly one item, and re
   assert.equal(plan.payload.storage.wochenplan_plan_v10.salesByDate['2026-10-20'], 450);
  } finally { await db.close(); }
 });
+
+test('annual vacation requests survive shared saves and remain subject to ownership and revision checks', async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const payload = fixture();
+  payload.storage.wochenplan_plan_v10.vacationCalendar = { title: 'Testfiliale', printNames: {}, requests: [
+   { id: 'request-a', employeeId: 'a', employeeName: 'Test A', from: '2027-07-01', to: '2027-07-14' }
+  ] };
+  await assert.rejects(rpc(deputy, 'save', args({ expected_revision: 1, payload })), /READ_ONLY/);
+  await rpc(owner, 'save', args({ expected_revision: 1, payload }));
+  const remote = await rpc(deputy, 'read', args());
+  assert.deepEqual(remote.payload.storage.wochenplan_plan_v10.vacationCalendar, payload.storage.wochenplan_plan_v10.vacationCalendar);
+  assert.deepEqual(remote.payload.storage.wochenplan_plan_v10.absences, []);
+  assert.deepEqual(remote.payload.storage.wochenplan_plan_v10.schedule, fixture().storage.wochenplan_plan_v10.schedule);
+  await assert.rejects(rpc(owner, 'save', args({ expected_revision: 1, payload: fixture() })), /REVISION_CONFLICT/);
+  const history = await rpc(owner, 'history', args());
+  await rpc(owner, 'revert', args({ id: history.find(event => event.kind === 'save').id, expected_revision: 2 }));
+  const restored = await rpc(owner, 'read', args());
+  assert.equal(restored.payload.storage.wochenplan_plan_v10.vacationCalendar, undefined);
+ } finally { await db.close(); }
+});
 test('item decisions enforce ownership, valid selections, stale/repeated decisions and atomic conflicts', async () => {
  const { db, rpc, args } = await setup();
  try {

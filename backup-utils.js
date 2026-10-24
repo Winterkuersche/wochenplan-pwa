@@ -68,6 +68,11 @@ function validateBackupData(backup, options = {}) {
     return "Die Abwesenheiten in der Sicherungsdatei sind ungültig.";
   }
 
+  if (typeof WochenplanVacationCalendar !== "undefined") {
+    const calendarError = WochenplanVacationCalendar.validateData(plan.vacationCalendar);
+    if (calendarError) return calendarError;
+  }
+
   const ui = normalizedBackup.storage[UI_KEY];
   if (!ui || typeof ui !== "object" || Array.isArray(ui)) {
     return "Die Einstellungen in der Sicherungsdatei sind ungültig.";

@@ -11,6 +11,18 @@ const HOLIDAYS_BY_STATE = {
       { date: "2026-10-31", name: "Reformationstag", code: "H" },
       { date: "2026-12-25", name: "1. Weihnachtstag", code: "H" },
       { date: "2026-12-26", name: "2. Weihnachtstag", code: "H" }
+    ],
+    2027: [
+      { date: "2027-01-01", name: "Neujahr", code: "H" },
+      { date: "2027-03-26", name: "Karfreitag", code: "H" },
+      { date: "2027-03-29", name: "Ostermontag", code: "H" },
+      { date: "2027-05-01", name: "Tag der Arbeit", code: "H" },
+      { date: "2027-05-06", name: "Christi Himmelfahrt", code: "H" },
+      { date: "2027-05-17", name: "Pfingstmontag", code: "H" },
+      { date: "2027-10-03", name: "Tag der Deutschen Einheit", code: "H" },
+      { date: "2027-10-31", name: "Reformationstag", code: "H" },
+      { date: "2027-12-25", name: "1. Weihnachtstag", code: "H" },
+      { date: "2027-12-26", name: "2. Weihnachtstag", code: "H" }
     ]
   }
 };
