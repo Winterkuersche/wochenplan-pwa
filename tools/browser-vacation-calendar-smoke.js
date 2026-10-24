@@ -25,6 +25,10 @@ async function run(context, url, width, engine) {
   await ready(); await page.locator('#btnViewDay').click();
   assert.equal(await page.locator('#vacationCalendarYear').inputValue(), '2027');
   assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2027-01-01');
+  await page.evaluate(() => { state.employees[12].activeToMonth = '2026-12'; state.employees[11].activeFromMonth = '2028-01'; WochenplanVacationCalendarPanel.render(); });
+  assert.equal(await page.locator('#vacationRequestEmployee option[value="p12"]').count(), 0);
+  assert.equal(await page.locator('#vacationRequestEmployee option[value="p11"]').count(), 0);
+  await page.evaluate(() => { state.employees[12].activeToMonth = ''; state.employees[11].activeFromMonth = ''; WochenplanVacationCalendarPanel.render(); });
   assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-01-01');
   await page.locator('#vacationCalendarYear').fill('2026'); await page.locator('#vacationCalendarYear').blur();
   assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2026-01-01');
@@ -79,7 +83,7 @@ async function run(context, url, width, engine) {
   await page.evaluate(() => { localDataStore.writeBatch = window.testWriteBatch; delete window.testWriteBatch; });
   await page.locator('#vacationRequestSave').click();
   for (let index = 2; index < 13; index++) await enter('p' + index, '2027-07-01', '2027-07-14');
-  assert.equal(await page.locator('.vacationCalendarSheet').count(), 7);
+  assert.equal(await page.locator('.vacationCalendarSheet').count(), 6);
   // The ordinary week editor also has to preserve the separate annual wishes.
   await page.locator('#btnViewWeek').click();
   await page.locator('#weeks button').filter({ hasText: '19.10' }).click();
@@ -89,13 +93,18 @@ async function run(context, url, width, engine) {
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('wochenplan_plan_v10')).schedule['2026-10-20'].p0.code === 'F5');
   assert.equal((await read()).vacationCalendar.requests.length, 13);
   await page.locator('#btnViewDay').click();
-  // Use the same output HTML as the user-facing print button, but suppress native UI.
-  await page.evaluate(() => {
-    window.open = () => ({ opener: null, document: { open() {}, write(html) { window.testPrintHtml = html; }, close() {} }, requestAnimationFrame(callback) { callback(); }, focus() {}, print() {} });
-  });
+  // Generate the actual downloadable PDF locally, including while offline.
+  await page.evaluate(() => { window.originalPdfDelivery = shareOrDownloadPdfBlob; shareOrDownloadPdfBlob = async blob => { window.testPdfBlob = blob; }; });
+  await context.setOffline(true);
   await page.locator('#vacationCalendarPrint').click();
-  const html = await page.evaluate(() => window.testPrintHtml);
-  assert.equal((html.match(/<section class="sheet">/g) || []).length, 7);
+  await page.waitForFunction(() => window.testPdfBlob instanceof Blob || !document.querySelector('#vacationCalendarMessage').textContent.startsWith('PDF wird erstellt'));
+  assert.equal(await page.evaluate(() => window.testPdfBlob instanceof Blob), true, await page.locator('#vacationCalendarMessage').innerText());
+  const downloadedPdf = Buffer.from(await page.evaluate(async () => [...new Uint8Array(await window.testPdfBlob.arrayBuffer())]));
+  assert.equal((downloadedPdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 6);
+  assert.ok(!downloadedPdf.includes(Buffer.from(url)), 'PDF contains no browser URL');
+  await context.setOffline(false);
+  const html = await page.evaluate(() => WochenplanVacationCalendar.printDocument(WochenplanVacationCalendar.buildExportModel(state.vacationCalendar, state.employees, 2027, undefined, year => getHolidaysForStateYear('schleswig-holstein', year)), getHolidaysForStateYear('schleswig-holstein', 2027), location.href));
+  assert.equal((html.match(/<section class="sheet">/g) || []).length, 6);
   assert.match(html, /Urlaubsplanung 2027/);
   const printPage = await context.newPage(); await printPage.setContent(html);
   await printPage.emulateMedia({ media: 'print' });
@@ -108,8 +117,9 @@ async function run(context, url, width, engine) {
   if (width === 1440 && engine === chromium) {
     fs.mkdirSync('test-results/vacation-calendar', { recursive: true });
     const file = 'test-results/vacation-calendar/annual-requests.pdf';
-    const pdf = await printPage.pdf({ path: file, preferCSSPageSize: true, printBackground: true });
-    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 7, 'Seven groups must print on exactly seven A4 pages');
+    fs.writeFileSync(file, downloadedPdf);
+    const pdf = downloadedPdf;
+    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 6, 'Five calendar groups and one team overview must produce exactly six A4 pages');
     await page.locator('.vacationCalendarPanel').screenshot({ path: 'test-results/vacation-calendar/input-desktop.png' });
   }
   await printPage.emulateMedia({ media: 'screen' });

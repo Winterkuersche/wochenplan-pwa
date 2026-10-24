@@ -35,3 +35,15 @@ Das Exportfenster enthält „Zurück zum Wochenplan“. Zuerst wird versucht, d
 ## Validierung
 
 Synthetische Tests für Kontingente, Halbjahresziel, Blocklänge, Stundenlimit (einschließlich Minuten, vorhandenen Überlastungen und unbekannten Werten), Schutz manueller Wünsche, genehmigte Bereiche/Deduplizierung, Beschäftigungsgrenzen, fehlende Feiertage und fehlerhafte Vorschauänderungen. Browserregressionen ergänzen Vorschau ohne Speicherung, direkte U-Zellen, Änderungen während der Vorschau, Schreibfehler, Übernahme und spätere manuelle Änderung sowie den Rückweg bei verweigertem Fensterschließen und unveränderte A4-Pagination.
+
+## V9.14.1: Direkte PDF-Datei und jahresbezogene Personenauswahl
+
+Der Kalender wird lokal aus den vorhandenen SVG-Blättern mit 2526 × 1785 Pixeln pro Blatt in den bereits vorhandenen A4-PDF-Writer geschrieben. Keine Browser-Druckansicht, Browser-Fußzeile, externe Capture-Dienste oder neuen Bibliotheken. Das PDF enthält pro Kalenderblatt genau eine Querformatseite und wird über den bestehenden lokalen Downloadweg angeboten. Gedruckt wird anschließend die PDF-Datei in tatsächlicher Größe bzw. an den bedruckbaren Bereich angepasst. Temporäre Bildadressen und Canvas-Flächen werden auch bei Fehlern freigegeben. Der Rasterexport erhält kleine Namen mit hoher Auflösung, jedoch keinen auswählbaren PDF-Text.
+
+Die Auswahl für neue Urlaubswünsche enthält nur Personen, deren Beschäftigungszeitraum das gewählte Jahr berührt (Ein-/Austrittsmonat einschließlich). Historische Wünsche werden weder gelöscht noch aus der Jahresübersicht entfernt; bestehende Einträge ausgeschiedener Personen können weiterhin ausdrücklich bearbeitet werden. Die Vorschlagsautomatik hatte diese Jahresbegrenzung bereits.
+
+Tests: Jahreswechsel der Auswahl, inklusive Eintritt/Austritt, PDF-Konvertierung und Fehlerbereinigung. Chromium/WebKit prüfen den tatsächlichen Export auch offline sowie die PDF-Seitenzahl. Native iPhone-Dateizustellung bleibt ein zusätzlicher Gerätetest.
+
+Ergänzung: Kalendernamen mit 5,2 pt statt 6,4 pt und bis zu drei Namenszeilen pro Tagesfeld. Bei weiteren Überschneidungen entstehen zusätzliche Kalenderblätter. Die letzte PDF-Seite ist eine Teamübersicht mit vollständigen Namen, Zeiträumen und Jahrestagen; auch aktive Personen ohne Wünsche werden aufgeführt. Umfangreiche Übersichten werden bis auf 7 pt angepasst; passt der Inhalt dann nicht vollständig, erscheint ein Fehler statt abgeschnittener Zeilen. Keine gespeicherten Plandaten werden geändert.
+
+Der SVG-Bildexport verwendet eine lokale Data-URL, um Canvas-Origin-Probleme in WebKit beim Zeichnen von SVG-Blob-Adressen zu vermeiden. Der erweiterte Browsertest gibt bei Exportfehlern die konkrete App-Meldung aus.

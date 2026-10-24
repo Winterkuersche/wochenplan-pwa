@@ -91,15 +91,15 @@ test('automatic pages fit every name at every date and keep each person on one s
   const employees = Array.from({ length: 13 }, (_, i) => ({ id: String(i), name: 'Person ' + i }));
   const value = data(employees.map(person => request(person.id, '2027-07-01', '2027-07-14')));
   const result = api.buildSheets(value, employees, 2027);
-  assert.equal(result.pages.length, 7);
+  assert.equal(result.pages.length, 5);
   assert.deepEqual(result.pages.flatMap(page => page.people.map(person => person.id)), employees.map(person => person.id));
-  for (const page of result.pages) assert.ok([...page.used.values()].every(count => count <= 2));
+  for (const page of result.pages) assert.ok([...page.used.values()].every(count => count <= 3));
   const dispersed = data(employees.map((person, i) => request(person.id, `2027-07-${String(i + 1).padStart(2, '0')}`)));
   assert.equal(api.buildSheets(dispersed, employees, 2027).pages.length, 1);
   // Very long labels must never be clipped or printed unreadably.
   employees[0].name = 'A'.repeat(100);
   assert.throws(() => api.buildSheets(value, employees, 2027), /Druckname/);
-  value.printNames['0'] = 'Person 0'; assert.equal(api.buildSheets(value, employees, 2027).pages.length, 7);
+  value.printNames['0'] = 'Person 0'; assert.equal(api.buildSheets(value, employees, 2027).pages.length, 5);
   assert.equal(api.buildSheets(api.emptyData(), [], 2027).pages.length, 1);
 });
 
@@ -170,4 +170,28 @@ test('export has a mobile return path even when the print window cannot close', 
   click(); assert.equal(closed, true); assert.equal(destination, 'https://example.test/planner/');
   const escaped = api.printDocument(api.buildSheets(undefined, [], 2027), [], 'https://example.test/</script><script>bad()');
   assert.equal((escaped.match(/<script>/g) || []).length, 1);
+});
+
+test('person picker follows inclusive entry/exit years without mutating historical requests', () => {
+  const people = [{ id: 'old', activeToMonth: '2026-12' }, { id: 'leaves', activeToMonth: '2027-01' }, { id: 'joins', activeFromMonth: '2027-12' }, { id: 'future', activeFromMonth: '2028-01' }, { id: 'all' }];
+  const before = JSON.stringify(people);
+  assert.deepEqual(api.peopleForYear(people, 2027).map(p => p.id), ['leaves', 'joins', 'all']);
+  assert.deepEqual(api.peopleForYear(people, 2026).map(p => p.id), ['old', 'leaves', 'all']);
+  assert.equal(JSON.stringify(people), before);
+});
+
+test('export appends one complete team overview with periods and deduplicated annual totals', () => {
+  const employees = [{ id: 'a', name: 'Name A' }, { id: 'b', name: 'Name B' }, { id: 'old', name: 'Old', activeToMonth: '2026-12' }];
+  const value = data([request('a', '2027-02-01', '2027-02-07'), request('archived', '2026-12-30', '2027-01-04')]);
+  const model = api.buildExportModel(value, employees, 2027, undefined, holidaysForYear);
+  assert.equal(model.pages.filter(page => page.overview).length, 1);
+  const overview = model.pages.at(-1);
+  assert.deepEqual(overview.people.map(person => person.id), ['a', 'b', 'archived']);
+  assert.equal(overview.people[0].total, '6'); assert.equal(overview.people[1].total, '0');
+  assert.equal(overview.people[1].periods.join(''), 'Noch keine Urlaubswünsche');
+  assert.match(overview.people[0].periods.join(''), /01.02.2027/);
+  assert.ok(overview.people.reduce((total, person) => total + person.height, 0) <= 490);
+  assert.match(api.renderSheet(model, model.pages.length - 1), /Teamübersicht/);
+  const many = Array.from({ length: 100 }, (_, id) => ({ id: String(id), name: 'Name ' + id }));
+  assert.throws(() => api.buildExportModel(undefined, many, 2027, undefined, holidaysForYear), /nicht lesbar/);
 });
