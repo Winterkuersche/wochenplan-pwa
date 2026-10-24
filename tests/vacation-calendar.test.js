@@ -6,6 +6,45 @@ const api = require('../vacation-calendar');
 const { loadScripts } = require('./test-helpers');
 const request = (employeeId, from, to = from, extra = {}) => ({ id: employeeId + from, employeeId, employeeName: 'Name ' + employeeId, from, to, ...extra });
 const data = requests => ({ ...api.emptyData(), requests });
+const holidayContext = loadScripts(['holidays.js']);
+const holidaysForYear = year => holidayContext.getHolidaysForStateYear('schleswig-holstein', year);
+
+test('requested days include Saturdays but exclude Sundays and SH public holidays', () => {
+  const count = (from, to = from) => api.countVacationDays([request('a', from, to)], holidaysForYear);
+  assert.equal(count('2027-02-01', '2027-02-06').days, 6); // Screenshot example.
+  assert.equal(count('2027-02-01', '2027-02-07').days, 6);
+  assert.equal(count('2027-05-01').days, 0); // Holiday on Saturday.
+  assert.equal(count('2027-02-07').days, 0); // Sunday.
+  assert.equal(count('2027-03-25', '2027-03-29').days, 2); // Good Friday + Easter Monday.
+  assert.equal(count('2027-05-03', '2027-05-08').days, 5); // Ascension.
+  assert.equal(count('2027-05-17', '2027-05-22').days, 5); // Whit Monday.
+  const christmas = count('2027-12-24', '2027-12-26');
+  assert.equal(christmas.days, 1); assert.equal(christmas.holidays, 1); assert.equal(christmas.sundays, 1);
+  assert.equal(count('2027-10-31').days, 0); // Sunday + holiday deducted once.
+  assert.equal(count('2027-07-05', '2027-07-10').days, 6); // School holidays still count.
+});
+
+test('annual totals clip cross-year ranges and count imported overlaps only once per person', () => {
+  const requests = [request('a', '2026-12-28', '2027-01-03'), request('a', '2027-01-02', '2027-01-04'), request('b', '2027-01-02')];
+  assert.equal(api.countVacationDays([requests[0]], holidaysForYear).days, 5);
+  assert.equal(api.countVacationDays([requests[0]], holidaysForYear, 2027).days, 1);
+  const totals = api.totalsByPerson(data(requests), [{ id: 'a', name: 'Current name' }], 2027, holidaysForYear);
+  assert.deepEqual(totals.map(person => [person.name, person.days]), [['Current name', 2], ['Name b', 1]]);
+  assert.equal(api.countVacationDays(requests, holidaysForYear, 2027).days, 3);
+  assert.equal(api.countVacationDays([request('a', '2026-02-01')], holidaysForYear, 2027).days, 0);
+  assert.throws(() => api.countVacationDays(requests, holidaysForYear, NaN), /Jahr/);
+});
+
+test('day counts survive DST and require holiday coverage before returning a number', () => {
+  assert.equal(api.countVacationDays([request('a', '2027-03-27', '2027-03-30')], holidaysForYear).days, 2);
+  assert.equal(api.countVacationDays([request('a', '2027-10-30', '2027-11-02')], holidaysForYear).days, 3);
+  const missing = api.countVacationDays([request('a', '2027-12-30', '2028-01-03')], holidaysForYear);
+  assert.equal(missing.days, null); assert.deepEqual(missing.missingYears, [2028]);
+  assert.equal(api.countVacationDays([request('a', '2027-12-30', '2028-01-03')], holidaysForYear, 2027).days, 2);
+  assert.throws(() => api.countVacationDays([request('a', '2027-02-29')], holidaysForYear), /gültige/);
+  const leap = api.countVacationDays([request('a', '2028-02-28', '2028-03-01')], () => [{ date: '2028-01-01' }]);
+  assert.equal(leap.days, 3);
+});
 
 test('strict dates, inclusive ranges, duplicates and overlaps cannot silently lose requests', () => {
   assert.match(api.validateRequest(request('a', '2027-02-29')), /gültige/);

@@ -7,6 +7,7 @@
 .vacationCalendarActions{display:flex;gap:8px;flex-wrap:wrap;width:100%}
 .vacationCalendarPanel button{min-height:42px}.vacationCalendarPanel [hidden]{display:none!important}
 .vacationCalendarMessage{min-height:1.4em}.vacationCalendarMessage.isError{color:#b00020}
+.vacationRequestDayCount{flex-basis:100%;margin:0}.vacationRequestCount{display:block;font-size:.85em;margin-top:4px}.vacationCalendarTotals{padding:0 12px 8px;border:1px solid var(--border,#d7dce0);border-radius:8px}.vacationCalendarTotals p{margin:6px 0;overflow-wrap:anywhere}
 .vacationCalendarRequests{padding:0;list-style:none}.vacationRequestRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #ddd}.vacationRequestRow span{flex:1 1 260px;overflow-wrap:anywhere}
 .vacationCalendarPreview{display:grid;gap:12px;min-width:0}.vacationCalendarSheet{border:1px solid #bfc7cb;background:white;overflow:auto}.vacationCalendarSheet svg{display:block;width:100%;min-width:760px;height:auto}
 @media(min-width:1000px){.vacationCalendarForm label:first-child{flex-basis:220px}.vacationCalendarPreview{grid-template-columns:1fr}}
