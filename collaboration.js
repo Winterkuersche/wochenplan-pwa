@@ -6,6 +6,7 @@
     OWNER_REQUIRED: "Diese Aktion ist der Filialverwaltung vorbehalten.",
     REVISION_CONFLICT: "Inzwischen wurde ein neuer Stand gespeichert. Bitte zuerst vergleichen.",
     CHANGE_CONFLICT: "Diese Änderung überschneidet sich mit einer späteren Änderung. Bitte einzeln prüfen.",
+    CLIENT_UPDATE_REQUIRED: "Diese App-Version kennt die gespeicherten Urlaubswünsche noch nicht. Bitte die App aktualisieren; der Online-Plan wurde nicht verändert.",
     ITEM_ALREADY_DECIDED: "Diese Änderung wurde inzwischen entschieden. Bitte den Vorschlag aktualisieren.",
     PROPOSAL_MISSING: "Dieser Vorschlag wurde inzwischen vollständig entschieden. Bitte aktualisieren.",
     INVALID_SELECTION: "Bitte eine noch offene Änderung auswählen.",

@@ -48,8 +48,15 @@ language plpgsql security invoker set search_path = '' as $$
 begin
   if tg_op = 'INSERT' then
     if new.revision <> 1 then raise exception 'Initial revision must be 1'; end if;
-  elsif new.user_id <> old.user_id or new.revision <> old.revision + 1 then
-    raise exception 'Planning revision conflict';
+  else
+    if new.user_id <> old.user_id or new.revision <> old.revision + 1 then
+      raise exception 'Planning revision conflict';
+    end if;
+    if (old.payload#>'{storage,wochenplan_plan_v10}') ? 'vacationCalendar'
+       and not coalesce((new.payload#>'{storage,wochenplan_plan_v10}') ? 'vacationCalendar',false)
+       and new.payload#>'{capabilities,vacationCalendar}' is distinct from 'true'::jsonb then
+      raise exception 'CLIENT_UPDATE_REQUIRED' using errcode='22023';
+    end if;
   end if;
   new.updated_at := clock_timestamp();
   return new;

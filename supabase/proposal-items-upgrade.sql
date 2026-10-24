@@ -109,7 +109,7 @@ begin
  if p_action='read' then
   return jsonb_build_object('id',bid,'name',b.name,'owner',owner,'can_edit',editable,'can_publish',publishable,
    'revision',pl.revision,'payload',pl.payload,'updated_at',pl.updated_at,'server_time',stamp,
-   'capabilities',jsonb_build_object('proposal_items',true),
+   'capabilities',jsonb_build_object('proposal_items',true,'vacation_calendar_guard',true),
    'members',(select jsonb_agg(jsonb_build_object('id',m.user_id,'name',m.display_name,'owner',m.user_id=b.owner_id,'active',m.active)) from wochenplan_private.members m where m.branch_id=bid),
    'delegations',coalesce((select jsonb_agg(to_jsonb(d)) from wochenplan_private.delegations d where d.branch_id=bid and d.revoked_at is null and d.ends_at>stamp),'[]'),
    'invites',case when owner then coalesce((select jsonb_agg(jsonb_build_object('id',i.id,'expires_at',i.expires_at)) from wochenplan_private.invites i where i.branch_id=bid and i.used_at is null and i.revoked_at is null and i.expires_at>stamp),'[]') else '[]'::jsonb end,
@@ -158,6 +158,12 @@ begin
  elsif p_action='propose' then
   if length(trim(coalesce(p_args->>'reason','')))=0 then raise exception 'REASON_REQUIRED'; end if;
   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+  -- Absence of this additive field in a legacy full-document save is not a deletion.
+  if (pl.payload#>'{storage,wochenplan_plan_v10}') ? 'vacationCalendar'
+     and not coalesce((p_args#>'{payload,storage,wochenplan_plan_v10}') ? 'vacationCalendar',false)
+     and p_args#>'{payload,capabilities,vacationCalendar}' is distinct from 'true'::jsonb then
+   raise exception 'CLIENT_UPDATE_REQUIRED' using errcode='22023';
+  end if;
   changes:=wochenplan_private.proposal_items(wochenplan_private.diff(pl.payload,wochenplan_private.clean_payload(p_args->'payload')));
   if jsonb_array_length(changes)=0 then raise exception 'EMPTY_CHANGE'; end if;
   insert into wochenplan_private.proposals(branch_id,author_id,author_name,reason,changes)
@@ -203,7 +209,14 @@ begin
  elsif p_action in ('save','restore','revert') then
   if not editable then raise exception 'READ_ONLY' using errcode='42501'; end if;
   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
-  if p_action='save' then payload:=wochenplan_private.clean_payload(p_args->'payload');
+  if p_action='save' then
+  -- Absence of this additive field in a legacy full-document save is not a deletion.
+  if (pl.payload#>'{storage,wochenplan_plan_v10}') ? 'vacationCalendar'
+     and not coalesce((p_args#>'{payload,storage,wochenplan_plan_v10}') ? 'vacationCalendar',false)
+     and p_args#>'{payload,capabilities,vacationCalendar}' is distinct from 'true'::jsonb then
+   raise exception 'CLIENT_UPDATE_REQUIRED' using errcode='22023';
+  end if;
+   payload:=wochenplan_private.clean_payload(p_args->'payload');
   elsif p_action='restore' then
    if not owner then raise exception 'OWNER_REQUIRED' using errcode='42501'; end if;
    select s.payload into payload from wochenplan_private.snapshots s where s.branch_id=bid and s.id=(p_args->>'id')::uuid;

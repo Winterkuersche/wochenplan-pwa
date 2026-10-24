@@ -4,6 +4,7 @@ function collectFullBackupSnapshot() {
   const savedTheme = loadJson("wochenplan_dark", null);
   return {
     backupVersion: 2,
+    capabilities: { vacationCalendar: true },
     app: { name: APP_META.name, version: APP_META.version },
     createdAt: new Date().toISOString(),
     storage: {

@@ -85,6 +85,69 @@ test('annual vacation requests survive shared saves and remain subject to owners
   assert.equal(restored.payload.storage.wochenplan_plan_v10.vacationCalendar, undefined);
  } finally { await db.close(); }
 });
+
+test('an older shared client cannot remove annual requests through save or proposal', async () => {
+ const { db, rpc, args } = await setup();
+ try {
+  const payload = fixture();
+  payload.storage.wochenplan_plan_v10.vacationCalendar = { title: 'Test', printNames: {}, requests: [{ id: 'r', employeeId: 'a', employeeName: 'Test A', from: '2027-07-01', to: '2027-07-14' }] };
+  await rpc(owner, 'save', args({ expected_revision: 1, payload }));
+  const before = await rpc(owner, 'read', args()), history = await rpc(owner, 'history', args());
+  const legacy = structuredClone(payload); delete legacy.storage.wochenplan_plan_v10.vacationCalendar;
+  legacy.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code = 'F5';
+  await assert.rejects(rpc(owner, 'save', args({ expected_revision: 2, payload: legacy })), /CLIENT_UPDATE_REQUIRED/);
+  await assert.rejects(rpc(deputy, 'propose', args({ expected_revision: 2, payload: legacy, reason: 'Legacy client' })), /CLIENT_UPDATE_REQUIRED/);
+  const after = await rpc(owner, 'read', args());
+  assert.deepEqual(after.payload, before.payload); assert.equal(after.revision, before.revision);
+  assert.deepEqual(after.proposals, before.proposals); assert.deepEqual(after.snapshots, before.snapshots);
+  assert.deepEqual(await rpc(owner, 'history', args()), history);
+  // New clients explicitly advertise support, so deliberate old-backup restores remain possible.
+  legacy.capabilities = { vacationCalendar: true };
+  await rpc(owner, 'save', args({ expected_revision: 2, payload: legacy }));
+  assert.equal((await rpc(owner, 'read', args())).payload.storage.wochenplan_plan_v10.vacationCalendar, undefined);
+ } finally { await db.close(); }
+});
+
+test('the personal online document also blocks legacy calendar deletion without changing history', async () => {
+ const { db } = await setup();
+ try {
+  await db.exec('reset role'); await db.exec(fs.readFileSync('supabase/wochenplan-schema.sql', 'utf8'));
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]); await db.exec('set role authenticated');
+  const payload = fixture(); payload.storage.wochenplan_plan_v10.vacationCalendar = { title: '', printNames: {}, requests: [] };
+  await db.query('insert into public.wochenplan_documents(user_id,payload) values ($1,$2::jsonb)', [owner, JSON.stringify(payload)]);
+  const legacy = fixture(); legacy.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code = 'F5';
+  const update = value => db.query('update public.wochenplan_documents set payload=$1::jsonb,revision=2 where user_id=$2 and revision=1 returning revision', [JSON.stringify(value), owner]);
+  await assert.rejects(update(legacy), /CLIENT_UPDATE_REQUIRED/);
+  const stored = (await db.query('select revision,payload from public.wochenplan_documents')).rows[0];
+  assert.equal(stored.revision, 1); assert.deepEqual(stored.payload, payload);
+  assert.equal((await db.query('select count(*)::int as n from public.wochenplan_history')).rows[0].n, 1);
+  legacy.capabilities = { vacationCalendar: true };
+  assert.equal((await update(legacy)).rows[0].revision, 2);
+ } finally { await db.close(); }
+});
+
+test('calendar guard upgrade is generated, repeatable and leaves all stored documents and history unchanged', async () => {
+ const { buildVacationCalendarGuardUpgrade } = require('../tools/build-vacation-calendar-guard-upgrade');
+ const sql = buildVacationCalendarGuardUpgrade();
+ assert.equal(sql, fs.readFileSync('supabase/vacation-calendar-guard-upgrade.sql', 'utf8'));
+ const { db, rpc, args } = await setup();
+ try {
+  await db.exec('reset role'); await db.exec(fs.readFileSync('supabase/wochenplan-schema.sql', 'utf8'));
+  await db.query('insert into public.wochenplan_documents(user_id,payload) values ($1,$2::jsonb)', [owner, JSON.stringify(fixture())]);
+  const stored = async () => (await db.query(`select jsonb_build_object(
+   'plans',(select jsonb_agg(to_jsonb(p)) from wochenplan_private.plans p),
+   'events',(select jsonb_agg(to_jsonb(e) order by id) from wochenplan_private.events e),
+   'snapshots',(select jsonb_agg(to_jsonb(s) order by id) from wochenplan_private.snapshots s),
+   'documents',(select jsonb_agg(to_jsonb(d)) from public.wochenplan_documents d),
+   'history',(select jsonb_agg(to_jsonb(h)) from public.wochenplan_history h)) as data`)).rows[0].data;
+  const before = await stored();
+  await db.exec(sql); await db.exec(sql);
+  assert.deepEqual(await stored(), before);
+  const privileges = (await db.query("select has_function_privilege('anon','wochenplan_private.api(text,jsonb)','EXECUTE') as anon, has_function_privilege('authenticated','wochenplan_private.api(text,jsonb)','EXECUTE') as auth")).rows[0];
+  assert.deepEqual(privileges, { anon: false, auth: true });
+  assert.equal((await rpc(owner, 'read', args())).capabilities.vacation_calendar_guard, true);
+ } finally { await db.close(); }
+});
 test('item decisions enforce ownership, valid selections, stale/repeated decisions and atomic conflicts', async () => {
  const { db, rpc, args } = await setup();
  try {

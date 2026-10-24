@@ -87,3 +87,14 @@ test('2027 holidays are available for calendar and existing vacation calculation
   assert.equal(dates.length, 10);
   for (const iso of ['2027-03-26', '2027-03-29', '2027-05-06', '2027-05-17']) assert.ok(dates.includes(iso));
 });
+
+test('new backup and sync snapshots advertise calendar support without changing plan content', () => {
+  const plan = { schedule: {}, absences: [] };
+  const ctx = loadScripts(['backup-io.js'], {
+    APP_META: { name: 'Wochenplan', version: 'V9.13.0' }, MASTER_KEY: 'master', PLAN_KEY: 'plan', UI_KEY: 'ui', BACKUP_MEP_CALIBRATION_KEY: 'calibration',
+    loadJson: (_key, fallback) => fallback, saveMasterData: () => ({ employees: [] }), savePlanData: () => plan, uiState: {}
+  });
+  const snapshot = ctx.collectFullBackupSnapshot();
+  assert.equal(snapshot.capabilities.vacationCalendar, true);
+  assert.equal(snapshot.storage.plan, plan);
+});

@@ -4,7 +4,8 @@ Unter **Urlaub → Urlaubswünsche · Jahreskalender** können Zeiträume für a
 Personen des Teams gesammelt werden. Standard ist das nächste Kalenderjahr,
 aktuell 2027. Pro Person sind mehrere getrennte Zeiträume möglich. Die Liste
 bietet Bearbeiten und Löschen; bestehende Schichten, genehmigte Abwesenheiten
-und Urlaubskonten bleiben unverändert. Beide Geräte sollen die neue App laden.
+und Urlaubskonten bleiben unverändert. Beide Geräte sollen die neue App laden. Ältere Apps dürfen bestehende
+Urlaubswünsche nicht durch unvollständige Speicherstände entfernen.
 
 **Jahreskalender drucken / PDF** öffnet ein eigenes Druckfenster. Dort kann der
 Kalender gedruckt oder über den Druckdialog als PDF gesichert werden. Das
@@ -27,7 +28,12 @@ gewünschten Zeiträume tragen ebenfalls den Namen; dies ist keine Urlaubstagez�
 `vacationCalendar` ist ein optionales Feld im vorhandenen Planungsdokument.
 Die Daten laufen durch dieselbe lokale Journal-Speicherung, Dateisicherung,
 Wiederherstellung und persönliche/gemeinsame Online-Synchronisierung wie der
-übrige Plan. Keine neue Tabelle, RPC oder produktive Migration ist nötig.
+übrige Plan. Keine neue Tabelle und kein zusätzlicher RPC sind nötig.
+Vor Aktivierung muss `supabase/vacation-calendar-guard-upgrade.sql` auf dem
+Server angewandt werden. Das transaktionale Upgrade ersetzt nur zwei Funktionen
+und verändert keine gespeicherten Pläne, Wünsche, Sicherungen oder den Verlauf.
+Es erhält die vorhandenen Rechte. Es wurde bisher nur lokal mit synthetischen
+Daten geprüft; die produktive Anwendung ist ein eigener administrativer Schritt.
 Ohne Vertretungsrechte gelten weiterhin die vorhandenen Vorschlagsregeln.
 Ein normaler Wochenplaneintrag muss das zusätzliche Feld erhalten.
 
@@ -62,3 +68,25 @@ Der Chromium-/WebKit-Ablauf prüft Handy- und Desktopbreite, Eingabe,
 Wiederöffnung, Änderungen, Speicherfehler, Erhalt bei Wochenplanänderungen,
 Namensgrenzen und Mehrblattdruck. Chromium erzeugt einen synthetischen
 PDF-Druck mit genau sieben Seiten sowie einen Screenshot der Eingabe.
+
+## Schutz beim Versionswechsel
+
+Der gemeinsame RPC weist Speichern und Einreichen eines Vorschlags ab, wenn
+bereits Urlaubswünsche gespeichert sind und ein älterer Client das ganze
+Kalenderfeld weglässt. Dieselbe Prüfung greift im Revisions-Trigger der
+persönlichen Online-Dokumente. Fehler lassen Revision, Plan, Vorschläge,
+Sicherungen und Verlauf unverändert. Der Server meldet `CLIENT_UPDATE_REQUIRED`.
+
+Neue App-Sicherungen und Synchronisierungen erklären ihre Kalenderunterstützung
+im Umschlag mit `capabilities.vacationCalendar: true`. Diese Angabe ist keine
+Berechtigung; alle bestehenden Rechte und Revisionsprüfungen gelten weiter.
+Sie erlaubt einem aktuellen Client, nach bewusster Wiederherstellung einer
+alten Sicherung ohne Kalender wieder zu speichern. Das normale Löschen aller
+Wünsche über die Eingabe überträgt ein leeres, weiterhin vorhandenes Kalenderfeld.
+Server-Rücknahmen und Wiederherstellungen bleiben ausdrücklich möglich.
+
+Das Upgrade wird offline aus den Installationsdateien erzeugt:
+`node tools/build-vacation-calendar-guard-upgrade.js`. Regressionstests zeigen
+zuerst den Datenverlust ohne die Korrektur und prüfen danach beide Speicherwege,
+den unveränderten Verlauf bei abgewiesenen Versuchen und die wiederholbare,
+datenerhaltende Anwendung des Upgrades.
