@@ -4,17 +4,28 @@
   const el = id => document.getElementById(id);
   const form = el("vacationCalendarForm");
   if (!form) return;
-  let editingId = null, expected = null, dirty = false;
+  let editingId = null, expected = null, dirty = false, endFollowsStart = true, renderedYear = null;
   const fields = ["vacationRequestEmployee", "vacationRequestFrom", "vacationRequestTo", "vacationRequestPrintName", "vacationCalendarTitle"];
   const signature = () => JSON.stringify(state.vacationCalendar || api.emptyData());
   const say = (text, error = false) => { el("vacationCalendarMessage").textContent = text; el("vacationCalendarMessage").classList.toggle("isError", error); };
   function selectedYear() { return Number(el("vacationCalendarYear").value); }
+  const holidaysForYear = year => getHolidaysForStateYear("schleswig-holstein", year);
+  const dayLabel = count => count.days === null ? `Keine verlässliche Tagezahl: Feiertage für ${count.missingYears.join(", ")} fehlen` : `${count.days} ${count.days === 1 ? "Urlaubstag" : "Urlaubstage"}`;
+  function defaultDates() {
+    const first = `${selectedYear()}-01-01`;
+    el("vacationRequestFrom").value = first; el("vacationRequestTo").value = first;
+    endFollowsStart = true;
+  }
+  function draftCount() {
+    const request = { id: "draft", employeeId: el("vacationRequestEmployee").value || "draft", employeeName: "Eingabe", from: el("vacationRequestFrom").value, to: el("vacationRequestTo").value };
+    el("vacationRequestDayCount").textContent = api.validateRequest(request) ? "Bitte einen gültigen Zeitraum wählen." : `Dieser Zeitraum: ${dayLabel(api.countVacationDays([request], holidaysForYear))}.`;
+  }
   function markDirty() {
     if (!dirty) expected = signature();
     dirty = true;
   }
   function reset() {
-    dirty = false; expected = null; editingId = null;
+    dirty = false; expected = null; editingId = null; endFollowsStart = true;
     el("vacationRequestFrom").value = ""; el("vacationRequestTo").value = "";
     el("vacationRequestSave").textContent = "Urlaubswunsch speichern";
     el("vacationRequestCancel").hidden = true;
@@ -64,6 +75,8 @@
       personName();
     }
     const year = selectedYear();
+    renderedYear = year;
+    if (!dirty && !el("vacationRequestFrom").value && !el("vacationRequestTo").value) defaultDates();
     const requests = data.requests.filter(item => item.from <= `${year}-12-31` && item.to >= `${year}-01-01`)
       .slice().sort((a, b) => a.from.localeCompare(b.from) || a.employeeName.localeCompare(b.employeeName));
     const list = el("vacationCalendarRequests"); list.replaceChildren();
@@ -73,6 +86,10 @@
       const description = document.createElement("span");
       const name = state.employees.find(person => person.id === request.employeeId)?.name || request.employeeName;
       description.textContent = `${name} · ${formatIsoDateForOverview(request.from)} bis ${formatIsoDateForOverview(request.to)}`;
+      const count = document.createElement("small"); count.className = "vacationRequestCount";
+      count.textContent = dayLabel(api.countVacationDays([request], holidaysForYear));
+      if (request.from.slice(0, 4) !== request.to.slice(0, 4)) count.textContent += ` · davon ${dayLabel(api.countVacationDays([request], holidaysForYear, year))} in ${year}`;
+      description.append(count);
       row.append(description);
       for (const action of ["Bearbeiten", "Löschen"]) {
         const button = document.createElement("button"); button.type = "button"; button.textContent = action; button.setAttribute("aria-label", `${action}: ${description.textContent}`);
@@ -88,7 +105,7 @@
             }
             el("vacationRequestEmployee").value = request.employeeId; personName();
             el("vacationRequestFrom").value = request.from; el("vacationRequestTo").value = request.to;
-            editingId = request.id; markDirty();
+            editingId = request.id; endFollowsStart = false; markDirty(); draftCount();
             el("vacationRequestSave").textContent = "Änderung speichern"; el("vacationRequestCancel").hidden = false;
             form.scrollIntoView({ block: "nearest", behavior: "smooth" });
           }
@@ -97,17 +114,31 @@
       }
       list.append(row);
     }
+    const totals = el("vacationCalendarTotals"); totals.replaceChildren();
+    const heading = document.createElement("h3"); heading.textContent = `Eingetragene Urlaubstage ${year}`; totals.append(heading);
+    for (const person of api.totalsByPerson(data, state.employees, year, holidaysForYear)) {
+      const p = document.createElement("p"); p.textContent = `${person.name}: ${dayLabel(person)}`; totals.append(p);
+    }
+    if (!requests.length) { const p = document.createElement("p"); p.textContent = "Noch keine Urlaubstage eingetragen."; totals.append(p); }
     el("vacationCalendarYearNote").textContent = year === 2027
       ? "Feiertage und Schulferien Schleswig-Holstein (Festland) sind für 2027 markiert. Bewegliche Schultage sind nicht enthalten."
       : "Für dieses Jahr sind keine Schulferien hinterlegt." + (holidays().length ? "" : " Feiertage sind ebenfalls nicht hinterlegt.");
-    preview();
+    draftCount(); preview();
   }
   for (const field of fields) el(field).addEventListener("input", () => { markDirty(); el("vacationRequestCancel").hidden = false; });
   el("vacationRequestEmployee").addEventListener("change", personName);
-  el("vacationRequestFrom").addEventListener("change", () => { if (!el("vacationRequestTo").value) el("vacationRequestTo").value = el("vacationRequestFrom").value; });
+  el("vacationRequestFrom").addEventListener("input", () => {
+    if (endFollowsStart || !el("vacationRequestTo").value) el("vacationRequestTo").value = el("vacationRequestFrom").value;
+    draftCount();
+  });
+  el("vacationRequestTo").addEventListener("input", () => { endFollowsStart = false; draftCount(); });
+  for (const field of ["vacationRequestFrom", "vacationRequestTo"]) el(field).addEventListener("focus", () => {
+    if (!el(field).value) { el(field).value = (field === "vacationRequestTo" && el("vacationRequestFrom").value) || `${selectedYear()}-01-01`; draftCount(); }
+  });
   el("vacationCalendarYear").addEventListener("change", () => {
     if (!Number.isInteger(selectedYear()) || selectedYear() < 1900 || selectedYear() > 2099) { say("Bitte ein Jahr zwischen 1900 und 2099 wählen.", true); return; }
-    uiState.vacationCalendarYear = selectedYear(); saveUiState(); render();
+    if (dirty) { el("vacationCalendarYear").value = renderedYear; say("Bitte die offene Eingabe zuerst speichern oder verwerfen, bevor du das Kalenderjahr wechselst.", true); return; }
+    uiState.vacationCalendarYear = selectedYear(); saveUiState(); defaultDates(); render();
   });
   form.addEventListener("submit", event => {
     event.preventDefault();

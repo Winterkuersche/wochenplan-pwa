@@ -73,6 +73,44 @@
     }
     return dates;
   }
+  // Count each person's requested date only once, in UTC (including across DST).
+  // Empty holiday data means unknown, never a verified zero-holiday year.
+  function countVacationDays(requests, holidaysForYear, year) {
+    if (year !== undefined && (!Number.isInteger(year) || year < 1900 || year > 2099)) throw new Error("Bitte ein Jahr zwischen 1900 und 2099 wählen.");
+    const dates = new Map(), holidaySets = new Map(), missingYears = new Set();
+    for (const request of requests) {
+      const error = validateRequest(request); if (error) throw new Error(error);
+      const from = year === undefined ? request.from : (request.from < `${year}-01-01` ? `${year}-01-01` : request.from);
+      const to = year === undefined ? request.to : (request.to > `${year}-12-31` ? `${year}-12-31` : request.to);
+      for (let time = Date.parse(from + "T12:00:00Z"); time <= Date.parse(to + "T12:00:00Z"); time += 86400000) {
+        const date = new Date(time), iso = date.toISOString().slice(0, 10);
+        dates.set(JSON.stringify([request.employeeId, iso]), { iso, year: date.getUTCFullYear(), weekday: date.getUTCDay() });
+      }
+    }
+    let days = 0, sundays = 0, holidays = 0;
+    for (const date of dates.values()) {
+      if (!holidaySets.has(date.year)) {
+        const entries = holidaysForYear(date.year);
+        if (!entries?.length) missingYears.add(date.year);
+        holidaySets.set(date.year, new Set((entries || []).map(entry => entry.date)));
+      }
+      if (date.weekday === 0) sundays++;
+      else if (holidaySets.get(date.year).has(date.iso)) holidays++;
+      else days++;
+    }
+    return { days: missingYears.size ? null : days, sundays, holidays, missingYears: [...missingYears].sort() };
+  }
+  function totalsByPerson(data, employees, year, holidaysForYear) {
+    data = copyData(data);
+    const team = new Map((employees || []).map(person => [person.id, person.name]));
+    const people = new Map();
+    for (const request of data.requests) {
+      if (request.from > `${year}-12-31` || request.to < `${year}-01-01`) continue;
+      if (!people.has(request.employeeId)) people.set(request.employeeId, { id: request.employeeId, name: team.get(request.employeeId) || request.employeeName, requests: [] });
+      people.get(request.employeeId).requests.push(request);
+    }
+    return [...people.values()].map(person => ({ id: person.id, name: person.name, ...countVacationDays(person.requests, holidaysForYear, year) }));
+  }
   function wrapName(name, measure = value => Array.from(value).length * layout.font * 0.58) {
     const lines = [];
     let line = "";
@@ -158,5 +196,5 @@
       @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#e8e8e8}.sheet{width:297mm;height:210mm;background:white;margin:12px auto;break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}.sheet svg{display:block;width:100%;height:100%}button{display:block;margin:12px auto;padding:12px 24px;font:16px Arial}@media print{body{background:white}button{display:none}.sheet{margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
       </style><button type="button" onclick="window.print()">Drucken / als PDF sichern</button>${pages}</html>`;
   }
-  return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, wrapName, buildSheets, renderSheet, printDocument, layout };
+  return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, countVacationDays, totalsByPerson, wrapName, buildSheets, renderSheet, printDocument, layout };
 });

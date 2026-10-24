@@ -24,6 +24,21 @@ async function run(context, url, width, engine) {
   await Promise.all([page.waitForEvent('load'), page.locator('#backupFileInput').setInputFiles({ name: 'synthetic-vacation.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(fixture)) })]);
   await ready(); await page.locator('#btnViewDay').click();
   assert.equal(await page.locator('#vacationCalendarYear').inputValue(), '2027');
+  assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2027-01-01');
+  assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-01-01');
+  await page.locator('#vacationCalendarYear').fill('2026'); await page.locator('#vacationCalendarYear').blur();
+  assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2026-01-01');
+  assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2026-01-01');
+  await page.locator('#vacationCalendarYear').fill('2027'); await page.locator('#vacationCalendarYear').blur();
+  await page.locator('#vacationRequestFrom').fill('2027-02-01');
+  assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-02-01');
+  await page.locator('#vacationRequestTo').fill('2027-02-07');
+  assert.match(await page.locator('#vacationRequestDayCount').innerText(), /6 Urlaubstage/);
+  // Changing the view year must not silently overwrite an unsaved range.
+  await page.locator('#vacationCalendarYear').fill('2028'); await page.locator('#vacationCalendarYear').blur();
+  assert.equal(await page.locator('#vacationCalendarYear').inputValue(), '2027');
+  assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-02-07');
+  await page.locator('#vacationRequestCancel').click();
   async function enter(person, from, to) {
     await page.locator('#vacationRequestEmployee').selectOption(person);
     await page.locator('#vacationRequestFrom').fill(from);
@@ -32,14 +47,23 @@ async function run(context, url, width, engine) {
     await page.waitForFunction(() => document.querySelector('#vacationCalendarMessage').textContent.startsWith('Urlaubswunsch gespeichert'));
   }
   await enter('p0', '2027-07-01', '2027-07-14');
+  assert.match(await page.locator('#vacationCalendarRequests').innerText(), /12 Urlaubstage/);
+  assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 12 Urlaubstage/);
+  await enter('p0', '2027-03-25', '2027-03-29');
+  assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 14 Urlaubstage/);
+  await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Löschen:.*25\.03/ }).click();
+  assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 12 Urlaubstage/);
   const original = await read();
   assert.equal(original.vacationCalendar.requests.length, 1);
   assert.deepEqual(original.absences, []); assert.equal(original.schedule['2026-10-20'].p0.code, 'F4'); assert.equal(original.salesByDate['2026-10-20'], 500);
   await page.reload(); await ready(); await page.locator('#btnViewDay').click();
   assert.equal((await read()).vacationCalendar.requests.length, 1);
   await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Bearbeiten:/ }).first().click();
+  assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2027-07-01');
+  assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-07-14');
   await page.locator('#vacationRequestTo').fill('2027-07-10'); await page.locator('#vacationRequestSave').click();
   assert.equal((await read()).vacationCalendar.requests[0].to, '2027-07-10');
+  assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 9 Urlaubstage/);
   // Storage failure must preserve both the previous plan and typed request.
   await page.locator('#vacationRequestEmployee').selectOption('p1');
   await page.locator('#vacationRequestFrom').fill('2027-07-01'); await page.locator('#vacationRequestTo').fill('2027-07-14');
@@ -96,7 +120,7 @@ async function run(context, url, width, engine) {
   assert.equal((await read()).vacationCalendar.requests.length, 12);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.deepEqual(errors, []);
-  console.log(`Annual vacation calendar passed (${width}px): CRUD, persistence, save failure, week edit, A4 pagination, print names, draft protection.`);
+  console.log(`Annual vacation calendar passed (${width}px): day counts, date picker year, CRUD, persistence, save failure, week edit, A4 pagination, print names, draft protection.`);
 }
 async function main() {
   const root = process.cwd();
