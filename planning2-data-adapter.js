@@ -51,7 +51,25 @@
       return true;
     }
 
-    return { readMaster, readPlan, savePlan, masterKey: MASTER_KEY, planKey: PLAN_KEY };
+    // Notify the mounted planner only after persisted master data actually changed.
+    function watchMasterChanges(events, onChange) {
+      let signature = JSON.stringify(readMaster());
+      const refresh = () => {
+        const next = JSON.stringify(readMaster());
+        if (next === signature) return;
+        signature = next;
+        onChange();
+      };
+      const storageChanged = event => { if (event.key === MASTER_KEY || event.key === null) refresh(); };
+      events.addEventListener("wochenplan:saved", refresh);
+      events.addEventListener("storage", storageChanged);
+      return () => {
+        events.removeEventListener("wochenplan:saved", refresh);
+        events.removeEventListener("storage", storageChanged);
+      };
+    }
+
+    return { readMaster, readPlan, savePlan, watchMasterChanges, masterKey: MASTER_KEY, planKey: PLAN_KEY };
   }
 
   return { createPlanning2DataAdapter, MASTER_KEY, PLAN_KEY };

@@ -30,6 +30,33 @@ async function main(){
   const week=async()=>{await page.locator('#weeks button').filter({hasText:'19.10'}).click()};await week();
   const cell=(id,date=day)=>page.locator(`.cell[data-eid="${id}"][data-day="${date}"]`);
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')));
+  async function toggleTeam() {
+    const desktop = page.locator('#btnToggleTeam');
+    if (await desktop.isVisible()) await desktop.click();
+    else {
+      await page.locator('#btnMoreActions').click();
+      await page.locator('[data-forward-target="btnToggleTeam"]').click();
+    }
+  }
+  // Change the actual team form while Planning 2 remains mounted.
+  await toggleTeam();
+  const exit = page.locator('.teamRow').nth(2).locator('input[type="month"]').nth(1);
+  await exit.fill('2026-09'); await exit.blur();
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('wochenplan_master_v10')).employees[2].activeToMonth==='2026-09');
+  await page.waitForFunction(()=>document.querySelectorAll('.cell[data-eid="c"]').length===0);
+  const history = JSON.stringify((await read()).schedule);
+  await page.locator('#prev').click();
+  assert.ok(await page.locator('.cell[data-eid="c"]').count()>0, 'Departed person remains visible in historical September');
+  await page.locator('#next').click();
+  assert.equal(await page.locator('.cell[data-eid="c"]').count(),0);
+  await page.reload(); await ready(); await week();
+  assert.equal(await page.locator('.cell[data-eid="c"]').count(),0, 'Departure survives reload');
+  assert.equal(JSON.stringify((await read()).schedule),history);
+  if (await page.locator('#teamSection').evaluate(el=>el.classList.contains('hidden'))) await toggleTeam();
+  await page.locator('.teamRow').nth(2).locator('input[type="month"]').nth(1).fill('');
+  await page.locator('.teamRow').nth(2).locator('input[type="month"]').nth(1).blur();
+  await page.waitForFunction(()=>document.querySelectorAll('.cell[data-eid="c"]').length>0);
+  await toggleTeam();
   const before=await read();
   await cell('a').click();await choosePlanningQuickShift(page,'F5');
   assert.equal((await read()).schedule[day].a.code,'F5');
