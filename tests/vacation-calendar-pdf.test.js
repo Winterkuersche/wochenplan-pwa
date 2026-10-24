@@ -25,10 +25,10 @@ test('calendar PDF creates one full-size image per page and releases temporary r
   const result = await context.buildVacationCalendarPdf({ pages: [{}, {}] }, []);
   assert.equal(result.type, 'application/pdf'); assert.equal(pages.length, 2);
   assert.ok(pages.every(page => page.width === 2526 && page.height === 1785));
-  assert.equal(revoked.length, 2); assert.ok(canvases.every(canvas => canvas.width === 0 && canvas.height === 0));
+  assert.equal(revoked.length, 0); assert.ok(canvases.every(canvas => canvas.width === 0 && canvas.height === 0));
 });
 test('failed image conversion rejects the export and still releases resources', async () => {
   const { context, revoked, canvases, pages } = setup(true);
   await assert.rejects(() => context.buildVacationCalendarPdf({ pages: [{}] }, []), /Kalenderseite/);
-  assert.equal(revoked.length, 1); assert.equal(pages.length, 0); assert.equal(canvases[0].width, 0);
+  assert.equal(revoked.length, 0); assert.equal(pages.length, 0); assert.equal(canvases[0].width, 0);
 });

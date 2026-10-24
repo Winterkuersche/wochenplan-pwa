@@ -47,14 +47,15 @@
   const context = canvas.getContext("2d");
   function model() {
     if (context) context.font = `${api.layout.font}px Arial`;
-    return api.buildSheets(state.vacationCalendar, state.employees, selectedYear(), context ? name => context.measureText(name).width : undefined);
+    return api.buildExportModel(state.vacationCalendar, state.employees, selectedYear(), context ? name => context.measureText(name).width : undefined, holidaysForYear,
+      context ? (value, font) => { context.font = `${font}px Arial`; return context.measureText(value).width; } : undefined);
   }
   function holidays() { return getHolidaysForStateYear("schleswig-holstein", selectedYear()); }
   function preview() {
     try {
       const sheets = model();
       el("vacationCalendarPreview").innerHTML = sheets.pages.map((_, i) => `<div class="vacationCalendarSheet">${api.renderSheet(sheets, i, holidays())}</div>`).join("");
-      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer · Namen werden bei Überschneidungen auf weitere Blätter verteilt.`;
+      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer, einschließlich einer Teamübersicht mit allen Mitarbeitern · Bis zu drei Namenszeilen pro Tagesfeld; weitere Kalenderblätter bei Bedarf.`;
       el("vacationCalendarPrint").disabled = false;
     } catch (error) {
       el("vacationCalendarPreview").replaceChildren();

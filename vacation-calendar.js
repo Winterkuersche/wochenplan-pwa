@@ -12,7 +12,7 @@
     ["2027-05-07", "2027-05-07"], ["2027-07-03", "2027-08-14"],
     ["2027-10-11", "2027-10-23"], ["2027-12-23", "2027-12-31"]
   ];
-  const layout = { width: 842, height: 595, x: 18, y: 38, tableWidth: 806, header: 22, row: 16.1, font: 6.4, line: 7.1, nameWidth: 48 };
+  const layout = { width: 842, height: 595, x: 18, y: 38, tableWidth: 806, header: 22, row: 16.1, font: 5.2, line: 5.0, nameWidth: 48, maxLines: 3 };
   const record = value => value && typeof value === "object" && !Array.isArray(value);
   const text = value => typeof value === "string" && value.trim().length > 0;
   const escape = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -164,7 +164,7 @@
     const sorted = [...people.values()].sort((a, b) => (order.get(a.id) ?? 99999) - (order.get(b.id) ?? 99999));
     const pages = [];
     for (const person of sorted) {
-      let page = pages.find(candidate => [...person.dates].every(iso => (candidate.used.get(iso) || 0) + person.lines.length <= 2));
+      let page = pages.find(candidate => [...person.dates].every(iso => (candidate.used.get(iso) || 0) + person.lines.length <= layout.maxLines));
       if (!page) { page = { people: [], used: new Map() }; pages.push(page); }
       page.people.push(person);
       for (const iso of person.dates) page.used.set(iso, (page.used.get(iso) || 0) + person.lines.length);
@@ -172,8 +172,60 @@
     if (!pages.length) pages.push({ people: [], used: new Map() });
     return { year, title: data.title, pages, dates };
   }
+  function buildExportModel(data, employees, year, measureName, holidaysForYear, measureText) {
+    data = copyData(data);
+    const model = buildSheets(data, employees, year, measureName);
+    const requests = data.requests.filter(item => item.from <= `${year}-12-31` && item.to >= `${year}-01-01`);
+    const people = new Map(peopleForYear(employees, year).map(person => [person.id, person.name]));
+    for (const request of requests) if (!people.has(request.employeeId)) people.set(request.employeeId, request.employeeName);
+    const shortDate = iso => iso.slice(8, 10) + "." + iso.slice(5, 7) + "." + iso.slice(0, 4);
+    const rows = [...people].map(([id, name]) => {
+      const own = requests.filter(item => item.employeeId === id).sort((a, b) => a.from.localeCompare(b.from));
+      const count = countVacationDays(own, holidaysForYear, year);
+      return { id, name, periods: own.map(item => `${shortDate(item.from)} – ${shortDate(item.to)}`).join("; ") || "Noch keine Urlaubswünsche", total: count.days === null ? "unbekannt" : String(count.days) };
+    });
+    function wrap(value, width, font) {
+      const lines = []; let line = "";
+      for (const char of value) {
+        if (line && (measureText ? measureText(line + char, font) : (line.length + 1) * font * .6) > width) { lines.push(line); line = ""; }
+        line += char;
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+    let overview;
+    for (const font of [9, 8, 7]) {
+      const fitted = rows.map(row => {
+        const names = wrap(row.name, 148, font), periods = wrap(row.periods, 546, font);
+        return { ...row, names, periods, height: Math.max(22, Math.max(names.length, periods.length) * (font + 3) + 8) };
+      });
+      if (fitted.reduce((sum, row) => sum + row.height, 0) <= 490) { overview = { overview: true, people: fitted, font }; break; }
+    }
+    if (!overview) throw new Error("Die Teamübersicht passt nicht lesbar auf ein Blatt. Bitte die Anzahl der Zeiträume reduzieren oder die Kalenderblätter einzeln verwenden.");
+    model.pages.push(overview);
+    return model;
+  }
+  function renderOverview(model, page) {
+    const text = (x, y, value, size = page.font, extra = "") => `<text x="${x}" y="${y}" font-size="${size}" ${extra}>${escape(value)}</text>`;
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 595" role="img" aria-label="Teamübersicht ${model.year}" font-family="Arial, sans-serif" fill="#111"><rect width="842" height="595" fill="white"/>`;
+    const title = `Urlaubsplanung ${model.year} · Teamübersicht${model.title ? " · " + model.title : ""}`;
+    svg += text(18, 23, title, 14, 'font-weight="bold" textLength="790" lengthAdjust="spacingAndGlyphs"');
+    svg += '<rect x="18" y="38" width="806" height="22" fill="#ededed"/>';
+    svg += text(22, 53, "Mitarbeiter", 10) + text(180, 53, "Urlaubswünsche · von / bis einschließlich", 10) + text(760, 53, "Tage", 10);
+    let y = 60;
+    for (const row of page.people) {
+      if (page.people.indexOf(row) % 2) svg += `<rect x="18" y="${y}" width="806" height="${row.height}" fill="#f5f5f5"/>`;
+      row.names.forEach((line, i) => { svg += text(22, y + page.font + 5 + i * (page.font + 3), line); });
+      row.periods.forEach((line, i) => { svg += text(180, y + page.font + 5 + i * (page.font + 3), line); });
+      svg += text(760, y + page.font + 5, row.total);
+      y += row.height;
+    }
+    svg += text(18, 576, "Urlaubswünsche · noch keine Genehmigung · Tage im gewählten Jahr ohne Sonntage und Feiertage SH", 7);
+    return svg + "</svg>";
+  }
   function renderSheet(model, pageIndex, holidays = []) {
     const page = model.pages[pageIndex], l = layout, col = l.tableWidth / 12;
+    if (page.overview) return renderOverview(model, page);
     const byIso = new Map(model.dates.map(date => [date.iso, date]));
     const holidayMap = new Map(holidays.map(holiday => [holiday.date, holiday.name]));
     const rect = (x, y, w, h, fill, stroke = "none") => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${stroke}" stroke-width=".35"/>`;
@@ -197,7 +249,7 @@
         if (school || holidayMap.has(iso)) svg += rect(x + .4, y + .4, 12.5, l.row - .8, holidayMap.has(iso) ? "#fff57b" : "#f9bfd7");
         svg += label(x + 2.3, y + 10.5, day, 8, 'font-weight="bold"');
         const lines = page.people.filter(person => person.dates.has(iso)).flatMap(person => person.lines);
-        lines.forEach((line, index) => { svg += label(x + 15.5, y + (lines.length === 1 ? 10.2 : 6.5 + index * l.line), line, l.font, `data-vacation-name="true" data-cell-right="${x + col - 1}"`); });
+        lines.forEach((line, index) => { svg += label(x + 15.5, y + ((l.row - (lines.length - 1) * l.line) / 2 + 1.8 + index * l.line), line, l.font, `data-vacation-name="true" data-cell-right="${x + col - 1}"`); });
         if (!lines.length && holidayMap.has(iso)) svg += label(x + 15.5, y + 9.6, holidayMap.get(iso), 4.2, 'textLength="46" lengthAdjust="spacingAndGlyphs"');
       }
     }
@@ -219,5 +271,5 @@
       });
       </script></html>`;
   }
-  return { emptyData, validateData, validateRequest, copyData, saveRequest, peopleForYear, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, renderSheet, printDocument, layout };
+  return { emptyData, validateData, validateRequest, copyData, saveRequest, peopleForYear, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, buildExportModel, renderSheet, printDocument, layout };
 });

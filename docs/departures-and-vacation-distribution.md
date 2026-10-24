@@ -43,3 +43,7 @@ Der Kalender wird lokal aus den vorhandenen SVG-Blättern mit 2526 × 1785 Pixel
 Die Auswahl für neue Urlaubswünsche enthält nur Personen, deren Beschäftigungszeitraum das gewählte Jahr berührt (Ein-/Austrittsmonat einschließlich). Historische Wünsche werden weder gelöscht noch aus der Jahresübersicht entfernt; bestehende Einträge ausgeschiedener Personen können weiterhin ausdrücklich bearbeitet werden. Die Vorschlagsautomatik hatte diese Jahresbegrenzung bereits.
 
 Tests: Jahreswechsel der Auswahl, inklusive Eintritt/Austritt, PDF-Konvertierung und Fehlerbereinigung. Chromium/WebKit prüfen den tatsächlichen Export auch offline sowie die PDF-Seitenzahl. Native iPhone-Dateizustellung bleibt ein zusätzlicher Gerätetest.
+
+Ergänzung: Kalendernamen mit 5,2 pt statt 6,4 pt und bis zu drei Namenszeilen pro Tagesfeld. Bei weiteren Überschneidungen entstehen zusätzliche Kalenderblätter. Die letzte PDF-Seite ist eine Teamübersicht mit vollständigen Namen, Zeiträumen und Jahrestagen; auch aktive Personen ohne Wünsche werden aufgeführt. Umfangreiche Übersichten werden bis auf 7 pt angepasst; passt der Inhalt dann nicht vollständig, erscheint ein Fehler statt abgeschnittener Zeilen. Keine gespeicherten Plandaten werden geändert.
+
+Der SVG-Bildexport verwendet eine lokale Data-URL, um Canvas-Origin-Probleme in WebKit beim Zeichnen von SVG-Blob-Adressen zu vermeiden. Der erweiterte Browsertest gibt bei Exportfehlern die konkrete App-Meldung aus.
