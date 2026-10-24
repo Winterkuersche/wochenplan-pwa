@@ -4,6 +4,7 @@
   const el = id => document.getElementById(id);
   const form = el("vacationCalendarForm");
   if (!form) return;
+  let distribution = null;
   let editingId = null, expected = null, dirty = false, endFollowsStart = true, renderedYear = null;
   const fields = ["vacationRequestEmployee", "vacationRequestFrom", "vacationRequestTo", "vacationRequestPrintName", "vacationCalendarTitle"];
   const signature = () => JSON.stringify(state.vacationCalendar || api.emptyData());
@@ -108,7 +109,7 @@
       for (const action of ["Bearbeiten", "Löschen"]) {
         const button = document.createElement("button"); button.type = "button"; button.textContent = action; button.setAttribute("aria-label", `${action}: ${name} · ${description.textContent}`);
         button.addEventListener("click", () => {
-          if (dirty) { say("Bitte zuerst die offene Eingabe speichern oder verwerfen.", true); return; }
+          if (dirty || distribution) { say("Bitte zuerst die offene Eingabe oder Urlaubsverteilung abschließen oder verwerfen.", true); return; }
           if (action === "Löschen") {
             if (!confirm(`Urlaubswunsch von ${name} löschen?`)) return;
             try { const next = api.copyData(state.vacationCalendar); next.requests = next.requests.filter(item => item.id !== request.id); commit(next); render(); say("Urlaubswunsch gelöscht."); }
@@ -154,12 +155,13 @@
   });
   el("vacationCalendarYear").addEventListener("change", () => {
     if (!Number.isInteger(selectedYear()) || selectedYear() < 1900 || selectedYear() > 2099) { say("Bitte ein Jahr zwischen 1900 und 2099 wählen.", true); return; }
-    if (dirty) { el("vacationCalendarYear").value = renderedYear; say("Bitte die offene Eingabe zuerst speichern oder verwerfen, bevor du das Kalenderjahr wechselst.", true); return; }
+    if (dirty || distribution) { el("vacationCalendarYear").value = renderedYear; say("Bitte die offene Eingabe oder Urlaubsverteilung zuerst abschließen oder verwerfen, bevor du das Kalenderjahr wechselst.", true); return; }
     uiState.vacationCalendarYear = selectedYear(); saveUiState(); defaultDates(); render();
   });
   form.addEventListener("submit", event => {
     event.preventDefault();
     try {
+      if (distribution) throw new Error("Bitte die Urlaubsverteilung zuerst übernehmen oder verwerfen.");
       if (dirty && signature() !== expected) throw new Error("Die Urlaubswünsche wurden inzwischen geändert. Deine Eingabe bleibt erhalten; bitte den aktuellen Stand vergleichen.");
       const employeeId = el("vacationRequestEmployee").value;
       const employee = state.employees.find(person => person.id === employeeId);
@@ -175,9 +177,9 @@
   });
   el("vacationRequestCancel").addEventListener("click", () => { reset(); say("Eingabe verworfen."); });
   function print() {
-    if (dirty) { say("Bitte die offene Eingabe zuerst speichern oder verwerfen. Gedruckt werden die gespeicherten Urlaubswünsche.", true); return; }
+    if (dirty || distribution) { say("Bitte die offene Eingabe oder Urlaubsverteilung zuerst speichern oder verwerfen. Gedruckt werden die gespeicherten Urlaubswünsche.", true); return; }
     try {
-      const html = api.printDocument(model(), holidays());
+      const html = api.printDocument(model(), holidays(), window.location.href);
       const tab = window.open("", "_blank");
       if (!tab) throw new Error("Bitte das neue Druckfenster im Browser erlauben und erneut auf Drucken tippen.");
       tab.opener = null; tab.document.open(); tab.document.write(html); tab.document.close();
@@ -185,9 +187,135 @@
     } catch (error) { say(error.message, true); }
   }
   el("vacationCalendarPrint").addEventListener("click", print);
-  window.WochenplanVacationCalendarPanel = { render, print, hasOpenDraft: () => dirty };
+  const distributor = window.WochenplanVacationDistribution;
+  // Use the same status resolver as the planner, including directly entered U/K cells.
+  const distributionAbsences = () => [...(state.absences || []), ...Object.entries(state.schedule || {}).flatMap(([iso, entries]) =>
+    Object.entries(entries || {}).flatMap(([employeeId, entry]) => {
+      const type = getEntryStatus(entry);
+      return type === "vacation" || type === "sick" ? [{ employeeId, type, from: iso, to: iso }] : [];
+    }))];
+  const distributionSignature = () => JSON.stringify([state.vacationCalendar || api.emptyData(), state.employees, distributionAbsences()]);
+  const distributionMessage = (message, error = false) => {
+    el("vacationDistributionMessage").textContent = message;
+    el("vacationDistributionMessage").classList.toggle("isError", error);
+  };
+  function distributionOptions() {
+    return { data: state.vacationCalendar, employees: state.employees, absences: distributionAbsences(), year: distribution.year,
+      holidaysForYear, budgets: distribution.budgets, selectedIds: distribution.selectedIds, notBefore: distribution.notBefore, proposals: distribution.proposals };
+  }
+  function checkDistributionSource() {
+    if (dirty) throw new Error("Bitte die offene manuelle Eingabe zuerst speichern oder verwerfen.");
+    if (distributionSignature() !== distribution.expected) throw new Error("Team, Urlaubswünsche oder Abwesenheiten wurden inzwischen geändert. Bitte die Vorschau verwerfen und neu berechnen.");
+  }
+  function distributionReport() {
+    try {
+      checkDistributionSource();
+      const report = distributor.assess(distributionOptions());
+      for (const person of report.people) {
+        const summary = el("vacationDistributionPreview").querySelector(`[data-distribution-summary="${CSS.escape(person.id)}"]`);
+        if (summary) summary.textContent = `${person.name}: ${person.total} / ${person.budget} Tage (${person.existing} vorhanden, ${person.added} neu) · bis 30. Juni: ${person.firstHalf} / ${person.target} · längster Block: ${person.longest} Tage · gleichzeitig maximal ${Number.isFinite(person.maxConcurrentMinutes) ? Math.floor(person.maxConcurrentMinutes / 60) + ":" + String(person.maxConcurrentMinutes % 60).padStart(2, "0") + " / 50:00 Wochenstunden" : "unbekannte Wochenstunden"}. ${person.warnings.join(" ")}`;
+      }
+      for (const row of el("vacationDistributionPreview").querySelectorAll("[data-proposal-id]")) {
+        const proposal = distribution.proposals.find(item => item.id === row.dataset.proposalId);
+        row.querySelector("small").textContent = api.validateRequest(proposal) ? "Bitte gültige Daten eingeben." : dayLabel(api.countVacationDays([proposal], holidaysForYear));
+      }
+      distributionMessage([...report.errors, ...report.notices, "Die Schichtbesetzung bitte anschließend prüfen. Offene Ziele sind oben je Person angegeben."].join(" "), !!report.errors.length);
+      el("vacationDistributionAdopt").disabled = !!report.errors.length || !distribution.proposals.length;
+    } catch (error) { distributionMessage(error.message, true); el("vacationDistributionAdopt").disabled = true; }
+  }
+  function showDistributionPreview() {
+    const preview = el("vacationDistributionPreview"); preview.replaceChildren();
+    for (const id of distribution.selectedIds) {
+      const details = document.createElement("details"), summary = document.createElement("summary");
+      details.className = "vacationDistributionPerson"; details.open = true;
+      summary.dataset.distributionSummary = id; details.append(summary);
+      for (const proposal of distribution.proposals.filter(item => item.employeeId === id)) {
+        const row = document.createElement("div"); row.className = "vacationDistributionRow"; row.dataset.proposalId = proposal.id;
+        for (const [key, label] of [["from", "Von"], ["to", "Bis einschließlich"]]) {
+          const field = document.createElement("label"), input = document.createElement("input");
+          field.textContent = label; input.type = "date"; input.value = proposal[key];
+          input.min = `${distribution.year}-01-01`; input.max = `${distribution.year}-12-31`;
+          input.addEventListener("input", () => { proposal[key] = input.value; distributionReport(); }); field.append(input); row.append(field);
+        }
+        const count = document.createElement("small"), remove = document.createElement("button");
+        remove.type = "button"; remove.textContent = "Vorschlag verwerfen";
+        remove.addEventListener("click", () => { distribution.proposals = distribution.proposals.filter(item => item !== proposal); row.remove(); distributionReport(); });
+        row.append(count, remove); details.append(row);
+      }
+      preview.append(details);
+    }
+    distributionReport();
+  }
+  el("vacationDistributionOpen").addEventListener("click", () => {
+    if (distribution) return;
+    if (dirty) { say("Bitte die offene Eingabe zuerst speichern oder verwerfen.", true); return; }
+    try {
+      flushPendingAutoSave();
+      const year = selectedYear(), today = new Date();
+      const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+      const notBefore = localDate > `${year}-01-01` ? localDate : `${year}-01-01`;
+      const people = distributor.eligiblePeople(state.vacationCalendar, state.employees, year, notBefore);
+      distribution = { year, expected: distributionSignature(), budgets: {}, selectedIds: [], proposals: [], notBefore };
+      el("vacationDistribution").hidden = false; el("vacationDistributionOpen").disabled = true;
+      el("vacationDistributionStart").value = notBefore; el("vacationDistributionStart").min = notBefore; el("vacationDistributionStart").max = `${year}-12-31`;
+      const list = el("vacationDistributionPeople"); list.replaceChildren();
+      for (const person of people) {
+        const row = document.createElement("div"); row.className = "vacationDistributionChoice"; row.dataset.employeeId = person.id;
+        const label = document.createElement("label"), check = document.createElement("input"), name = document.createElement("span");
+        check.type = "checkbox"; check.checked = true;
+        name.textContent = `${person.name} · Wochen-Soll ${person.target || "fehlt"}`;
+        label.append(check, name);
+        const budgetLabel = document.createElement("label"), budget = document.createElement("input");
+        budgetLabel.textContent = `Jahreskontingent ${year}`; budget.type = "number"; budget.min = "0"; budget.max = "366"; budget.step = "1";
+        budget.value = person.totalVacationDays ?? person.vacationDays ?? 30; budgetLabel.append(budget); row.append(label, budgetLabel); list.append(row);
+      }
+      el("vacationDistributionGenerate").disabled = !people.length;
+      distributionMessage(people.length ? "Personen und Kontingente prüfen. Noch nichts gespeichert." : `Keine aktiven Mitarbeiter ohne Urlaubswünsche für ${year} gefunden.`);
+    } catch (error) { say(error.message, true); }
+  });
+  el("vacationDistributionGenerate").addEventListener("click", () => {
+    try {
+      checkDistributionSource();
+      distribution.selectedIds = []; distribution.budgets = {};
+      for (const row of el("vacationDistributionPeople").children) {
+        if (!row.querySelector('input[type="checkbox"]').checked) continue;
+        const input = row.querySelector('input[type="number"]');
+        if (!input.value || !input.checkValidity()) throw new Error("Bitte gültige ganze Jahreskontingente eingeben.");
+        distribution.selectedIds.push(row.dataset.employeeId); distribution.budgets[row.dataset.employeeId] = Number(input.value);
+      }
+      if (!distribution.selectedIds.length) throw new Error("Bitte mindestens eine Person auswählen.");
+      const start = el("vacationDistributionStart");
+      if (!start.value || !start.checkValidity()) throw new Error("Bitte einen gültigen frühesten Beginn im Planungsjahr wählen.");
+      distribution.notBefore = start.value;
+      distribution.proposals = distributor.propose(distributionOptions()).proposals;
+      el("vacationDistributionSettings").hidden = true;
+      el("vacationDistributionBack").hidden = false; el("vacationDistributionAdopt").hidden = false;
+      showDistributionPreview();
+    } catch (error) { distributionMessage(error.message, true); }
+  });
+  el("vacationDistributionBack").addEventListener("click", () => {
+    distribution.proposals = []; el("vacationDistributionPreview").replaceChildren();
+    el("vacationDistributionSettings").hidden = false; el("vacationDistributionBack").hidden = true; el("vacationDistributionAdopt").hidden = true;
+    distributionMessage("Vorschläge verworfen. Einstellungen anpassen und neu berechnen.");
+  });
+  function closeDistribution() {
+    distribution = null; el("vacationDistribution").hidden = true; el("vacationDistributionOpen").disabled = false;
+    el("vacationDistributionPreview").replaceChildren(); el("vacationDistributionSettings").hidden = false;
+    el("vacationDistributionBack").hidden = true; el("vacationDistributionAdopt").hidden = true;
+  }
+  el("vacationDistributionCancel").addEventListener("click", closeDistribution);
+  el("vacationDistributionAdopt").addEventListener("click", () => {
+    try {
+      checkDistributionSource();
+      if (!distribution.proposals.length) throw new Error("Keine Vorschläge zum Übernehmen vorhanden.");
+      const next = distributor.adopt(distributionOptions(), () => crypto.randomUUID());
+      commit(next); closeDistribution(); render();
+      say("Vorschläge als Urlaubswünsche gespeichert. Jeder Zeitraum bleibt über Bearbeiten und Löschen änderbar; keine Genehmigung oder Änderung der Schichten.");
+    } catch (error) { distributionMessage(error.message, true); }
+  });
+  window.WochenplanVacationCalendarPanel = { render, print, hasOpenDraft: () => dirty || !!distribution };
   window.addEventListener("beforeunload", event => {
-    if (dirty) { event.preventDefault(); event.returnValue = ""; }
+    if (dirty || distribution) { event.preventDefault(); event.returnValue = ""; }
   });
   window.addEventListener("wochenplan:update-waiting", () => say("Ein App-Update ist bereit. Bitte die offene Eingabe zuerst speichern und die App danach neu öffnen."));
   render();

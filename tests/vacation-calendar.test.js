@@ -107,7 +107,7 @@ test('printed dates include full names and weekends; special characters cannot i
   const value = data([request('a', '2027-01-01', '2027-01-03', { employeeName: '<script> & A' })]);
   value.title = '<img onerror=evil()>';
   const html = api.printDocument(api.buildSheets(value, [], 2027), [{ date: '2027-01-01', name: 'Neujahr' }]);
-  assert.doesNotMatch(html, /<script>|<img /); assert.match(html, /&lt;script&gt;/); assert.match(html, /&lt;img/);
+  assert.doesNotMatch(html, /<img /); assert.equal((html.match(/<script>/g) || []).length, 1, "Only the fixed return-navigation script may execute"); assert.match(html, /&lt;script&gt;/); assert.match(html, /&lt;img/);
   assert.equal((html.match(/&lt;script&gt;/g) || []).length, 3);
   assert.match(html, /size:A4 landscape/); assert.match(html, /#f9bfd7/); assert.match(html, /#fff57b/);
   // Footer follows all 31 rows; bottom row never crosses the printable page.
@@ -153,4 +153,21 @@ test('new backup and sync snapshots advertise calendar support without changing 
   const snapshot = ctx.collectFullBackupSnapshot();
   assert.equal(snapshot.capabilities.vacationCalendar, true);
   assert.equal(snapshot.storage.plan, plan);
+});
+
+test('export has a mobile return path even when the print window cannot close', () => {
+  const html = api.printDocument(api.buildSheets(undefined, [], 2027), [], 'https://example.test/planner/');
+  assert.match(html, /Zurück zum Wochenplan/); assert.match(html, /name="viewport"/);
+  assert.match(html, /@media screen\{\.sheet\{width:min\(297mm,100%\)/);
+  assert.match(html, /@page\{size:A4 landscape/);
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  let click, closed = false, destination;
+  vm.runInNewContext(script, {
+    document: { getElementById: () => ({ addEventListener: (event, listener) => { click = listener; } }) },
+    window: { close: () => { closed = true; }, closed: false, location: { replace: url => { destination = url; } } },
+    setTimeout: callback => callback()
+  });
+  click(); assert.equal(closed, true); assert.equal(destination, 'https://example.test/planner/');
+  const escaped = api.printDocument(api.buildSheets(undefined, [], 2027), [], 'https://example.test/</script><script>bad()');
+  assert.equal((escaped.match(/<script>/g) || []).length, 1);
 });
