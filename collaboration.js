@@ -6,6 +6,10 @@
     OWNER_REQUIRED: "Diese Aktion ist der Filialverwaltung vorbehalten.",
     REVISION_CONFLICT: "Inzwischen wurde ein neuer Stand gespeichert. Bitte zuerst vergleichen.",
     CHANGE_CONFLICT: "Diese Änderung überschneidet sich mit einer späteren Änderung. Bitte einzeln prüfen.",
+    ITEM_ALREADY_DECIDED: "Diese Änderung wurde inzwischen entschieden. Bitte den Vorschlag aktualisieren.",
+    PROPOSAL_MISSING: "Dieser Vorschlag wurde inzwischen vollständig entschieden. Bitte aktualisieren.",
+    INVALID_SELECTION: "Bitte eine noch offene Änderung auswählen.",
+    DEPENDENT_CHANGE: "Diese Änderungen gehören zusammen: Für Schichten und Abwesenheiten muss die Person im Team stehen. Übernimm zuerst die zugehörigen Teamdaten oder alle zusammengehörigen Änderungen gemeinsam. Beim Entfernen zuerst ihre Einträge auflösen.",
     INVITE_INVALID: "Die Einladung ist abgelaufen, widerrufen oder bereits verwendet.",
     EMPTY_CHANGE: "Es gibt keine Änderungen zum Übernehmen.",
     PUBLISH_DENIED: "Du darfst diesen Wochenstand nicht freigeben.",
@@ -163,6 +167,10 @@
       const result = await exclusive(() => call(action, { expected_revision: state.branch?.revision, ...args }));
       await refresh(); return result;
     }
+    async function decideProposalItems(id, indices, decision) {
+      if (!state.branch?.capabilities?.proposal_items) throw new Error("Einzelentscheidungen benötigen noch die Server-Aktualisierung. Der Vorschlag bleibt erhalten.");
+      return perform("decide_proposal_items", { id, indices, decision });
+    }
     async function propose(reason) {
       return exclusive(async thisEpoch => {
         const payload = snapshot(), signature = await fingerprint(payload), previous = metadata();
@@ -202,7 +210,7 @@
           sharedArchive: { format: "wochenplan-filialarchiv-v1", branch: { ...branch, payload: undefined }, events } };
       });
     }
-    return { setUser, select, refresh, save, scheduleSave, adopt, perform, history, compare, archive,
+    return { setUser, select, refresh, save, scheduleSave, adopt, perform, decideProposalItems, history, compare, archive,
       create: (name, display_name) => establish("create", { name, display_name, payload: snapshot() }),
       join: (token, display_name) => establish("accept_invite", { token, display_name }),
       propose,

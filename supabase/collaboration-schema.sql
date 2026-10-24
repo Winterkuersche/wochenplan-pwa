@@ -56,7 +56,7 @@ create table wochenplan_private.proposals (
  id uuid primary key default gen_random_uuid(), branch_id uuid not null references wochenplan_private.branches(id),
  author_id uuid not null references auth.users(id), author_name text not null,
  reason text not null, changes jsonb not null,
- status text not null default 'pending' check(status in ('pending','accepted','rejected')),
+ status text not null default 'pending' check(status in ('pending','accepted','rejected','mixed')),
  created_at timestamptz not null default now(), decided_at timestamptz
 );
 create index on wochenplan_private.proposals(branch_id,created_at desc);
@@ -127,10 +127,39 @@ begin
   desired_exists:=(c->>case when reverse_change then 'before_exists' else 'after_exists' end)::boolean;
   if ((result #> path) is not null) is distinct from expected_exists or
      (expected_exists and (result #> path) is distinct from expected) then raise exception 'CHANGE_CONFLICT' using errcode='40001'; end if;
+  -- A proposal can add individual shifts on a previously empty day. Create
+  -- only this known container; never create arbitrary missing ancestors.
+  if desired_exists and not expected_exists and cardinality(path)=5
+     and path[2]='wochenplan_plan_v10' and path[3]='schedule'
+     and result #> path[1:4] is null then
+   result:=jsonb_set(result,path[1:4],'{}'::jsonb,true);
+  end if;
   if desired_exists then result:=jsonb_set(result,path,desired,true); else result:=result #- path; end if;
   if desired_exists and (result #> path) is distinct from desired then raise exception 'CHANGE_CONFLICT' using errcode='40001'; end if;
  end loop;
  return wochenplan_private.clean_payload(result);
+end $$;
+
+-- Existing day-level additions/removals become one atomic item per shift.
+-- Arrays and the fields within a shift remain indivisible.
+create function wochenplan_private.proposal_items(changes jsonb) returns jsonb
+language plpgsql immutable security invoker set search_path='' as $$
+declare c jsonb; result jsonb:='[]'; k text;
+begin
+ for c in select value from jsonb_array_elements(changes) loop
+  if jsonb_array_length(c->'path')=4 and c->'path'->>1='wochenplan_plan_v10'
+     and c->'path'->>2='schedule' then
+   for k in select key from (
+    select jsonb_object_keys(case when c->>'before_exists'='true' then c->'before' else '{}'::jsonb end) key
+    union select jsonb_object_keys(case when c->>'after_exists'='true' then c->'after' else '{}'::jsonb end) key
+   ) keys order by key loop
+    result:=result||wochenplan_private.diff(c->'before'->k,c->'after'->k,
+     array['storage','wochenplan_plan_v10','schedule',c->'path'->>3,k]);
+   end loop;
+  else result:=result||jsonb_build_array(c);
+  end if;
+ end loop;
+ return result;
 end $$;
 
 create function wochenplan_private.api(p_action text,p_args jsonb) returns jsonb
@@ -142,6 +171,8 @@ declare uid uuid:=auth.uid(); bid uuid; b wochenplan_private.branches;
  ev wochenplan_private.events; snap wochenplan_private.snapshots;
  actor text; owner boolean; editable boolean; publishable boolean; result jsonb; payload jsonb;
  changes jsonb; token text; expected bigint; stamp timestamptz:=clock_timestamp(); ws date;
+ selected_changes jsonb; selected_indices jsonb; updated_changes jsonb; item_index bigint;
+ decision text; proposal_status text;
 begin
  if uid is null then raise exception 'LOGIN_REQUIRED' using errcode='42501'; end if;
  if octet_length(p_args::text)>4300000 then raise exception 'REQUEST_TOO_LARGE'; end if;
@@ -186,6 +217,7 @@ begin
  if p_action='read' then
   return jsonb_build_object('id',bid,'name',b.name,'owner',owner,'can_edit',editable,'can_publish',publishable,
    'revision',pl.revision,'payload',pl.payload,'updated_at',pl.updated_at,'server_time',stamp,
+   'capabilities',jsonb_build_object('proposal_items',true),
    'members',(select jsonb_agg(jsonb_build_object('id',m.user_id,'name',m.display_name,'owner',m.user_id=b.owner_id,'active',m.active)) from wochenplan_private.members m where m.branch_id=bid),
    'delegations',coalesce((select jsonb_agg(to_jsonb(d)) from wochenplan_private.delegations d where d.branch_id=bid and d.revoked_at is null and d.ends_at>stamp),'[]'),
    'invites',case when owner then coalesce((select jsonb_agg(jsonb_build_object('id',i.id,'expires_at',i.expires_at)) from wochenplan_private.invites i where i.branch_id=bid and i.used_at is null and i.revoked_at is null and i.expires_at>stamp),'[]') else '[]'::jsonb end,
@@ -210,7 +242,7 @@ begin
   return to_jsonb(snap);
  end if;
 
- if p_action in ('invite','revoke_invite','grant','revoke_grant','remove_member','decide_proposal') and not owner then
+ if p_action in ('invite','revoke_invite','grant','revoke_grant','remove_member','decide_proposal','decide_proposal_items') and not owner then
   raise exception 'OWNER_REQUIRED' using errcode='42501';
  end if;
  if p_action='invite' then
@@ -234,19 +266,47 @@ begin
  elsif p_action='propose' then
   if length(trim(coalesce(p_args->>'reason','')))=0 then raise exception 'REASON_REQUIRED'; end if;
   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
-  changes:=wochenplan_private.diff(pl.payload,wochenplan_private.clean_payload(p_args->'payload'));
+  changes:=wochenplan_private.proposal_items(wochenplan_private.diff(pl.payload,wochenplan_private.clean_payload(p_args->'payload')));
   if jsonb_array_length(changes)=0 then raise exception 'EMPTY_CHANGE'; end if;
   insert into wochenplan_private.proposals(branch_id,author_id,author_name,reason,changes)
    values(bid,uid,actor,left(p_args->>'reason',500),changes);
- elsif p_action='decide_proposal' then
+ elsif p_action in ('decide_proposal','decide_proposal_items') then
   select * into prop from wochenplan_private.proposals where id=(p_args->>'id')::uuid and branch_id=bid for update;
   if not found or prop.status<>'pending' then raise exception 'PROPOSAL_MISSING'; end if;
-  if p_args->>'decision' not in ('accepted','rejected') then raise exception 'INVALID_DECISION'; end if;
-  if p_args->>'decision'='accepted' then
-   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
-   payload:=wochenplan_private.apply_changes(pl.payload,prop.changes);
+  decision:=p_args->>'decision';
+  if decision is null or decision not in ('accepted','rejected') then raise exception 'INVALID_DECISION'; end if;
+  if p_action='decide_proposal_items' then
+   selected_indices:=p_args->'indices';
+   if jsonb_typeof(selected_indices) is distinct from 'array' or jsonb_array_length(selected_indices)=0 then raise exception 'INVALID_SELECTION'; end if;
+   if exists(select 1 from jsonb_array_elements(selected_indices) i where jsonb_typeof(i)<>'number' or i::text !~ '^(0|[1-9][0-9]*)$') then raise exception 'INVALID_SELECTION'; end if;
+   if (select count(distinct value) from jsonb_array_elements(selected_indices))<>jsonb_array_length(selected_indices) then raise exception 'INVALID_SELECTION'; end if;
+   if exists(select 1 from jsonb_array_elements(selected_indices) i where i::numeric>=jsonb_array_length(prop.changes)) then raise exception 'INVALID_SELECTION'; end if;
+  else
+   -- Older clients may still decide the whole proposal: only its open items.
+   select coalesce(jsonb_agg(ord-1),'[]'::jsonb) into selected_indices
+    from jsonb_array_elements(prop.changes) with ordinality c(value,ord) where not value ? 'decision';
   end if;
-  update wochenplan_private.proposals set status=p_args->>'decision',decided_at=stamp where id=prop.id;
+  selected_changes:='[]'; updated_changes:='[]';
+  for item,item_index in select value,ord-1 from jsonb_array_elements(prop.changes) with ordinality c(value,ord) loop
+   if selected_indices @> jsonb_build_array(item_index) then
+    if item ? 'decision' then raise exception 'ITEM_ALREADY_DECIDED'; end if;
+    item:=item||jsonb_build_object('decision',decision,'decided_at',stamp,'decided_by',uid,'decided_by_name',actor,'proposal_id',prop.id);
+    selected_changes:=selected_changes||jsonb_build_array(item);
+   end if;
+   updated_changes:=updated_changes||jsonb_build_array(item);
+  end loop;
+  if jsonb_array_length(selected_changes)=0 then raise exception 'INVALID_SELECTION'; end if;
+  if decision='accepted' then
+   if (p_args->>'expected_revision')::bigint is distinct from pl.revision then raise exception 'REVISION_CONFLICT' using errcode='40001'; end if;
+   payload:=wochenplan_private.apply_changes(pl.payload,selected_changes);
+  end if;
+  proposal_status:=case
+   when exists(select 1 from jsonb_array_elements(updated_changes) c where not c ? 'decision') then 'pending'
+   when not exists(select 1 from jsonb_array_elements(updated_changes) c where c->>'decision'<>'accepted') then 'accepted'
+   when not exists(select 1 from jsonb_array_elements(updated_changes) c where c->>'decision'<>'rejected') then 'rejected'
+   else 'mixed' end;
+  update wochenplan_private.proposals set changes=updated_changes,status=proposal_status,
+   decided_at=case when proposal_status='pending' then null else stamp end where id=prop.id;
   p_args:=p_args||jsonb_build_object('reason','Vorschlag von '||prop.author_name||': '||prop.reason);
  elsif p_action in ('save','restore','revert') then
   if not editable then raise exception 'READ_ONLY' using errcode='42501'; end if;
@@ -277,6 +337,15 @@ begin
  end if;
 
  if payload is not null then
+  -- Every plan update shares this invariant, including save, restore and revert.
+  -- Checking the final payload permits related changes in either path order.
+  if exists(select 1 from jsonb_each(payload->'storage'->'wochenplan_plan_v10'->'schedule') d,
+     lateral jsonb_object_keys(d.value) person(id)
+     where not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=person.id))
+     or exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_plan_v10'->'absences') a
+      where a ? 'employeeId' and not exists(select 1 from jsonb_array_elements(payload->'storage'->'wochenplan_master_v10'->'employees') e where e->>'id'=a->>'employeeId')) then
+   raise exception 'DEPENDENT_CHANGE' using errcode='23503';
+  end if;
   changes:=wochenplan_private.diff(pl.payload,payload);
   if jsonb_array_length(changes)>0 then
    -- Preserve a full recovery point for every successful plan change.
@@ -297,6 +366,7 @@ begin
   values(bid,case when payload is not null then pl.revision else null end,uid,actor,p_action,
    left(coalesce(p_args->>'reason',''),500),case when p_action in ('grant','revoke_grant','remove_member','revoke_invite','publish','checkpoint') then
      jsonb_build_array(jsonb_build_object('action',p_action,'details',p_args-'payload'-'token'-'expected_revision'))
+     when p_action in ('decide_proposal','decide_proposal_items') then selected_changes
      else coalesce(changes,'[]') end);
  return coalesce(result,jsonb_build_object('revision',pl.revision));
 end $$;
