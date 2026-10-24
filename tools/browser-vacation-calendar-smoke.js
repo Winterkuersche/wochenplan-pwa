@@ -83,7 +83,7 @@ async function run(context, url, width, engine) {
   await page.evaluate(() => { localDataStore.writeBatch = window.testWriteBatch; delete window.testWriteBatch; });
   await page.locator('#vacationRequestSave').click();
   for (let index = 2; index < 13; index++) await enter('p' + index, '2027-07-01', '2027-07-14');
-  assert.equal(await page.locator('.vacationCalendarSheet').count(), 6);
+  assert.equal(await page.locator('.vacationCalendarSheet').count(), 7);
   // The ordinary week editor also has to preserve the separate annual wishes.
   await page.locator('#btnViewWeek').click();
   await page.locator('#weeks button').filter({ hasText: '19.10' }).click();
@@ -100,11 +100,11 @@ async function run(context, url, width, engine) {
   await page.waitForFunction(() => window.testPdfBlob instanceof Blob || !document.querySelector('#vacationCalendarMessage').textContent.startsWith('PDF wird erstellt'));
   assert.equal(await page.evaluate(() => window.testPdfBlob instanceof Blob), true, await page.locator('#vacationCalendarMessage').innerText());
   const downloadedPdf = Buffer.from(await page.evaluate(async () => [...new Uint8Array(await window.testPdfBlob.arrayBuffer())]));
-  assert.equal((downloadedPdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 6);
+  assert.equal((downloadedPdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 7);
   assert.ok(!downloadedPdf.includes(Buffer.from(url)), 'PDF contains no browser URL');
   await context.setOffline(false);
   const html = await page.evaluate(() => WochenplanVacationCalendar.printDocument(WochenplanVacationCalendar.buildExportModel(state.vacationCalendar, state.employees, 2027, undefined, year => getHolidaysForStateYear('schleswig-holstein', year)), getHolidaysForStateYear('schleswig-holstein', 2027), location.href));
-  assert.equal((html.match(/<section class="sheet">/g) || []).length, 6);
+  assert.equal((html.match(/<section class="sheet">/g) || []).length, 7);
   assert.match(html, /Urlaubsplanung 2027/);
   const printPage = await context.newPage(); await printPage.setContent(html);
   await printPage.emulateMedia({ media: 'print' });
@@ -119,7 +119,7 @@ async function run(context, url, width, engine) {
     const file = 'test-results/vacation-calendar/annual-requests.pdf';
     fs.writeFileSync(file, downloadedPdf);
     const pdf = downloadedPdf;
-    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 6, 'Five calendar groups and one team overview must produce exactly six A4 pages');
+    assert.equal((pdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 7, 'Five calendar groups, combined calendar and team overview produce seven A4 pages');
     await page.locator('.vacationCalendarPanel').screenshot({ path: 'test-results/vacation-calendar/input-desktop.png' });
   }
   await printPage.emulateMedia({ media: 'screen' });

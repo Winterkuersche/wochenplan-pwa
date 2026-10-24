@@ -55,7 +55,7 @@
     try {
       const sheets = model();
       el("vacationCalendarPreview").innerHTML = sheets.pages.map((_, i) => `<div class="vacationCalendarSheet">${api.renderSheet(sheets, i, holidays())}</div>`).join("");
-      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer, einschließlich einer Teamübersicht mit allen Mitarbeitern · Bis zu drei Namenszeilen pro Tagesfeld; weitere Kalenderblätter bei Bedarf.`;
+      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer, einschließlich Gesamtkalender mit Nummernlegende und Teamübersicht · Bis zu drei Namenszeilen pro Tagesfeld; weitere Kalenderblätter bei Bedarf.`;
       el("vacationCalendarPrint").disabled = false;
     } catch (error) {
       el("vacationCalendarPreview").replaceChildren();

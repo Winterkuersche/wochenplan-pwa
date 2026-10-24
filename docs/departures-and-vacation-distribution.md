@@ -47,3 +47,7 @@ Tests: Jahreswechsel der Auswahl, inklusive Eintritt/Austritt, PDF-Konvertierung
 Ergänzung: Kalendernamen mit 5,2 pt statt 6,4 pt und bis zu drei Namenszeilen pro Tagesfeld. Bei weiteren Überschneidungen entstehen zusätzliche Kalenderblätter. Die letzte PDF-Seite ist eine Teamübersicht mit vollständigen Namen, Zeiträumen und Jahrestagen; auch aktive Personen ohne Wünsche werden aufgeführt. Umfangreiche Übersichten werden bis auf 7 pt angepasst; passt der Inhalt dann nicht vollständig, erscheint ein Fehler statt abgeschnittener Zeilen. Keine gespeicherten Plandaten werden geändert.
 
 Der SVG-Bildexport verwendet eine lokale Data-URL, um Canvas-Origin-Probleme in WebKit beim Zeichnen von SVG-Blob-Adressen zu vermeiden. Der erweiterte Browsertest gibt bei Exportfehlern die konkrete App-Meldung aus.
+
+## V9.14.2: Gemeinsames Jahreskalenderblatt
+
+Zusätzlich zu den getrennten Namenskalendern und der tabellarischen Teamübersicht enthält Vorschau/PDF ein gemeinsames Jahreskalenderblatt. Tagesfelder verwenden eindeutige Nummern (01, 02, …); eine Namenslegende auf demselben Blatt ordnet diese dem gesamten Team zu. Gleiche Vornamen werden wie bisher durch vollständige Namen unterschieden. Personen ohne Wünsche stehen mit Hinweis in der Legende. Die kompakteren Kalenderzeilen schaffen Platz für die Legende; die anderen Kalenderblätter behalten die bisherige Aufteilung. Bei mehr als 20 Personen oder nicht lesbar unterzubringenden Überschneidungen erscheint eine ausdrückliche Fehlermeldung statt fehlender Namen. Alle Daten bleiben unverändert.
