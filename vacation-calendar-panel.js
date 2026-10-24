@@ -77,22 +77,36 @@
     const year = selectedYear();
     renderedYear = year;
     if (!dirty && !el("vacationRequestFrom").value && !el("vacationRequestTo").value) defaultDates();
+    const labels = api.personLabels(data, state.employees);
+    const totalsById = new Map(api.totalsByPerson(data, state.employees, year, holidaysForYear).map(person => [person.id, person]));
     const requests = data.requests.filter(item => item.from <= `${year}-12-31` && item.to >= `${year}-01-01`)
       .slice().sort((a, b) => a.from.localeCompare(b.from) || a.employeeName.localeCompare(b.employeeName));
-    const list = el("vacationCalendarRequests"); list.replaceChildren();
+    const list = el("vacationCalendarRequests");
+    const openPeople = new Set([...list.querySelectorAll("details[open]")].map(node => node.dataset.employeeId));
+    list.replaceChildren();
+    const groups = new Map();
+    for (const id of [...new Set(requests.map(request => request.employeeId))].sort((a, b) => labels.get(a).localeCompare(labels.get(b), "de"))) {
+      const item = document.createElement("li"), details = document.createElement("details"), summary = document.createElement("summary"), entries = document.createElement("ul");
+      details.className = "vacationPerson"; details.dataset.employeeId = id; details.open = openPeople.has(id);
+      const number = requests.filter(request => request.employeeId === id).length;
+      summary.textContent = `${labels.get(id)} · ${number} ${number === 1 ? "Zeitraum" : "Zeiträume"} · ${dayLabel(totalsById.get(id))}`;
+      entries.className = "vacationPersonRequests";
+      details.append(summary, entries); item.append(details); list.append(item); groups.set(id, entries);
+    }
+    el("vacationCalendarExpand").disabled = !requests.length; el("vacationCalendarCollapse").disabled = !requests.length;
     if (!requests.length) { const p = document.createElement("p"); p.textContent = `Noch keine Urlaubswünsche für ${year} eingetragen.`; list.append(p); }
     for (const request of requests) {
       const row = document.createElement("li"); row.className = "vacationRequestRow";
       const description = document.createElement("span");
       const name = state.employees.find(person => person.id === request.employeeId)?.name || request.employeeName;
-      description.textContent = `${name} · ${formatIsoDateForOverview(request.from)} bis ${formatIsoDateForOverview(request.to)}`;
+      description.textContent = `${formatIsoDateForOverview(request.from)} bis ${formatIsoDateForOverview(request.to)}`;
       const count = document.createElement("small"); count.className = "vacationRequestCount";
       count.textContent = dayLabel(api.countVacationDays([request], holidaysForYear));
       if (request.from.slice(0, 4) !== request.to.slice(0, 4)) count.textContent += ` · davon ${dayLabel(api.countVacationDays([request], holidaysForYear, year))} in ${year}`;
       description.append(count);
       row.append(description);
       for (const action of ["Bearbeiten", "Löschen"]) {
-        const button = document.createElement("button"); button.type = "button"; button.textContent = action; button.setAttribute("aria-label", `${action}: ${description.textContent}`);
+        const button = document.createElement("button"); button.type = "button"; button.textContent = action; button.setAttribute("aria-label", `${action}: ${name} · ${description.textContent}`);
         button.addEventListener("click", () => {
           if (dirty) { say("Bitte zuerst die offene Eingabe speichern oder verwerfen.", true); return; }
           if (action === "Löschen") {
@@ -112,12 +126,12 @@
         });
         row.append(button);
       }
-      list.append(row);
+      groups.get(request.employeeId).append(row);
     }
     const totals = el("vacationCalendarTotals"); totals.replaceChildren();
     const heading = document.createElement("h3"); heading.textContent = `Eingetragene Urlaubstage ${year}`; totals.append(heading);
     for (const person of api.totalsByPerson(data, state.employees, year, holidaysForYear)) {
-      const p = document.createElement("p"); p.textContent = `${person.name}: ${dayLabel(person)}`; totals.append(p);
+      const p = document.createElement("p"); p.textContent = `${labels.get(person.id)}: ${dayLabel(person)}`; totals.append(p);
     }
     if (!requests.length) { const p = document.createElement("p"); p.textContent = "Noch keine Urlaubstage eingetragen."; totals.append(p); }
     el("vacationCalendarYearNote").textContent = year === 2027
@@ -125,6 +139,9 @@
       : "Für dieses Jahr sind keine Schulferien hinterlegt." + (holidays().length ? "" : " Feiertage sind ebenfalls nicht hinterlegt.");
     draftCount(); preview();
   }
+  for (const [id, open] of [["vacationCalendarExpand", true], ["vacationCalendarCollapse", false]]) el(id).addEventListener("click", () => {
+    for (const details of el("vacationCalendarRequests").querySelectorAll("details")) details.open = open;
+  });
   for (const field of fields) el(field).addEventListener("input", () => { markDirty(); el("vacationRequestCancel").hidden = false; });
   el("vacationRequestEmployee").addEventListener("change", personName);
   el("vacationRequestFrom").addEventListener("input", () => {
