@@ -13,7 +13,9 @@ Prüfung: Austritt, Wiederaktivierung, unveränderte historische Schichten, wied
 ## Entwurf: Urlaubsverteilung ohne eigene Wünsche (noch nicht implementiert)
 
 - Aktive Mitarbeiter ohne Wünsche für das gewählte Jahr auswählen. Zu verteilende Tage je Person sichtbar und korrigierbar anzeigen; bereits genehmigten Urlaub berücksichtigen.
-- Ein Zwei-Wochen-Block plus kleinere, übers Jahr verteilte Blöcke als Standard. Kleine Kontingente entsprechend kürzer. Zählung Montag bis Samstag ohne Feiertage Schleswig-Holstein; Eintritt/Austritt begrenzen die Termine.
+- Mindestens ein zusammenhängender Block mit 12 anrechenbaren Urlaubstagen im Jahr. Sonntage und gesetzliche Feiertage Schleswig-Holstein zählen nicht mit; der Kalenderzeitraum kann dadurch länger als zwei Wochen sein. Ein-/Austritt und die zu verteilende Tageszahl begrenzen die Termine. Reicht das Kontingent nicht für 12 Tage, ist ein ausdrücklicher Hinweis statt einer vorgetäuschten Erfüllung nötig.
+- Bis einschließlich 30. Juni möglichst mindestens die Hälfte des Jahresurlaubs einplanen (bei 30 Tagen: 15; bei ungerader Zahl auf ganze Tage aufrunden). Bereits genehmigte oder manuell erfasste Zeiträume berücksichtigen. Bei unvermeidbaren Konflikten Zielabweichung sichtbar machen; keine manuellen Wünsche überschreiben.
+- Verbleibende Tage möglichst über das restliche Jahr verteilen. Alle Vorschläge einzeln manuell änderbar lassen.
 - Termine ohne Überschneidung mit bestehenden Wünschen und genehmigtem Urlaub bevorzugen. Sonst möglichst wenige gleichzeitige Abwesenheiten und sichtbare Überschneidungshinweise. Die Kalenderverteilung ersetzt keine Prüfung der späteren Schichtbesetzung.
 - Zunächst Vorschau mit Person, Zeitraum und Tagezahl; Vorschläge einzeln ändern oder verwerfen. Erst ausdrücklich übernehmen, vorhandene Wünsche nicht ersetzen.
 - Übernommene Vorschläge bleiben jederzeit über Bearbeiten/Löschen änderbar. Manuelle Eingaben bei erneuter Verteilung schützen. Keine automatische Genehmigung oder Änderung von Schichten und Urlaubskonten.
