@@ -33,6 +33,7 @@ const APP_FILES = [
   "./vacation-calendar.js",
   "./vacation-distribution.js",
   "./vacation-calendar-panel.js",
+  "./vacation-calendar-pdf.js",
   "./vacation-calendar.css",
   "./day-resolution.js",
   "./month-engine.js",

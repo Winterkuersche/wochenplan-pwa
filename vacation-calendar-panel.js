@@ -65,17 +65,17 @@
   function render() {
     const data = state.vacationCalendar || api.emptyData();
     if (!el("vacationCalendarYear").value) el("vacationCalendarYear").value = uiState.vacationCalendarYear || Math.min(2099, new Date().getFullYear() + 1);
+    const year = selectedYear();
     if (!dirty) {
       const selected = el("vacationRequestEmployee").value;
       const select = el("vacationRequestEmployee"); select.replaceChildren();
-      for (const employee of state.employees) {
+      for (const employee of api.peopleForYear(state.employees, year)) {
         const option = document.createElement("option"); option.value = employee.id; option.textContent = employee.name; select.append(option);
       }
       if ([...select.options].some(option => option.value === selected)) select.value = selected;
       el("vacationCalendarTitle").value = data.title;
       personName();
     }
-    const year = selectedYear();
     renderedYear = year;
     if (!dirty && !el("vacationRequestFrom").value && !el("vacationRequestTo").value) defaultDates();
     const labels = api.personLabels(data, state.employees);
@@ -166,6 +166,7 @@
       const employeeId = el("vacationRequestEmployee").value;
       const employee = state.employees.find(person => person.id === employeeId);
       const previous = state.vacationCalendar?.requests.find(item => item.id === editingId);
+      if (!editingId && !api.peopleForYear(state.employees, selectedYear()).some(person => person.id === employeeId)) throw new Error("Bitte eine im Planungsjahr aktive Person auswählen.");
       const next = api.saveRequest(state.vacationCalendar, {
         id: editingId || crypto.randomUUID(), employeeId, employeeName: employee?.name || previous?.employeeName || "",
         from: el("vacationRequestFrom").value, to: el("vacationRequestTo").value
@@ -176,15 +177,19 @@
     } catch (error) { say(error.message, true); }
   });
   el("vacationRequestCancel").addEventListener("click", () => { reset(); say("Eingabe verworfen."); });
-  function print() {
-    if (dirty || distribution) { say("Bitte die offene Eingabe oder Urlaubsverteilung zuerst speichern oder verwerfen. Gedruckt werden die gespeicherten Urlaubswünsche.", true); return; }
+  let exporting = false;
+  async function print() {
+    if (exporting) return;
+    if (dirty || distribution) { say("Bitte die offene Eingabe oder Urlaubsverteilung zuerst speichern oder verwerfen. Exportiert werden die gespeicherten Urlaubswünsche.", true); return; }
+    exporting = true; el("vacationCalendarPrint").disabled = true;
     try {
-      const html = api.printDocument(model(), holidays(), window.location.href);
-      const tab = window.open("", "_blank");
-      if (!tab) throw new Error("Bitte das neue Druckfenster im Browser erlauben und erneut auf Drucken tippen.");
-      tab.opener = null; tab.document.open(); tab.document.write(html); tab.document.close();
-      tab.requestAnimationFrame(() => tab.requestAnimationFrame(() => { tab.focus(); tab.print(); }));
+      const sheets = model();
+      say("PDF wird erstellt …");
+      const blob = await buildVacationCalendarPdf(sheets, holidays());
+      await shareOrDownloadPdfBlob(blob, `Urlaubsplanung-${sheets.year}.pdf`);
+      say("PDF erstellt: A4 quer, ohne Browser-Adresse oder Datum in der Fußzeile.");
     } catch (error) { say(error.message, true); }
+    finally { exporting = false; preview(); }
   }
   el("vacationCalendarPrint").addEventListener("click", print);
   const distributor = window.WochenplanVacationDistribution;

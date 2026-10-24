@@ -60,6 +60,11 @@
     if (problem) throw new Error(problem);
     return next;
   }
+  function peopleForYear(employees, year) {
+    datesForYear(year);
+    return (employees || []).filter(person => (!person.activeFromMonth || person.activeFromMonth <= `${year}-12`) &&
+      (!person.activeToMonth || person.activeToMonth >= `${year}-01`));
+  }
   function datesForYear(year) {
     if (!Number.isInteger(year) || year < 1900 || year > 2099) throw new Error("Bitte ein Jahr zwischen 1900 und 2099 wählen.");
     const dates = [];
@@ -214,5 +219,5 @@
       });
       </script></html>`;
   }
-  return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, renderSheet, printDocument, layout };
+  return { emptyData, validateData, validateRequest, copyData, saveRequest, peopleForYear, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, renderSheet, printDocument, layout };
 });

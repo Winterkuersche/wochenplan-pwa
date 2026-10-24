@@ -171,3 +171,11 @@ test('export has a mobile return path even when the print window cannot close', 
   const escaped = api.printDocument(api.buildSheets(undefined, [], 2027), [], 'https://example.test/</script><script>bad()');
   assert.equal((escaped.match(/<script>/g) || []).length, 1);
 });
+
+test('person picker follows inclusive entry/exit years without mutating historical requests', () => {
+  const people = [{ id: 'old', activeToMonth: '2026-12' }, { id: 'leaves', activeToMonth: '2027-01' }, { id: 'joins', activeFromMonth: '2027-12' }, { id: 'future', activeFromMonth: '2028-01' }, { id: 'all' }];
+  const before = JSON.stringify(people);
+  assert.deepEqual(api.peopleForYear(people, 2027).map(p => p.id), ['leaves', 'joins', 'all']);
+  assert.deepEqual(api.peopleForYear(people, 2026).map(p => p.id), ['old', 'leaves', 'all']);
+  assert.equal(JSON.stringify(people), before);
+});
