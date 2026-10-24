@@ -28,6 +28,7 @@ function client(db) {
       async maybeSingle() {
         if (db.unavailable) throw Error('offline');
         if (action === 'read') { db.reads++; return { data: structuredClone(db.record) }; }
+        if (db.updateError) return { error: db.updateError };
         if (action === 'insert' && db.record) return { error: { code: '23505' } };
         if (action === 'update' && filters.revision !== db.record?.revision) return { data: null, error: { code: 'PGRST116', details: 'The result contains 0 rows' } };
         db.writes += 1;
@@ -53,6 +54,16 @@ test('first connection never uploads a local plan without selecting it', async (
   const db = server(); const { c } = controller(t, db); await c.start();
   assert.equal(c.status.mode, 'first-upload');
   assert.equal(await c.save(), false);
+  assert.equal(db.writes, 0);
+});
+
+test('a server calendar compatibility rejection is shown as update-required and never counts as a save', async t => {
+  const db = server(payload()); const f = controller(t, db); await f.c.start();
+  db.updateError = { code: '22023', message: 'CLIENT_UPDATE_REQUIRED' };
+  f.set(payload('F5'));
+  assert.equal(await f.c.save(), false);
+  assert.equal(f.c.status.mode, 'update-required'); assert.match(f.c.status.message, /aktualisieren/);
+  assert.equal(db.record.payload.storage.wochenplan_plan_v10.schedule['2026-10-20'].one.code, 'F4');
   assert.equal(db.writes, 0);
 });
 

@@ -36,3 +36,11 @@ jobs:
       - run: npm run test:browser
         env:
           BROWSER_ENGINE: ${{ matrix.engine }}
+      - name: Save annual calendar print samples
+        if: always() && matrix.engine == 'chromium'
+        uses: actions/upload-artifact@v7
+        with:
+          name: annual-vacation-calendar-${{ github.run_id }}
+          path: test-results/vacation-calendar/
+          if-no-files-found: ignore
+          retention-days: 7

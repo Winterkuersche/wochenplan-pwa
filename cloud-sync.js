@@ -121,6 +121,10 @@
           if (!error || error.code === "23505" || (remote && error.code === "PGRST116")) {
             linked = false;
             message("choose", "Inzwischen wurde ein anderer Online-Stand gespeichert. Bitte zuerst abgleichen.");
+          } else if (error?.message?.includes("CLIENT_UPDATE_REQUIRED")) {
+            linked = false;
+            saveAgain = false;
+            message("update-required", "Bitte die App aktualisieren. Die Online-Urlaubswünsche bleiben geschützt; deine lokale Änderung wurde nicht hochgeladen.");
           } else {
             message("offline", "Online-Speichern fehlgeschlagen. Der lokale Stand bleibt erhalten; bitte erneut versuchen.");
           }

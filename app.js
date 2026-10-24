@@ -83,7 +83,7 @@ function waitForAnimationFrames(frameCount = 2) {
 function updatePrintButtonLabel() {
   if (!btnPrintEl) return;
   const view = uiState?.currentView || "week";
-  btnPrintEl.textContent = view === "mep" ? "Monat als PDF exportieren" : "Drucken / PDF";
+  btnPrintEl.textContent = view === "mep" ? "Monat als PDF exportieren" : view === "day" ? "Jahreskalender drucken / PDF" : "Drucken / PDF";
 }
 
 
@@ -1332,7 +1332,8 @@ function buildInitialState(options = {}) {
     schedule,
     absences,
     salesByDate,
-    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(plan.monthlyPlanBaselines)
+    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(plan.monthlyPlanBaselines),
+    vacationCalendar: typeof WochenplanVacationCalendar !== "undefined" && !WochenplanVacationCalendar.validateData(plan.vacationCalendar) ? plan.vacationCalendar : undefined
   };
 }
 
@@ -3510,6 +3511,7 @@ function renderAllViews() {
   renderSummary();
 
   if (typeof renderDayView === "function") renderDayView();
+  window.WochenplanVacationCalendarPanel?.render();
   if (typeof renderWeekView === "function") renderWeekView();
   if (typeof renderMonthView === "function") renderMonthView();
   renderOverviewView();
@@ -3843,6 +3845,10 @@ async function printCurrentView() {
 
 btnPrintEl?.addEventListener("click", async () => {
   const currentView = uiState?.currentView || "week";
+  if (currentView === "day") {
+    window.WochenplanVacationCalendarPanel?.print();
+    return;
+  }
   if (currentView === "mep") {
     await exportMepTemplatePdf();
     return;

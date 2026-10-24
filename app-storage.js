@@ -113,7 +113,8 @@ function savePlanData(options) {
     schedule: state.schedule || {},
     absences: state.absences || [],
     salesByDate: state.salesByDate || {},
-    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(state.monthlyPlanBaselines)
+    monthlyPlanBaselines: normalizeMonthlyPlanBaselines(state.monthlyPlanBaselines),
+    ...(state.vacationCalendar !== undefined ? { vacationCalendar: state.vacationCalendar } : {})
   };
   return snapshotOnly ? payload : saveJson(PLAN_KEY, payload);
 }
@@ -183,7 +184,8 @@ function undoPlanning2Plan() {
     schedule: undo.before.schedule || {},
     absences: undo.before.absences || [],
     salesByDate: undo.before.salesByDate || {},
-    monthlyPlanBaselines: undo.before.monthlyPlanBaselines || {}
+    monthlyPlanBaselines: undo.before.monthlyPlanBaselines || {},
+    vacationCalendar: undo.before.vacationCalendar
   };
   if (!saveAppState()) {
     state = previous;
@@ -218,6 +220,8 @@ function flushPendingAutoSave() {
 
 function loadAppState() {
   const rawPlan = loadJson(PLAN_KEY, defaultPlanState());
+  const calendarError = typeof WochenplanVacationCalendar !== "undefined" ? WochenplanVacationCalendar.validateData(rawPlan.vacationCalendar) : "";
+  if (calendarError) localDataStore.protect(calendarError + " Der vorhandene Speicher bleibt geschützt.");
   const normalizedSchedule = rawPlan.schedule && typeof rawPlan.schedule === "object"
     ? normalizeSchedule(rawPlan.schedule)
     : {};
