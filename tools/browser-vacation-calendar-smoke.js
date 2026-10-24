@@ -51,6 +51,10 @@ async function run(context, url, width, engine) {
   assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 12 Urlaubstage/);
   await enter('p0', '2027-03-25', '2027-03-29');
   assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 14 Urlaubstage/);
+  assert.equal(await page.locator('.vacationPerson').count(), 1);
+  assert.equal(await page.locator('.vacationPerson[open]').count(), 0);
+  assert.match(await page.locator('.vacationPerson summary').innerText(), /2 Zeiträume.*14 Urlaubstage/);
+  await page.locator('.vacationPerson summary').click();
   await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Löschen:.*25\.03/ }).click();
   assert.match(await page.locator('#vacationCalendarTotals').innerText(), /Person 0: 12 Urlaubstage/);
   const original = await read();
@@ -58,6 +62,7 @@ async function run(context, url, width, engine) {
   assert.deepEqual(original.absences, []); assert.equal(original.schedule['2026-10-20'].p0.code, 'F4'); assert.equal(original.salesByDate['2026-10-20'], 500);
   await page.reload(); await ready(); await page.locator('#btnViewDay').click();
   assert.equal((await read()).vacationCalendar.requests.length, 1);
+  await page.locator('.vacationPerson summary').click();
   await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Bearbeiten:/ }).first().click();
   assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2027-07-01');
   assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-07-14');
@@ -114,6 +119,11 @@ async function run(context, url, width, engine) {
   await page.locator('#vacationCalendarPrint').click();
   assert.match(await page.locator('#vacationCalendarMessage').innerText(), /zuerst speichern/);
   await page.locator('#vacationRequestCancel').click();
+  await page.locator('#vacationCalendarExpand').click();
+  assert.equal(await page.locator('.vacationPerson[open]').count(), 13);
+  await page.locator('#vacationCalendarCollapse').click();
+  assert.equal(await page.locator('.vacationPerson[open]').count(), 0);
+  await page.locator('#vacationCalendarExpand').click();
   await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Löschen:/ }).first().click();
   assert.equal((await read()).vacationCalendar.requests.length, 12);
   await page.reload(); await ready(); await page.locator('#btnViewDay').click();

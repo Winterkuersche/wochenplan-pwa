@@ -9,6 +9,23 @@ const data = requests => ({ ...api.emptyData(), requests });
 const holidayContext = loadScripts(['holidays.js']);
 const holidaysForYear = year => holidayContext.getHolidaysForStateYear('schleswig-holstein', year);
 
+test('compact calendar names keep same first names distinct, including archived people', () => {
+  const employees = [{ id: 'a', name: 'Brodersen, Ines' }, { id: 'b', name: 'Stephan Müller' }, { id: 'c', name: 'Lange, Bärbel' }];
+  const value = data([request('a', '2027-02-01'), request('b', '2027-02-01'), request('c', '2027-02-01')]);
+  const before = JSON.stringify(value);
+  assert.deepEqual([...api.personLabels(value, employees).values()], ['Ines', 'Stephan', 'Bärbel']);
+  let sheets = api.buildSheets(value, employees, 2027);
+  assert.deepEqual(sheets.pages.flatMap(page => page.people.map(person => person.name)), ['Ines', 'Stephan', 'Bärbel']);
+  value.requests.push(request('old', '2027-05-01', '2027-05-02', { employeeName: 'Anders, ines' }));
+  const labels = api.personLabels(value, employees);
+  assert.equal(labels.get('a'), 'Brodersen, Ines'); assert.equal(labels.get('old'), 'Anders, ines');
+  value.printNames.a = 'I. Brodersen';
+  sheets = api.buildSheets(value, employees, 2027);
+  assert.equal(sheets.pages[0].people[0].name, 'I. Brodersen');
+  value.requests.pop(); delete value.printNames.a;
+  assert.equal(JSON.stringify(value), before);
+});
+
 test('requested days include Saturdays but exclude Sundays and SH public holidays', () => {
   const count = (from, to = from) => api.countVacationDays([request('a', from, to)], holidaysForYear);
   assert.equal(count('2027-02-01', '2027-02-06').days, 6); // Screenshot example.

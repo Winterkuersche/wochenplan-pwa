@@ -126,16 +126,28 @@
     if (line.trim()) lines.push(line.trim());
     return lines;
   }
+  // Display only; IDs and stored names remain unchanged. Include archived people
+  // from requests so a shared first name can never silently become ambiguous.
+  function personLabels(data, employees) {
+    const people = new Map();
+    for (const request of data?.requests || []) people.set(request.employeeId, request.employeeName.trim());
+    for (const person of employees || []) people.set(person.id, person.name.trim());
+    const firstName = name => name.includes(",") ? name.slice(name.indexOf(",") + 1).trim() || name : name.split(/\s+/)[0];
+    const key = name => name.normalize("NFC").toLocaleLowerCase("de-DE");
+    const counts = new Map();
+    for (const name of people.values()) { const first = key(firstName(name)); counts.set(first, (counts.get(first) || 0) + 1); }
+    return new Map([...people].map(([id, name]) => [id, counts.get(key(firstName(name))) > 1 ? name : firstName(name)]));
+  }
   function buildSheets(data, employees, year, measure) {
     data = copyData(data);
     const dates = datesForYear(year);
     const from = `${year}-01-01`, to = `${year}-12-31`;
     const requests = data.requests.filter(item => item.from <= to && item.to >= from);
-    const team = new Map((employees || []).map(employee => [employee.id, employee]));
+    const labels = personLabels(data, employees);
     const people = new Map();
     for (const request of requests) {
       if (!people.has(request.employeeId)) {
-        const name = Object.hasOwn(data.printNames, request.employeeId) ? data.printNames[request.employeeId] : (team.get(request.employeeId)?.name || request.employeeName);
+        const name = Object.hasOwn(data.printNames, request.employeeId) ? data.printNames[request.employeeId] : labels.get(request.employeeId);
         const lines = wrapName(name, measure);
         if (lines.length > 2) throw new Error(`Der Druckname „${name}“ ist zu lang. Bitte im Eingabefeld einen kürzeren Drucknamen eintragen.`);
         people.set(request.employeeId, { id: request.employeeId, name, lines, dates: new Set() });
@@ -196,5 +208,5 @@
       @page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;background:#e8e8e8}.sheet{width:297mm;height:210mm;background:white;margin:12px auto;break-after:page;page-break-after:always}.sheet:last-child{break-after:auto;page-break-after:auto}.sheet svg{display:block;width:100%;height:100%}button{display:block;margin:12px auto;padding:12px 24px;font:16px Arial}@media print{body{background:white}button{display:none}.sheet{margin:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
       </style><button type="button" onclick="window.print()">Drucken / als PDF sichern</button>${pages}</html>`;
   }
-  return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, countVacationDays, totalsByPerson, wrapName, buildSheets, renderSheet, printDocument, layout };
+  return { emptyData, validateData, validateRequest, copyData, saveRequest, datesForYear, countVacationDays, totalsByPerson, personLabels, wrapName, buildSheets, renderSheet, printDocument, layout };
 });

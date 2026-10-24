@@ -1,4 +1,4 @@
-.vacationCalendarPanel{margin-bottom:24px;padding:16px;border:1px solid var(--border,#d7dce0);border-radius:14px;background:var(--panel,#fff);min-width:0}
+.vacationCalendarPanel{margin-bottom:24px;padding:12px;border:1px solid var(--border,#d7dce0);border-radius:14px;background:var(--panel,#fff);min-width:0;font-size:.9rem}
 .vacationCalendarPanel h2{margin:0 0 6px}.vacationCalendarPanel h3{font-size:1rem;margin:20px 0 8px}
 .vacationCalendarTools,.vacationCalendarForm{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:14px 0}
 .vacationCalendarPanel label{display:flex;flex-direction:column;gap:5px;font-size:.9rem;min-width:0}
@@ -8,7 +8,8 @@
 .vacationCalendarPanel button{min-height:42px}.vacationCalendarPanel [hidden]{display:none!important}
 .vacationCalendarMessage{min-height:1.4em}.vacationCalendarMessage.isError{color:#b00020}
 .vacationRequestDayCount{flex-basis:100%;margin:0}.vacationRequestCount{display:block;font-size:.85em;margin-top:4px}.vacationCalendarTotals{padding:0 12px 8px;border:1px solid var(--border,#d7dce0);border-radius:8px}.vacationCalendarTotals p{margin:6px 0;overflow-wrap:anywhere}
-.vacationCalendarRequests{padding:0;list-style:none}.vacationRequestRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #ddd}.vacationRequestRow span{flex:1 1 260px;overflow-wrap:anywhere}
+.vacationCalendarRequests,.vacationPersonRequests{padding:0;list-style:none;font-size:.875rem;line-height:1.35}.vacationPerson{border-bottom:1px solid var(--border,#d7dce0)}.vacationPerson summary{padding:12px 4px;min-height:44px;cursor:pointer;font-weight:600;overflow-wrap:anywhere}.vacationPersonRequests{margin:0 0 8px;padding:0 8px}.vacationRequestRow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--border,#d7dce0)}.vacationRequestRow span{min-width:0;overflow-wrap:anywhere}.vacationCalendarPanel .vacationRequestRow button{font-size:.8125rem;padding:6px 8px;min-height:44px}.vacationCalendarTotals{font-size:.875rem}.vacationCalendarTotals p{display:inline-block;margin:4px 12px 4px 0}
+@media(max-width:420px){.vacationRequestRow{grid-template-columns:1fr auto}.vacationRequestRow span{grid-column:1/-1}.vacationRequestRow button{justify-self:start}}
 .vacationCalendarPreview{display:grid;gap:12px;min-width:0}.vacationCalendarSheet{border:1px solid #bfc7cb;background:white;overflow:auto}.vacationCalendarSheet svg{display:block;width:100%;min-width:760px;height:auto}
 @media(min-width:1000px){.vacationCalendarForm label:first-child{flex-basis:220px}.vacationCalendarPreview{grid-template-columns:1fr}}
 body.dark .vacationCalendarPanel{background:#202831;color:#eee}
