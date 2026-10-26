@@ -13,7 +13,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="planning2-live.css?v=2026-10-22-1">
+<link rel="stylesheet" href="planning2-live.css?v=2026-10-26-2">
 <link rel="stylesheet" href="collaboration-proposals.css?v=2026-10-24-2">
 <link rel="stylesheet" href="vacation-calendar.css?v=2026-10-24-7">
 
@@ -443,24 +443,27 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
   <details id="baselineChanges" class="baselineChanges" hidden><summary>Änderungen seit Festschreibung <span id="baselineChangeCount" class="changeCount"></span></summary><div id="baselineChangesList" class="baselineChangesList"></div></details>
   <div class="tools"><span class="safeBadge">Produktive Plandaten</span></div>
   <div id="weeks" class="weeks"></div>
+  <div id="planningFeedbackSlot" class="planningFeedbackSlot"><div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div></div>
   <div class="table"><div class="scroll"><div id="grid"></div></div></div>
   <div class="note">Zelle antippen = planen. Änderungen werden im gemeinsamen Plan gespeichert und sind auch im bisherigen Planer sichtbar.</div>
 </div>
 
 <div id="editorOverlay" class="overlay hidden" aria-hidden="true">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
-    <div class="sheetHead"><div><h2 id="editorTitle">Schicht planen</h2><div id="editorSub" class="sheetSub"></div><div id="baselineDetail" class="baselineDetail" hidden></div></div><button id="closeEditor" class="closeBtn" type="button">✕</button></div>
-    <div class="quickGrid">
-      <details class="quickMenu"><summary class="quick">F</summary><div><button type="button" class="quick" data-quick="F3">F3</button><button type="button" class="quick" data-quick="F4">F4</button><button type="button" class="quick" data-quick="F5">F5</button><button type="button" class="quick" data-quick="F6">F6</button></div></details>
-      <details class="quickMenu"><summary class="quick">Late</summary><div><button type="button" class="quick" data-quick="L3">L3</button><button type="button" class="quick" data-quick="L4">L4</button><button type="button" class="quick" data-quick="L5">L5</button><button type="button" class="quick" data-quick="L6">L6</button></div></details>
-      <button class="quick" data-quick="LAST" id="editLastShift" hidden>↻ Zuletzt</button><button class="quick" data-quick="G">G</button><button class="quick" data-quick="FLEX">Flex</button>
-      <button class="quick secondary" data-quick="FR">Frei</button><button class="quick secondary" data-quick="U">Urlaub</button><button class="quick secondary" data-quick="K">Krank</button><button class="quick secondary" data-quick="AH">AH</button>
+    <div class="sheetHead"><div><h2 id="editorTitle">Schicht planen</h2><div id="editorSub" class="sheetSub"></div></div><button id="closeEditor" class="closeBtn" type="button">✕</button></div>
+    <p class="editorGroupLabel" id="editorStandardLabel">Standards</p>
+    <div class="quickGrid" role="group" aria-labelledby="editorStandardLabel">
+      <details class="quickMenu"><summary class="quick">Früh</summary><div><button type="button" class="quick" data-quick="F3">F3</button><button type="button" class="quick" data-quick="F4">F4</button><button type="button" class="quick" data-quick="F5">F5</button><button type="button" class="quick" data-quick="F6">F6</button></div></details>
+      <details class="quickMenu"><summary class="quick">Spät</summary><div><button type="button" class="quick" data-quick="L3">L3</button><button type="button" class="quick" data-quick="L4">L4</button><button type="button" class="quick" data-quick="L5">L5</button><button type="button" class="quick" data-quick="L6">L6</button></div></details>
+      <button type="button" class="quick" data-quick="G">Ganz</button><button type="button" class="quick" data-quick="FR">Frei</button>
     </div>
-    <div id="editFavorites" class="editorFavorites" hidden></div>
-    <div id="editBalance" class="editorBalance" aria-live="polite"></div>
+    <p class="editorGroupLabel" id="editorSpecialLabel">Sonderfälle</p>
+    <div class="quickGrid" role="group" aria-labelledby="editorSpecialLabel">
+      <button type="button" class="quick secondary" data-quick="FLEX">Flex</button><button type="button" class="quick secondary" data-quick="AH">Aushilfe</button><button type="button" class="quick secondary" data-quick="U">Urlaub</button><button type="button" class="quick secondary" data-quick="K">Krank</button>
+    </div>
     <div id="editWarning" class="editorWarning" hidden></div>
     <div class="fields">
-      <label class="field"><span>Typ</span><select id="editType"><option value="FLEX">Flex</option><option value="G">G</option><option value="AH">AH</option><option value="U">Urlaub</option><option value="K">Krank</option></select></label>
+      <label class="field" hidden><span>Typ</span><select id="editType"><option value="">Bitte wählen</option><option value="FLEX">Flex</option><option value="G">G</option><option value="AH">AH</option><option value="U">Urlaub</option><option value="K">Krank</option></select></label>
       <label class="field" id="editCheckoutField"><span>Abrechnung / Ende</span><select id="editCheckout"><option value="19:00">19:00</option><option value="19:10">19:10</option></select></label>
       <label class="field" id="editStartField"><span>Startzeit</span><select id="editStart"></select></label>
       <label class="field" id="editWorkField"><span>Arbeitszeit</span><span class="workWheels"><select id="editWorkHours" aria-label="Arbeitsstunden"></select><select id="editWorkMinutes" aria-label="Arbeitsminuten"><option value="0">00 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option></select></span></label>
@@ -469,8 +472,15 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
       <label class="field full" id="editBranchField"><span>AH Zielfiliale</span><input id="editBranch" type="text" placeholder="z. B. Kiel"></label>
       <label class="field" id="editAbsenceFromField" hidden><span>Von</span><input id="editAbsenceFrom" type="date"></label><label class="field" id="editAbsenceToField" hidden><span>Bis</span><input id="editAbsenceTo" type="date"></label>
     </div>
-    <div class="saveRow"><button id="moveEntry" type="button" hidden>Verschieben</button><button id="swapEntry" type="button" hidden>Tauschen</button><button id="copyEntry" type="button" hidden>Kopieren</button><button id="multiEntry" type="button">⊕ Mehrfach</button><button id="deleteEntry" class="danger" type="button">Löschen</button><button id="saveCustom" class="primary" type="button">Speichern</button></div>
-    <div class="previewWarning">Planning 2 verwendet die zentrale Stammdatenpflege und den gemeinsamen Plan der normalen App.</div>
+    <details id="editorMoreOptions" class="editorMoreOptions">
+      <summary>Weitere Optionen</summary>
+      <div id="baselineDetail" class="baselineDetail" hidden></div>
+      <button type="button" class="quick" data-quick="LAST" id="editLastShift" hidden>↻ Zuletzt</button>
+      <div id="editFavorites" class="editorFavorites" hidden></div>
+      <div id="editBalance" class="editorBalance" aria-live="polite"></div>
+      <div class="saveRow"><button id="moveEntry" type="button" hidden>Verschieben</button><button id="swapEntry" type="button" hidden>Tauschen</button><button id="copyEntry" type="button" hidden>Kopieren</button><button id="multiEntry" type="button">⊕ Mehrfach</button></div>
+    </details>
+    <div class="saveRow"><button id="deleteEntry" class="danger" type="button">Löschen</button><button id="saveCustom" class="primary" type="button" hidden>Speichern</button></div>
   </div>
 </div>
 <div id="transferOverlay" class="overlay hidden" aria-hidden="true"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="transferTitle"><div class="sheetHead"><div><h2 id="transferTitle">Schicht verschieben</h2><div id="transferSub" class="sheetSub"></div></div><button id="closeTransfer" class="closeBtn" type="button">✕</button></div><div class="transferFields"><label class="field"><span>Mitarbeiter am selben Tag</span><select id="transferTarget"></select></label><div id="transferPreview" class="transferPreview" aria-live="polite"></div></div><div class="saveRow"><button id="cancelTransfer" type="button">Abbrechen</button><button id="confirmTransfer" class="primary" type="button">Bestätigen</button></div></div></div>
@@ -486,7 +496,7 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
     <div id="candidateDebugList" class="candidateList"></div>
   </div>
 </div>
-<div id="planning2MultiBar" class="planning2MultiBar" hidden role="status"><strong id="planning2MultiLabel"></strong><span id="planning2MultiFeedback" aria-live="polite"></span><button id="planning2MultiStop" type="button">Beenden</button></div><div id="toast" class="toast"></div>
+<div id="planning2MultiBar" class="planning2MultiBar" hidden role="status"><strong id="planning2MultiLabel"></strong><span id="planning2MultiFeedback" aria-live="polite"></span><button id="planning2MultiStop" type="button">Beenden</button></div>
 
 </section>
 
@@ -966,37 +976,37 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-10-24-7"></script>
-<script src="./holidays.js?v=2026-10-24-7"></script>
-<script src="./time-utils.js?v=2026-10-24-7"></script>
-<script src="./employee-availability.js?v=2026-10-24-7"></script>
-<script src="./shift-rules.js?v=2026-10-24-7"></script>
-<script src="./date-utils.js?v=2026-10-24-7"></script>
-<script src="./shift-utils.js?v=2026-10-24-7"></script>
-<script src="./status-utils.js?v=2026-10-24-7"></script>
-<script src="./contract-models.js?v=2026-10-24-7"></script>
-<script src="./absences.js?v=2026-10-24-7"></script>
-<script src="./planning2-domain-helpers.js?v=2026-10-24-7"></script>
-<script src="./planning2-carryover.js?v=2026-10-24-7"></script>
-<script src="./planning2-mutation-packages.js?v=2026-10-24-7"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-10-24-7"></script>
-<script src="./planning2-data-adapter.js?v=2026-10-24-7"></script>
-<script src="./vacation-utils.js?v=2026-10-24-7"></script>
-<script src="./day-resolution.js?v=2026-10-24-7"></script>
-<script src="./month-engine.js?v=2026-10-24-7"></script>
-<script src="./daily-staffing.js?v=2026-10-24-7"></script>
-<script src="./day-view.js?v=2026-10-24-7"></script>
-<script src="./week-view.js?v=2026-10-24-7"></script>
-<script src="./mep-view.js?v=2026-10-24-7"></script>
-<script src="./month-editor.js?v=2026-10-24-7"></script>
-<script src="./month-view.js?v=2026-10-24-7"></script>
-<script src="./balance-utils.js?v=2026-10-24-7"></script>
-<script src="./monthly-plan-baselines.js?v=2026-10-24-7"></script>
-<script src="./vacation-calendar.js?v=2026-10-24-7"></script>
-<script src="./vacation-distribution.js?v=2026-10-24-7"></script>
-<script src="./backup-utils.js?v=2026-10-24-7"></script>
-<script src="./backup-io.js?v=2026-10-24-7"></script>
-<script src="./manual-month-utils.js?v=2026-10-24-7"></script>
+<script src="./version.js?v=2026-10-26-2"></script>
+<script src="./holidays.js?v=2026-10-26-2"></script>
+<script src="./time-utils.js?v=2026-10-26-2"></script>
+<script src="./employee-availability.js?v=2026-10-26-2"></script>
+<script src="./shift-rules.js?v=2026-10-26-2"></script>
+<script src="./date-utils.js?v=2026-10-26-2"></script>
+<script src="./shift-utils.js?v=2026-10-26-2"></script>
+<script src="./status-utils.js?v=2026-10-26-2"></script>
+<script src="./contract-models.js?v=2026-10-26-2"></script>
+<script src="./absences.js?v=2026-10-26-2"></script>
+<script src="./planning2-domain-helpers.js?v=2026-10-26-2"></script>
+<script src="./planning2-carryover.js?v=2026-10-26-2"></script>
+<script src="./planning2-mutation-packages.js?v=2026-10-26-2"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-10-26-2"></script>
+<script src="./planning2-data-adapter.js?v=2026-10-26-2"></script>
+<script src="./vacation-utils.js?v=2026-10-26-2"></script>
+<script src="./day-resolution.js?v=2026-10-26-2"></script>
+<script src="./month-engine.js?v=2026-10-26-2"></script>
+<script src="./daily-staffing.js?v=2026-10-26-2"></script>
+<script src="./day-view.js?v=2026-10-26-2"></script>
+<script src="./week-view.js?v=2026-10-26-2"></script>
+<script src="./mep-view.js?v=2026-10-26-2"></script>
+<script src="./month-editor.js?v=2026-10-26-2"></script>
+<script src="./month-view.js?v=2026-10-26-2"></script>
+<script src="./balance-utils.js?v=2026-10-26-2"></script>
+<script src="./monthly-plan-baselines.js?v=2026-10-26-2"></script>
+<script src="./vacation-calendar.js?v=2026-10-26-2"></script>
+<script src="./vacation-distribution.js?v=2026-10-26-2"></script>
+<script src="./backup-utils.js?v=2026-10-26-2"></script>
+<script src="./backup-io.js?v=2026-10-26-2"></script>
+<script src="./manual-month-utils.js?v=2026-10-26-2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1008,23 +1018,23 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-10-24-7"></script>
-<script src="./app-orchestration.js?v=2026-10-24-7"></script>
-<script src="./employee-order.js?v=2026-10-24-7"></script>
-<script src="./planning2-manual-tools.js?v=2026-10-24-7"></script>
-<script src="./planning2-live.js?v=2026-10-24-7"></script>
-<script src="./storage-utils.js?v=2026-10-24-7"></script>
-<script src="./cloud-config.js?v=2026-10-24-7"></script>
-<script src="./vendor/supabase-2.118.0.js?v=2026-10-24-7"></script>
-<script src="./cloud-sync.js?v=2026-10-24-7"></script>
-<script src="./collaboration-proposals.js?v=2026-10-24-7"></script>
-<script src="./collaboration.js?v=2026-10-24-7"></script>
-<script src="./app-storage.js?v=2026-10-24-7"></script>
-<script src="./app.js?v=2026-10-24-7"></script>
-<script src="./vacation-calendar-pdf.js?v=2026-10-24-7"></script>
-<script src="./vacation-calendar-panel.js?v=2026-10-24-7"></script>
-<script src="./data-panel.js?v=2026-10-24-7"></script>
-<script src="./collaboration-panel.js?v=2026-10-24-7"></script>
+<script src="./pdf-export.js?v=2026-10-26-2"></script>
+<script src="./app-orchestration.js?v=2026-10-26-2"></script>
+<script src="./employee-order.js?v=2026-10-26-2"></script>
+<script src="./planning2-manual-tools.js?v=2026-10-26-2"></script>
+<script src="./planning2-live.js?v=2026-10-26-2"></script>
+<script src="./storage-utils.js?v=2026-10-26-2"></script>
+<script src="./cloud-config.js?v=2026-10-26-2"></script>
+<script src="./vendor/supabase-2.118.0.js?v=2026-10-26-2"></script>
+<script src="./cloud-sync.js?v=2026-10-26-2"></script>
+<script src="./collaboration-proposals.js?v=2026-10-26-2"></script>
+<script src="./collaboration.js?v=2026-10-26-2"></script>
+<script src="./app-storage.js?v=2026-10-26-2"></script>
+<script src="./app.js?v=2026-10-26-2"></script>
+<script src="./vacation-calendar-pdf.js?v=2026-10-26-2"></script>
+<script src="./vacation-calendar-panel.js?v=2026-10-26-2"></script>
+<script src="./data-panel.js?v=2026-10-26-2"></script>
+<script src="./collaboration-panel.js?v=2026-10-26-2"></script>
 
 
 <script>
