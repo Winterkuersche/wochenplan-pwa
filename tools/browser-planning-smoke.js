@@ -58,17 +58,48 @@ async function main(){
   await page.waitForFunction(()=>document.querySelectorAll('.cell[data-eid="c"]').length>0);
   await toggleTeam();
   const before=await read();
+  // A fresh cell starts with choices only. Conditional fields must remain
+  // visually hidden even though their CSS normally uses display:flex.
+  await cell('a','2026-10-21').click();
+  assert.equal(await page.locator('#editType').inputValue(),'');
+  assert.equal(await page.locator('#editorMoreOptions').getAttribute('open'),null);
+  for(const id of ['editStartField','editWorkField','editCheckoutField','editBranchField','editAbsenceFromField','editAbsenceToField','saveCustom'])
+    assert.equal(await page.locator('#'+id).isVisible(),false,id+' hidden before choosing');
+  assert.deepEqual(await page.locator('[aria-labelledby="editorStandardLabel"] > button, [aria-labelledby="editorStandardLabel"] > details > summary').allTextContents(),['Früh','Spät','Ganz','Frei']);
+  assert.deepEqual(await page.locator('[aria-labelledby="editorSpecialLabel"] > button').allTextContents(),['Flex','Aushilfe','Urlaub','Krank']);
+  const fields=['editCheckoutField','editStartField','editWorkField','editComputedEndField','editSixBreakField','editBranchField','editAbsenceFromField','editAbsenceToField'];
+  for(const [kind,visible] of [['FLEX',['editStartField','editWorkField','editComputedEndField','editSixBreakField']],['AH',['editStartField','editWorkField','editComputedEndField','editSixBreakField','editBranchField']],['U',['editAbsenceFromField','editAbsenceToField']],['K',['editAbsenceFromField','editAbsenceToField']],['G',['editCheckoutField']]]){
+    await choosePlanningQuickShift(page,kind);
+    for(const id of fields)assert.equal(await page.locator('#'+id).isVisible(),visible.includes(id),kind+': '+id);
+    assert.equal(await page.locator('[data-quick="'+kind+'"]').getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('#saveCustom').isVisible(),true);
+    if(kind==='FLEX'||kind==='AH'){assert.equal(await page.locator('#editStart').inputValue(),'09:00');assert.equal(await page.locator('#editComputedEnd').innerText(),'15:00')}
+    assert.deepEqual(await read(),before,'Choosing a mode must not persist');
+  }
+  await page.locator('#closeEditor').click();
   await cell('a').click();await choosePlanningQuickShift(page,'F5');
   assert.equal((await read()).schedule[day].a.code,'F5');
   assert.equal(await page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('wochenplan_save_journal_v1')).previous.wochenplan_plan_v10).schedule['2026-10-20'].a.code),'F4');
+  assert.equal(await page.locator('#toast').isVisible(),true);
+  assert.equal(await page.locator('#toast').evaluate(el=>getComputedStyle(el).position),'static');
+  assert.equal(await page.locator('#planningFeedbackSlot #toast').count(),1);
+  const feedbackGeometry=await page.evaluate(()=>({bottom:document.getElementById('toast').getBoundingClientRect().bottom,tableTop:document.querySelector('#planning2View .table').getBoundingClientRect().top}));
+  assert.ok(feedbackGeometry.bottom<=feedbackGeometry.tableTop,'Save feedback must not cover the table');
+  await page.locator('#toast button').click();assert.deepEqual(await read(),before);
+  // The next cell can be opened immediately, while save feedback is active.
+  await cell('a').click();await choosePlanningQuickShift(page,'F5');
+  await cell('a','2026-10-21').click();
+  assert.equal(await page.locator('#editorOverlay').isVisible(),true);
+  assert.equal(await page.locator('#toast').isVisible(),false,'Previous success must not cover the next editor');
+  await page.locator('#closeEditor').click();
   await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
-  await cell('a','2026-10-21').click();await page.locator('#editFavorites [data-favorite]').first().click();
+  await cell('a','2026-10-21').click();await page.locator('#editorMoreOptions > summary').click();await page.locator('#editFavorites [data-favorite]').first().click();
   assert.ok((await read()).schedule['2026-10-21'].a);await page.locator('#planningUndo').click();
-  await cell('a').click();await page.locator('#multiEntry').click();await cell('a','2026-10-21').click();
+  await cell('a').click();await page.locator('#editorMoreOptions > summary').click();await page.locator('#multiEntry').click();await cell('a','2026-10-21').click();
   assert.ok((await read()).schedule['2026-10-21'].a);await page.locator('#planning2MultiStop').click();await page.locator('#planningUndo').click();
-  await cell('a').click();await page.locator('#swapEntry').click();await page.locator('#transferTarget').selectOption('b');await page.locator('#confirmTransfer').click();
+  await cell('a').click();await page.locator('#editorMoreOptions > summary').click();await page.locator('#swapEntry').click();await page.locator('#transferTarget').selectOption('b');await page.locator('#confirmTransfer').click();
   assert.equal((await read()).schedule[day].a.start,'14:00');await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
-  await cell('a').click();await page.locator('#moveEntry').click();await page.locator('#transferTarget').selectOption('c');await page.locator('#confirmTransfer').click();
+  await cell('a').click();await page.locator('#editorMoreOptions > summary').click();await page.locator('#moveEntry').click();await page.locator('#transferTarget').selectOption('c');await page.locator('#confirmTransfer').click();
   assert.equal((await read()).schedule[day].a,undefined);assert.ok((await read()).schedule[day].c);await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
   await page.locator('#createBaseline').click();assert.ok((await read()).monthlyPlanBaselines['2026-10']);await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
   await page.locator('#grid [data-hours-person="a"]').click();assert.equal(await page.locator('#hourBreakdownDialog').isVisible(),true);
@@ -100,7 +131,7 @@ async function main(){
   // Quota failure leaves editor open with no success toast and keeps all bytes.
   const safe=JSON.stringify(await read());await cell('a').click();await page.evaluate(()=>{window.__originalSet=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('Synthetic quota','QuotaExceededError')}});
   await choosePlanningQuickShift(page,'F5');assert.equal(JSON.stringify(await read()),safe);assert.equal(await page.locator('#editorOverlay').isVisible(),true);
-  assert.match(await page.locator('#toast').innerText(),/Gerätespeicher|Speichern/);await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSet});await page.locator('#closeEditor').click();
+  assert.match(await page.locator('#toast').innerText(),/Gerätespeicher|Speichern/);assert.equal(await page.locator('#editorOverlay #toast').isVisible(),true);assert.equal(await page.locator('#toast').evaluate(el=>getComputedStyle(el).position),'static');await page.evaluate(()=>{Storage.prototype.setItem=window.__originalSet});await page.locator('#closeEditor').click();
   await page.reload();await ready();await week();assert.equal((await read()).salesByDate[day],900);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
   await context.close();

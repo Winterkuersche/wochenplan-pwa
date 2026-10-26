@@ -1,3 +1,4 @@
+const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Synthetic requests only; external services are blocked.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -88,8 +89,7 @@ async function run(context, url, width, engine) {
   await page.locator('#btnViewWeek').click();
   await page.locator('#weeks button').filter({ hasText: '19.10' }).click();
   await page.locator('.cell[data-eid="p0"][data-day="2026-10-20"]').click();
-  await page.locator('.quickMenu summary').filter({ hasText: /^F$/ }).click();
-  await page.locator('[data-quick="F5"]').click();
+  await choosePlanningQuickShift(page, 'F5');
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('wochenplan_plan_v10')).schedule['2026-10-20'].p0.code === 'F5');
   assert.equal((await read()).vacationCalendar.requests.length, 13);
   await page.locator('#btnViewDay').click();

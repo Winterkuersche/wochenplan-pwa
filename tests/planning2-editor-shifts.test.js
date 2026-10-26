@@ -64,3 +64,29 @@ test('Planning-2 AH cells show attendance, AH, target branch and credited work',
   const result = cellContext.cell({ type: 'external-help', minutesForMonth: 360, sourceEntry: { start: '09:00', end: '16:00', branch: 'Kiel', minutes: 360 } });
   assert.deepEqual(Array.from(result), ['09:00–16:00', 'AH · Kiel · 6:00 h', 'abs']);
 });
+
+test('productive editor isolates each mode and disables saving an unselected cell', () => {
+  const live = fs.readFileSync('planning2-live.js', 'utf8');
+  const source = live.slice(live.indexOf('function syncEditorFields('), live.indexOf('function baselineEntryLabel('));
+  const elements = new Map();
+  const element = id => {
+    if (!elements.has(id)) elements.set(id, { hidden: false, value: '' });
+    return elements.get(id);
+  };
+  const ctx = vm.createContext({
+    document: { getElementById: element, querySelectorAll: () => [] },
+    editing: { existing: { end: '19:10' } },
+    updateEditorComputedEnd() {}
+  });
+  vm.runInContext(source, ctx);
+  for (const kind of ['', 'FLEX', 'AH', 'U', 'K', 'G', 'FLEX', '']) {
+    ctx.syncEditorFields(kind);
+    const duration = ['FLEX', 'AH'].includes(kind), absence = ['U', 'K'].includes(kind);
+    assert.equal(element('saveCustom').hidden, !kind);
+    assert.equal(element('editCheckoutField').hidden, kind !== 'G');
+    for (const id of ['editStartField', 'editWorkField', 'editComputedEndField']) assert.equal(element(id).hidden, !duration);
+    assert.equal(element('editBranchField').hidden, kind !== 'AH');
+    for (const id of ['editAbsenceFromField', 'editAbsenceToField']) assert.equal(element(id).hidden, !absence);
+  }
+  assert.equal(element('editCheckout').value, '19:10', 'existing checkout time retained');
+});
