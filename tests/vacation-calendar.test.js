@@ -195,3 +195,38 @@ test('export appends one complete team overview with periods and deduplicated an
   const many = Array.from({ length: 100 }, (_, id) => ({ id: String(id), name: 'Name ' + id }));
   assert.throws(() => api.buildExportModel(undefined, many, 2027, undefined, holidaysForYear), /nicht lesbar/);
 });
+
+test('combined calendar includes all overlapping people once per date and a unique name legend', () => {
+  const people = Array.from({ length: 13 }, (_, id) => ({ id: String(id), name: id < 2 ? 'Surname' + id + ', Alex' : 'Person ' + id }));
+  const input = data(people.map(person => request(person.id, '2027-07-01', '2027-07-14')));
+  const model = api.buildExportModel(input, people, 2027, undefined, holidaysForYear);
+  const page = model.pages.find(page => page.combined);
+  assert.ok(page); assert.equal(page.legend.length, 13);
+  assert.deepEqual(page.cellLines.get('2027-07-01').join(' ').split(' '), page.legend.map(person => person.code));
+  assert.ok(page.cellLines.get('2027-07-01').length <= 3);
+  assert.equal(page.cellLines.get('2027-06-30').length, 0);
+  assert.notEqual(page.legend[0].name, page.legend[1].name);
+  assert.ok(page.legend[0].name.includes('Surname'));
+  const svg = api.renderSheet(model, model.pages.indexOf(page));
+  assert.match(svg, /Gesamtes Team/); assert.equal((svg.match(/data-team-legend=/g) || []).length, 13);
+});
+
+
+test('oversized optional combined calendar preserves complete existing export pages', () => {
+  for (const simultaneous of [false, true]) {
+    const people = Array.from({ length: simultaneous ? 16 : 21 }, (_, id) => ({ id: String(id), name: 'Name ' + id }));
+    const input = data(people.map((person, i) => request(person.id, `2027-07-${String(simultaneous ? 1 : i + 1).padStart(2, '0')}`, `2027-07-${String(simultaneous ? 1 : i + 1).padStart(2, '0')}`)));
+    const before = JSON.stringify(input);
+    const original = api.buildSheets(input, people, 2027);
+    const model = api.buildExportModel(input, people, 2027, undefined, holidaysForYear);
+    assert.equal(model.pages.some(page => page.combined), false);
+    assert.equal(model.pages.length, original.pages.length + 1);
+    assert.deepEqual(model.pages.slice(0, -1), original.pages);
+    assert.deepEqual(model.pages.at(-1).people.map(person => person.id), people.map(person => person.id));
+    assert.equal(model.warnings.length, 1);
+    assert.match(model.warnings[0], simultaneous ? /01.07.2027/ : /20 Personen/);
+    assert.match(model.warnings[0], /übrigen Kalenderblättern und der Teamübersicht/);
+    for (let i = 0; i < model.pages.length; i++) assert.match(api.renderSheet(model, i), /<svg/);
+    assert.equal(JSON.stringify(input), before);
+  }
+});

@@ -202,6 +202,32 @@
       if (fitted.reduce((sum, row) => sum + row.height, 0) <= 490) { overview = { overview: true, people: fitted, font }; break; }
     }
     if (!overview) throw new Error("Die Teamübersicht passt nicht lesbar auf ein Blatt. Bitte die Anzahl der Zeiträume reduzieren oder die Kalenderblätter einzeln verwenden.");
+    const combined = { combined: true, people: [], cellLines: new Map(), legend: [], used: new Map() };
+    const combinedFont = 5.2, combinedLabels = personLabels(data, employees);
+    for (const [index, row] of overview.people.entries()) {
+      const code = String(index + 1).padStart(2, "0");
+      const own = requests.filter(item => item.employeeId === row.id);
+      const dates = new Set(model.dates.filter(day => own.some(item => item.from <= day.iso && day.iso <= item.to)).map(day => day.iso));
+      combined.people.push({ id: row.id, name: row.name, lines: [code], dates });
+      const name = combinedLabels.get(row.id) || row.name;
+      const legendText = `${code} ${name}${own.length ? "" : " (ohne Wünsche)"}`;
+      combined.legend.push({ code, name, hasRequests: own.length > 0, width: measureText ? measureText(legendText, 7) : legendText.length * 4.2 });
+    }
+    let combinedWarning = combined.legend.length > 20 ? "Das zusätzliche Gesamtblatt entfällt: Mehr als 20 Personen passen nicht lesbar in die Namenslegende. Alle Personen bleiben in den übrigen Kalenderblättern und der Teamübersicht enthalten." : "";
+    for (const day of model.dates) {
+      const codes = combined.people.filter(person => person.dates.has(day.iso)).map(person => person.lines[0]);
+      const lines = []; let line = "";
+      for (const code of codes) {
+        const next = line ? line + " " + code : code;
+        const width = measureText ? measureText(next, combinedFont) : next.length * combinedFont * .6;
+        if (line && width > layout.nameWidth) { lines.push(line); line = code; } else line = next;
+      }
+      if (line) lines.push(line);
+      if (lines.length > 3 && !combinedWarning) combinedWarning = `Das zusätzliche Gesamtblatt entfällt: Zu viele gleichzeitige Urlaubswünsche am ${shortDate(day.iso)} für ein lesbares Tagesfeld. Alle Personen bleiben in den übrigen Kalenderblättern und der Teamübersicht enthalten.`;
+      combined.cellLines.set(day.iso, lines);
+    }
+    model.warnings = combinedWarning ? [combinedWarning] : [];
+    if (!combinedWarning) model.pages.push(combined);
     model.pages.push(overview);
     return model;
   }
@@ -209,7 +235,7 @@
     const text = (x, y, value, size = page.font, extra = "") => `<text x="${x}" y="${y}" font-size="${size}" ${extra}>${escape(value)}</text>`;
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 842 595" role="img" aria-label="Teamübersicht ${model.year}" font-family="Arial, sans-serif" fill="#111"><rect width="842" height="595" fill="white"/>`;
     const title = `Urlaubsplanung ${model.year} · Teamübersicht${model.title ? " · " + model.title : ""}`;
-    svg += text(18, 23, title, 14, 'font-weight="bold" textLength="790" lengthAdjust="spacingAndGlyphs"');
+    svg += text(18, 23, title, 14, 'font-weight="bold"' + (title.length > 90 ? ' textLength="790" lengthAdjust="spacingAndGlyphs"' : ''));
     svg += '<rect x="18" y="38" width="806" height="22" fill="#ededed"/>';
     svg += text(22, 53, "Mitarbeiter", 10) + text(180, 53, "Urlaubswünsche · von / bis einschließlich", 10) + text(760, 53, "Tage", 10);
     let y = 60;
@@ -224,7 +250,9 @@
     return svg + "</svg>";
   }
   function renderSheet(model, pageIndex, holidays = []) {
-    const page = model.pages[pageIndex], l = layout, col = l.tableWidth / 12;
+    const page = model.pages[pageIndex];
+    const l = page.combined ? { ...layout, row: 14.7, line: 4.6, font: 5.2 } : layout;
+    const col = l.tableWidth / 12;
     if (page.overview) return renderOverview(model, page);
     const byIso = new Map(model.dates.map(date => [date.iso, date]));
     const holidayMap = new Map(holidays.map(holiday => [holiday.date, holiday.name]));
@@ -232,7 +260,7 @@
     const label = (x, y, value, size = 8, extra = "") => `<text x="${x}" y="${y}" font-size="${size}" ${extra}>${escape(value)}</text>`;
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${l.width} ${l.height}" role="img" aria-label="Urlaubswünsche ${model.year}, Blatt ${pageIndex + 1}" font-family="Arial, sans-serif" fill="#111">`;
     svg += rect(0, 0, l.width, l.height, "#fff");
-    const heading = `Urlaubsplanung ${model.year}${model.title ? " · " + model.title : ""}`;
+    const heading = `Urlaubsplanung ${model.year}${page.combined ? " · Gesamtes Team" : ""}${model.title ? " · " + model.title : ""}`;
     svg += label(l.x, 23, heading, 15, 'font-weight="bold"' + (heading.length > 80 ? ' textLength="710" lengthAdjust="spacingAndGlyphs"' : ""));
     svg += label(824, 23, `Blatt ${pageIndex + 1} / ${model.pages.length}`, 8, 'text-anchor="end"');
     for (let month = 0; month < 12; month++) {
@@ -248,10 +276,17 @@
         const school = model.year === 2027 && schoolHolidays2027.some(([from, to]) => iso >= from && iso <= to);
         if (school || holidayMap.has(iso)) svg += rect(x + .4, y + .4, 12.5, l.row - .8, holidayMap.has(iso) ? "#fff57b" : "#f9bfd7");
         svg += label(x + 2.3, y + 10.5, day, 8, 'font-weight="bold"');
-        const lines = page.people.filter(person => person.dates.has(iso)).flatMap(person => person.lines);
+        const lines = page.combined ? page.cellLines.get(iso) : page.people.filter(person => person.dates.has(iso)).flatMap(person => person.lines);
         lines.forEach((line, index) => { svg += label(x + 15.5, y + ((l.row - (lines.length - 1) * l.line) / 2 + 1.8 + index * l.line), line, l.font, `data-vacation-name="true" data-cell-right="${x + col - 1}"`); });
         if (!lines.length && holidayMap.has(iso)) svg += label(x + 15.5, y + 9.6, holidayMap.get(iso), 4.2, 'textLength="46" lengthAdjust="spacingAndGlyphs"');
       }
+    }
+    if (page.combined) {
+      page.legend.forEach((person, index) => {
+        const name = `${person.code} ${person.name}${person.hasRequests ? "" : " (ohne Wünsche)"}`;
+        const x = 18 + index % 4 * 202, y = 530 + Math.floor(index / 4) * 8;
+        svg += label(x, y, name, 7, `data-team-legend="${escape(person.code)}"${person.width > 190 ? ' textLength="190" lengthAdjust="spacingAndGlyphs"' : ""}`);
+      });
     }
     svg += label(18, 576, "Urlaubswünsche · noch keine Genehmigung", 7);
     svg += rect(258, 568, 9, 9, "#fff57b") + label(271, 575, "Feiertag SH", 6.8);
