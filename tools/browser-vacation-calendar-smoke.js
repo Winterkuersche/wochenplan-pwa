@@ -103,6 +103,23 @@ async function run(context, url, width, engine) {
   assert.equal((downloadedPdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 7);
   assert.ok(!downloadedPdf.includes(Buffer.from(url)), 'PDF contains no browser URL');
   await context.setOffline(false);
+  // The optional combined sheet must not block the existing export for a larger team.
+  await page.evaluate(() => {
+    window.originalCalendarPeople = state.employees;
+    state.employees = [...state.employees, ...Array.from({ length: 8 }, (_, i) => ({ id: 'extra' + i, name: 'Extra ' + i, target: '20:00' }))];
+    window.testPdfBlob = null;
+    WochenplanVacationCalendarPanel.render();
+  });
+  assert.equal(await page.locator('.vacationCalendarSheet').count(), 6);
+  assert.match(await page.locator('#vacationCalendarPageCount').innerText(), /Gesamtblatt entfällt/);
+  assert.equal(await page.locator('#vacationCalendarPrint').isEnabled(), true);
+  await page.locator('#vacationCalendarPrint').click();
+  await page.waitForFunction(() => window.testPdfBlob instanceof Blob || !document.querySelector('#vacationCalendarMessage').textContent.startsWith('PDF wird erstellt'));
+  assert.equal(await page.evaluate(() => window.testPdfBlob instanceof Blob), true, await page.locator('#vacationCalendarMessage').innerText());
+  const fallbackPdf = Buffer.from(await page.evaluate(async () => [...new Uint8Array(await window.testPdfBlob.arrayBuffer())]));
+  assert.equal((fallbackPdf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length, 6);
+  assert.match(await page.locator('#vacationCalendarMessage').innerText(), /PDF erstellt:.*Gesamtblatt entfällt/);
+  await page.evaluate(() => { state.employees = window.originalCalendarPeople; delete window.originalCalendarPeople; WochenplanVacationCalendarPanel.render(); });
   const html = await page.evaluate(() => WochenplanVacationCalendar.printDocument(WochenplanVacationCalendar.buildExportModel(state.vacationCalendar, state.employees, 2027, undefined, year => getHolidaysForStateYear('schleswig-holstein', year)), getHolidaysForStateYear('schleswig-holstein', 2027), location.href));
   assert.equal((html.match(/<section class="sheet">/g) || []).length, 7);
   assert.match(html, /Urlaubsplanung 2027/);

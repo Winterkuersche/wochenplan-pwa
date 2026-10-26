@@ -213,7 +213,7 @@
       const legendText = `${code} ${name}${own.length ? "" : " (ohne Wünsche)"}`;
       combined.legend.push({ code, name, hasRequests: own.length > 0, width: measureText ? measureText(legendText, 7) : legendText.length * 4.2 });
     }
-    if (combined.legend.length > 20) throw new Error("Der gemeinsame Kalender mit Namenslegende passt für mehr als 20 Personen nicht lesbar auf ein Blatt.");
+    let combinedWarning = combined.legend.length > 20 ? "Das zusätzliche Gesamtblatt entfällt: Mehr als 20 Personen passen nicht lesbar in die Namenslegende. Alle Personen bleiben in den übrigen Kalenderblättern und der Teamübersicht enthalten." : "";
     for (const day of model.dates) {
       const codes = combined.people.filter(person => person.dates.has(day.iso)).map(person => person.lines[0]);
       const lines = []; let line = "";
@@ -223,10 +223,12 @@
         if (line && width > layout.nameWidth) { lines.push(line); line = code; } else line = next;
       }
       if (line) lines.push(line);
-      if (lines.length > 3) throw new Error(`Zu viele gleichzeitige Urlaubswünsche am ${day.iso} für das gemeinsame Kalenderblatt.`);
+      if (lines.length > 3 && !combinedWarning) combinedWarning = `Das zusätzliche Gesamtblatt entfällt: Zu viele gleichzeitige Urlaubswünsche am ${shortDate(day.iso)} für ein lesbares Tagesfeld. Alle Personen bleiben in den übrigen Kalenderblättern und der Teamübersicht enthalten.`;
       combined.cellLines.set(day.iso, lines);
     }
-    model.pages.push(combined, overview);
+    model.warnings = combinedWarning ? [combinedWarning] : [];
+    if (!combinedWarning) model.pages.push(combined);
+    model.pages.push(overview);
     return model;
   }
   function renderOverview(model, page) {

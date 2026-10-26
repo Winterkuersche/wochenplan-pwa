@@ -55,7 +55,7 @@
     try {
       const sheets = model();
       el("vacationCalendarPreview").innerHTML = sheets.pages.map((_, i) => `<div class="vacationCalendarSheet">${api.renderSheet(sheets, i, holidays())}</div>`).join("");
-      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer, einschließlich Gesamtkalender mit Nummernlegende und Teamübersicht · Bis zu drei Namenszeilen pro Tagesfeld; weitere Kalenderblätter bei Bedarf.`;
+      el("vacationCalendarPageCount").textContent = `${sheets.pages.length} ${sheets.pages.length === 1 ? "Blatt" : "Blätter"} in A4 quer, einschließlich ${sheets.pages.some(page => page.combined) ? "Gesamtkalender mit Nummernlegende und " : ""}Teamübersicht · Bis zu drei Namenszeilen pro Tagesfeld; weitere Kalenderblätter bei Bedarf. ${(sheets.warnings || []).join(" ")}`;
       el("vacationCalendarPrint").disabled = false;
     } catch (error) {
       el("vacationCalendarPreview").replaceChildren();
@@ -188,7 +188,7 @@
       say("PDF wird erstellt …");
       const blob = await buildVacationCalendarPdf(sheets, holidays());
       await shareOrDownloadPdfBlob(blob, `Urlaubsplanung-${sheets.year}.pdf`);
-      say("PDF erstellt: A4 quer, ohne Browser-Adresse oder Datum in der Fußzeile.");
+      say(`PDF erstellt: A4 quer, ohne Browser-Adresse oder Datum in der Fußzeile. ${(sheets.warnings || []).join(" ")}`);
     } catch (error) { say(error.message, true); }
     finally { exporting = false; preview(); }
   }
