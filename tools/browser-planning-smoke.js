@@ -75,8 +75,31 @@ async function main(){
     assert.equal(await page.locator('#saveCustom').isVisible(),true);
     if(kind==='FLEX'||kind==='AH'){assert.equal(await page.locator('#editStart').inputValue(),'09:00');assert.equal(await page.locator('#editComputedEnd').innerText(),'15:00')}
     assert.deepEqual(await read(),before,'Choosing a mode must not persist');
+    if(kind==='U'||kind==='K'){await page.locator('#editAbsenceTo').fill('2026-10-24')}
+    const draft=await page.locator('#editorOverlay input, #editorOverlay select').evaluateAll(els=>els.map(el=>[el.id,el.value]));
+    await choosePlanningQuickShift(page,kind);
+    assert.equal(await page.locator('#editType').inputValue(),'');
+    for(const id of fields)assert.equal(await page.locator('#'+id).isVisible(),false,kind+': collapsed '+id);
+    assert.equal(await page.locator('#saveCustom').isVisible(),false);
+    assert.equal(await page.locator('[data-quick="'+kind+'"]').getAttribute('aria-pressed'),'false');
+    assert.deepEqual(await read(),before,'Collapsing must not persist');
+    await choosePlanningQuickShift(page,kind);
+    assert.deepEqual(await page.locator('#editorOverlay input, #editorOverlay select').evaluateAll(els=>els.map(el=>[el.id,el.value])),draft,'Draft retained after reopening '+kind);
+
   }
-  await page.locator('#closeEditor').click();
+  // Edited values survive repeated toggling, and only explicit save writes them.
+  await page.locator('#editCheckout').selectOption('19:10');
+  await choosePlanningQuickShift(page,'G');await choosePlanningQuickShift(page,'G');
+  assert.equal(await page.locator('#editCheckout').inputValue(),'19:10');
+  await choosePlanningQuickShift(page,'AH');
+  await page.locator('#editStart').selectOption('10:00');
+  await page.locator('#editBranch').fill('Kiel');
+  await choosePlanningQuickShift(page,'AH');await choosePlanningQuickShift(page,'AH');
+  assert.equal(await page.locator('#editStart').inputValue(),'10:00');
+  assert.equal(await page.locator('#editBranch').inputValue(),'Kiel');
+  await page.locator('#saveCustom').click();
+  assert.equal((await read()).schedule['2026-10-21'].a.branch,'Kiel');
+  await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
   await cell('a').click();await choosePlanningQuickShift(page,'F5');
   assert.equal((await read()).schedule[day].a.code,'F5');
   assert.equal(await page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('wochenplan_save_journal_v1')).previous.wochenplan_plan_v10).schedule['2026-10-20'].a.code),'F4');
