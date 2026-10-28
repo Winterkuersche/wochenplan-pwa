@@ -324,3 +324,47 @@ test('editor shortcut menus remain touchable button controls and baseline detail
   assert.match(liveCss, /baselineDetail\{background:#252b33;color:#edf1f5/);
   assert.match(live, /baselineDetail\.innerHTML='<b>Aktuell<\/b>/);
 });
+
+function startupAt(now, oldWeekFrom='2026-09-01') {
+  const stored={weekFrom:oldWeekFrom,schedule:{'2026-09-01':{a:{code:'F4'}}}};
+  const before=JSON.stringify(stored);
+  const ctx=vm.createContext({
+    Date:class extends Date { constructor(...args){super(...(args.length?args:[now]));} },
+    getTestPlan:()=>structuredClone(stored),
+    document:{getElementById:()=>({hidden:false})},render(){}
+  });
+  const helpers=['monday','weeks'].map(name=>live.split('\n').find(line=>line.startsWith('function '+name+'('))).join('\n');
+  const mount=live.slice(live.indexOf('function mountPlanning2(){'),live.indexOf('planning2Data.watchMasterChanges'));
+  vm.runInContext("let d=new Date(2026,8,1),activeWeek=0,mounted=false;const pad=n=>String(n).padStart(2,'0'),iso=x=>x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate());"+helpers+mount,ctx);
+  ctx.mountPlanning2();
+  assert.equal(JSON.stringify(stored),before,'Opening must not change saved plan dates or shifts');
+  return ctx;
+}
+
+test('week startup uses today instead of an old saved plan range',()=>{
+  const ctx=startupAt('2026-10-28T08:00:00');
+  assert.equal(vm.runInContext('iso(d)',ctx),'2026-10-01');
+  assert.equal(vm.runInContext('iso(weeks()[activeWeek][0])',ctx),'2026-10-26');
+});
+
+test('week startup handles Sunday, year boundaries and leap day',()=>{
+  for(const [now,month,start] of [
+    ['2026-11-01T08:00:00','2026-11-01','2026-10-26'],
+    ['2027-01-01T08:00:00','2027-01-01','2026-12-28'],
+    ['2028-02-29T08:00:00','2028-02-01','2028-02-28']
+  ]){
+    const ctx=startupAt(now);
+    assert.equal(vm.runInContext('iso(d)',ctx),month);
+    assert.equal(vm.runInContext('iso(weeks()[activeWeek][0])',ctx),start);
+  }
+});
+
+test('returning to the week view retains manual navigation until restart',()=>{
+  const ctx=startupAt('2026-10-28T08:00:00');
+  vm.runInContext('d=new Date(2027,0,1);activeWeek=2',ctx);
+  ctx.mountPlanning2();
+  assert.equal(vm.runInContext('iso(d)',ctx),'2027-01-01');
+  assert.equal(vm.runInContext('activeWeek',ctx),2);
+  const restarted=startupAt('2026-10-28T08:00:00');
+  assert.equal(vm.runInContext('iso(d)',restarted),'2026-10-01');
+});

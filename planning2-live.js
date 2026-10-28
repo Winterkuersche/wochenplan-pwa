@@ -346,7 +346,9 @@ let mounted=false;
 function mountPlanning2(){
   if(mounted){render();return}
   mounted=true;
-  let p=getTestPlan();if(p.weekFrom){let x=new Date(p.weekFrom+'T00:00:00');if(!isNaN(x)){d=new Date(x.getFullYear(),x.getMonth(),1)}}
+  const today=new Date(),currentMonday=iso(monday(today));
+  d=new Date(today.getFullYear(),today.getMonth(),1);
+  activeWeek=Math.max(0,weeks().findIndex(week=>iso(week[0])===currentMonday));
   render();document.getElementById('planung2RuntimeStatus').hidden=true;
 }
 planning2Data.watchMasterChanges(window,()=>{if(mounted)render()});

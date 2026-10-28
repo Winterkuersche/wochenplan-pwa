@@ -27,6 +27,21 @@ async function main(){
   await page.goto(url);await ready();
   await page.locator('#btnDataPanel').click();
   await Promise.all([page.waitForEvent('load'),page.locator('#backupFileInput').setInputFiles({name:'synthetic-planning.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await ready();
+  // Old plan dates must not select the startup month or week.
+  await page.evaluate(()=>{const plan=JSON.parse(localStorage.getItem('wochenplan_plan_v10'));plan.weekFrom='2026-09-01';plan.weekTo='2026-09-06';localStorage.setItem('wochenplan_plan_v10',JSON.stringify(plan))});
+  const storedBeforeStartup=await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await page.clock.setFixedTime(new Date('2026-10-28T08:00:00Z'));
+  await page.reload();await ready();
+  assert.match(await page.locator('#title').innerText(),/Oktober 2026/);
+  assert.match(await page.locator('#weeks button.on').innerText(),/26\.10/);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),storedBeforeStartup);
+  await page.locator('#next').click();
+  assert.match(await page.locator('#title').innerText(),/November 2026/);
+  await page.reload();await ready();
+  assert.match(await page.locator('#title').innerText(),/Oktober 2026/);
+  assert.match(await page.locator('#weeks button.on').innerText(),/26\.10/);
+  await page.clock.setFixedTime(new Date('2026-10-01T08:00:00Z'));
+  await page.reload();await ready();
   const week=async()=>{await page.locator('#weeks button').filter({hasText:'19.10'}).click()};await week();
   const cell=(id,date=day)=>page.locator(`.cell[data-eid="${id}"][data-day="${date}"]`);
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')));
@@ -161,7 +176,7 @@ async function main(){
   // Real service worker coverage (the other online smokes intentionally block it).
   const offline=await browser.newContext({serviceWorkers:'allow',viewport:{width:390,height:844}});
   await offline.route('https://**/*',route=>route.abort());
-  const offlinePage=await offline.newPage();offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
+  const offlinePage=await offline.newPage();await offlinePage.clock.setFixedTime(new Date('2026-10-01T08:00:00Z'));offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
   await offlinePage.goto(url);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await offlinePage.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.active),null,{timeout:20000});
   // The app reloads itself on the initial controllerchange. Do not start a
