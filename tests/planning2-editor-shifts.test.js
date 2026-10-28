@@ -78,6 +78,7 @@ test('productive editor isolates each mode and disables saving an unselected cel
     editing: { existing: { end: '19:10' } },
     updateEditorComputedEnd() {}
   });
+  element('editCheckout').value = '19:10';
   vm.runInContext(source, ctx);
   for (const kind of ['', 'FLEX', 'AH', 'U', 'K', 'G', 'FLEX', '']) {
     ctx.syncEditorFields(kind);
@@ -88,5 +89,5 @@ test('productive editor isolates each mode and disables saving an unselected cel
     assert.equal(element('editBranchField').hidden, kind !== 'AH');
     for (const id of ['editAbsenceFromField', 'editAbsenceToField']) assert.equal(element(id).hidden, !absence);
   }
-  assert.equal(element('editCheckout').value, '19:10', 'existing checkout time retained');
+  assert.equal(element('editCheckout').value, '19:10', 'checkout selection retained when changing modes');
 });

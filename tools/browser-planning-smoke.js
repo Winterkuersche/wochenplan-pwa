@@ -27,6 +27,21 @@ async function main(){
   await page.goto(url);await ready();
   await page.locator('#btnDataPanel').click();
   await Promise.all([page.waitForEvent('load'),page.locator('#backupFileInput').setInputFiles({name:'synthetic-planning.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(fixture))})]);await ready();
+  // Old plan dates must not select the startup month or week.
+  await page.evaluate(()=>{const plan=JSON.parse(localStorage.getItem('wochenplan_plan_v10'));plan.weekFrom='2026-09-01';plan.weekTo='2026-09-06';localStorage.setItem('wochenplan_plan_v10',JSON.stringify(plan))});
+  const storedBeforeStartup=await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await page.clock.setFixedTime(new Date('2026-10-28T08:00:00Z'));
+  await page.reload();await ready();
+  assert.match(await page.locator('#title').innerText(),/Oktober 2026/);
+  assert.match(await page.locator('#weeks button.on').innerText(),/26\.10/);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),storedBeforeStartup);
+  await page.locator('#next').click();
+  assert.match(await page.locator('#title').innerText(),/November 2026/);
+  await page.reload();await ready();
+  assert.match(await page.locator('#title').innerText(),/Oktober 2026/);
+  assert.match(await page.locator('#weeks button.on').innerText(),/26\.10/);
+  await page.clock.setFixedTime(new Date('2026-10-01T08:00:00Z'));
+  await page.reload();await ready();
   const week=async()=>{await page.locator('#weeks button').filter({hasText:'19.10'}).click()};await week();
   const cell=(id,date=day)=>page.locator(`.cell[data-eid="${id}"][data-day="${date}"]`);
   const read=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')));
@@ -75,8 +90,31 @@ async function main(){
     assert.equal(await page.locator('#saveCustom').isVisible(),true);
     if(kind==='FLEX'||kind==='AH'){assert.equal(await page.locator('#editStart').inputValue(),'09:00');assert.equal(await page.locator('#editComputedEnd').innerText(),'15:00')}
     assert.deepEqual(await read(),before,'Choosing a mode must not persist');
+    if(kind==='U'||kind==='K'){await page.locator('#editAbsenceTo').fill('2026-10-24')}
+    const draft=await page.locator('#editorOverlay input, #editorOverlay select').evaluateAll(els=>els.map(el=>[el.id,el.value]));
+    await choosePlanningQuickShift(page,kind);
+    assert.equal(await page.locator('#editType').inputValue(),'');
+    for(const id of fields)assert.equal(await page.locator('#'+id).isVisible(),false,kind+': collapsed '+id);
+    assert.equal(await page.locator('#saveCustom').isVisible(),false);
+    assert.equal(await page.locator('[data-quick="'+kind+'"]').getAttribute('aria-pressed'),'false');
+    assert.deepEqual(await read(),before,'Collapsing must not persist');
+    await choosePlanningQuickShift(page,kind);
+    assert.deepEqual(await page.locator('#editorOverlay input, #editorOverlay select').evaluateAll(els=>els.map(el=>[el.id,el.value])),draft,'Draft retained after reopening '+kind);
+
   }
-  await page.locator('#closeEditor').click();
+  // Edited values survive repeated toggling, and only explicit save writes them.
+  await page.locator('#editCheckout').selectOption('19:10');
+  await choosePlanningQuickShift(page,'G');await choosePlanningQuickShift(page,'G');
+  assert.equal(await page.locator('#editCheckout').inputValue(),'19:10');
+  await choosePlanningQuickShift(page,'AH');
+  await page.locator('#editStart').selectOption('10:00');
+  await page.locator('#editBranch').fill('Kiel');
+  await choosePlanningQuickShift(page,'AH');await choosePlanningQuickShift(page,'AH');
+  assert.equal(await page.locator('#editStart').inputValue(),'10:00');
+  assert.equal(await page.locator('#editBranch').inputValue(),'Kiel');
+  await page.locator('#saveCustom').click();
+  assert.equal((await read()).schedule['2026-10-21'].a.branch,'Kiel');
+  await page.locator('#planningUndo').click();assert.deepEqual(await read(),before);
   await cell('a').click();await choosePlanningQuickShift(page,'F5');
   assert.equal((await read()).schedule[day].a.code,'F5');
   assert.equal(await page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('wochenplan_save_journal_v1')).previous.wochenplan_plan_v10).schedule['2026-10-20'].a.code),'F4');
@@ -138,7 +176,7 @@ async function main(){
   // Real service worker coverage (the other online smokes intentionally block it).
   const offline=await browser.newContext({serviceWorkers:'allow',viewport:{width:390,height:844}});
   await offline.route('https://**/*',route=>route.abort());
-  const offlinePage=await offline.newPage();offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
+  const offlinePage=await offline.newPage();await offlinePage.clock.setFixedTime(new Date('2026-10-01T08:00:00Z'));offlinePage.on('dialog',dialog=>dialog.accept());offlinePage.on('pageerror',error=>errors.push(error.message));
   await offlinePage.goto(url);await offlinePage.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await offlinePage.waitForFunction(async()=>Boolean((await navigator.serviceWorker.getRegistration())?.active),null,{timeout:20000});
   // The app reloads itself on the initial controllerchange. Do not start a
