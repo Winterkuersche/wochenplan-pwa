@@ -1054,6 +1054,7 @@ function clearDay(employeeId, isoDate, options = {}) {
   return true;
 }
 function commitPlanChange() {
+  reconcilePlanBeforeSave();
   refreshEmployeeVacationCounters();
   saveAppStateDebounced();
   renderAllViews();
@@ -3498,24 +3499,21 @@ function formatIsoDateForOverview(isoDate) {
 }
 
 function renderAllViews() {
-  if (!isReconcilingMepEarlyStartForActiveMonth) {
-    isReconcilingMepEarlyStartForActiveMonth = true;
-    const reconciliation = reconcileMepEarlyStartForActiveMonth({ commit: false });
-    isReconcilingMepEarlyStartForActiveMonth = false;
-    if (reconciliation.changed) {
-      refreshEmployeeVacationCounters();
-      saveAppStateDebounced();
-    }
-  }
-
   renderSummary();
+  const view = uiState.currentView || "week";
+  if (view === "day") {
+    if (typeof renderDayView === "function") renderDayView();
+    window.WochenplanVacationCalendarPanel?.render();
+  }
+  if (view === "month" && typeof renderMonthView === "function") renderMonthView();
+  if (view === "overview") renderOverviewView();
+  if (view === "mep" && typeof renderMepTemplateView === "function") renderMepTemplateView();
+}
 
-  if (typeof renderDayView === "function") renderDayView();
-  window.WochenplanVacationCalendarPanel?.render();
-  if (typeof renderWeekView === "function") renderWeekView();
-  if (typeof renderMonthView === "function") renderMonthView();
-  renderOverviewView();
-  if (typeof renderMepTemplateView === "function") renderMepTemplateView();
+function reconcilePlanBeforeSave() {
+  const result = reconcileMepEarlyStartForActiveMonth({ commit: false });
+  if (result.changed) refreshEmployeeVacationCounters();
+  return result;
 }
 
 function renderAll() {
@@ -3592,6 +3590,7 @@ function bootstrapApp() {
     syncMonthPlanToState();
     syncWeekRangeFromActiveWeek();
 
+    if (reconcilePlanBeforeSave().changed) saveAppStateDebounced();
     renderAll();
     window.__APP_BOOT_OK__ = true;
     console.info("startup: render-complete");
@@ -3608,6 +3607,13 @@ function bootstrapApp() {
     }
   }
 }
+
+window.addEventListener("planning2:period-selected", event => {
+  state.activeMonth = event.detail.month;
+  state.weekFrom = event.detail.from;
+  state.weekTo = event.detail.to;
+  syncMonthPlanToState();
+});
 
 window.addEventListener("planning2:plan-saved", () => {
   const refreshed = loadAppState();

@@ -160,6 +160,7 @@ function commitPlanning2Plan(plan, expectedPlan) {
   const previous = state;
   const before = localStorage.getItem(PLAN_KEY) === null ? savePlanData({ snapshotOnly: true }) : current;
   state = { ...state, ...plan };
+  if (typeof reconcilePlanBeforeSave === "function") reconcilePlanBeforeSave();
   if (!saveAppState()) {
     state = previous;
     throw new Error(saveStatusMessage || "Speichern fehlgeschlagen. Der bisherige Stand bleibt erhalten.");
