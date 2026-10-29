@@ -11,7 +11,16 @@ Ausgangsstand: eed6b36, Bedienprüfung vom 29.10.2026. Nur synthetische Daten.
 - [x] Browser-Gegenprüfung: Rücknahme, November in Monat/MEP und Escape funktionieren.
 - [ ] CI-Ergebnisse am PR prüfen.
 
-633 lokale Tests sowie globale Helper- und Service-Worker-Asset-Prüfungen bestanden. Ein neuer Screenshot konnte wegen Zeitüberschreitung des Browserdienstes nicht erstellt werden.
+634 lokale Tests sowie globale Helper- und Service-Worker-Asset-Prüfungen bestanden. Ein neuer Screenshot konnte wegen Zeitüberschreitung des Browserdienstes nicht erstellt werden.
 - [ ] iPhone-Praxiskontrolle durch Nutzer nach Veröffentlichung.
 
 Tests: gezielte Regression für verborgene Ansichten, Monats-/Jahresgrenzen und gemeinsame Rücknahme automatischer Folgewirkungen; vollständige bestehende Testsuite. Tatsächliche Ergebnisse siehe PR.
+
+Nachbesserung PR #442: Der fehlgeschlagene Monats-Browsertest wurde auf einen
+Neustart am Monatsanfang zurückgeführt. Der gespeicherte Wochenmontag lag im
+Vormonat und wurde als Monat interpretiert. Alle Ansichten starten nun beim
+aktuellen Monat und der aktuellen Woche; Planungsdaten bleiben erhalten.
+Mit synthetischen Daten bei 390 px vor der Korrektur reproduziert (Oktober →
+September), danach einschließlich Abwesenheitskürzung und Neustart geprüft.
+Ein gezielter Browserfall sowie Monats-/Jahreswechsel und Schalttag sind ergänzt.
+Die erneuten Chromium-/WebKit-CI-Ergebnisse stehen noch aus.

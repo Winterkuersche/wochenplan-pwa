@@ -3543,20 +3543,24 @@ function showStartupFailureMessage(error) {
   banner.textContent = fallbackText;
 }
 
+// Navigation starts at today after a full restart. A saved Monday may belong
+// to the previous month (for example 28 September in the first October week).
+// Do not infer the selected month from that persisted week boundary.
+function selectCurrentPlanningPeriod() {
+  const today = toIsoDate(new Date());
+  state.activeMonth = today.slice(0, 7);
+  state.weekFrom = today;
+  syncMonthPlanToState();
+  syncWeekRangeFromActiveWeek();
+}
+
 function bootstrapApp() {
   window.__APP_BOOT_OK__ = false;
 
   try {
     updateResponsiveViewportMetrics();
 
-    if (!state.weekFrom) {
-      const today = new Date();
-      state.weekFrom = toIsoDate(today);
-    }
-
-    if (!state.activeMonth) {
-      state.activeMonth = (state.weekFrom || toIsoDate(new Date())).slice(0, 7);
-    }
+    selectCurrentPlanningPeriod();
 
     let savedTheme = null;
     try {

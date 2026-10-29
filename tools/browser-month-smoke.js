@@ -63,6 +63,17 @@ async function run(context, url, width) {
   }
 
   await reset();
+  // On 1 October the current Monday is in September. Persisting that week
+  // must not make a full restart open September in the month view.
+  await page.locator('#btnViewWeek').click();
+  await page.locator('#btnViewMonth').click();
+  await page.waitForFunction(() => {
+    const plan = JSON.parse(localStorage.getItem('wochenplan_plan_v10'));
+    const ui = JSON.parse(localStorage.getItem('wochenplan_ui_v10'));
+    return plan.weekFrom === '2026-09-28' && ui.currentView === 'month';
+  });
+  await reload();
+  assert.match(await page.locator('#monthTitle').innerText(), /Oktober 2026/);
   await cell('20').click();
   await page.locator('#monthFallbackOptions').getByRole('button', { name: 'Früh', exact: true }).click();
   await page.locator('#monthFallbackOptions').getByRole('button', { name: 'F5', exact: true }).click();
