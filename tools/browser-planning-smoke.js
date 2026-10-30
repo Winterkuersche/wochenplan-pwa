@@ -1,3 +1,4 @@
+const { checkPlanningLayout } = require('./browser-planning-layout');
 const { choosePlanningQuickShift } = require('./browser-planning-helpers');
 // Actual week controls, synthetic data only. No external service or credentials.
 const assert = require('node:assert/strict');
@@ -173,6 +174,7 @@ async function main(){
   await page.reload();await ready();await week();assert.equal((await read()).salesByDate[day],900);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
   await context.close();
+  await checkPlanningLayout(browser,url,fixture);
   // Real service worker coverage (the other online smokes intentionally block it).
   const offline=await browser.newContext({serviceWorkers:'allow',viewport:{width:390,height:844}});
   await offline.route('https://**/*',route=>route.abort());
