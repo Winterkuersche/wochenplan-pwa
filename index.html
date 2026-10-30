@@ -13,7 +13,7 @@ content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&display=swap">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="planning2-live.css?v=2026-10-26-2">
+<link rel="stylesheet" href="planning2-live.css?v=2026-10-29-1">
 <link rel="stylesheet" href="collaboration-proposals.css?v=2026-10-24-2">
 <link rel="stylesheet" href="vacation-calendar.css?v=2026-10-24-7">
 
@@ -451,10 +451,10 @@ Jahresurlaub, genommene Tage und Resturlaub (Sonntage und Feiertage werden nicht
 <div id="editorOverlay" class="overlay hidden" aria-hidden="true">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
     <div class="sheetHead"><div><h2 id="editorTitle">Schicht planen</h2><div id="editorSub" class="sheetSub"></div></div><button id="closeEditor" class="closeBtn" type="button">✕</button></div>
-    <p class="editorGroupLabel" id="editorStandardLabel">Standards</p>
+    <p class="editorGroupLabel" id="editorStandardLabel">Standards</p><p class="quickSaveHint">Früh, Spät und Frei werden sofort übernommen. Andere Schichten mit „Speichern“ bestätigen.</p>
     <div class="quickGrid" role="group" aria-labelledby="editorStandardLabel">
-      <details class="quickMenu"><summary class="quick">Früh</summary><div><button type="button" class="quick" data-quick="F3">F3</button><button type="button" class="quick" data-quick="F4">F4</button><button type="button" class="quick" data-quick="F5">F5</button><button type="button" class="quick" data-quick="F6">F6</button></div></details>
-      <details class="quickMenu"><summary class="quick">Spät</summary><div><button type="button" class="quick" data-quick="L3">L3</button><button type="button" class="quick" data-quick="L4">L4</button><button type="button" class="quick" data-quick="L5">L5</button><button type="button" class="quick" data-quick="L6">L6</button></div></details>
+      <details class="quickMenu"><summary class="quick">Früh</summary><div><button type="button" class="quick" data-quick="F3">F3 · 09:00–12:00</button><button type="button" class="quick" data-quick="F4">F4 · 09:00–13:00</button><button type="button" class="quick" data-quick="F5">F5 · 09:00–14:00</button><button type="button" class="quick" data-quick="F6">F6 · 09:00–15:00</button></div></details>
+      <details class="quickMenu"><summary class="quick">Spät</summary><div><button type="button" class="quick" data-quick="L3">L3 · 16:00–19:00</button><button type="button" class="quick" data-quick="L4">L4 · 15:00–19:00</button><button type="button" class="quick" data-quick="L5">L5 · 14:00–19:00</button><button type="button" class="quick" data-quick="L6">L6 · 13:00–19:00</button></div></details>
       <button type="button" class="quick" data-quick="G">Ganz</button><button type="button" class="quick" data-quick="FR">Frei</button>
     </div>
     <p class="editorGroupLabel" id="editorSpecialLabel">Sonderfälle</p>
@@ -976,37 +976,37 @@ L1E-L4E ohne Abrechnung
   - CI:      .github/workflows/global-helper-collision-check.yml
 -->
 
-<script src="./version.js?v=2026-10-28-2"></script>
-<script src="./holidays.js?v=2026-10-28-2"></script>
-<script src="./time-utils.js?v=2026-10-28-2"></script>
-<script src="./employee-availability.js?v=2026-10-28-2"></script>
-<script src="./shift-rules.js?v=2026-10-28-2"></script>
-<script src="./date-utils.js?v=2026-10-28-2"></script>
-<script src="./shift-utils.js?v=2026-10-28-2"></script>
-<script src="./status-utils.js?v=2026-10-28-2"></script>
-<script src="./contract-models.js?v=2026-10-28-2"></script>
-<script src="./absences.js?v=2026-10-28-2"></script>
-<script src="./planning2-domain-helpers.js?v=2026-10-28-2"></script>
-<script src="./planning2-carryover.js?v=2026-10-28-2"></script>
-<script src="./planning2-mutation-packages.js?v=2026-10-28-2"></script>
-<script src="./planning2-targeted-suggestions.js?v=2026-10-28-2"></script>
-<script src="./planning2-data-adapter.js?v=2026-10-28-2"></script>
-<script src="./vacation-utils.js?v=2026-10-28-2"></script>
-<script src="./day-resolution.js?v=2026-10-28-2"></script>
-<script src="./month-engine.js?v=2026-10-28-2"></script>
-<script src="./daily-staffing.js?v=2026-10-28-2"></script>
-<script src="./day-view.js?v=2026-10-28-2"></script>
-<script src="./week-view.js?v=2026-10-28-2"></script>
-<script src="./mep-view.js?v=2026-10-28-2"></script>
-<script src="./month-editor.js?v=2026-10-28-2"></script>
-<script src="./month-view.js?v=2026-10-28-2"></script>
-<script src="./balance-utils.js?v=2026-10-28-2"></script>
-<script src="./monthly-plan-baselines.js?v=2026-10-28-2"></script>
-<script src="./vacation-calendar.js?v=2026-10-28-2"></script>
-<script src="./vacation-distribution.js?v=2026-10-28-2"></script>
-<script src="./backup-utils.js?v=2026-10-28-2"></script>
-<script src="./backup-io.js?v=2026-10-28-2"></script>
-<script src="./manual-month-utils.js?v=2026-10-28-2"></script>
+<script src="./version.js?v=2026-10-29-1"></script>
+<script src="./holidays.js?v=2026-10-29-1"></script>
+<script src="./time-utils.js?v=2026-10-29-1"></script>
+<script src="./employee-availability.js?v=2026-10-29-1"></script>
+<script src="./shift-rules.js?v=2026-10-29-1"></script>
+<script src="./date-utils.js?v=2026-10-29-1"></script>
+<script src="./shift-utils.js?v=2026-10-29-1"></script>
+<script src="./status-utils.js?v=2026-10-29-1"></script>
+<script src="./contract-models.js?v=2026-10-29-1"></script>
+<script src="./absences.js?v=2026-10-29-1"></script>
+<script src="./planning2-domain-helpers.js?v=2026-10-29-1"></script>
+<script src="./planning2-carryover.js?v=2026-10-29-1"></script>
+<script src="./planning2-mutation-packages.js?v=2026-10-29-1"></script>
+<script src="./planning2-targeted-suggestions.js?v=2026-10-29-1"></script>
+<script src="./planning2-data-adapter.js?v=2026-10-29-1"></script>
+<script src="./vacation-utils.js?v=2026-10-29-1"></script>
+<script src="./day-resolution.js?v=2026-10-29-1"></script>
+<script src="./month-engine.js?v=2026-10-29-1"></script>
+<script src="./daily-staffing.js?v=2026-10-29-1"></script>
+<script src="./day-view.js?v=2026-10-29-1"></script>
+<script src="./week-view.js?v=2026-10-29-1"></script>
+<script src="./mep-view.js?v=2026-10-29-1"></script>
+<script src="./month-editor.js?v=2026-10-29-1"></script>
+<script src="./month-view.js?v=2026-10-29-1"></script>
+<script src="./balance-utils.js?v=2026-10-29-1"></script>
+<script src="./monthly-plan-baselines.js?v=2026-10-29-1"></script>
+<script src="./vacation-calendar.js?v=2026-10-29-1"></script>
+<script src="./vacation-distribution.js?v=2026-10-29-1"></script>
+<script src="./backup-utils.js?v=2026-10-29-1"></script>
+<script src="./backup-io.js?v=2026-10-29-1"></script>
+<script src="./manual-month-utils.js?v=2026-10-29-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -1018,23 +1018,23 @@ window.WOCHENPLAN_DRIVE_CONFIG = {
   scope: "https://www.googleapis.com/auth/drive"
 };
 </script>
-<script src="./pdf-export.js?v=2026-10-28-2"></script>
-<script src="./app-orchestration.js?v=2026-10-28-2"></script>
-<script src="./employee-order.js?v=2026-10-28-2"></script>
-<script src="./planning2-manual-tools.js?v=2026-10-28-2"></script>
-<script src="./planning2-live.js?v=2026-10-28-2"></script>
-<script src="./storage-utils.js?v=2026-10-28-2"></script>
-<script src="./cloud-config.js?v=2026-10-28-2"></script>
-<script src="./vendor/supabase-2.118.0.js?v=2026-10-28-2"></script>
-<script src="./cloud-sync.js?v=2026-10-28-2"></script>
-<script src="./collaboration-proposals.js?v=2026-10-28-2"></script>
-<script src="./collaboration.js?v=2026-10-28-2"></script>
-<script src="./app-storage.js?v=2026-10-28-2"></script>
-<script src="./app.js?v=2026-10-28-2"></script>
-<script src="./vacation-calendar-pdf.js?v=2026-10-28-2"></script>
-<script src="./vacation-calendar-panel.js?v=2026-10-28-2"></script>
-<script src="./data-panel.js?v=2026-10-28-2"></script>
-<script src="./collaboration-panel.js?v=2026-10-28-2"></script>
+<script src="./pdf-export.js?v=2026-10-29-1"></script>
+<script src="./app-orchestration.js?v=2026-10-29-1"></script>
+<script src="./employee-order.js?v=2026-10-29-1"></script>
+<script src="./planning2-manual-tools.js?v=2026-10-29-1"></script>
+<script src="./planning2-live.js?v=2026-10-29-1"></script>
+<script src="./storage-utils.js?v=2026-10-29-1"></script>
+<script src="./cloud-config.js?v=2026-10-29-1"></script>
+<script src="./vendor/supabase-2.118.0.js?v=2026-10-29-1"></script>
+<script src="./cloud-sync.js?v=2026-10-29-1"></script>
+<script src="./collaboration-proposals.js?v=2026-10-29-1"></script>
+<script src="./collaboration.js?v=2026-10-29-1"></script>
+<script src="./app-storage.js?v=2026-10-29-1"></script>
+<script src="./app.js?v=2026-10-29-1"></script>
+<script src="./vacation-calendar-pdf.js?v=2026-10-29-1"></script>
+<script src="./vacation-calendar-panel.js?v=2026-10-29-1"></script>
+<script src="./data-panel.js?v=2026-10-29-1"></script>
+<script src="./collaboration-panel.js?v=2026-10-29-1"></script>
 
 
 <script>

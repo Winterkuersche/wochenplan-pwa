@@ -98,3 +98,11 @@ test('undo clears optional plan fields absent from the stored snapshot',()=>{
   assert.deepEqual(h.stored(),{weekFrom:'2026-10-19',schedule:{},absences:[],salesByDate:{},monthlyPlanBaselines:{}});
 });
 
+
+test('automatic follow-up corrections belong to the original undo transaction',()=>{
+ const h=harness(),before=plan(),changed=plan();changed.schedule['2026-10-20'].a.end='15:00';
+ h.ctx.reconcilePlanBeforeSave=()=>{h.ctx.state.schedule['2026-10-21']={a:{type:'shift',start:'08:55',end:'14:00'}}};
+ h.ctx.commitPlanning2Plan(changed,before);
+ assert.equal(h.stored().schedule['2026-10-21'].a.start,'08:55');assert.equal(h.ctx.canUndoPlanning2Plan(),true);
+ h.ctx.undoPlanning2Plan();assert.deepEqual(h.stored(),before);
+});
