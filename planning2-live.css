@@ -39,3 +39,19 @@
 
 #weekView .quickSaveHint{font-size:.8rem;color:var(--muted,#68717b);margin:0 0 .6rem}#weekView .quickMenu>div{min-width:170px}#weekView .quickMenu>div .quick{white-space:nowrap}
 @media(max-width:600px){body[data-current-view="week"] .compactTopbar{padding:10px}body[data-current-view="week"] .compactTopbar h1{font-size:1.65rem;margin:0}body[data-current-view="week"] .compactTopbar>p{display:none}}
+
+/* One scroll area keeps the day headings and employee names in view together. */
+@media screen {
+  #weekView .scroll { max-height:70vh; max-height:70dvh; overflow:auto; isolation:isolate; }
+  #weekView #grid > .head { position:sticky; top:0; z-index:5; }
+  #weekView #grid > .head .names { z-index:6; }
+
+  /* Only the editor contents scroll; its Save action remains at the bottom. */
+  #weekView #editorOverlay .sheet { display:flex; flex-direction:column; overflow:hidden; }
+  #weekView #editorOverlay .sheetHead { flex:0 0 auto; padding-bottom:8px; }
+  #weekView #editorOverlay .editorScroll { flex:1 1 auto; min-height:0; overflow:auto; padding-bottom:12px; }
+  #weekView #editorOverlay .editorSaveRow { flex:0 0 auto; display:flex; margin:0; padding-top:10px; border-top:1px solid #ccd3db; background:inherit; }
+  #weekView #editorOverlay .editorSaveRow:not(:has(button:not([hidden]))) { display:none; }
+  #weekView #editorOverlay .editorSaveRow button { min-height:48px; }
+  #weekView #editorOverlay .editorDeleteRow { margin-top:20px; }
+}
