@@ -32,6 +32,8 @@ async function device(){
   return send(404,{message:'unexpected path'});
  });
  const p=await c.newPage();pages.push(p);p.on('dialog',d=>d.accept());p.on('pageerror',e=>console.log('PAGEERROR',e.message));
+ // The visible editor uses an October fixture regardless of the real month.
+ await p.clock.setFixedTime(new Date('2026-10-24T08:00:00Z'));
  await p.goto(url);await p.waitForFunction(()=>window.__APP_BOOT_OK__===true);return{c,p};
 }
 async function mode(p,name){await p.waitForFunction(name=>document.querySelector('#dataStatus').dataset.mode===name,name,{timeout:10000});console.log('MODE',name);}
