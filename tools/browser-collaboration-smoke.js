@@ -48,12 +48,15 @@ async function main(){
     return send(404,{message:'Unexpected synthetic route'});
    });
    const page=await context.newPage();pages.push(page);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+   // Keep the planner's October fixture reachable after a calendar-month change.
+   // Database authorization and delegation dates still use the real server time.
+   await page.clock.setFixedTime(new Date('2026-10-24T08:00:00Z'));
    await page.goto(url);await page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
    return {page,context,user,personalRequests,setOldServer:value=>oldServer=value};
   }
   async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
   const a=await device(0),b=await device(1);
-  const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
+  const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'},{id:'test-two',name:'Zweite Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
   await a.page.evaluate(b=>importBackupFromObject(b,{reload:false}),fixture);await a.page.reload();await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await login(a);await a.page.locator('#sharedSetup>summary').click();await a.page.locator('#sharedDisplayName').fill('TL Test');await a.page.locator('#sharedBranchName').fill('Testfiliale');await a.page.locator('#btnSharedCreate').click();
   await a.page.locator('#sharedSummary').filter({hasText:'Filialverwaltung'}).waitFor();
@@ -152,6 +155,57 @@ async function main(){
   // interval must update both visible and stored plans on its own.
   await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F6',null,{timeout:25000});
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');
+  // A person selection is navigation, not a pending request. It must not freeze
+  // either vacation view on a linked second device after the control loses focus.
+  if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#btnViewDay').click();
+  await b.page.locator('#vacationRequestEmployee').selectOption('test-two');
+  await b.page.locator('#vacationRequestEmployee').blur();
+  assert.equal(await b.page.evaluate(()=>WochenplanVacationCalendarPanel.hasOpenDraft()),false);
+  assert.equal(await b.page.locator('#vacationRequestCancel').isVisible(),false);
+  await a.page.locator('#btnCloseData').click();await a.page.locator('#btnViewDay').click();
+  async function enterWish(from,to){
+   await a.page.locator('#vacationRequestEmployee').selectOption('test-one');
+   await a.page.locator('#vacationRequestFrom').fill(from);await a.page.locator('#vacationRequestTo').fill(to);
+   await a.page.locator('#vacationRequestSave').click();
+   await a.page.waitForFunction(()=>document.getElementById('vacationCalendarMessage').textContent.startsWith('Urlaubswunsch gespeichert'));
+   await a.page.waitForFunction(()=>document.getElementById('dataStatus').textContent==='Filialplan aktuell');
+  }
+  await enterWish('2027-02-01','2027-02-06');
+  await b.page.waitForFunction(()=>state.vacationCalendar?.requests?.length===1,null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationCalendarRequests').innerText(),/Testperson.*6 Urlaubstage/s);
+  assert.equal(await b.page.locator('#vacationRequestEmployee').inputValue(),'test-two');
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).vacationCalendar.requests.length),1);
+  // Approved vacation uses the existing absence editor and must also arrive
+  // while only a person is selected in the separate wishes form.
+  await a.page.locator('#vacationTableBody tr').filter({hasText:'Zweite Testperson'}).getByRole('button',{name:'+ Urlaub',exact:true}).click();
+  await a.page.locator('#shiftDialogAbsenceFrom').fill('2026-10-26');
+  await a.page.locator('#shiftDialogAbsenceTo').fill('2026-10-31');
+  await a.page.locator('#shiftDialogSave').click();
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').textContent==='Filialplan aktuell');
+  await b.page.waitForFunction(()=>state.absences.some(item=>item.employeeId==='test-two'&&item.from==='2026-10-26'),null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationTableBody tr').filter({hasText:'Zweite Testperson'}).innerText(),/26\.10\.2026.*31\.10\.2026/s);
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).absences.length),1);
+  // An actual unsaved date still blocks a newer shared stand, including after
+  // switching views. Cancelling it must let the next foreground poll catch up.
+  await b.page.locator('#vacationRequestFrom').fill('2027-08-02');
+  await b.page.locator('#vacationRequestFrom').blur();
+  await b.page.locator('#btnViewWeek').click();
+  const beforeDraft=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await enterWish('2027-03-01','2027-03-06');
+  const waitingStand=(await a.page.locator('#sharedSummary').innerText()).match(/Stand \d+/)[0];
+  await b.page.waitForFunction(stand=>document.getElementById('sharedSummary').textContent.includes(stand),waitingStand,{timeout:25000});
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan prüfen');
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeDraft);
+  await b.page.locator('#btnViewDay').click();
+  assert.equal(await b.page.locator('#vacationRequestFrom').inputValue(),'2027-08-02');
+  assert.equal(await b.page.evaluate(()=>WochenplanVacationCalendarPanel.hasOpenDraft()),true);
+  await b.page.locator('#vacationRequestCancel').click();
+  await b.page.waitForFunction(()=>state.vacationCalendar?.requests?.length===2,null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationCalendarTotals').innerText(),/Testperson: 12 Urlaubstage/);
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).vacationCalendar.requests.length),2);
+  console.log('Vacation sync passed: person selection, automatic wishes/approved vacation updates, preserved selection and real draft, catch-up after cancelling.');
+  await a.page.locator('#btnDataPanel').click();
   // The independent archive is a valid standard backup, including attributed history.
   await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
   const downloadPromise=a.page.waitForEvent('download');await a.page.locator('#btnSharedArchive').click();
@@ -167,7 +221,7 @@ async function main(){
   assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);
   console.log('Shared browser/database flow passed: durable separate proposals, reload, cell markers, accept, reject, conflict protection, automatic foreground updates, delegate/revoke and mobile layout.');
- }catch(error){for(const page of pages) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})));throw error;
+ }catch(error){for(const page of pages) if(!page.isClosed()) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})).catch(e=>({diagnosticError:e.message})));throw error;
  }finally{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));await db.close();}
 }
 main().catch(e=>{console.error(e);process.exit(1);});

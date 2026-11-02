@@ -6,7 +6,9 @@
   if (!form) return;
   let distribution = null;
   let editingId = null, expected = null, dirty = false, endFollowsStart = true, renderedYear = null;
-  const fields = ["vacationRequestEmployee", "vacationRequestFrom", "vacationRequestTo", "vacationRequestPrintName", "vacationCalendarTitle"];
+  // Choosing a person only changes context. Typed fields and editing an
+  // existing request still protect a real draft from automatic shared updates.
+  const fields = ["vacationRequestFrom", "vacationRequestTo", "vacationRequestPrintName", "vacationCalendarTitle"];
   const signature = () => JSON.stringify(state.vacationCalendar || api.emptyData());
   const say = (text, error = false) => { el("vacationCalendarMessage").textContent = text; el("vacationCalendarMessage").classList.toggle("isError", error); };
   function selectedYear() { return Number(el("vacationCalendarYear").value); }

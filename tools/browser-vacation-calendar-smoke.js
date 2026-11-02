@@ -31,6 +31,16 @@ async function run(context, url, width, engine) {
   assert.equal(await page.locator('#vacationRequestEmployee option[value="p11"]').count(), 0);
   await page.evaluate(() => { state.employees[12].activeToMonth = ''; state.employees[11].activeFromMonth = ''; WochenplanVacationCalendarPanel.render(); });
   assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-01-01');
+  await page.locator('#vacationRequestEmployee').selectOption('p1');
+  await page.locator('#vacationRequestEmployee').blur();
+  assert.equal(await page.evaluate(() => WochenplanVacationCalendarPanel.hasOpenDraft()), false, 'Selecting a person must not block shared-plan updates');
+  assert.equal(await page.locator('#vacationRequestCancel').isVisible(), false);
+  for (const [field, value] of [['vacationRequestFrom', '2027-01-02'], ['vacationRequestTo', '2027-01-03'], ['vacationCalendarTitle', 'Synthetischer Titel'], ['vacationRequestPrintName', 'Testdruckname']]) {
+    await page.locator('#' + field).fill(value);
+    await page.locator('#vacationRequestEmployee').selectOption('p0');
+    assert.equal(await page.evaluate(() => WochenplanVacationCalendarPanel.hasOpenDraft()), true, `${field} must remain protected after selecting a person`);
+    await page.locator('#vacationRequestCancel').click();
+  }
   await page.locator('#vacationCalendarYear').fill('2026'); await page.locator('#vacationCalendarYear').blur();
   assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2026-01-01');
   assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2026-01-01');
@@ -69,6 +79,7 @@ async function run(context, url, width, engine) {
   assert.equal((await read()).vacationCalendar.requests.length, 1);
   await page.locator('.vacationPerson summary').click();
   await page.locator('#vacationCalendarRequests').getByRole('button', { name: /^Bearbeiten:/ }).first().click();
+  assert.equal(await page.evaluate(() => WochenplanVacationCalendarPanel.hasOpenDraft()), true, 'Editing a saved request must block shared-plan updates');
   assert.equal(await page.locator('#vacationRequestFrom').inputValue(), '2027-07-01');
   assert.equal(await page.locator('#vacationRequestTo').inputValue(), '2027-07-14');
   await page.locator('#vacationRequestTo').fill('2027-07-10'); await page.locator('#vacationRequestSave').click();
