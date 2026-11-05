@@ -3594,7 +3594,8 @@ function bootstrapApp() {
     syncMonthPlanToState();
     syncWeekRangeFromActiveWeek();
 
-    if (reconcilePlanBeforeSave().changed) saveAppStateDebounced();
+    // Opening a shared plan is read-only. Reconcile carryover shifts inside
+    // the next explicit edit's save transaction, not as a startup draft.
     renderAll();
     window.__APP_BOOT_OK__ = true;
     console.info("startup: render-complete");
