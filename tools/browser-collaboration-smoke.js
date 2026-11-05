@@ -57,6 +57,10 @@ async function main(){
   async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
   const a=await device(0),b=await device(1);
   const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'},{id:'test-two',name:'Zweite Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
+  // Legacy November entries have not yet been reconciled by a conscious edit.
+  // Opening this month on the deputy's device must not create a local proposal.
+  fixture.plan.schedule['2026-11-03']={'test-one':{type:'shift',code:'G',start:'09:00',end:'19:10',minutes:540,pause:70}};
+  fixture.plan.schedule['2026-11-04']={'test-one':{type:'shift',code:'F6',start:'09:00',end:'15:00',minutes:360,pause:0}};
   await a.page.evaluate(b=>importBackupFromObject(b,{reload:false}),fixture);await a.page.reload();await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await login(a);await a.page.locator('#sharedSetup>summary').click();await a.page.locator('#sharedDisplayName').fill('TL Test');await a.page.locator('#sharedBranchName').fill('Testfiliale');await a.page.locator('#btnSharedCreate').click();
   await a.page.locator('#sharedSummary').filter({hasText:'Filialverwaltung'}).waitFor();
@@ -219,6 +223,31 @@ async function main(){
   await b.page.locator('#btnDataPanel').click();
   await b.page.locator('#btnCloseData').click();assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
   assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await b.page.locator('#btnViewWeek').click();
+  const beforeReopen=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await b.page.clock.setFixedTime(new Date('2026-11-05T08:00:00Z'));
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'09:00','Reopening another month must preserve the shared shift');
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeReopen,'Startup must not save a locally corrected plan');
+  assert.match(await b.page.locator('#title').innerText(),/November 2026/);
+  // A later real owner edit must still arrive automatically after that restart.
+  await a.page.locator('#btnCloseData').click();await a.page.locator('#btnViewWeek').click();
+  await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(a.page,'F5');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5',null,{timeout:25000});
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'09:00');
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan aktuell');
+  // The correction belongs to the next conscious save and must still run there.
+  await a.page.locator('#next').click();
+  await a.page.locator('#weeks button').filter({hasText:'02.11'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-11-04"]').click();await choosePlanningQuickShift(a.page,'F5');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  assert.equal(await a.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'08:55');
+  await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='F5'&&state.schedule['2026-11-04']['test-one'].start==='08:55',null,{timeout:25000});
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan aktuell');
+  console.log('Reopen/month-change sync passed: no startup mutation, later shared updates and carryover correction on conscious save.');
   assert.deepEqual(errors,[]);
   console.log('Shared browser/database flow passed: durable separate proposals, reload, cell markers, accept, reject, conflict protection, automatic foreground updates, delegate/revoke and mobile layout.');
  }catch(error){for(const page of pages) if(!page.isClosed()) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})).catch(e=>({diagnosticError:e.message})));throw error;
