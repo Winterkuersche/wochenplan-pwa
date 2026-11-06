@@ -36,6 +36,17 @@ test('individual decisions fail closed on an old server and send stable item ind
  assert.equal(f.decision.id,'p');assert.deepEqual(Array.from(f.decision.indices),[1]);
  assert.equal(f.decision.expected_revision,1);assert.equal(f.decision.decision,'accepted');
 });
+test('an accepted deletion with an empty server day stays synced and allows a later proposal',async t=>{
+ const f=setup(t,{editable:false,auto:true});await f.c.setUser({id:'u'});
+ f.record.payload.storage.wochenplan_plan_v10.schedule={'2026-10-19':{}};
+ f.set('F4');f.local.storage.wochenplan_plan_v10.schedule={};
+ await f.c.refresh();assert.equal(f.c.status.mode,'synced');
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);
+ after.schedule['2026-10-19']={one:{code:'F5'}};
+ await f.c.proposePlan(before,after,'Neue Schicht',{userId:'u',branchId:'b'});
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.c.status.mode,'synced');assert.equal(f.writes,0);
+});
 test('a direct editor proposal includes only its transaction and preserves older local drafts',async t=>{
  const f=setup(t,{editable:false,auto:true});await f.c.setUser({id:'u'});
  f.local.storage.wochenplan_plan_v10.schedule['2026-10-20']={one:{code:'LOCAL'}};
