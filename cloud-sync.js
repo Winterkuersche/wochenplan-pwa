@@ -9,6 +9,10 @@
   async function fingerprint(snapshot) {
     const master = snapshot.storage.wochenplan_master_v10;
     const { weekFrom, weekTo, ...plan } = snapshot.storage.wochenplan_plan_v10;
+    // Removing the final shift may leave an empty day object on the server.
+    // The app omits these containers on import; both represent the same plan.
+    if (plan.schedule) plan.schedule = Object.fromEntries(Object.entries(plan.schedule)
+      .filter(([, day]) => !day || typeof day !== "object" || Array.isArray(day) || Object.keys(day).length));
     const bytes = new TextEncoder().encode(JSON.stringify(canonical({ master, plan })));
     const hash = await crypto.subtle.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
