@@ -168,6 +168,17 @@ function stagePlanning2Proposal(plan){
     if(plan.schedule?.[dayIso]&&!Object.keys(plan.schedule[dayIso]).length)delete plan.schedule[dayIso];
   }
   editing.proposalPlan=clone(plan);
+  let selected=plan.schedule?.[editing.dayIso]?.[editing.eid];
+  if(selected?.type==='shift'){
+    document.getElementById('editType').value=selected.code==='G'?'G':'FLEX';
+    let start=document.getElementById('editStart');
+    if(![...start.options].some(option=>option.value===selected.start)){
+      let option=document.createElement('option');option.value=selected.start;option.textContent=selected.start;start.appendChild(option);
+    }
+    start.value=selected.start;setEditorWorkMinutes(selected.minutes);
+    document.getElementById('editCheckout').value=selected.end==='19:10'?'19:10':'19:00';
+    syncEditorFields(document.getElementById('editType').value);updatePlanning2EditorInfo();
+  }
   let master=planning2Data.readMaster(),employees=master.employees||[],before=editing.beforePlan;
   let lines=getPlanning2ChangedPlanCells(before,plan).map(({dayIso,employeeId})=>{
     let person=employees.find(e=>String(e.id)===String(employeeId)),oldValue=planning2TransferResolved(before,employeeId,dayIso),newValue=planning2TransferResolved(plan,employeeId,dayIso);

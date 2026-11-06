@@ -89,6 +89,8 @@ async function main(){
   await b.page.locator('#closeEditor').click();
   assert.equal(await b.page.locator('#btnSharedProposalOverview').textContent(),'Offene Vorschläge (0)');
   await proposalCell.click();await choosePlanningQuickShift(b.page,'F5');
+  assert.equal(await b.page.locator('#editWorkHours').inputValue(),'5');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'14:00');
   await b.page.locator('#editorProposalReason').fill('Direkt aus der Schicht');
   b.setFailProposals(true);await b.page.locator('#sendEditorProposal').click();
   await b.page.locator('#toast').filter({hasText:'nicht verfügbar'}).waitFor();
