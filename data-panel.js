@@ -23,6 +23,18 @@
     renderLocal();
   }
 
+  function snapshotEditorPlan(plan) {
+    const current = state;
+    try {
+      // Evaluate derived counters in an isolated state; never save or render it.
+      state = { ...JSON.parse(JSON.stringify(current)), ...JSON.parse(JSON.stringify(plan)) };
+      state.schedule = normalizeSchedule(state.schedule);
+      state.absences = normalizeAbsences(state.absences || []);
+      refreshEmployeeVacationCounters();
+      return collectFullBackupSnapshot();
+    } finally { state = current; }
+  }
+
   function showError(error) {
     element("dataActionMessage").textContent = error?.message || "Die Aktion konnte nicht abgeschlossen werden. Bitte erneut versuchen.";
   }
@@ -245,9 +257,11 @@
         getSnapshot: () => { if (localDataStore.blocked) throw new Error(localDataStore.error); return collectFullBackupSnapshot(); },
         applySnapshot: (payload) => importBackupFromObject(payload, { source: "shared", preserveUi: true, reload: false }),
         applyRemoteSnapshot: applySharedPlan,
+        snapshotEditorPlan,
         canAutoApply: canApplySharedPlan,
         reload: () => window.location.reload()
       });
+      window.WochenplanSharedController = shared;
       await cloud.start();
     } catch (_) {
       element("cloudMessage").textContent = "Online-Verbindung konnte nicht gestartet werden. Dein lokaler Plan bleibt erhalten.";

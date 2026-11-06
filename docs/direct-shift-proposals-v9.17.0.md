@@ -1,0 +1,11 @@
+# V9.17.0 – Vorschläge direkt im Schichteditor
+
+Wer mit „Ansehen und Vorschläge“ verbunden ist, wählt die Schicht in der Wochen- oder Monatsansicht und sendet den Vorschlag direkt im Editor. Früh, Spät, Frei, Favoriten und Löschen bereiten eine Vorschau vor; erst „Vorschlag senden“ übermittelt sie. Individuelle Zeiten und Abwesenheitszeiträume werden über denselben Button gesendet. Ein Grund ist optional. Die Filialverwaltung und eine aktive Vertretung speichern weiterhin direkt.
+
+Der Vorschlag enthält die Änderungen dieses Editorvorgangs einschließlich zugehöriger Öffner-/Schließer-Korrekturen und abgeleiteter Urlaubszähler. Ältere lokale Entwürfe gehören nicht dazu. Der Vorschlag wird auf den neuesten Serverstand angewandt; eine inzwischen anders geänderte Stelle wird abgewiesen. Die Serverrechte und Standprüfung gelten weiterhin unverändert.
+
+Vorgeschlagene Daten werden weder in den lokalen produktiven Plan noch in den gemeinsamen Plan geschrieben. Nach erfolgreichem Versand schließt der Editor; die vorhandenen Zellmarkierungen und die Übersicht zeigen den offenen Vorschlag. Die Filialverwaltung entscheidet weiterhin einzeln oder gemeinsam. Ohne weitere offene lokale Entwürfe folgt das Gerät danach neuen Filialständen automatisch. Bereits vorhandene abweichende Geräteentwürfe bleiben geschützt.
+
+Bei einem fehlgeschlagenen Versand bleiben Auswahl und Grund im offenen Dialog erhalten. Während des Versands werden die Bedienelemente gesperrt. Ein fehlgeschlagener Leseabgleich nach bestätigtem Versand bietet keinen erneuten Versand an. Bei Konto- oder Filialwechsel muss der Editor erneut geöffnet werden.
+
+Prüfung: Controllerregressionen für isolierte Änderungen, ältere lokale Entwürfe, fremde neue Änderungen, Konflikte, Kontextwechsel und Verbindungsfehler. Browserprüfung mit zwei synthetischen Konten, realem SDK und lokalem PostgreSQL: Vorschau, Abbruch, fehlgeschlagener Versand mit erneutem Versuch, Eingang und Annahme bei der Filialverwaltung, automatische Aktualisierung, individuelle Schicht, Löschen, Urlaub sowie Neuladen nach Annahme. Keine produktiven Plandaten für Tests.

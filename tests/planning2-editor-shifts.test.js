@@ -74,6 +74,7 @@ test('productive editor isolates each mode and disables saving an unselected cel
     return elements.get(id);
   };
   const ctx = vm.createContext({
+    isPlanning2ProposalEditor:()=>false,
     document: { getElementById: element, querySelectorAll: () => [] },
     editing: { existing: { end: '19:10' } },
     updateEditorComputedEnd() {}

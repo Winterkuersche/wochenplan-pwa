@@ -22,7 +22,7 @@ async function main(){
   const engine=process.env.BROWSER_ENGINE==='webkit'?webkit:chromium;
   browser=await engine.launch({executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:engine===chromium?['--no-sandbox']:[]});
   async function device(index){
-   let oldServer=false;
+   let oldServer=false,failProposals=false;
    const user={id:ids[index],email:`synthetic-${index}@example.invalid`,aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
    const now=Math.floor(Date.now()/1000),token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:user.id,role:'authenticated',aud:'authenticated',iat:now,exp:now+3600})).toString('base64url')+'.c3ludGhldGlj';
    const context=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
@@ -38,7 +38,7 @@ async function main(){
      const task=queue.then(async()=>{
       try{
        await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[user.id]);await db.exec('set role authenticated');
-       const body=req.postDataJSON(),r=await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[body.p_action,JSON.stringify(body.p_args)]);
+       const body=req.postDataJSON();if(failProposals&&body.p_action==='propose')return{status:503,body:{message:'Synthetic offline'}};const r=await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[body.p_action,JSON.stringify(body.p_args)]);
        const data=r.rows[0].data;
        if(oldServer&&body.p_action==='read')delete data.capabilities;
        return {status:200,body:data};
@@ -52,7 +52,7 @@ async function main(){
    // Database authorization and delegation dates still use the real server time.
    await page.clock.setFixedTime(new Date('2026-10-24T08:00:00Z'));
    await page.goto(url);await page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-   return {page,context,user,personalRequests,setOldServer:value=>oldServer=value};
+   return {page,context,user,personalRequests,setOldServer:value=>oldServer=value,setFailProposals:value=>failProposals=value};
   }
   async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
   const a=await device(0),b=await device(1);
@@ -76,10 +76,53 @@ async function main(){
   await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
   console.log('Shared deputy adopted');
+  // Read-only edits go directly from the shift editor into the owner's inbox.
+  // No device save, data dialog, or whole-week submission is involved.
   if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F5');
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-21"]').click();await choosePlanningQuickShift(b.page,'F6');
+  const proposalCell=b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]');
+  const beforeProposal=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await proposalCell.click();await choosePlanningQuickShift(b.page,'F6');
+  await b.page.locator('#editorProposalPreview').filter({hasText:'09:00–15:00'}).waitFor();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal);
+  await b.page.locator('#closeEditor').click();
+  assert.equal(await b.page.locator('#btnSharedProposalOverview').textContent(),'Offene Vorschläge (0)');
+  await proposalCell.click();await choosePlanningQuickShift(b.page,'F5');
+  await b.page.locator('#editorProposalReason').fill('Direkt aus der Schicht');
+  b.setFailProposals(true);await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#toast').filter({hasText:'nicht verfügbar'}).waitFor();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  assert.equal(await b.page.locator('#editorProposalReason').inputValue(),'Direkt aus der Schicht');
+  assert.equal(await b.page.locator('#sendEditorProposal').isEnabled(),true);
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal);
+  b.setFailProposals(false);await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await proposalCell.locator('.sharedProposalMark').waitFor();
+  assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposalSection>summary').click();
+  await a.page.locator('#sharedProposals').getByText('SV Test: Direkt aus der Schicht',{exact:false}).waitFor();
+  assert.equal(await a.page.locator('#sharedProposals .sharedProposalItem').count(),1);
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5',null,{timeout:25000});
+  await a.page.locator('#btnCloseData').click();
+  await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();
+  assert.equal(await a.page.locator('#sendEditorProposal').isVisible(),false);
+  await choosePlanningQuickShift(a.page,'F4');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4',null,{timeout:25000});
+  await a.page.locator('#btnDataPanel').click();
+  // Collapse again for the legacy proposal checks below.
+  await a.page.locator('#sharedProposalSection>summary').click();
+  console.log('Direct shift proposal passed: preview, cancel, failed-send retry, isolated submission, owner acceptance and automatic sync.');
+
+  if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  // Retain coverage for pre-existing local drafts and the legacy bulk submission.
+  await b.page.evaluate(()=>{setShift('test-one','2026-10-20','F5');setShift('test-one','2026-10-21','F6')});
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4');
@@ -97,7 +140,7 @@ async function main(){
   a.setOldServer(false);await a.page.locator('#btnSharedRefresh').click();
   const firstItem=a.page.locator('#sharedProposals .sharedProposalItem').filter({hasText:'2026-10-20'});
   await firstItem.getByRole('button',{name:'Änderung annehmen',exact:true}).click();
-  await a.page.locator('#sharedSummary').filter({hasText:'Stand 2'}).waitFor();
+  await a.page.waitForFunction(()=>WochenplanSharedController.status.branch.payload.storage.wochenplan_plan_v10.schedule['2026-10-20']['test-one'].code==='F5');
   assert.equal(await a.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F5');
   await b.page.locator('#btnSharedProposalOverview').click();
   await b.page.locator('#btnSharedRefresh').click();await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5');
@@ -114,13 +157,13 @@ async function main(){
   await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
   await b.page.locator('#btnSharedProposalOverview').click();await b.page.locator('#btnSharedRefresh').click();
   await b.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
-  assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="accepted"]').count(),1);
+  assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="accepted"]').count(),2);
   assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="rejected"]').count(),1);
   assert.notEqual(await b.page.evaluate(()=>state.schedule['2026-10-21']?.['test-one']?.code),'F6');
   // Another proposal remains separate even while the owner changes the same cell.
   await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F6');
+  await b.page.evaluate(()=>setShift('test-one','2026-10-20','F6'));
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Konflikttest');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   await a.page.locator('#btnCloseData').click();await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
@@ -248,6 +291,36 @@ async function main(){
   await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='F5'&&state.schedule['2026-11-04']['test-one'].start==='08:55',null,{timeout:25000});
   assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan aktuell');
   console.log('Reopen/month-change sync passed: no startup mutation, later shared updates and carryover correction on conscious save.');
+  await b.page.locator('#weeks button').filter({hasText:'02.11'}).click();
+  const customCell=b.page.locator('.cell[data-eid="test-one"][data-day="2026-11-04"]');
+  await customCell.click();
+  await b.page.locator('#editStart').selectOption('09:00');
+  await b.page.locator('#editWorkHours').selectOption('6');
+  await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedProposalOverview').click();
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='FLEX',null,{timeout:25000});
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await customCell.click();await b.page.locator('#deleteEntry').click();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  await b.page.locator('#editorProposalPreview').filter({hasText:'→ Frei'}).waitFor();
+  await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>!state.schedule['2026-11-04']?.['test-one'],null,{timeout:25000});
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await customCell.click();await b.page.locator('[data-quick="U"]').click();
+  await b.page.locator('#editAbsenceFrom').fill('2026-11-09');await b.page.locator('#editAbsenceTo').fill('2026-11-10');
+  await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.absences.some(a=>a.employeeId==='test-one'&&a.from==='2026-11-09'),null,{timeout:25000});
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  console.log('Direct custom shift, deletion and absence proposals passed; canonical sync survives acceptance and reload.');
+
   assert.deepEqual(errors,[]);
   console.log('Shared browser/database flow passed: durable separate proposals, reload, cell markers, accept, reject, conflict protection, automatic foreground updates, delegate/revoke and mobile layout.');
  }catch(error){for(const page of pages) if(!page.isClosed()) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})).catch(e=>({diagnosticError:e.message})));throw error;
