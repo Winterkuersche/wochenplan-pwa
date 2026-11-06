@@ -82,7 +82,12 @@ async function main(){
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
   const proposalCell=b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]');
   const beforeProposal=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
-  await proposalCell.click();await choosePlanningQuickShift(b.page,'F6');
+  await proposalCell.click();
+  await b.page.locator('#editWorkHours').selectOption('6');await b.page.locator('#editSixBreak').selectOption('break');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'16:00');
+  await choosePlanningQuickShift(b.page,'F6');
+  assert.equal(await b.page.locator('#editSixBreak').inputValue(),'none');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'15:00');
   await b.page.locator('#editorProposalPreview').filter({hasText:'09:00–15:00'}).waitFor();
   assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
   assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal);

@@ -92,3 +92,33 @@ test('productive editor isolates each mode and disables saving an unselected cel
   }
   assert.equal(element('editCheckout').value, '19:10', 'checkout selection retained when changing modes');
 });
+
+test('staging a six-hour proposal synchronizes the pause choice and displayed end in both directions',()=>{
+  const live=fs.readFileSync('planning2-live.js','utf8');
+  function extract(name){const start=live.indexOf('function '+name+'(');let depth=0;for(let i=live.indexOf('{',start);i<live.length;i++){if(live[i]==='{')depth++;else if(live[i]==='}'&&--depth===0)return live.slice(start,i+1)}throw Error(name)}
+  const elements=new Map(),element=id=>{
+    if(!elements.has(id))elements.set(id,{hidden:false,value:'',textContent:'',options:[{value:'09:00'},{value:'6'}],appendChild(value){this.options.push(value)}});
+    return elements.get(id);
+  };
+  const day='2026-11-03',ctx=vm.createContext({
+    document:{getElementById:element,querySelectorAll:()=>[]},
+    clone:value=>JSON.parse(JSON.stringify(value)),normalizePlanEntry:value=>value,
+    getPlanning2ChangedPlanCells:()=>[{dayIso:day,employeeId:'one'}],
+    planning2Data:{readMaster:()=>({employees:[{id:'one',name:'Testperson'}]})},
+    planning2TransferResolved:(plan,id,date)=>plan.schedule?.[date]?.[id],
+    planning2TransferLabel:value=>value.start+'–'+value.end,
+    updatePlanning2EditorInfo(){},isPlanning2ProposalEditor:()=>true
+  });
+  for(const file of ['time-utils.js','shift-rules.js','shift-utils.js'])vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
+  for(const name of ['editorWorkMinutes','setEditorWorkMinutes','buildEditorDurationEntry','updateEditorComputedEnd','syncEditorFields','stagePlanning2Proposal'])vm.runInContext(extract(name),ctx);
+  for(const withBreak of [false,true]){
+    element('editSixBreak').value=withBreak?'none':'break';
+    const selected=ctx.buildWorkDurationShiftEntry('09:00',360,{withBreakAtSix:withBreak});
+    const before=ctx.buildWorkDurationShiftEntry('09:00',360,{withBreakAtSix:!withBreak});
+    ctx.editing={eid:'one',dayIso:day,sharedContext:{proposalOnly:true},beforePlan:{schedule:{[day]:{one:before}},absences:[]}};
+    ctx.stagePlanning2Proposal({schedule:{[day]:{one:selected}},absences:[]});
+    assert.equal(element('editSixBreak').value,withBreak?'break':'none');
+    assert.equal(element('editComputedEnd').textContent,selected.end);
+    assert.equal(ctx.editing.proposalPlan.schedule[day].one.end,selected.end);
+  }
+});
