@@ -176,9 +176,11 @@ function stagePlanning2Proposal(plan){
       let option=document.createElement('option');option.value=selected.start;option.textContent=selected.start;start.appendChild(option);
     }
     start.value=selected.start;setEditorWorkMinutes(selected.minutes);
-    document.getElementById('editSixBreak').value=selected.minutes===360&&Number(selected.pause??selected.breakMinutes??0)>getBusinessRequiredBreakMinutes(selected.start,addMinutesToHHMM(selected.start,360))?'break':'none';
+    document.getElementById('editSixBreak').value=selected.minutes===360&&Number(selected.pause??selected.breakMinutes??0)>=REQUIRED_BREAK_BASE_MINUTES?'break':'none';
     document.getElementById('editCheckout').value=selected.end==='19:10'?'19:10':'19:00';
     syncEditorFields(document.getElementById('editType').value);updatePlanning2EditorInfo();
+    // Display the staged result, including automatic 08:55/19:10 adjustments.
+    document.getElementById('editComputedEnd').textContent=selected.end;
   }
   let master=planning2Data.readMaster(),employees=master.employees||[],before=editing.beforePlan;
   let lines=getPlanning2ChangedPlanCells(before,plan).map(({dayIso,employeeId})=>{

@@ -93,7 +93,7 @@ test('productive editor isolates each mode and disables saving an unselected cel
   assert.equal(element('editCheckout').value, '19:10', 'checkout selection retained when changing modes');
 });
 
-test('staging a six-hour proposal synchronizes the pause choice and displayed end in both directions',()=>{
+test('staged six-hour proposals synchronize pauses and show the automatic checkout end',()=>{
   const live=fs.readFileSync('planning2-live.js','utf8');
   function extract(name){const start=live.indexOf('function '+name+'(');let depth=0;for(let i=live.indexOf('{',start);i<live.length;i++){if(live[i]==='{')depth++;else if(live[i]==='}'&&--depth===0)return live.slice(start,i+1)}throw Error(name)}
   const elements=new Map(),element=id=>{
@@ -101,7 +101,7 @@ test('staging a six-hour proposal synchronizes the pause choice and displayed en
     return elements.get(id);
   };
   const day='2026-11-03',ctx=vm.createContext({
-    document:{getElementById:element,querySelectorAll:()=>[]},
+    document:{getElementById:element,querySelectorAll:()=>[],createElement:()=>({})},
     clone:value=>JSON.parse(JSON.stringify(value)),normalizePlanEntry:value=>value,
     getPlanning2ChangedPlanCells:()=>[{dayIso:day,employeeId:'one'}],
     planning2Data:{readMaster:()=>({employees:[{id:'one',name:'Testperson'}]})},
@@ -121,4 +121,10 @@ test('staging a six-hour proposal synchronizes the pause choice and displayed en
     assert.equal(element('editComputedEnd').textContent,selected.end);
     assert.equal(ctx.editing.proposalPlan.schedule[day].one.end,selected.end);
   }
+  element('editSixBreak').value='break';
+  const checkout=ctx.buildLateShiftEntryForWorkedMinutes(360,true);
+  ctx.stagePlanning2Proposal({schedule:{[day]:{one:checkout}},absences:[]});
+  assert.equal(element('editSixBreak').value,'none','ten billing minutes are not a voluntary hour of break');
+  assert.equal(element('editComputedEnd').textContent,'19:10');
+  assert.equal(ctx.editing.proposalPlan.schedule[day].one.end,'19:10');
 });
