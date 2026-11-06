@@ -1,6 +1,6 @@
 # V9.17.0 – Vorschläge direkt im Schichteditor
 
-Wer mit „Ansehen und Vorschläge“ verbunden ist, wählt die Schicht in der Wochen- oder Monatsansicht und sendet den Vorschlag direkt im Editor. Früh, Spät, Frei, Favoriten und Löschen bereiten eine Vorschau vor; erst „Vorschlag senden“ übermittelt sie. Individuelle Zeiten und Abwesenheitszeiträume werden über denselben Button gesendet. Ein Grund ist optional. Die Filialverwaltung und eine aktive Vertretung speichern weiterhin direkt.
+Wer mit „Ansehen und Vorschläge“ verbunden ist, wählt die Schicht in der Wochenansicht und sendet den Vorschlag direkt im Editor. Früh, Spät, Frei, Favoriten und Löschen bereiten eine Vorschau vor; erst „Vorschlag senden“ übermittelt sie. Individuelle Zeiten und Abwesenheitszeiträume werden über denselben Button gesendet. Ein Grund ist optional. Die Filialverwaltung und eine aktive Vertretung speichern weiterhin direkt.
 
 Der Vorschlag enthält die Änderungen dieses Editorvorgangs einschließlich zugehöriger Öffner-/Schließer-Korrekturen und abgeleiteter Urlaubszähler. Ältere lokale Entwürfe gehören nicht dazu. Der Vorschlag wird auf den neuesten Serverstand angewandt; eine inzwischen anders geänderte Stelle wird abgewiesen. Die Serverrechte und Standprüfung gelten weiterhin unverändert.
 

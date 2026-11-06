@@ -30,6 +30,7 @@
       state = { ...JSON.parse(JSON.stringify(current)), ...JSON.parse(JSON.stringify(plan)) };
       state.schedule = normalizeSchedule(state.schedule);
       state.absences = normalizeAbsences(state.absences || []);
+      syncVacationScheduleFromAbsences();
       refreshEmployeeVacationCounters();
       return collectFullBackupSnapshot();
     } finally { state = current; }

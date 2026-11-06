@@ -158,6 +158,8 @@ function configurePlanning2ProposalEditor(){
   }
 }
 function stagePlanning2Proposal(plan){
+  editing.sharedContext.proposalOnly=true;
+  if(document.getElementById('editorProposal').hidden)configurePlanning2ProposalEditor();
   // Shared imports use the host's canonical entry format. Normalize only
   // this edit's changed cells so accepting it cannot create a false draft.
   for(let {dayIso,employeeId} of getPlanning2ChangedPlanCells(editing.beforePlan,plan)){
