@@ -15,6 +15,9 @@ bindRuntimeErrorListeners();
 
 document.title = `${APP_META.name} ${APP_META.version}`;
 
+const appVersionEl = document.getElementById("app-version");
+if (appVersionEl) appVersionEl.textContent = `Version ${APP_META.version}`;
+
 const appTitleEl = document.getElementById("app-title");
 if (appTitleEl) {
   appTitleEl.textContent = `${APP_META.name} ${APP_META.version}`;
