@@ -49,7 +49,7 @@ const APP_FILES = [
   "./backup-io.js",
   "./storage-utils.js",
   "./cloud-config.js",
-  "./vendor/supabase-2.118.0.js",
+  "./vendor/supabase-2.119.0.js",
   "./cloud-sync.js",
   "./collaboration-proposals.js",
   "./collaboration.js",
