@@ -14,10 +14,10 @@
     "check:globals": "node tools/check-global-helper-collisions.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.118.0"
+    "@supabase/supabase-js": "2.119.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.11",
+    "@electric-sql/pglite": "0.5.15",
     "playwright": "1.65.0"
   }
 }
