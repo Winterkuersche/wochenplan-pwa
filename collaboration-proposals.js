@@ -6,6 +6,8 @@
   const equal = (a, b) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
   function clean(payload) {
     const { weekFrom, weekTo, ...plan } = payload.storage.wochenplan_plan_v10;
+    if (plan.schedule) plan.schedule = Object.fromEntries(Object.entries(plan.schedule)
+      .filter(([, day]) => !day || typeof day !== "object" || Array.isArray(day) || Object.keys(day).length));
     return { storage: { wochenplan_master_v10: payload.storage.wochenplan_master_v10, wochenplan_plan_v10: plan } };
   }
   function diff(before, after, path = []) {
@@ -20,7 +22,10 @@
   const at = (payload, path) => path.reduce((v, k) => v != null && Object.prototype.hasOwnProperty.call(v, k) ? v[k] : undefined, payload);
   function conflicts(payload, changes) {
     return (changes || []).filter(c => {
-      const value = at(payload, c.path);
+      let value = at(payload, c.path);
+      // A new shift can replace an empty server day left by a prior deletion.
+      if (!c.before_exists && c.path.length === 4 && c.path[2] === "schedule" &&
+          value && typeof value === "object" && !Array.isArray(value) && !Object.keys(value).length) value = undefined;
       return (value !== undefined) !== c.before_exists || (c.before_exists && !equal(value, c.before));
     });
   }

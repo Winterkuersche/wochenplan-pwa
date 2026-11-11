@@ -41,6 +41,20 @@ async function checkPlanningLayout(browser, url, fixture) {
       await page.locator('#editStart').selectOption('10:00');
       await save.click();
       await page.waitForFunction(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).schedule['2026-10-20']?.['layout-12']?.start==='10:00');
+      // The current read-only workflow must keep its send action pinned too.
+      const beforeProposal=await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+      await page.evaluate(()=>{window.WochenplanSharedController={active:true,status:{user:{id:'layout-user'},selected:'layout-branch',branch:{can_edit:false}},proposePlan:async(before,after)=>{window.__layoutProposal={before,after}},refresh:async()=>{}}});
+      await page.locator('.cell[data-eid="layout-12"][data-day="2026-10-20"]').click();
+      await page.locator('#editStart').selectOption('11:00');
+      await page.locator('#editorMoreOptions').evaluate(el=>{el.open=true});
+      await page.locator('#editorOverlay .editorScroll').evaluate(el=>{el.scrollTop=el.scrollHeight});
+      const send=page.locator('#sendEditorProposal'),sendRect=await send.boundingBox(),contentRect=await page.locator('#editorOverlay .editorScroll').boundingBox();
+      assert.ok(sendRect&&sendRect.y>=0&&sendRect.y+sendRect.height<=viewport.height+1,'Proposal Send stays within viewport');
+      assert.ok(contentRect.y+contentRect.height<=sendRect.y+1,'Send does not cover the proposal form');
+      await page.screenshot({path:`test-results/layout-${viewport.width}x${viewport.height}.png`});
+      await send.click();await page.locator('#editorOverlay').waitFor({state:'hidden'});
+      assert.equal(await page.evaluate(()=>window.__layoutProposal.after.schedule['2026-10-20']['layout-12'].start),'11:00');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal,'A proposal must not save the staged shift locally');
       console.log(`Planning layout passed ${viewport.width}x${viewport.height}: pinned dates/names, aligned columns, reachable Save and unchanged scroll data.`);
     } finally { await context.close(); }
   }

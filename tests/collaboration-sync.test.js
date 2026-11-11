@@ -36,6 +36,71 @@ test('individual decisions fail closed on an old server and send stable item ind
  assert.equal(f.decision.id,'p');assert.deepEqual(Array.from(f.decision.indices),[1]);
  assert.equal(f.decision.expected_revision,1);assert.equal(f.decision.decision,'accepted');
 });
+test('an accepted deletion with an empty server day stays synced and allows a later proposal',async t=>{
+ const f=setup(t,{editable:false,auto:true});await f.c.setUser({id:'u'});
+ f.record.payload.storage.wochenplan_plan_v10.schedule={'2026-10-19':{}};
+ f.set('F4');f.local.storage.wochenplan_plan_v10.schedule={};
+ await f.c.refresh();assert.equal(f.c.status.mode,'synced');
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);
+ after.schedule['2026-10-19']={one:{code:'F5'}};
+ await f.c.proposePlan(before,after,'Neue Schicht',{userId:'u',branchId:'b'});
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.c.status.mode,'synced');assert.equal(f.writes,0);
+});
+test('a direct editor proposal includes only its transaction and preserves older local drafts',async t=>{
+ const f=setup(t,{editable:false,auto:true});await f.c.setUser({id:'u'});
+ f.local.storage.wochenplan_plan_v10.schedule['2026-10-20']={one:{code:'LOCAL'}};
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);
+ after.schedule['2026-10-19'].one.code='F5';
+ await f.c.proposePlan(before,after,'Schichtvorschlag',{userId:'u',branchId:'b'});
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-20'],undefined);
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-20'].one.code,'LOCAL');
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F4');
+ assert.equal(f.writes,0);
+});
+test('a direct proposal rebases over unrelated remote work without creating a local draft',async t=>{
+ const f=setup(t,{editable:false,auto:true});await f.c.setUser({id:'u'});
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);after.schedule['2026-10-19'].one.code='F5';
+ f.record.revision++;f.record.payload.storage.wochenplan_plan_v10.schedule['2026-10-20']={one:{code:'REMOTE'}};
+ await f.c.proposePlan(before,after,'Schichtvorschlag',{userId:'u',branchId:'b'});
+ assert.equal(f.proposed.expected_revision,2);
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-20'].one.code,'REMOTE');
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F4');
+ assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-20'].one.code,'REMOTE');
+ assert.equal(f.c.status.mode,'synced');assert.equal(f.writes,0);
+});
+test('a direct proposal rejects a changed shift, switched account and empty edit',async t=>{
+ const f=setup(t,{editable:false});await f.c.setUser({id:'u'});
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);after.schedule['2026-10-19'].one.code='F5';
+ await assert.rejects(f.c.proposePlan(before,after,'Test',{userId:'other',branchId:'b'}),/Konto oder die Filiale/);
+ await assert.rejects(f.c.proposePlan(before,after,'Test',{userId:'u',branchId:'other'}),/Konto oder die Filiale/);
+ await assert.rejects(f.c.proposePlan(before,before,'Test',{userId:'u',branchId:'b'}),/keine Änderungen/);
+ f.record.payload=payload('F6');f.record.revision++;
+ await assert.rejects(f.c.proposePlan(before,after,'Test',{userId:'u',branchId:'b'}),/vorgeschlagenen Stelle/);
+ assert.equal(f.proposed,null);assert.equal(f.writes,0);assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F4');
+});
+test('failed direct proposal keeps its candidate available and never writes locally',async t=>{
+ const f=setup(t,{editable:false});await f.c.setUser({id:'u'});
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);after.schedule['2026-10-19'].one.code='F5';
+ f.offline(true);await assert.rejects(f.c.proposePlan(before,after,'Test',{userId:'u',branchId:'b'}),/offline/);
+ assert.equal(after.schedule['2026-10-19'].one.code,'F5');assert.equal(f.writes,0);assert.equal(f.proposed,null);
+});
+test('a confirmed direct proposal remains successful when only its follow-up read fails',async t=>{
+ const f=setup(t,{editable:false});await f.c.setUser({id:'u'});
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);after.schedule['2026-10-19'].one.code='F5';
+ let reads=0;f.beforeRead(()=>{if(++reads===2)throw Error('offline after confirmed send');});
+ await f.c.proposePlan(before,after,'Test',{userId:'u',branchId:'b'});
+ assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
+ assert.equal(f.c.status.mode,'offline');assert.equal(f.writes,0);
+});
+test('switching account during a direct proposal read prevents submission',async t=>{
+ const f=setup(t,{editable:false});await f.c.setUser({id:'u'});
+ const before=structuredClone(f.local.storage.wochenplan_plan_v10),after=structuredClone(before);after.schedule['2026-10-19'].one.code='F5';
+ f.beforeRead(()=>f.c.setUser(null));
+ await assert.rejects(f.c.proposePlan(before,after,'Test',{userId:'u',branchId:'b'}),/Konto oder der Planungsbereich/);
+ assert.equal(f.proposed,null);assert.equal(f.writes,0);
+});
 test('a fresh device selects its sole workplace without replacing its local draft',async t=>{
  const f=setup(t);f.set('F6');await f.c.setUser({id:'u'});
  assert.equal(f.c.status.selected,'b');assert.equal(f.c.status.mode,'compare');assert.equal(f.c.personalActive,false);

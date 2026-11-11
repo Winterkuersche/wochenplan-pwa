@@ -190,6 +190,31 @@
         await inspect(await call("read"), thisEpoch);
       });
     }
+    // Editor transactions are scoped to this edit, not the device's older draft.
+    // Neither preparation nor submission writes the proposed plan locally.
+    async function proposePlan(beforePlan, nextPlan, reason, context) {
+      const before = options.snapshotEditorPlan ? options.snapshotEditorPlan(beforePlan) : snapshot();
+      const after = options.snapshotEditorPlan ? options.snapshotEditorPlan(nextPlan) : JSON.parse(JSON.stringify(before));
+      if (!options.snapshotEditorPlan) {
+        before.storage.wochenplan_plan_v10 = JSON.parse(JSON.stringify(beforePlan));
+        after.storage.wochenplan_plan_v10 = JSON.parse(JSON.stringify(nextPlan));
+      }
+      const changes = root.WochenplanProposals.diff(before, after);
+      return exclusive(async thisEpoch => {
+        if (!context || context.userId !== state.user?.id || context.branchId !== state.selected)
+          throw new Error("Das Konto oder die Filiale wurde gewechselt. Bitte die Schicht erneut öffnen.");
+        if (!changes.length) throw new Error("Es gibt keine Änderungen zum Vorschlagen.");
+        const remote = await call("read");
+        if (epoch !== thisEpoch) return;
+        const proposed = root.WochenplanProposals.apply(remote.payload, changes);
+        await call("propose", { payload: proposed, reason, expected_revision: remote.revision });
+        if (epoch !== thisEpoch) return;
+        // The send already succeeded. A failed follow-up read must not invite
+        // a second submission of the same proposal.
+        try { await inspect(await call("read"), thisEpoch); }
+        catch (error) { if (epoch === thisEpoch) setMode("offline", error.message); }
+      });
+    }
     async function history(args = {}) { return exclusive(() => call("history", args)); }
     async function compare() {
       return exclusive(async () => {
@@ -214,7 +239,7 @@
     return { setUser, select, refresh, save, scheduleSave, adopt, perform, decideProposalItems, history, compare, archive,
       create: (name, display_name) => establish("create", { name, display_name, payload: snapshot() }),
       join: (token, display_name) => establish("accept_invite", { token, display_name }),
-      propose,
+      propose, proposePlan,
       dispose() { disposed = true; epoch++; cancel(); },
       get status() { return { ...state }; }, get active() { return Boolean(state.selected); },
       // Until membership lookup completes, no legacy single-account writes

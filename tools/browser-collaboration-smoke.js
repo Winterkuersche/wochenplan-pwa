@@ -22,7 +22,7 @@ async function main(){
   const engine=process.env.BROWSER_ENGINE==='webkit'?webkit:chromium;
   browser=await engine.launch({executablePath:process.env.BROWSER_EXECUTABLE||undefined,args:engine===chromium?['--no-sandbox']:[]});
   async function device(index){
-   let oldServer=false;
+   let oldServer=false,failProposals=false;
    const user={id:ids[index],email:`synthetic-${index}@example.invalid`,aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{}};
    const now=Math.floor(Date.now()/1000),token=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url')+'.'+Buffer.from(JSON.stringify({sub:user.id,role:'authenticated',aud:'authenticated',iat:now,exp:now+3600})).toString('base64url')+'.c3ludGhldGlj';
    const context=await browser.newContext({serviceWorkers:'block',viewport:{width:390,height:844}});
@@ -38,7 +38,7 @@ async function main(){
      const task=queue.then(async()=>{
       try{
        await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[user.id]);await db.exec('set role authenticated');
-       const body=req.postDataJSON(),r=await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[body.p_action,JSON.stringify(body.p_args)]);
+       const body=req.postDataJSON();if(failProposals&&body.p_action==='propose')return{status:503,body:{message:'Synthetic offline'}};const r=await db.query('select public.wochenplan_collaboration($1,$2::jsonb) as data',[body.p_action,JSON.stringify(body.p_args)]);
        const data=r.rows[0].data;
        if(oldServer&&body.p_action==='read')delete data.capabilities;
        return {status:200,body:data};
@@ -48,12 +48,19 @@ async function main(){
     return send(404,{message:'Unexpected synthetic route'});
    });
    const page=await context.newPage();pages.push(page);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+   // Keep the planner's October fixture reachable after a calendar-month change.
+   // Database authorization and delegation dates still use the real server time.
+   await page.clock.setFixedTime(new Date('2026-10-24T08:00:00Z'));
    await page.goto(url);await page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
-   return {page,context,user,personalRequests,setOldServer:value=>oldServer=value};
+   return {page,context,user,personalRequests,setOldServer:value=>oldServer=value,setFailProposals:value=>failProposals=value};
   }
   async function login(d){await d.page.locator('#btnDataPanel').click();await d.page.locator('#cloudEmail').fill(d.user.email);await d.page.locator('#cloudPassword').fill('Synthetic-Password-123');await d.page.locator('#btnCloudLogin').click();await d.page.locator('#collaborationPanel').waitFor({state:'visible'});}
   const a=await device(0),b=await device(1);
-  const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
+  const fixture={master:{employees:[{id:'test-one',name:'Testperson',target:'20:00',roleKey:'TZ20'},{id:'test-two',name:'Zweite Testperson',target:'20:00',roleKey:'TZ20'}]},plan:{weekFrom:'2026-10-19',schedule:{'2026-10-20':{'test-one':{type:'shift',code:'F4',start:'09:00',end:'13:00',minutes:240,pause:0}}},absences:[]},ui:{teamCollapsed:true,currentView:'week'}};
+  // Legacy November entries have not yet been reconciled by a conscious edit.
+  // Opening this month on the deputy's device must not create a local proposal.
+  fixture.plan.schedule['2026-11-03']={'test-one':{type:'shift',code:'G',start:'09:00',end:'19:10',minutes:540,pause:70}};
+  fixture.plan.schedule['2026-11-04']={'test-one':{type:'shift',code:'F6',start:'09:00',end:'15:00',minutes:360,pause:0}};
   await a.page.evaluate(b=>importBackupFromObject(b,{reload:false}),fixture);await a.page.reload();await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await login(a);await a.page.locator('#sharedSetup>summary').click();await a.page.locator('#sharedDisplayName').fill('TL Test');await a.page.locator('#sharedBranchName').fill('Testfiliale');await a.page.locator('#btnSharedCreate').click();
   await a.page.locator('#sharedSummary').filter({hasText:'Filialverwaltung'}).waitFor();
@@ -69,10 +76,60 @@ async function main(){
   await Promise.all([b.page.waitForEvent('load'),b.page.locator('#btnSharedAdopt').click()]);await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
   console.log('Shared deputy adopted');
+  // Read-only edits go directly from the shift editor into the owner's inbox.
+  // No device save, data dialog, or whole-week submission is involved.
   if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F5');
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-21"]').click();await choosePlanningQuickShift(b.page,'F6');
+  const proposalCell=b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]');
+  const beforeProposal=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await proposalCell.click();
+  await b.page.locator('#editWorkHours').selectOption('6');await b.page.locator('#editSixBreak').selectOption('break');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'16:00');
+  await choosePlanningQuickShift(b.page,'F6');
+  assert.equal(await b.page.locator('#editSixBreak').inputValue(),'none');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'15:00');
+  await b.page.locator('#editorProposalPreview').filter({hasText:'09:00–15:00'}).waitFor();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal);
+  await b.page.locator('#closeEditor').click();
+  assert.equal(await b.page.locator('#btnSharedProposalOverview').textContent(),'Offene Vorschläge (0)');
+  await proposalCell.click();await choosePlanningQuickShift(b.page,'F5');
+  assert.equal(await b.page.locator('#editWorkHours').inputValue(),'5');
+  assert.equal(await b.page.locator('#editComputedEnd').textContent(),'14:00');
+  await b.page.locator('#editorProposalReason').fill('Direkt aus der Schicht');
+  b.setFailProposals(true);await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#toast').filter({hasText:'nicht verfügbar'}).waitFor();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  assert.equal(await b.page.locator('#editorProposalReason').inputValue(),'Direkt aus der Schicht');
+  assert.equal(await b.page.locator('#sendEditorProposal').isEnabled(),true);
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeProposal);
+  b.setFailProposals(false);await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await proposalCell.locator('.sharedProposalMark').waitFor();
+  assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposalSection>summary').click();
+  await a.page.locator('#sharedProposals').getByText('SV Test: Direkt aus der Schicht',{exact:false}).waitFor();
+  assert.equal(await a.page.locator('#sharedProposals .sharedProposalItem').count(),1);
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5',null,{timeout:25000});
+  await a.page.locator('#btnCloseData').click();
+  await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();
+  assert.equal(await a.page.locator('#sendEditorProposal').isVisible(),false);
+  await choosePlanningQuickShift(a.page,'F4');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4',null,{timeout:25000});
+  await a.page.locator('#btnDataPanel').click();
+  // Collapse again for the legacy proposal checks below.
+  await a.page.locator('#sharedProposalSection>summary').click();
+  console.log('Direct shift proposal passed: preview, cancel, failed-send retry, isolated submission, owner acceptance and automatic sync.');
+
+  if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  // Retain coverage for pre-existing local drafts and the legacy bulk submission.
+  await b.page.evaluate(()=>{setShift('test-one','2026-10-20','F5');setShift('test-one','2026-10-21','F6')});
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Vertretungsvorschlag');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4');
@@ -90,7 +147,7 @@ async function main(){
   a.setOldServer(false);await a.page.locator('#btnSharedRefresh').click();
   const firstItem=a.page.locator('#sharedProposals .sharedProposalItem').filter({hasText:'2026-10-20'});
   await firstItem.getByRole('button',{name:'Änderung annehmen',exact:true}).click();
-  await a.page.locator('#sharedSummary').filter({hasText:'Stand 2'}).waitFor();
+  await a.page.waitForFunction(()=>WochenplanSharedController.status.branch.payload.storage.wochenplan_plan_v10.schedule['2026-10-20']['test-one'].code==='F5');
   assert.equal(await a.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F5');
   await b.page.locator('#btnSharedProposalOverview').click();
   await b.page.locator('#btnSharedRefresh').click();await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5');
@@ -107,13 +164,13 @@ async function main(){
   await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
   await b.page.locator('#btnSharedProposalOverview').click();await b.page.locator('#btnSharedRefresh').click();
   await b.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
-  assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="accepted"]').count(),1);
+  assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="accepted"]').count(),2);
   assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="rejected"]').count(),1);
   assert.notEqual(await b.page.evaluate(()=>state.schedule['2026-10-21']?.['test-one']?.code),'F6');
   // Another proposal remains separate even while the owner changes the same cell.
   await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(b.page,'F6');
+  await b.page.evaluate(()=>setShift('test-one','2026-10-20','F6'));
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Konflikttest');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   await a.page.locator('#btnCloseData').click();await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
@@ -152,6 +209,57 @@ async function main(){
   // interval must update both visible and stored plans on its own.
   await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F6',null,{timeout:25000});
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F6');
+  // A person selection is navigation, not a pending request. It must not freeze
+  // either vacation view on a linked second device after the control loses focus.
+  if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
+  await b.page.locator('#btnViewDay').click();
+  await b.page.locator('#vacationRequestEmployee').selectOption('test-two');
+  await b.page.locator('#vacationRequestEmployee').blur();
+  assert.equal(await b.page.evaluate(()=>WochenplanVacationCalendarPanel.hasOpenDraft()),false);
+  assert.equal(await b.page.locator('#vacationRequestCancel').isVisible(),false);
+  await a.page.locator('#btnCloseData').click();await a.page.locator('#btnViewDay').click();
+  async function enterWish(from,to){
+   await a.page.locator('#vacationRequestEmployee').selectOption('test-one');
+   await a.page.locator('#vacationRequestFrom').fill(from);await a.page.locator('#vacationRequestTo').fill(to);
+   await a.page.locator('#vacationRequestSave').click();
+   await a.page.waitForFunction(()=>document.getElementById('vacationCalendarMessage').textContent.startsWith('Urlaubswunsch gespeichert'));
+   await a.page.waitForFunction(()=>document.getElementById('dataStatus').textContent==='Filialplan aktuell');
+  }
+  await enterWish('2027-02-01','2027-02-06');
+  await b.page.waitForFunction(()=>state.vacationCalendar?.requests?.length===1,null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationCalendarRequests').innerText(),/Testperson.*6 Urlaubstage/s);
+  assert.equal(await b.page.locator('#vacationRequestEmployee').inputValue(),'test-two');
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).vacationCalendar.requests.length),1);
+  // Approved vacation uses the existing absence editor and must also arrive
+  // while only a person is selected in the separate wishes form.
+  await a.page.locator('#vacationTableBody tr').filter({hasText:'Zweite Testperson'}).getByRole('button',{name:'+ Urlaub',exact:true}).click();
+  await a.page.locator('#shiftDialogAbsenceFrom').fill('2026-10-26');
+  await a.page.locator('#shiftDialogAbsenceTo').fill('2026-10-31');
+  await a.page.locator('#shiftDialogSave').click();
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').textContent==='Filialplan aktuell');
+  await b.page.waitForFunction(()=>state.absences.some(item=>item.employeeId==='test-two'&&item.from==='2026-10-26'),null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationTableBody tr').filter({hasText:'Zweite Testperson'}).innerText(),/26\.10\.2026.*31\.10\.2026/s);
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).absences.length),1);
+  // An actual unsaved date still blocks a newer shared stand, including after
+  // switching views. Cancelling it must let the next foreground poll catch up.
+  await b.page.locator('#vacationRequestFrom').fill('2027-08-02');
+  await b.page.locator('#vacationRequestFrom').blur();
+  await b.page.locator('#btnViewWeek').click();
+  const beforeDraft=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await enterWish('2027-03-01','2027-03-06');
+  const waitingStand=(await a.page.locator('#sharedSummary').innerText()).match(/Stand \d+/)[0];
+  await b.page.waitForFunction(stand=>document.getElementById('sharedSummary').textContent.includes(stand),waitingStand,{timeout:25000});
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan prüfen');
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeDraft);
+  await b.page.locator('#btnViewDay').click();
+  assert.equal(await b.page.locator('#vacationRequestFrom').inputValue(),'2027-08-02');
+  assert.equal(await b.page.evaluate(()=>WochenplanVacationCalendarPanel.hasOpenDraft()),true);
+  await b.page.locator('#vacationRequestCancel').click();
+  await b.page.waitForFunction(()=>state.vacationCalendar?.requests?.length===2,null,{timeout:25000});
+  assert.match(await b.page.locator('#vacationCalendarTotals').innerText(),/Testperson: 12 Urlaubstage/);
+  assert.equal(await b.page.evaluate(()=>JSON.parse(localStorage.getItem('wochenplan_plan_v10')).vacationCalendar.requests.length),2);
+  console.log('Vacation sync passed: person selection, automatic wishes/approved vacation updates, preserved selection and real draft, catch-up after cancelling.');
+  await a.page.locator('#btnDataPanel').click();
   // The independent archive is a valid standard backup, including attributed history.
   await a.page.locator('#sharedSnapshotSelect').locator('xpath=ancestor::details').locator('summary').click();
   const downloadPromise=a.page.waitForEvent('download');await a.page.locator('#btnSharedArchive').click();
@@ -165,9 +273,64 @@ async function main(){
   await b.page.locator('#btnDataPanel').click();
   await b.page.locator('#btnCloseData').click();assert.equal(await b.page.locator('#dataDialog').isVisible(),false);
   assert.equal(await b.page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await b.page.locator('#btnViewWeek').click();
+  const beforeReopen=await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10'));
+  await b.page.clock.setFixedTime(new Date('2026-11-05T08:00:00Z'));
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'09:00','Reopening another month must preserve the shared shift');
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  assert.equal(await b.page.evaluate(()=>localStorage.getItem('wochenplan_plan_v10')),beforeReopen,'Startup must not save a locally corrected plan');
+  assert.match(await b.page.locator('#title').innerText(),/November 2026/);
+  // A later real owner edit must still arrive automatically after that restart.
+  await a.page.locator('#btnCloseData').click();await a.page.locator('#btnViewWeek').click();
+  await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-10-20"]').click();await choosePlanningQuickShift(a.page,'F5');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5',null,{timeout:25000});
+  assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'09:00');
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan aktuell');
+  // The correction belongs to the next conscious save and must still run there.
+  await a.page.locator('#next').click();
+  await a.page.locator('#weeks button').filter({hasText:'02.11'}).click();
+  await a.page.locator('.cell[data-eid="test-one"][data-day="2026-11-04"]').click();await choosePlanningQuickShift(a.page,'F5');
+  await a.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  assert.equal(await a.page.evaluate(()=>state.schedule['2026-11-04']['test-one'].start),'08:55');
+  await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='F5'&&state.schedule['2026-11-04']['test-one'].start==='08:55',null,{timeout:25000});
+  assert.equal(await b.page.locator('#dataStatus').textContent(),'Filialplan aktuell');
+  console.log('Reopen/month-change sync passed: no startup mutation, later shared updates and carryover correction on conscious save.');
+  await b.page.locator('#weeks button').filter({hasText:'02.11'}).click();
+  const customCell=b.page.locator('.cell[data-eid="test-one"][data-day="2026-11-04"]');
+  await customCell.click();
+  await b.page.locator('#editStart').selectOption('09:00');
+  await b.page.locator('#editWorkHours').selectOption('6');
+  await b.page.locator('#sendEditorProposal').click();
+  await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedProposalOverview').click();
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='FLEX',null,{timeout:25000});
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await customCell.click();await b.page.locator('#deleteEntry').click();
+  assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
+  await b.page.locator('#editorProposalPreview').filter({hasText:'→ Frei'}).waitFor();
+  await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>!state.schedule['2026-11-04']?.['test-one'],null,{timeout:25000});
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  await customCell.click();await b.page.locator('[data-quick="U"]').click();
+  await b.page.locator('#editAbsenceFrom').fill('2026-11-09');await b.page.locator('#editAbsenceTo').fill('2026-11-10');
+  await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
+  await a.page.locator('#btnSharedRefresh').click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await b.page.waitForFunction(()=>state.absences.some(a=>a.employeeId==='test-one'&&a.from==='2026-11-09'),null,{timeout:25000});
+  await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
+  await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
+  console.log('Direct custom shift, deletion and absence proposals passed; canonical sync survives acceptance and reload.');
+
   assert.deepEqual(errors,[]);
   console.log('Shared browser/database flow passed: durable separate proposals, reload, cell markers, accept, reject, conflict protection, automatic foreground updates, delegate/revoke and mobile layout.');
- }catch(error){for(const page of pages) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})));throw error;
+ }catch(error){for(const page of pages) if(!page.isClosed()) console.error(await page.evaluate(()=>({message:document.getElementById('dataActionMessage').textContent,shared:document.getElementById('sharedMessage').textContent,summary:document.getElementById('sharedSummary').textContent})).catch(e=>({diagnosticError:e.message})));throw error;
  }finally{if(browser)await browser.close();if(server)await new Promise(r=>server.close(r));await db.close();}
 }
 main().catch(e=>{console.error(e);process.exit(1);});

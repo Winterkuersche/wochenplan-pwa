@@ -15,6 +15,9 @@ bindRuntimeErrorListeners();
 
 document.title = `${APP_META.name} ${APP_META.version}`;
 
+const appVersionEl = document.getElementById("app-version");
+if (appVersionEl) appVersionEl.textContent = `Version ${APP_META.version}`;
+
 const appTitleEl = document.getElementById("app-title");
 if (appTitleEl) {
   appTitleEl.textContent = `${APP_META.name} ${APP_META.version}`;
@@ -3594,7 +3597,8 @@ function bootstrapApp() {
     syncMonthPlanToState();
     syncWeekRangeFromActiveWeek();
 
-    if (reconcilePlanBeforeSave().changed) saveAppStateDebounced();
+    // Opening a shared plan is read-only. Reconcile carryover shifts inside
+    // the next explicit edit's save transaction, not as a startup draft.
     renderAll();
     window.__APP_BOOT_OK__ = true;
     console.info("startup: render-complete");

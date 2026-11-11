@@ -2,6 +2,16 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const {loadScripts}=require('./test-helpers');
 const model=loadScripts(['collaboration-proposals.js']).WochenplanProposals;
 const payload=()=>({storage:{wochenplan_master_v10:{employees:[]},wochenplan_plan_v10:{schedule:{'2026-10-19':{a:{code:'F4',start:'09:00'}}},absences:[]},wochenplan_ui_v10:{}}});
+test('empty day containers are unchanged and a new shift can replace one safely',()=>{
+ const before=payload(),withEmpty=payload();withEmpty.storage.wochenplan_plan_v10.schedule['2026-10-20']={};
+ assert.equal(model.diff(before,withEmpty).length,0);
+ const next=payload();next.storage.wochenplan_plan_v10.schedule['2026-10-20']={a:{code:'F5'}};
+ const changes=model.diff(before,next);
+ assert.equal(model.conflicts(withEmpty,changes).length,0);
+ assert.equal(model.apply(withEmpty,changes).storage.wochenplan_plan_v10.schedule['2026-10-20'].a.code,'F5');
+ withEmpty.storage.wochenplan_plan_v10.schedule['2026-10-20']={b:{code:'F6'}};
+ assert.equal(model.conflicts(withEmpty,changes).length,1);
+});
 test('partially decided proposals keep stable indices and mark only their open entries',()=>{
  const a=payload(),b=payload();b.storage.wochenplan_plan_v10.schedule['2026-10-19'].a.code='F5';
  b.storage.wochenplan_plan_v10.schedule['2026-10-20']={a:{code:'F6'}};
