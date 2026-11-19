@@ -75,11 +75,22 @@
         if(path[1]==="wochenplan_master_v10") title="Teamdaten · "+path.slice(2).join(" / ");
         const detail=document.createElement("details"),summary=document.createElement("summary");
         const shift=v => v && typeof v==="object" && (v.start || v.code) ? `${v.code || "Schicht"} ${v.start || ""}–${v.end || ""}` : null;
-        summary.textContent=title+(shift(c.before)||shift(c.after)?` · ${shift(c.before)||"leer"} → ${shift(c.after)||"leer"}`:"");
+        const shiftProposal = proposal && path[2] === "schedule" && path.length === 5;
+        const entryLabel = value => {
+          if (!value) return "Kein Eintrag";
+          const labels = { off: "Frei", vacation: "Urlaub", sick: "Krank", holiday: "Feiertag" };
+          if (Object.hasOwn(labels, value.type)) return labels[value.type];
+          if (value.type === "external-help") return value.start && value.end
+            ? `Aushilfe ${value.start}–${value.end}` : "Aushilfe";
+          return shift(value) || value.label || "Planeintrag";
+        };
+        summary.textContent = title;
+        if (shiftProposal) summary.textContent += ` · ${entryLabel(c.before)} → ${entryLabel(c.after)}`;
+        else if (shift(c.before) || shift(c.after)) summary.textContent += ` · ${shift(c.before) || "leer"} → ${shift(c.after) || "leer"}`;
         detail.append(summary);
-        if (proposal && path[2] === "schedule" && path.length === 5) {
+        if (shiftProposal) {
           for (const [label, value] of [["Vorher", c.before], ["Nachher", c.after]]) {
-            const parts = [shift(value) || "leer"];
+            const parts = [entryLabel(value)];
             if (value?.pause) parts.push(value.pause + " Min. Pause");
             if (value?.branch) parts.push(value.branch);
             if (value?.note) parts.push(value.note);
