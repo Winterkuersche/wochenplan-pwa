@@ -61,6 +61,9 @@ async function main(){
   // Opening this month on the deputy's device must not create a local proposal.
   fixture.plan.schedule['2026-11-03']={'test-one':{type:'shift',code:'G',start:'09:00',end:'19:10',minutes:540,pause:70}};
   fixture.plan.schedule['2026-11-04']={'test-one':{type:'shift',code:'F6',start:'09:00',end:'15:00',minutes:360,pause:0}};
+  fixture.plan.monthlyPlanBaselines = {
+    '2026-10': { month: '2026-10', createdAt: '2026-10-01T08:00:00.000Z', entries: {}, changeTimestamps: {} }
+  };
   await a.page.evaluate(b=>importBackupFromObject(b,{reload:false}),fixture);await a.page.reload();await a.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await login(a);await a.page.locator('#sharedSetup>summary').click();await a.page.locator('#sharedDisplayName').fill('TL Test');await a.page.locator('#sharedBranchName').fill('Testfiliale');await a.page.locator('#btnSharedCreate').click();
   await a.page.locator('#sharedSummary').filter({hasText:'Filialverwaltung'}).waitFor();
@@ -112,7 +115,16 @@ async function main(){
   await a.page.locator('#sharedProposalSection>summary').click();
   await a.page.locator('#sharedProposals').getByText('SV Test: Direkt aus der Schicht',{exact:false}).waitFor();
   assert.equal(await a.page.locator('#sharedProposals .sharedProposalItem').count(),1);
+  const directProposal = await a.page.evaluate(() =>
+    WochenplanSharedController.status.branch.proposals.find(p => p.reason === 'Direkt aus der Schicht'));
+  assert.equal(directProposal.changes.length, 2);
+  assert.ok(directProposal.changes.some(c => c.path[4] === 'changeTimestamps'));
+  assert.doesNotMatch(await a.page.locator('#sharedProposals').innerText(), /changeTimestamps/);
   await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
+  await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
+  assert.equal(await a.page.evaluate(() =>
+    WochenplanSharedController.status.branch.proposals.find(p => p.reason === 'Direkt aus der Schicht')
+      .changes.every(c => c.decision === 'accepted')), true);
   await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F5',null,{timeout:25000});
   await a.page.locator('#btnCloseData').click();
   await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
@@ -170,7 +182,10 @@ async function main(){
   // Another proposal remains separate even while the owner changes the same cell.
   await b.page.locator('#btnCloseData').click();
   await b.page.locator('#weeks button').filter({hasText:'19.10'}).click();
-  await b.page.evaluate(()=>setShift('test-one','2026-10-20','F6'));
+  await b.page.evaluate(() => {
+    markMonthlyPlanEntryChanged('2026-10-20', 'test-one', state, '2026-10-24T08:01:00.000Z');
+    setShift('test-one', '2026-10-20', 'F6');
+  });
   await b.page.locator('#btnDataPanel').click();await b.page.locator('#sharedReason').fill('Konflikttest');await b.page.locator('#btnSharedPropose').click();
   await b.page.locator('#dataActionMessage').filter({hasText:'Vorschlag eingereicht'}).waitFor();
   await a.page.locator('#btnCloseData').click();await a.page.locator('#weeks button').filter({hasText:'19.10'}).click();
@@ -179,8 +194,21 @@ async function main(){
   await a.page.locator('#btnSharedRefresh').click();
   await a.page.locator('#sharedProposals .sharedProposalConflict').waitFor();
   assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).isDisabled(),true);
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung ablehnen',exact:true}).click();
+  // Reproduce a proposal whose shift had already been rejected by an older app.
+  const legacyProposal = await a.page.evaluate(async () => {
+    const controller = WochenplanSharedController;
+    const proposal = controller.status.branch.proposals.find(p => p.reason === 'Konflikttest');
+    const shiftIndex = proposal.changes.findIndex(c => c.path[2] === 'schedule');
+    await controller.decideProposalItems(proposal.id, [shiftIndex], 'rejected');
+    return proposal.id;
+  });
   await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
+  const leftover = a.page.locator(`#sharedProposals [data-proposal-id="${legacyProposal}"]`);
+  assert.equal(await leftover.getByRole('button',{name:'Änderung annehmen',exact:true}).count(),0);
+  const revisionBeforeCleanup = await a.page.evaluate(() => WochenplanSharedController.status.branch.revision);
+  await leftover.getByRole('button',{name:'Zeitmarkierungen verwerfen'}).click();
+  await leftover.waitFor({state:'detached'});
+  assert.equal(await a.page.evaluate(() => WochenplanSharedController.status.branch.revision), revisionBeforeCleanup);
   assert.equal(await a.page.evaluate(()=>state.schedule['2026-10-20']['test-one'].code),'F4');
   await b.page.locator('#btnSharedRefresh').click();await b.page.waitForFunction(()=>state.schedule['2026-10-20']['test-one'].code==='F4');
   assert.equal(await b.page.locator('#sharedResolvedProposals .sharedProposalItem[data-status="rejected"]').count(),2);

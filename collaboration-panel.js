@@ -57,7 +57,7 @@
       if (Array.from(select.options).some(o=>o.value===previous)) select.value=previous;
     }
     const kinds={created:"Filiale angelegt",joined:"Beigetreten",save:"Plan geändert",propose:"Vorschlag eingereicht",decide_proposal:"Vorschlag entschieden",decide_proposal_items:"Vorschlag teilweise entschieden",grant:"Vertretung freigegeben",revoke_grant:"Vertretung beendet",remove_member:"Zugang beendet",invite:"Einladung erstellt",revoke_invite:"Einladung widerrufen",revert:"Änderung zurückgenommen",restore:"Stand wiederhergestellt",publish:"Woche freigegeben",checkpoint:"Sicherungsstand angelegt"};
-    function changes(parent, list) {
+    function changes(parent, list, { proposal = false } = {}) {
       for(const c of list || []) {
         if(c.action) {
           const d=c.details||{},name=current?.branch?.members.find(m=>m.id===d.user_id)?.name||"Mitglied";
@@ -77,8 +77,19 @@
         const shift=v => v && typeof v==="object" && (v.start || v.code) ? `${v.code || "Schicht"} ${v.start || ""}–${v.end || ""}` : null;
         summary.textContent=title+(shift(c.before)||shift(c.after)?` · ${shift(c.before)||"leer"} → ${shift(c.after)||"leer"}`:"");
         detail.append(summary);
-        const before=document.createElement("pre");before.textContent=`Vorher: ${JSON.stringify(c.before,null,2)}\nNachher: ${JSON.stringify(c.after,null,2)}`;
-        detail.append(before);parent.append(detail);
+        if (proposal && path[2] === "schedule" && path.length === 5) {
+          for (const [label, value] of [["Vorher", c.before], ["Nachher", c.after]]) {
+            const parts = [shift(value) || "leer"];
+            if (value?.pause) parts.push(value.pause + " Min. Pause");
+            if (value?.branch) parts.push(value.branch);
+            if (value?.note) parts.push(value.note);
+            paragraph(detail, label + " · " + parts.join(" · "));
+          }
+        } else {
+          const before=document.createElement("pre");before.textContent=`Vorher: ${JSON.stringify(c.before,null,2)}\nNachher: ${JSON.stringify(c.after,null,2)}`;
+          detail.append(before);
+        }
+        parent.append(detail);
         if (c.decision) paragraph(parent, `${c.decision === "accepted" ? "Angenommen" : "Abgelehnt"}${c.decided_by_name ? " von " + c.decided_by_name : ""} · ${fmt(c.decided_at)}`);
       }
     }
@@ -150,7 +161,11 @@
       }
       clear("sharedInvites");
       for(const invite of branch.invites) button(el("sharedInvites"),`Einladung bis ${fmt(invite.expires_at)} widerrufen`,()=>controller.perform("revoke_invite",{id:invite.id}));
-      const pending = branch.proposals.filter(p => p.status === "pending");
+      const reviews = branch.proposals.map(proposal => ({
+        proposal,
+        ...root.WochenplanProposals.reviewItems(proposal)
+      }));
+      const pending = reviews.filter(({ visible }) => visible.some(item => item.status === "pending"));
       el("sharedProposalTitle").textContent = el("btnSharedProposalOverview").textContent = `Offene Vorschläge (${pending.length})`;
       el("sharedDraftHint").textContent = !branch.can_edit && ["draft", "compare"].includes(status.mode)
         ? "Du siehst einen eigenen Geräte-Entwurf. Er ist noch nicht verbindlich. Reiche ihn als Vorschlag ein; bis dahin wird er nicht durch neue Online-Stände ersetzt."
@@ -160,19 +175,27 @@
       proposalKey = nextKey;
       clear("sharedProposals"); clear("sharedResolvedProposals");
       if (!pending.length) paragraph(el("sharedProposals"), "Keine offenen Vorschläge.");
-      for(const proposal of branch.proposals) {
+      for (const { proposal, visible: items, leftoverIndices } of reviews) {
         const card=document.createElement("article");card.className="sharedEvent";
         card.dataset.proposalId = proposal.id;
-        const items = root.WochenplanProposals.items(proposal), open = root.WochenplanProposals.pending(proposal);
+        const openItems = items.filter(item => item.status === "pending");
+        const hasOpenChanges = openItems.length > 0;
+        const rawItems = root.WochenplanProposals.items(proposal);
+        const conflicts = root.WochenplanProposals.conflicts(branch.payload,
+          openItems.flatMap(item => item.indices.map(index => rawItems[index].change)));
         const itemActions = branch.owner && branch.capabilities?.proposal_items;
-        paragraph(card,`${proposal.author_name}: ${proposal.reason} · ${proposal.status==="pending"?`${open.length} von ${items.length} Änderungen offen`:proposal.status==="accepted"?"angenommen":proposal.status==="mixed"?"teilweise angenommen, teilweise abgelehnt":"abgelehnt"} · ${fmt(proposal.created_at)}`);
+        const decisions = new Set(items.map(item => item.status));
+        const result = hasOpenChanges ? `${openItems.length} von ${items.length} Änderungen offen`
+          : !items.length ? "Nur interne Zeitmarkierungen"
+          : decisions.size > 1 ? "teilweise angenommen, teilweise abgelehnt"
+          : decisions.has("accepted") ? "angenommen" : "abgelehnt";
+        paragraph(card, `${proposal.author_name}: ${proposal.reason} · ${result} · ${fmt(proposal.created_at)}`);
         if (proposal.decided_at) paragraph(card, `Entschieden am ${fmt(proposal.decided_at)}`);
-        const conflicts = root.WochenplanProposals.conflicts(branch.payload, open);
-        for (const {change: c, index, status: itemStatus} of items) {
+        for (const {change: c, index, indices, status: itemStatus} of items) {
           const row = document.createElement("section"); row.className = "sharedProposalItem"; row.dataset.itemIndex = String(index); row.dataset.status = itemStatus;
-          changes(row, [c]);
+          changes(row, [c], { proposal: true });
           if (!c.decision) paragraph(row, itemStatus === "pending" ? "Offen" : itemStatus === "accepted" ? "Angenommen" : "Abgelehnt");
-          const conflict = conflicts.includes(c);
+          const conflict = indices.some(i => conflicts.includes(rawItems[i].change));
           if (conflict) {
             paragraph(row, "Plan inzwischen geändert – bitte vergleichen. Diese Änderung kann nicht unverändert übernommen werden.").className = "sharedProposalConflict";
             const value = c.path.reduce((v, k) => v?.[k], branch.payload);
@@ -181,22 +204,34 @@
           if (itemActions && itemStatus === "pending") {
             const actions = document.createElement("div"); actions.className = "sharedProposalActions";
             const accept = button(actions, "Änderung annehmen", async () => {
-              if (confirm("Nur diese Änderung in den Filialplan übernehmen? Die übrigen Punkte bleiben unverändert.")) await controller.decideProposalItems(proposal.id, [index], "accepted");
+              if (confirm("Nur diese Änderung in den Filialplan übernehmen? Die übrigen Punkte bleiben unverändert.")) await controller.decideProposalItems(proposal.id, indices, "accepted");
             });
             accept.disabled = conflict || status.busy; accept.dataset.conflict = String(conflict);
-            button(actions, "Änderung ablehnen", () => controller.decideProposalItems(proposal.id, [index], "rejected"));
+            button(actions, "Änderung ablehnen", () => controller.decideProposalItems(proposal.id, indices, "rejected"));
             row.append(actions);
           }
           card.append(row);
         }
-        if(branch.owner&&proposal.status==="pending") {
+        if (branch.owner && leftoverIndices.length) {
+          paragraph(card, "Aus diesem Vorschlag sind noch interne Zeitmarkierungen offen.");
+          if (itemActions) button(card, "Zeitmarkierungen verwerfen", () =>
+            controller.decideProposalItems(proposal.id, leftoverIndices, "rejected"));
+          else if (!hasOpenChanges) button(card, "Zeitmarkierungen verwerfen", () =>
+            controller.perform("decide_proposal", { id: proposal.id, decision: "rejected" }));
+        }
+        if (branch.owner && hasOpenChanges) {
           if (!itemActions) paragraph(card, "Einzelentscheidungen benötigen noch die Server-Aktualisierung. Bis dahin kann der Vorschlag als Ganzes entschieden werden.");
-          const accept = button(card,itemActions ? "Alle offenen annehmen" : "Vorschlag annehmen",async()=>{if(confirm("Alle noch offenen Änderungen in den Filialplan übernehmen?")) await controller.perform("decide_proposal",{id:proposal.id,decision:"accepted"});});
-          accept.disabled = Boolean(conflicts.length);
-          accept.dataset.conflict = String(Boolean(conflicts.length));
+          const accept = button(card, itemActions ? "Alle offenen annehmen" : "Vorschlag annehmen", async () => {
+            if (!confirm("Alle noch offenen Planänderungen in den Filialplan übernehmen?")) return;
+            if (itemActions) await controller.decideProposalItems(proposal.id, openItems.flatMap(item => item.indices), "accepted");
+            else await controller.perform("decide_proposal", { id: proposal.id, decision: "accepted" });
+          });
+          const blocked = conflicts.length > 0 || (!itemActions && leftoverIndices.length > 0);
+          accept.disabled = blocked;
+          accept.dataset.conflict = String(blocked);
           button(card,itemActions ? "Alle offenen ablehnen" : "Vorschlag ablehnen",()=>controller.perform("decide_proposal",{id:proposal.id,decision:"rejected"}));
         }
-        el(proposal.status === "pending" ? "sharedProposals" : "sharedResolvedProposals").append(card);
+        el(hasOpenChanges || (branch.owner && leftoverIndices.length) ? "sharedProposals" : "sharedResolvedProposals").append(card);
       }
       }
       el("sharedProposalSection").querySelectorAll("button").forEach(b => { b.disabled = status.busy || b.dataset.conflict === "true"; });

@@ -253,3 +253,22 @@ test('typing another change during submission never discards the newer local dra
  assert.equal(f.proposed.payload.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F5');
  assert.equal(f.local.storage.wochenplan_plan_v10.schedule['2026-10-19'].one.code,'F6');assert.equal(f.adopted,null);
 });
+
+test('proposal review attaches timestamps to the matching open shift and isolates old leftovers', t => {
+ const {ctx}=setup(t);
+ const path=['storage','wochenplan_plan_v10'];
+ const stamp={path:[...path,'monthlyPlanBaselines','2026-10','changeTimestamps','2026-10-19::one']};
+ const shift={path:[...path,'schedule','2026-10-19','one']};
+ const unrelated={path:[...path,'monthlyPlanBaselines','2026-10','changeTimestamps','2026-10-19::two']};
+ const baseline={path:[...path,'monthlyPlanBaselines','2026-10','entries']};
+ const proposal={status:'pending',changes:[stamp,shift,unrelated,baseline]};
+ const review=ctx.WochenplanProposals.reviewItems(proposal);
+ assert.deepEqual(Array.from(review.visible,i=>Array.from(i.indices)),[[1,0],[3]]);
+ assert.deepEqual(Array.from(review.leftoverIndices),[2]);
+
+ proposal.changes[1]={...shift,decision:'rejected'};
+ const legacy=ctx.WochenplanProposals.reviewItems(proposal);
+ assert.deepEqual(Array.from(legacy.leftoverIndices),[0,2]);
+ assert.equal(legacy.visible[0].status,'rejected');
+ assert.deepEqual(Array.from(legacy.visible[0].indices),[1]);
+});
