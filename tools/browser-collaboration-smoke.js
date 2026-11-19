@@ -195,14 +195,16 @@ async function main(){
   await a.page.locator('#sharedProposals .sharedProposalConflict').waitFor();
   assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).isDisabled(),true);
   // Reproduce a proposal whose shift had already been rejected by an older app.
-  const legacyProposal = await a.page.evaluate(async () => {
+  const legacyDecision = await a.page.waitForFunction(async () => {
     const controller = WochenplanSharedController;
+    if (controller.status.busy) return false;
     const proposal = controller.status.branch.proposals.find(p => p.reason === 'Konflikttest');
     const shiftIndex = proposal.changes.findIndex(c => c.path[2] === 'schedule');
     await controller.decideProposalItems(proposal.id, [shiftIndex], 'rejected');
     return proposal.id;
   });
   await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
+  const legacyProposal = await legacyDecision.jsonValue();
   const leftover = a.page.locator(`#sharedProposals [data-proposal-id="${legacyProposal}"]`);
   assert.equal(await leftover.getByRole('button',{name:'Änderung annehmen',exact:true}).count(),0);
   const revisionBeforeCleanup = await a.page.evaluate(() => WochenplanSharedController.status.branch.revision);
