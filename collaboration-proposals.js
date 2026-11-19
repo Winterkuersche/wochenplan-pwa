@@ -59,6 +59,40 @@
     return (proposal.changes || []).map((change, index) => ({ change, index,
       status: change.decision || (proposal.status === "pending" ? "pending" : proposal.status) }));
   }
+  function reviewItems(proposal) {
+    const all = items(proposal);
+    const visible = [], timestamps = [];
+    for (const item of all) {
+      const path = item.change.path;
+      const isTimestamp = path?.[0] === "storage" && path[1] === "wochenplan_plan_v10" &&
+        path[2] === "monthlyPlanBaselines" && path[4] === "changeTimestamps" &&
+        (path.length === 5 || path.length === 6);
+      if (isTimestamp) timestamps.push(item);
+      else visible.push({ ...item, indices: [item.index] });
+    }
+    const leftoverIndices = [];
+    for (const item of timestamps) {
+      if (item.status !== "pending") continue;
+      const { path, before, after } = item.change;
+      const keys = path.length === 6 ? [path[5]] :
+        [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])]
+          .filter(key => !equal(before?.[key], after?.[key]));
+      const shift = keys.length && visible.find(entry => {
+        const [storage, plan, section, day, employee] = entry.change.path || [];
+        return entry.status === "pending" && storage === "storage" &&
+          plan === path[1] && section === "schedule" && day?.slice(0, 7) === path[3] &&
+          keys.every(key => {
+            const prefix = day + "::";
+            if (!key.startsWith(prefix)) return false;
+            const id = key.slice(prefix.length);
+            return employee ? employee === id : affectsCell(entry.change, day, id);
+          });
+      });
+      if (shift) shift.indices.push(item.index);
+      else leftoverIndices.push(item.index);
+    }
+    return { visible, leftoverIndices };
+  }
   const pending = proposal => items(proposal).filter(item => item.status === "pending").map(item => item.change);
-  root.WochenplanProposals = Object.freeze({ equal, clean, diff: (a, b) => diff(clean(a), clean(b)), conflicts, apply, affectsCell, items, pending });
+  root.WochenplanProposals = Object.freeze({ equal, clean, diff: (a, b) => diff(clean(a), clean(b)), conflicts, apply, affectsCell, items, pending, reviewItems });
 })(typeof window === "undefined" ? globalThis : window);
