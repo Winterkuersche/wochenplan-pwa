@@ -376,7 +376,7 @@ async function main(){
   await b.page.locator('#editAbsenceFrom').fill('2026-11-09');await b.page.locator('#editAbsenceTo').fill('2026-11-10');
   await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
   await a.page.locator('#btnSharedRefresh').click();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
   await b.page.waitForFunction(()=>state.absences.some(a=>a.employeeId==='test-one'&&a.from==='2026-11-09'),null,{timeout:25000});
   await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
