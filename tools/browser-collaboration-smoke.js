@@ -115,6 +115,7 @@ async function main(){
   await a.page.locator('#sharedProposalSection>summary').click();
   await a.page.locator('#sharedProposals').getByText('SV Test: Direkt aus der Schicht',{exact:false}).waitFor();
   assert.equal(await a.page.locator('#sharedProposals .sharedProposalItem').count(),1);
+  assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:/Alle offenen/}).count(),0);
   const directProposal = await a.page.evaluate(() =>
     WochenplanSharedController.status.branch.proposals.find(p => p.reason === 'Direkt aus der Schicht'));
   assert.equal(directProposal.changes.length, 2);
@@ -193,6 +194,16 @@ async function main(){
   await a.page.locator('#btnDataPanel').click();await a.page.locator('#sharedMessage').filter({hasText:'aktuell'}).waitFor();
   await a.page.locator('#btnSharedRefresh').click();
   await a.page.locator('#sharedProposals .sharedProposalConflict').waitFor();
+  const comparison = a.page.locator('#sharedProposals .sharedProposalComparison');
+  assert.deepEqual(await comparison.locator('dt').allTextContents(), [
+    'Beim Vorschlag geplant', 'Jetzt im Plan', 'Vorgeschlagen'
+  ]);
+  const [previousShift, currentShift, proposedShift] = await comparison.locator('dd').allTextContents();
+  assert.match(previousShift, /^F5 /);
+  assert.match(currentShift, /^F4 /);
+  assert.match(proposedShift, /^F6 /);
+  assert.equal(await comparison.locator('pre').count(),0);
+  assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung ablehnen',exact:true}).isEnabled(),true);
   assert.equal(await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).isDisabled(),true);
   // Reproduce a proposal whose shift had already been rejected by an older app.
   const legacyProposal = await a.page.evaluate(async () => {
@@ -339,7 +350,7 @@ async function main(){
   await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
   await a.page.locator('#btnSharedProposalOverview').click();
   await a.page.locator('#btnSharedRefresh').click();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
   await b.page.waitForFunction(()=>state.schedule['2026-11-04']['test-one'].code==='FLEX',null,{timeout:25000});
   await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
   await customCell.click();await b.page.locator('[data-quick="FR"]').click();
@@ -348,7 +359,7 @@ async function main(){
   const freeSummary = a.page.locator('#sharedProposals .sharedProposalItem summary').filter({hasText:'→ Frei'});
   await freeSummary.click();
   await a.page.locator('#sharedProposals').getByText('Nachher · Frei',{exact:true}).waitFor();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen ablehnen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung ablehnen',exact:true}).click();
   await a.page.locator('#btnSharedProposalOverview').filter({hasText:'(0)'}).waitFor();
   await customCell.click();await b.page.locator('#deleteEntry').click();
   assert.equal(await b.page.locator('#editorOverlay').isVisible(),true);
@@ -358,14 +369,14 @@ async function main(){
   const deleteSummary = a.page.locator('#sharedProposals .sharedProposalItem summary').filter({hasText:'→ Kein Eintrag'});
   await deleteSummary.click();
   await a.page.locator('#sharedProposals').getByText('Nachher · Kein Eintrag',{exact:true}).waitFor();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
   await b.page.waitForFunction(()=>!state.schedule['2026-11-04']?.['test-one'],null,{timeout:25000});
   await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
   await customCell.click();await b.page.locator('[data-quick="U"]').click();
   await b.page.locator('#editAbsenceFrom').fill('2026-11-09');await b.page.locator('#editAbsenceTo').fill('2026-11-10');
   await b.page.locator('#sendEditorProposal').click();await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
   await a.page.locator('#btnSharedRefresh').click();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
   await b.page.waitForFunction(()=>state.absences.some(a=>a.employeeId==='test-one'&&a.from==='2026-11-09'),null,{timeout:25000});
   await b.page.reload();await b.page.waitForFunction(()=>window.__APP_BOOT_OK__===true);
   await b.page.waitForFunction(()=>document.getElementById('dataStatus').dataset.mode==='synced');
@@ -386,7 +397,7 @@ async function main(){
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']?.['test-one']?.specialWork),undefined);
   await a.page.locator('#btnSharedRefresh').click();
   await a.page.locator('#sharedProposals .sharedProposalItem summary').filter({hasText:'Sonderzeit 19:10–21:00'}).waitFor();
-  await a.page.locator('#sharedProposals').getByRole('button',{name:'Alle offenen annehmen',exact:true}).click();
+  await a.page.locator('#sharedProposals').getByRole('button',{name:'Änderung annehmen',exact:true}).click();
   await b.page.waitForFunction(()=>state.schedule['2026-11-04']?.['test-one']?.specialWork?.minutes===110,null,{timeout:25000});
 
   assert.deepEqual(errors,[]);

@@ -57,7 +57,32 @@
       if (Array.from(select.options).some(o=>o.value===previous)) select.value=previous;
     }
     const kinds={created:"Filiale angelegt",joined:"Beigetreten",save:"Plan geändert",propose:"Vorschlag eingereicht",decide_proposal:"Vorschlag entschieden",decide_proposal_items:"Vorschlag teilweise entschieden",grant:"Vertretung freigegeben",revoke_grant:"Vertretung beendet",remove_member:"Zugang beendet",invite:"Einladung erstellt",revoke_invite:"Einladung widerrufen",revert:"Änderung zurückgenommen",restore:"Stand wiederhergestellt",publish:"Woche freigegeben",checkpoint:"Sicherungsstand angelegt"};
-    function changes(parent, list, { proposal = false } = {}) {
+    const shift = value => value && typeof value === "object" && (value.start || value.code)
+      ? `${value.code || "Schicht"} ${value.start || ""}–${value.end || ""}` : null;
+    function entryLabel(value) {
+      if (!value) return "Kein Eintrag";
+      const labels = { off: "Frei", vacation: "Urlaub", sick: "Krank", holiday: "Feiertag" };
+      if (Object.hasOwn(labels, value.type)) return labels[value.type];
+      if (value.type === "external-help") return value.start && value.end
+        ? `Aushilfe ${value.start}–${value.end}` : "Aushilfe";
+      const regular = shift(value) || value.label;
+      const block = value.specialWork;
+      const special = block ? `Sonderzeit ${block.start}–${block.end}` : "";
+      return [regular, special].filter(Boolean).join(" + ") || "Planeintrag";
+    }
+    function entryDescription(value) {
+      const pause = value?.pause ?? value?.breakMinutes;
+      const specialPause = value?.specialWork?.pause;
+      return [
+        entryLabel(value),
+        pause > 0 && `${pause} Min. Pause`,
+        value?.branch,
+        value?.note,
+        specialPause > 0 && `Sonderzeit: ${specialPause} Min. Pause`,
+        value?.specialWork?.note
+      ].filter(Boolean).join(" · ");
+    }
+    function changes(parent, list, { proposal = false, conflict = null } = {}) {
       for(const c of list || []) {
         if(c.action) {
           const d=c.details||{},name=current?.branch?.members.find(m=>m.id===d.user_id)?.name||"Mitglied";
@@ -73,36 +98,34 @@
         let title=path.slice(2).join(" / ");
         if(path[2]==="schedule") title=`${path[3] || "Planung"} · ${employees.find(e=>e.id===path[4])?.name || path[4] || "Tag"}`;
         if(path[1]==="wochenplan_master_v10") title="Teamdaten · "+path.slice(2).join(" / ");
-        const detail=document.createElement("details"),summary=document.createElement("summary");
-        const shift=v => v && typeof v==="object" && (v.start || v.code) ? `${v.code || "Schicht"} ${v.start || ""}–${v.end || ""}` : null;
         const shiftProposal = proposal && path[2] === "schedule" && path.length === 5;
-        const entryLabel = value => {
-          if (!value) return "Kein Eintrag";
-          const labels = { off: "Frei", vacation: "Urlaub", sick: "Krank", holiday: "Feiertag" };
-          if (Object.hasOwn(labels, value.type)) return labels[value.type];
-          if (value.type === "external-help") return value.start && value.end
-            ? `Aushilfe ${value.start}–${value.end}` : "Aushilfe";
-          const regular = shift(value) || value.label;
-          const block = value.specialWork;
-          const special = block ? `Sonderzeit ${block.start}–${block.end}` : "";
-          return [regular, special].filter(Boolean).join(" + ") || "Planeintrag";
-        };
+        if (shiftProposal && conflict) {
+          const heading = paragraph(parent, title);
+          heading.className = "sharedProposalComparisonTitle";
+          const comparison = document.createElement("dl");
+          comparison.className = "sharedProposalComparison";
+          for (const [label, value] of [["Beim Vorschlag geplant", c.before], ["Jetzt im Plan", conflict.value], ["Vorgeschlagen", c.after]]) {
+            const term = document.createElement("dt");
+            const description = document.createElement("dd");
+            term.textContent = label;
+            description.textContent = entryDescription(value);
+            comparison.append(term, description);
+          }
+          parent.append(comparison);
+          continue;
+        }
+        const detail=document.createElement("details"),summary=document.createElement("summary");
         summary.textContent = title;
         if (shiftProposal) summary.textContent += ` · ${entryLabel(c.before)} → ${entryLabel(c.after)}`;
         else if (shift(c.before) || shift(c.after)) summary.textContent += ` · ${shift(c.before) || "leer"} → ${shift(c.after) || "leer"}`;
         detail.append(summary);
         if (shiftProposal) {
           for (const [label, value] of [["Vorher", c.before], ["Nachher", c.after]]) {
-            const parts = [entryLabel(value)];
-            if (value?.pause) parts.push(value.pause + " Min. Pause");
-            if (value?.branch) parts.push(value.branch);
-            if (value?.note) parts.push(value.note);
-            if (value?.specialWork?.pause) parts.push(`Sonderzeit: ${value.specialWork.pause} Min. Pause`);
-            if (value?.specialWork?.note) parts.push(value.specialWork.note);
-            paragraph(detail, label + " · " + parts.join(" · "));
+            paragraph(detail, label + " · " + entryDescription(value));
           }
         } else {
           const before=document.createElement("pre");before.textContent=`Vorher: ${JSON.stringify(c.before,null,2)}\nNachher: ${JSON.stringify(c.after,null,2)}`;
+          if (conflict) before.textContent += `\nAktueller Plan: ${JSON.stringify(conflict.value ?? null,null,2)}`;
           detail.append(before);
         }
         parent.append(detail);
@@ -209,13 +232,12 @@
         if (proposal.decided_at) paragraph(card, `Entschieden am ${fmt(proposal.decided_at)}`);
         for (const {change: c, index, indices, status: itemStatus} of items) {
           const row = document.createElement("section"); row.className = "sharedProposalItem"; row.dataset.itemIndex = String(index); row.dataset.status = itemStatus;
-          changes(row, [c], { proposal: true });
-          if (!c.decision) paragraph(row, itemStatus === "pending" ? "Offen" : itemStatus === "accepted" ? "Angenommen" : "Abgelehnt");
           const conflict = indices.some(i => conflicts.includes(rawItems[i].change));
+          const currentValue = conflict ? { value: c.path.reduce((value, key) => value?.[key], branch.payload) } : null;
+          changes(row, [c], { proposal: true, conflict: currentValue });
+          if (!c.decision && !conflict) paragraph(row, itemStatus === "pending" ? "Offen" : itemStatus === "accepted" ? "Angenommen" : "Abgelehnt");
           if (conflict) {
-            paragraph(row, "Plan inzwischen geändert – bitte vergleichen. Diese Änderung kann nicht unverändert übernommen werden.").className = "sharedProposalConflict";
-            const value = c.path.reduce((v, k) => v?.[k], branch.payload);
-            paragraph(row, `Aktueller Plan: ${JSON.stringify(value ?? null)}`);
+            paragraph(row, "Der Plan wurde inzwischen geändert. Deshalb ist „Annehmen“ gesperrt.").className = "sharedProposalConflict";
           }
           if (itemActions && itemStatus === "pending") {
             const actions = document.createElement("div"); actions.className = "sharedProposalActions";
@@ -235,7 +257,7 @@
           else if (!hasOpenChanges) button(card, "Zeitmarkierungen verwerfen", () =>
             controller.perform("decide_proposal", { id: proposal.id, decision: "rejected" }));
         }
-        if (branch.owner && hasOpenChanges) {
+        if (branch.owner && hasOpenChanges && (!itemActions || openItems.length > 1)) {
           if (!itemActions) paragraph(card, "Einzelentscheidungen benötigen noch die Server-Aktualisierung. Bis dahin kann der Vorschlag als Ganzes entschieden werden.");
           const accept = button(card, itemActions ? "Alle offenen annehmen" : "Vorschlag annehmen", async () => {
             if (!confirm("Alle noch offenen Planänderungen in den Filialplan übernehmen?")) return;

@@ -2,7 +2,17 @@
 #btnSharedProposalOverview { margin: 0 0 12px; }
 #sharedProposals article, #sharedResolvedProposals article { overflow-wrap: anywhere; }
 .sharedProposalConflict { color: #b54708; font-weight: 600; }
+body.dark .sharedProposalConflict { color: #f5aa72; }
 .sharedProposalItem { border-top: 1px solid #94a3b8; padding: 10px 0; }
+.sharedProposalComparisonTitle { font-weight: 700; }
+.sharedProposalComparison {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr);
+  gap: 8px 12px;
+  margin: 8px 0;
+}
+.sharedProposalComparison dt { font-weight: 600; }
+.sharedProposalComparison dd { margin: 0; }
 .sharedProposalActions { display: flex; flex-wrap: wrap; gap: 8px; }
 .sharedProposalActions button { white-space: normal; }
 #grid .cell:has(.sharedProposalMark), #monthView .monthCellClickable:has(.sharedProposalMark) { position: relative; }
