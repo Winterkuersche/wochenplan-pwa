@@ -82,7 +82,9 @@ function compactMonthlyPlanEntry(entry, absence = null, resolvedEntry = null) {
   if (!entry || typeof entry !== "object") return null;
   const status = typeof getEntryStatus === "function" ? getEntryStatus(entry) : "";
   if (entry.type === "shift" || status === "work") {
-    return { kind: "shift", start: entry.start || "", end: entry.end || "" };
+    return { kind: "shift", start: entry.start || "", end: entry.end || "",
+      ...(entry.specialWork ? { specialWork: { ...entry.specialWork }, primaryMinutes: entry.minutes || 0 } : {}) };
+
   }
   if (entry.type === "external-help" || status === "external") {
     return { kind: "external-help", start: entry.start || "", end: entry.end || "", branch: entry.branch || "" };
@@ -184,6 +186,7 @@ function deleteMonthlyPlanBaseline(yearMonth, appState) {
 
 function getMonthlyPlanEntryWorkedMinutes(entry) {
   if (!entry || (entry.kind !== "shift" && entry.kind !== "external-help")) return 0;
+  if (entry.specialWork) return entry.primaryMinutes + entry.specialWork.minutes;
   if (!entry.start || !entry.end) return 0;
   if (entry.kind === "external-help" && typeof getExternalHelpWorkedMinutes === "function") {
     return getExternalHelpWorkedMinutes(entry.start, entry.end);
@@ -262,6 +265,7 @@ function formatMonthlyPlanChangeDescription(change) {
   if (change.changeType === MONTHLY_PLAN_CHANGE.SHIFT_MOVED_OR_RESIZED) return "Schichtbeginn und -ende geändert";
   if (change.changeType === MONTHLY_PLAN_CHANGE.WORKDAY_ADDED) return "Zusätzlicher Arbeitstag";
   if (change.changeType === MONTHLY_PLAN_CHANGE.WORKDAY_REMOVED) return "Arbeitstag entfernt";
+  if (change.changeType === MONTHLY_PLAN_CHANGE.CHANGED && (change.baseline?.specialWork || change.current?.specialWork)) return "Sonderzeit geändert";
   return "Status geändert";
 }
 

@@ -224,6 +224,11 @@ function getMonthCellText(resolved, options = {}) {
     cellText = getStatusShortLabel(status);
   }
 
+  const block = status === ENTRY_STATUS.WORK ? resolved?.sourceEntry?.specialWork : null;
+  if (block) {
+    const special = `${block.start}–${block.end}`;
+    return resolved.sourceEntry.start ? `${cellText}<br>${special}` : special;
+  }
   return cellText;
 }
 

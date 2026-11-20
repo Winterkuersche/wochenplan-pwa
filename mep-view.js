@@ -139,6 +139,17 @@ function getMepResolvedDayContent(employee, isoDate) {
     };
   }
 
+  if (resolved.type === "shift" && sourceEntry.specialWork) {
+    const span = getSpecialWorkMepSpan(sourceEntry, sourceEntry.specialWork);
+    const extra = span.pause - span.gap;
+    const pause = span.gapLabel && extra === 0 ? span.gapLabel
+      : span.pause > 0 ? `${minutesToHM(span.pause)} h` : "-";
+    return {
+      start: span.start, end: span.end, sum: minutesToHM(span.worked), pause,
+      pauseTooltip: `Pause gesamt: ${span.pause} Minuten${span.gapLabel ? ` · Lücke ${span.gapLabel}` : ""}`
+    };
+  }
+
   const sourceEntryStatus = getEntryStatus(sourceEntry);
   const isExternalEntry = sourceEntryStatus === ENTRY_STATUS.EXTERNAL;
   const pauseLabel = isExternalEntry ? sourceEntry.branch?.trim() || "" : getMepPauseLabel(sourceEntry);

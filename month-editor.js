@@ -22,12 +22,14 @@ function isValidLastMonthWorkShift(entry) {
   return Boolean(entry)
     && getEntryStatus(entry) === ENTRY_STATUS.WORK
     && entry.type === "shift"
+    && !(entry.specialWork && !entry.start)
     && !entry.externalHelp;
 }
 
 function rememberLastMonthWorkShift(entry) {
   if (!isValidLastMonthWorkShift(entry)) return false;
   lastMonthWorkShift = cloneMonthWorkShift(entry);
+  delete lastMonthWorkShift.specialWork;
   return true;
 }
 

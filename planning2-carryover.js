@@ -57,7 +57,8 @@ function rankPlanning2CarryoverCandidates(employees, getShift, closingIso, morni
     .filter(({ employee }) => {
       const closing = getShift(employee, closingIso);
       const morning = getShift(employee, morningIso);
-      return closing && allowedEnds.includes(closing.end) && ["08:55", "09:00"].includes(morning?.start);
+      return closing && allowedEnds.includes(closing.end) && ["08:55", "09:00"].includes(morning?.start)
+        && !(morning.specialWork && specialWorkOverlapsShift(morning.specialWork, "08:55", morning.end));
   });
   const explicit = eligible.filter(({ employee }) => isPlanning2ExplicitCarryoverOpener(employee, getShift, morningIso));
   const candidates = explicit.length ? explicit : eligible;
