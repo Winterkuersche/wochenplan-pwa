@@ -140,12 +140,13 @@ function getResolvedDayEntry({
   }
 
   if (isShiftEntry(plannedEntry)) {
+    const additionalMinutes = plannedEntry.specialWork?.minutes || 0;
     return createResolvedDayEntry({
       type: "shift",
       status: ENTRY_STATUS.WORK,
-      label: getShiftDisplayLabel(plannedEntry),
-      minutesForMonth: sunday ? 0 : (plannedEntry.minutes || 0),
-      minutesForBranch: sunday ? 0 : (plannedEntry.minutes || 0),
+      label: plannedEntry.start ? getShiftDisplayLabel(plannedEntry) : "Sonderzeit",
+      minutesForMonth: (plannedEntry.minutes || 0) + additionalMinutes,
+      minutesForBranch: (plannedEntry.minutes || 0) + additionalMinutes,
       isSunday: sunday,
       sourceEntry: plannedEntry
     });

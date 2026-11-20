@@ -219,3 +219,32 @@ function getShiftWorkedHHMM(entry) {
   if (!isShiftEntry(entry)) return "00:00";
   return minutesToHHMM(entry.minutes || 0);
 }
+
+// Additional attendance stays separate from the normal shift and its rules.
+function buildSpecialWorkBlock(start, end, pause, note = "") {
+  if (!isValidHHMM(start) || !isValidHHMM(end)) return null;
+  const from = parseTimeToMinutes(start), to = parseTimeToMinutes(end);
+  const breakMinutes = Number(pause);
+  if (!Number.isInteger(breakMinutes) || breakMinutes < 0 || to - from <= breakMinutes) return null;
+  if (from >= 9 * 60 && to <= 19 * 60 + 10) return null;
+  return {
+    start: minutesToHHMM(from), end: minutesToHHMM(to), pause: breakMinutes,
+    minutes: to - from - breakMinutes, note: String(note ?? "").trim().slice(0, 120)
+  };
+}
+
+function specialWorkOverlapsShift(block, start, end) {
+  return Boolean(block && start && end && block.start < end && start < block.end);
+}
+
+function getSpecialWorkMepSpan(entry, block) {
+  const regular = entry?.start && entry?.end ? entry : null;
+  const blocks = (regular ? [regular, block] : [block]).sort((a, b) => a.start.localeCompare(b.start));
+  const first = blocks[0], last = blocks.at(-1);
+  const worked = (regular?.minutes || 0) + block.minutes;
+  const gap = blocks.length === 2 ? parseTimeToMinutes(last.start) - parseTimeToMinutes(first.end) : 0;
+  // Use credited minutes, matching the app's existing rounding of regular shifts.
+  const pause = parseTimeToMinutes(last.end) - parseTimeToMinutes(first.start) - worked;
+  return { start: first.start, end: last.end, worked, pause, gap,
+    gapLabel: gap > 0 ? first.end + "–" + last.start : "" };
+}

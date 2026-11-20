@@ -270,8 +270,16 @@ function normalizePlanEntry(entry) {
     normalizedLabel = normalizedCode || derivedShiftKey || "";
   }
 
+  const specialWork = entry.specialWork;
+  const normalEntry = { ...entry };
+  if (specialWork) {
+    delete normalEntry.specialWork;
+    const block = isShiftWork && buildSpecialWorkBlock(specialWork.start, specialWork.end, specialWork.pause, specialWork.note);
+    if (block && !specialWorkOverlapsShift(block, start, end)) normalEntry.specialWork = block;
+  }
+
   return {
-    ...entry,
+    ...normalEntry,
     type,
     status,
     shiftKey: derivedShiftKey,
@@ -691,6 +699,13 @@ function updateEmployeeDay(employeeId, isoDate, updater, options = {}) {
     return null;
   }
 
+  if (currentEntry?.specialWork && getEntryStatus(nextEntry) === ENTRY_STATUS.WORK && !nextEntry.specialWork) {
+    if (specialWorkOverlapsShift(currentEntry.specialWork, nextEntry.start, nextEntry.end)) {
+      alert("Die Schicht überschneidet sich mit der Sonderzeit. Bitte zuerst die Sonderzeit anpassen.");
+      return null;
+    }
+    nextEntry.specialWork = currentEntry.specialWork;
+  }
   const normalizedEntry = normalizePlanEntry(nextEntry);
 
   if (!normalizedEntry) {
@@ -826,6 +841,7 @@ function applyMepEarlyStartCarryoverRule(isoDate, options = {}) {
     if (!hasShiftOnDay(emp)) return false;
     const entry = getPlanEntry(emp.id, isoDate);
     if (!isCarryoverMorningEligibleShift(entry)) return false;
+    if (entry.specialWork && specialWorkOverlapsShift(entry.specialWork, "08:55", entry.end)) return false;
     const prevEntry = getPlanEntry(emp.id, prevIso);
     return prevEntry?.type === "shift" && prevEntry.end === QUALIFYING_PREV_SHIFT_END;
   });
@@ -923,6 +939,11 @@ function setShift(employeeId, isoDate, entryOrShiftKey) {
   }
 
   if (!entry || entry.type !== "shift") return;
+  const existing = getPlanEntry(employeeId, isoDate);
+  if (existing?.specialWork && specialWorkOverlapsShift(existing.specialWork, entry.start, entry.end)) {
+    alert("Die Schicht überschneidet sich mit der Sonderzeit. Bitte zuerst die Sonderzeit anpassen.");
+    return false;
+  }
   const decision = resolveDayOverwriteDecision({
     employeeId,
     fromIso: isoDate,

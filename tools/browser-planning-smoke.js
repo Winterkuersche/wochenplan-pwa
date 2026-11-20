@@ -73,6 +73,56 @@ async function main(){
   await page.locator('.teamRow').nth(2).locator('input[type="month"]').nth(1).blur();
   await page.waitForFunction(()=>document.querySelectorAll('.cell[data-eid="c"]').length>0);
   await toggleTeam();
+  // A second block stays separate in the plan, but becomes a pause gap on the MEP sheet.
+  await cell('a').click();
+  await page.locator('#editorMoreOptions > summary').click();
+  await page.locator('#specialWorkEditor > summary').click();
+  await page.locator('#specialWorkStart').fill('19:10');
+  await page.locator('#specialWorkEnd').fill('21:00');
+  await page.locator('#specialWorkNote').fill('Umbau');
+  await page.locator('#saveSpecialWork').click();
+  await page.locator('#editorOverlay').waitFor({state:'hidden'});
+  assert.match(await cell('a').innerText(), /09:00–13:00 \/ 19:10–21:00/);
+  assert.match(await cell('a').innerText(), /5:50 h/);
+  const mep = () => page.evaluate(date => getMepResolvedDayContent(state.employees.find(e => e.id === 'a'), date), day);
+  const expected = {start:'09:00',end:'21:00',pause:'13:00–19:10',sum:'5:50',
+    pauseTooltip:'Pause gesamt: 370 Minuten · Lücke 13:00–19:10'};
+  assert.deepEqual(await mep(), expected);
+  await page.reload();await ready();await week();
+  assert.deepEqual(await mep(), expected);
+  await cell('a').click();
+  await page.locator('#editorMoreOptions > summary').click();
+  await page.locator('#specialWorkPause').fill('15');
+  await page.locator('#saveSpecialWork').click();
+  await page.locator('#editorOverlay').waitFor({state:'hidden'});
+  assert.deepEqual(await mep(), {...expected,pause:'6:25 h',sum:'5:35',
+    pauseTooltip:'Pause gesamt: 385 Minuten · Lücke 13:00–19:10'});
+  await cell('a').click();
+  await page.locator('#editorMoreOptions > summary').click();
+  await page.locator('#removeSpecialWork').click();
+  await page.locator('#editorOverlay').waitFor({state:'hidden'});
+  assert.equal((await read()).schedule[day].a.specialWork,undefined);
+  assert.equal((await mep()).sum,'4:00');
+  const specialOnlyDate = '2026-10-21';
+  await cell('a',specialOnlyDate).click();
+  await page.locator('#editorMoreOptions > summary').click();
+  await page.locator('#specialWorkEditor > summary').click();
+  await page.locator('#specialWorkStart').fill('07:00');
+  await page.locator('#specialWorkEnd').fill('10:00');
+  await page.locator('#saveSpecialWork').click();
+  await page.locator('#editorOverlay').waitFor({state:'hidden'});
+  assert.match(await cell('a',specialOnlyDate).innerText(), /07:00–10:00/);
+  const beforeOverlap = await read();
+  await cell('a',specialOnlyDate).click();
+  await choosePlanningQuickShift(page,'F4');
+  await page.locator('#toast').filter({hasText:'überschneiden'}).waitFor();
+  assert.deepEqual(await read(),beforeOverlap);
+  await page.locator('#closeEditor').click();
+  await cell('a',specialOnlyDate).click();
+  await page.locator('#editorMoreOptions > summary').click();
+  await page.locator('#removeSpecialWork').click();
+  await page.locator('#editorOverlay').waitFor({state:'hidden'});
+  assert.equal((await read()).schedule[specialOnlyDate]?.a,undefined);
   const before=await read();
   // A fresh cell starts with choices only. Conditional fields must remain
   // visually hidden even though their CSS normally uses display:flex.

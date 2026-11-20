@@ -82,7 +82,10 @@
           if (Object.hasOwn(labels, value.type)) return labels[value.type];
           if (value.type === "external-help") return value.start && value.end
             ? `Aushilfe ${value.start}–${value.end}` : "Aushilfe";
-          return shift(value) || value.label || "Planeintrag";
+          const regular = shift(value) || value.label;
+          const block = value.specialWork;
+          const special = block ? `Sonderzeit ${block.start}–${block.end}` : "";
+          return [regular, special].filter(Boolean).join(" + ") || "Planeintrag";
         };
         summary.textContent = title;
         if (shiftProposal) summary.textContent += ` · ${entryLabel(c.before)} → ${entryLabel(c.after)}`;
@@ -94,6 +97,8 @@
             if (value?.pause) parts.push(value.pause + " Min. Pause");
             if (value?.branch) parts.push(value.branch);
             if (value?.note) parts.push(value.note);
+            if (value?.specialWork?.pause) parts.push(`Sonderzeit: ${value.specialWork.pause} Min. Pause`);
+            if (value?.specialWork?.note) parts.push(value.specialWork.note);
             paragraph(detail, label + " · " + parts.join(" · "));
           }
         } else {
