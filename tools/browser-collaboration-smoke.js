@@ -373,7 +373,6 @@ async function main(){
 
   // A representative outside-hours block goes through the same proposal and sync path.
   if(await b.page.locator('#dataDialog').isVisible())await b.page.locator('#btnCloseData').click();
-  await b.page.locator('#next').click();
   await b.page.locator('#weeks button').filter({hasText:'02.11'}).click();
   await customCell.click();
   await b.page.locator('#editorMoreOptions > summary').click();
@@ -381,7 +380,7 @@ async function main(){
   await b.page.locator('#specialWorkStart').fill('19:10');
   await b.page.locator('#specialWorkEnd').fill('21:00');
   await b.page.locator('#saveSpecialWork').click();
-  await b.page.locator('#editorProposalPreview').getByText('Sonderzeit 19:10–21:00',{exact:false}).waitFor();
+  await b.page.locator('#editorProposalPreview').filter({hasText:'Sonderzeit 19:10–21:00'}).waitFor();
   await b.page.locator('#sendEditorProposal').click();
   await b.page.locator('#editorOverlay').waitFor({state:'hidden'});
   assert.equal(await b.page.evaluate(()=>state.schedule['2026-11-04']?.['test-one']?.specialWork),undefined);
